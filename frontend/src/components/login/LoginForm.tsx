@@ -57,7 +57,7 @@ export default function LoginForm() {
 
       <form onSubmit={handleSubmit} className="login-form">
         <div className="form-group">
-          <label htmlFor="identifier">Correo Electrónico  Usuario</label>
+          <label htmlFor="identifier">Correo Electrónico o Usuario</label>
           <div className="input-wrapper">
             <span className="input-icon">✉</span>
             <input
