@@ -20,9 +20,7 @@ export default function LoginPage() {
 
         <footer className="login-footer">
           <div className="login-footer__links">
-            <span>🌐 Portal Web</span>
-            <span>◉ Soporte TI</span>
-            <span>↗ Políticas</span>
+            
           </div>
 
           <p>
