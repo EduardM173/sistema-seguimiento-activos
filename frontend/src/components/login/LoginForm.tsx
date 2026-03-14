@@ -52,7 +52,7 @@ export default function LoginForm() {
     <div className="login-card">
       <div className="login-card__header">
         <h2>Acceso al Sistema</h2>
-        <p>Ingrese sus credenciales universitarias para continuar.</p>
+        <p>Ingrese sus credenciales para continuar.</p>
       </div>
 
       <form onSubmit={handleSubmit} className="login-form">
