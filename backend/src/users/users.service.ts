@@ -10,13 +10,9 @@ export class UsersService {
   async create(createUserDto: CreateUserDto) {
     const { nombres, apellidos, correo, nombreUsuario, password, telefono, areaId } = createUserDto;
 
-    // 🔍 Validar duplicados (correo o username)
     const existingUser = await this.prisma.usuario.findFirst({
       where: {
-        OR: [
-          { correo },
-          { nombreUsuario },
-        ],
+        OR: [{ correo }, { nombreUsuario }],
       },
     });
 
@@ -29,10 +25,8 @@ export class UsersService {
       }
     }
 
-    // 🔐 Encriptar contraseña
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // 🔍 Buscar rol por defecto
     const rol = await this.prisma.rol.findUnique({
       where: { nombre: 'USUARIO_OPERATIVO' },
     });
@@ -43,7 +37,6 @@ export class UsersService {
       );
     }
 
-    // 🚀 Crear usuario
     const usuarioCreado = await this.prisma.usuario.create({
       data: {
         nombres,
@@ -74,5 +67,26 @@ export class UsersService {
       message: 'Usuario creado correctamente',
       user: usuarioCreado,
     };
+  }
+
+  async findAll() {
+    return this.prisma.usuario.findMany({
+      select: {
+        id: true,
+        nombres: true,
+        apellidos: true,
+        correo: true,
+        nombreUsuario: true,
+        telefono: true,
+        estado: true,
+        areaId: true,
+        rolId: true,
+        creadoEn: true,
+        actualizadoEn: true,
+      },
+      orderBy: {
+        id: 'desc',
+      },
+    });
   }
 }
