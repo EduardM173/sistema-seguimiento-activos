@@ -1,384 +1,205 @@
 .sidebar {
-  /* contenedor general del navbar */
   position: fixed;
-  /* lo deja pegado a la ventana */
   top: 0;
-  /* lo pega arriba */
   left: 0;
-  /* lo pega al lado izquierdo */
   width: 280px;
-  /* ancho del sidebar */
   height: 100vh;
-  /* ocupa toda la altura visible */
   background: linear-gradient(180deg, #020817 0%, #020b24 100%);
-  /* fondo oscuro parecido al mockup */
   border-right: 1px solid rgba(148, 163, 184, 0.12);
-  /* borde suave al costado */
   display: flex;
-  /* usa flex para separar arriba y abajo */
   flex-direction: column;
-  /* acomoda en columna */
   justify-content: space-between;
-  /* empuja la parte de abajo al final */
   padding: 22px 16px 18px;
-  /* espacio interno del sidebar */
   box-sizing: border-box;
-  /* evita problemas con el ancho */
   font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  /* fuente limpia y moderna */
 }
-/* fin del bloque sidebar */
 
 .sidebar__top {
-  /* agrupa lo de arriba */
   display: flex;
-  /* activa flex */
   flex-direction: column;
-  /* acomoda en columna */
   gap: 18px;
-  /* separa cada bloque */
 }
-/* fin del bloque superior */
 
 .sidebar__brand {
-  /* contenedor del logo y nombre */
   display: flex;
-  /* pone logo y texto en fila */
   align-items: center;
-  /* los centra verticalmente */
   gap: 10px;
-  /* separacion entre logo y texto */
   padding: 6px 8px;
-  /* espacio interno */
 }
-/* fin del bloque de marca */
 
 .sidebar__logo {
-  /* caja del logo */
   width: 32px;
-  /* ancho del logo */
   height: 32px;
-  /* alto del logo */
   border-radius: 10px;
-  /* bordes redondos */
   background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%);
-  /* azul del logo */
   display: flex;
-  /* centra el icono */
   align-items: center;
-  /* centra vertical */
   justify-content: center;
-  /* centra horizontal */
   font-size: 16px;
-  /* tamaño del icono */
   box-shadow: 0 8px 20px rgba(37, 99, 235, 0.25);
-  /* sombra suave */
 }
-/* fin del logo */
 
 .sidebar__title {
-  /* texto del nombre del sistema */
   color: #1d8bff;
-  /* azul parecido al mockup */
   font-size: 18px;
-  /* tamaño del nombre */
   font-weight: 700;
-  /* lo pone fuerte */
   letter-spacing: 0.2px;
-  /* da un poco de aire */
 }
-/* fin del titulo */
 
 .sidebar__primaryButton {
-  /* boton nuevo activo */
   width: 100%;
-  /* ocupa todo el ancho */
   border: none;
-  /* quita borde por defecto */
   border-radius: 10px;
-  /* bordes redondos */
   background: linear-gradient(180deg, #2476f3 0%, #1f67df 100%);
-  /* azul fuerte del boton */
   color: #f8fbff;
-  /* texto claro */
   display: flex;
-  /* acomoda el icono y texto */
   align-items: center;
-  /* centra vertical */
   justify-content: center;
-  /* centra horizontal */
   gap: 10px;
-  /* separa icono y texto */
   padding: 14px 16px;
-  /* alto interno del boton */
   font-size: 15px;
-  /* tamaño del texto */
   font-weight: 600;
-  /* peso del texto */
   cursor: pointer;
-  /* cambia el cursor */
   box-shadow: 0 10px 24px rgba(37, 99, 235, 0.28);
-  /* sombra suave azul */
   transition: transform 0.2s ease, box-shadow 0.2s ease;
-  /* anima hover suave */
 }
-/* fin del boton principal */
 
 .sidebar__primaryButton:hover {
-  /* efecto al pasar el mouse */
   transform: translateY(-1px);
-  /* lo sube un poco */
   box-shadow: 0 14px 28px rgba(37, 99, 235, 0.32);
-  /* aumenta la sombra */
 }
-/* fin del hover del boton */
 
 .sidebar__plus {
-  /* circulito del signo mas */
   width: 20px;
-  /* ancho del circulo */
   height: 20px;
-  /* alto del circulo */
   border-radius: 999px;
-  /* lo vuelve redondo */
   background: rgba(255, 255, 255, 0.16);
-  /* fondo claro suave */
   display: inline-flex;
-  /* centra el signo */
   align-items: center;
-  /* centra vertical */
   justify-content: center;
-  /* centra horizontal */
   font-size: 14px;
-  /* tamaño del mas */
   font-weight: 700;
-  /* lo hace visible */
 }
-/* fin del signo mas */
 
 .sidebar__nav {
-  /* bloque de navegacion */
   display: flex;
-  /* activa flex */
   flex-direction: column;
-  /* acomoda en columna */
 }
-/* fin de navegacion */
 
 .sidebar__menu {
-  /* lista general del menu */
   list-style: none;
-  /* quita viñetas */
   margin: 0;
-  /* quita margen */
   padding: 0;
-  /* quita padding */
   display: flex;
-  /* activa flex */
   flex-direction: column;
-  /* pone items en columna */
   gap: 8px;
-  /* separa los items */
 }
-/* fin de lista */
 
 .sidebar__item {
-  /* item individual */
   width: 100%;
-  /* ocupa todo el ancho */
 }
-/* fin del item */
 
 .sidebar__link {
-  /* boton de cada opcion */
   width: 100%;
-  /* ocupa todo el ancho */
   border: none;
-  /* quita borde */
   background: transparent;
-  /* sin fondo por defecto */
   color: #94a3b8;
-  /* gris azulado del texto */
   border-radius: 10px;
-  /* bordes redondos */
   padding: 12px 14px;
-  /* espacio interno */
   display: flex;
-  /* acomoda icono y texto */
   align-items: center;
-  /* centra vertical */
   gap: 12px;
-  /* separa icono y texto */
   cursor: pointer;
-  /* cursor de mano */
   text-align: left;
-  /* alinea texto a la izquierda */
   transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
-  /* animacion suave */
 }
-/* fin del link */
 
 .sidebar__link:hover {
-  /* efecto hover */
   background: rgba(30, 41, 59, 0.55);
-  /* fondo suave */
   color: #e2e8f0;
-  /* aclara el texto */
   transform: translateX(2px);
-  /* mueve apenas a la derecha */
 }
-/* fin del hover */
 
 .sidebar__link--active {
-  /* estado activo del item */
   background: rgba(30, 41, 59, 0.78);
-  /* fondo marcado */
   color: #f8fafc;
-  /* texto mas claro */
   box-shadow: inset 0 0 0 1px rgba(59, 130, 246, 0.12);
-  /* borde interno muy suave */
 }
-/* fin del item activo */
 
 .sidebar__icon {
-  /* cajita del icono */
   width: 20px;
-  /* ancho del icono */
   min-width: 20px;
-  /* evita que se encoja */
   display: inline-flex;
-  /* centra el simbolo */
   align-items: center;
-  /* centra vertical */
   justify-content: center;
-  /* centra horizontal */
   font-size: 16px;
-  /* tamaño del simbolo */
   opacity: 0.95;
-  /* lo deja un poco suave */
 }
-/* fin del icono */
 
 .sidebar__text {
-  /* texto de cada opcion */
   font-size: 15px;
-  /* tamaño del texto */
   font-weight: 500;
-  /* peso medio */
 }
-/* fin del texto */
 
 .sidebar__bottom {
-  /* bloque de abajo */
   padding-top: 16px;
-  /* espacio arriba */
   border-top: 1px solid rgba(148, 163, 184, 0.12);
-  /* linea separadora suave */
 }
-/* fin del bloque inferior */
 
 .dashboardPage {
-  /* contenedor general de la pagina */
   min-height: 100vh;
-  /* altura minima completa */
   background: #020617;
-  /* fondo oscuro de la vista */
   padding-left: 280px;
-  /* deja espacio para el sidebar */
   box-sizing: border-box;
-  /* mantiene el ancho bien */
 }
-/* fin de la pagina */
 
 .dashboardContent {
-  /* area del contenido principal */
   min-height: 100vh;
-  /* llena la altura */
   padding: 24px;
-  /* espacio interno */
   color: #e2e8f0;
-  /* texto claro */
 }
-/* fin del contenido principal */
 
 .dashboardCard {
-  /* tarjeta de ejemplo */
   background: rgba(15, 23, 42, 0.86);
-  /* fondo del panel */
   border: 1px solid rgba(148, 163, 184, 0.12);
-  /* borde suave */
   border-radius: 16px;
-  /* bordes redondos */
   padding: 24px;
-  /* espacio interno */
 }
-/* fin de la tarjeta */
 
 .dashboardCard h1 {
-  /* titulo de ejemplo */
   margin: 0 0 8px;
-  /* margen del titulo */
   font-size: 24px;
-  /* tamaño del titulo */
 }
-/* fin del titulo */
 
 .dashboardCard p {
-  /* texto de ejemplo */
   margin: 0;
-  /* quita margen extra */
   color: #94a3b8;
-  /* color secundario */
 }
-/* fin del texto */
 
 @media (max-width: 900px) {
-  /* reglas para pantallas medianas */
   .sidebar {
-    /* ajusta el ancho del sidebar */
     width: 240px;
-    /* hace el navbar un poco mas estrecho */
   }
-  /* fin del sidebar en tablet */
 
   .dashboardPage {
-    /* ajusta el espacio del contenido */
     padding-left: 240px;
-    /* deja espacio segun el nuevo ancho */
   }
-  /* fin del ajuste de la pagina */
 }
-/* fin del media query de tablet */
 
 @media (max-width: 768px) {
-  /* reglas para pantallas pequeñas */
   .sidebar {
-    /* convierte el sidebar en barra superior */
     position: relative;
-    /* deja de estar fijo */
     width: 100%;
-    /* ocupa todo el ancho */
     height: auto;
-    /* altura automatica */
     border-right: none;
-    /* quita el borde lateral */
     border-bottom: 1px solid rgba(148, 163, 184, 0.12);
-    /* agrega borde abajo */
   }
-  /* fin del sidebar en movil */
 
   .dashboardPage {
-    /* quita el espacio lateral */
     padding-left: 0;
-    /* ya no deja hueco a la izquierda */
   }
-  /* fin del ajuste de pagina */
 
   .dashboardContent {
-    /* ajusta contenido en movil */
     padding: 18px;
-    /* reduce el padding */
   }
-  /* fin del contenido en movil */
 }
-/* fin del media query movil */
