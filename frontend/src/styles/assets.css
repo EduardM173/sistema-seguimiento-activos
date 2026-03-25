@@ -1,0 +1,136 @@
+.assetsPage {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 32px;
+  min-height: 100vh;
+  background: #f5f7fb;
+}
+
+.assetsPage__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.assetsPage__title {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 800;
+  color: #111827;
+}
+
+.assetsPage__subtitle {
+  margin: 8px 0 0;
+  font-size: 1rem;
+  color: #6b7280;
+  max-width: 760px;
+  line-height: 1.5;
+}
+
+.assetsCard {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+  overflow: hidden;
+}
+
+.assetsTableWrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.assetsTable {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 720px;
+}
+
+.assetsTable thead {
+  background: #f8fafc;
+}
+
+.assetsTable th {
+  padding: 18px 20px;
+  text-align: left;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #475569;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.assetsTable td {
+  padding: 18px 20px;
+  font-size: 0.96rem;
+  color: #1f2937;
+  border-bottom: 1px solid #eef2f7;
+  vertical-align: middle;
+}
+
+.assetsTable tbody tr:hover {
+  background: #f8fbff;
+}
+
+.assetsTable__code {
+  color: #2563eb;
+  font-weight: 700;
+}
+
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 0.85rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.assetsFooter {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  padding: 16px 20px;
+  font-size: 0.95rem;
+  color: #6b7280;
+  background: #ffffff;
+}
+
+.assetsState {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 240px;
+  padding: 32px;
+  text-align: center;
+}
+
+.assetsState--error {
+  color: #b91c1c;
+}
+
+.assetsState__text {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: inherit;
+}
+
+@media (max-width: 768px) {
+  .assetsPage {
+    padding: 20px;
+  }
+
+  .assetsPage__title {
+    font-size: 1.6rem;
+  }
+
+  .assetsPage__subtitle {
+    font-size: 0.95rem;
+  }
+}

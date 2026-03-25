@@ -203,3 +203,30 @@
     padding: 18px;
   }
 }
+
+:root {
+  --sidebar-width: 220px;
+}
+
+.appLayout {
+  min-height: 100vh;
+  background: #f5f7fb;
+}
+
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: var(--sidebar-width);
+  height: 100vh;
+  z-index: 1000;
+}
+
+.appContent {
+  margin-left: var(--sidebar-width);
+  min-height: 100vh;
+  width: calc(100% - var(--sidebar-width));
+  padding: 32px;
+  box-sizing: border-box;
+  overflow-x: auto;
+}
