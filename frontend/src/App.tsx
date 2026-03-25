@@ -16,6 +16,9 @@ import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 // pagina del dashboard
 
+import AssetsPage from './pages/AssetsPage';
+// pagina de activos
+
 export default function App() {
   return (
     <AuthProvider>
@@ -35,6 +38,9 @@ export default function App() {
 
             <Route path="/dashboard" element={<DashboardPage />} />
             {/* dashboard */}
+
+            <Route path="/activos" element={<AssetsPage />} />
+            {/* hu13 listado de activos */}
           </Route>
         </Route>
 

@@ -21,7 +21,7 @@ export default function Navbar() {
 
   const mainItems: MainItem[] = [
     { label: 'Dashboard', icon: '▦', to: '/dashboard' },
-    { label: 'Activos', icon: '≣' },
+    { label: 'Activos', icon: '≣', to: '/activos' },
     { label: 'Inventario', icon: '◫' },
     { label: 'Transferencias', icon: '⇄' },
     { label: 'Reportes', icon: '▥' },
