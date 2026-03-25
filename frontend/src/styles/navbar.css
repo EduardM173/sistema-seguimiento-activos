@@ -202,31 +202,40 @@
   .dashboardContent {
     padding: 18px;
   }
-}
-
-:root {
-  --sidebar-width: 220px;
+}:root {
+  --sidebar-width: 280px;
 }
 
 .appLayout {
   min-height: 100vh;
-  background: #f5f7fb;
-}
-
-.sidebar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: var(--sidebar-width);
-  height: 100vh;
-  z-index: 1000;
+  background: #f1f5f9;
 }
 
 .appContent {
   margin-left: var(--sidebar-width);
   min-height: 100vh;
   width: calc(100% - var(--sidebar-width));
-  padding: 32px;
+  padding: 24px;
   box-sizing: border-box;
   overflow-x: auto;
+}
+
+/* responsive */
+@media (max-width: 900px) {
+  :root {
+    --sidebar-width: 240px;
+  }
+
+  .appContent {
+    margin-left: var(--sidebar-width);
+    width: calc(100% - var(--sidebar-width));
+  }
+}
+
+@media (max-width: 768px) {
+  .appContent {
+    margin-left: 0;
+    width: 100%;
+    padding: 18px;
+  }
 }
