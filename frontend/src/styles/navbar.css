@@ -202,6 +202,8 @@
   .dashboardContent {
     padding: 18px;
   }
+}:root {
+  --sidebar-width: 280px;
 }
 
 .appLayout {
@@ -210,22 +212,30 @@
 }
 
 .appContent {
+  margin-left: var(--sidebar-width);
   min-height: 100vh;
-  margin-left: 280px;
+  width: calc(100% - var(--sidebar-width));
   padding: 24px;
   box-sizing: border-box;
+  overflow-x: auto;
 }
 
 /* responsive */
 @media (max-width: 900px) {
+  :root {
+    --sidebar-width: 240px;
+  }
+
   .appContent {
-    margin-left: 240px;
+    margin-left: var(--sidebar-width);
+    width: calc(100% - var(--sidebar-width));
   }
 }
 
 @media (max-width: 768px) {
   .appContent {
     margin-left: 0;
+    width: 100%;
     padding: 18px;
   }
 }
