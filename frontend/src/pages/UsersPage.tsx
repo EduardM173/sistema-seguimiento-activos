@@ -8,10 +8,13 @@ export default function UsersPage() {
     correo: '',
     nombreUsuario: '',
     password: '',
+    telefono: '',
+    areaId: '',
   });
 
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   function handleChange(event: React.ChangeEvent<HTMLInputElement>) {
     const { name, value } = event.target;
@@ -26,10 +29,20 @@ export default function UsersPage() {
     event.preventDefault();
     setMessage('');
     setError('');
+    setLoading(true);
 
     try {
-      await createUser(formData);
-      setMessage(`Usuario creado correctamente:`);
+      await createUser({
+        nombres: formData.nombres,
+        apellidos: formData.apellidos,
+        correo: formData.correo,
+        nombreUsuario: formData.nombreUsuario,
+        password: formData.password,
+        telefono: formData.telefono || undefined,
+        areaId: formData.areaId || undefined,
+      });
+
+      setMessage('Usuario creado correctamente');
 
       setFormData({
         nombres: '',
@@ -37,6 +50,8 @@ export default function UsersPage() {
         correo: '',
         nombreUsuario: '',
         password: '',
+        telefono: '',
+        areaId: '',
       });
     } catch (err) {
       if (err instanceof Error) {
@@ -44,6 +59,8 @@ export default function UsersPage() {
       } else {
         setError('Ocurrió un error al crear el usuario');
       }
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -118,11 +135,42 @@ export default function UsersPage() {
           />
         </div>
 
-        <button type="submit">Guardar usuario</button>
+        <div style={{ marginBottom: '1rem' }}>
+          <label htmlFor="telefono">Teléfono</label>
+          <input
+            id="telefono"
+            type="text"
+            name="telefono"
+            value={formData.telefono}
+            onChange={handleChange}
+            style={{ display: 'block', width: '100%', padding: '0.5rem' }}
+          />
+        </div>
+
+        <div style={{ marginBottom: '1rem' }}>
+          <label htmlFor="areaId">Área ID</label>
+          <input
+            id="areaId"
+            type="text"
+            name="areaId"
+            value={formData.areaId}
+            onChange={handleChange}
+            style={{ display: 'block', width: '100%', padding: '0.5rem' }}
+          />
+        </div>
+
+        <button type="submit" disabled={loading}>
+          {loading ? 'Guardando...' : 'Guardar usuario'}
+        </button>
       </form>
 
-      {message && <p style={{ color: 'green', marginTop: '1rem' }}>{message}</p>}
-      {error && <p style={{ color: 'red', marginTop: '1rem' }}>{error}</p>}
+      {message && (
+        <p style={{ color: 'green', marginTop: '1rem' }}>{message}</p>
+      )}
+
+      {error && (
+        <p style={{ color: 'red', marginTop: '1rem' }}>{error}</p>
+      )}
     </div>
   );
 }

@@ -3,12 +3,13 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 
 import ProtectedRoute from './components/auth/ProtectedRoute';
+
 import PrivateLayout from './components/layout/PrivateLayout';
 
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
-import UsersPage from './pages/UsersPage';
-import AssetsPage from './pages/AssetsPage';
+import UserList from './pages/users/UserList';
+import CreateUser from './components/users/CreateUser';
 
 export default function App() {
   return (
@@ -19,8 +20,8 @@ export default function App() {
         <Route element={<ProtectedRoute />}>
           <Route element={<PrivateLayout />}>
             <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/users" element={<UsersPage />} />
-            <Route path="/activos" element={<AssetsPage />} />
+            <Route path="/users" element={<UserList />} />
+            <Route path="/users/create" element={<CreateUser />} />
           </Route>
         </Route>
 

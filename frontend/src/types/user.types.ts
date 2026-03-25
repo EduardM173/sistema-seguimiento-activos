@@ -4,22 +4,25 @@ export interface CreateUserRequest {
   correo: string;
   nombreUsuario: string;
   password: string;
+  telefono?: string;
+  areaId?: string;
 }
 
 export interface User {
-  id: number;
+  id: string; // tu backend usa cuid() → string
   nombres: string;
   apellidos: string;
   correo: string;
   nombreUsuario: string;
-  password?: string;
+  telefono?: string | null;
+  areaId?: string | null;
+  rolId?: string;
+  estado?: string;
+  creadoEn?: string;
+  actualizadoEn?: string;
 }
 
 export interface CreateUserResponse {
-  id: number;
-  nombres: string;
-  apellidos: string;
-  correo: string;
-  nombreUsuario: string;
-  password?: string;
+  message: string;
+  user: User;
 }
