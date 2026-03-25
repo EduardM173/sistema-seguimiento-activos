@@ -1,139 +1,172 @@
+import { NavLink } from 'react-router-dom';
+// importa navlink para navegar entre rutas
+
+import { useAuth } from '../../context/AuthContext';
+// importa el logout global
+
 import '../../styles/navbar.css';
-// importa el css del navbar
+// importa los estilos del navbar
 
-type MenuItem = {
-// define la forma de cada item del menu
+type MainItem = {
+  // tipo para items principales
   label: string;
-// guarda el nombre que se vera
+  // texto del item
+
   icon: string;
-// guarda un icono simple de texto
-  active?: boolean;
-// marca si el item esta activo o no
+  // icono simple por ahora
+
+  to?: string;
+  // ruta del item si ya existe
 };
-// cierra el tipo del item
 
-const mainItems: MenuItem[] = [
-// lista principal del menu
-  { label: 'Dashboard', icon: '▦', active: true },
-// este queda activo por defecto
-  { label: 'Activos', icon: '≣' },
-// item de activos
-  { label: 'Inventario', icon: '◫' },
-// item de inventario
-  { label: 'Transferencias', icon: '⇄' },
-// item de transferencias
-  { label: 'Reportes', icon: '▥' },
-// item de reportes
-  { label: 'Usuarios', icon: '◌' },
-// item de usuarios
-  { label: 'Auditoría', icon: '🛡' },
-// item de auditoria
-];
-// termina la lista principal
+type BottomItem = {
+  // tipo para items de abajo
+  label: string;
+  // texto del item
 
-const bottomItems: MenuItem[] = [
-// lista de abajo del navbar
-  { label: 'Configuración', icon: '⚙' },
-// item de configuracion
-  { label: 'Cerrar Sesión', icon: '↩' },
-// item para cerrar sesion
-];
-// termina la lista de abajo
+  icon: string;
+  // icono simple
+
+  action?: () => void;
+  // accion opcional
+};
 
 export default function Navbar() {
-// crea el componente del navbar
+  // componente global del navbar
+
+  const { logout } = useAuth();
+  // obtiene la funcion global de cerrar sesion
+
+  const mainItems: MainItem[] = [
+    // menu principal
+    { label: 'Dashboard', icon: '▦', to: '/dashboard' },
+    // ruta ya lista
+
+    { label: 'Activos', icon: '≣' },
+    // aun sin ruta
+
+    { label: 'Inventario', icon: '◫' },
+    // aun sin ruta
+
+    { label: 'Transferencias', icon: '⇄' },
+    // aun sin ruta
+
+    { label: 'Reportes', icon: '▥' },
+    // aun sin ruta
+
+    { label: 'Usuarios', icon: '◌' },
+    // aun sin ruta
+
+    { label: 'Auditoría', icon: '🛡' },
+    // aun sin ruta
+  ];
+
+  const bottomItems: BottomItem[] = [
+    // menu inferior
+    { label: 'Configuración', icon: '⚙' },
+    // aun sin ruta o accion
+
+    { label: 'Cerrar Sesión', icon: '↩', action: logout },
+    // aqui si ya metemos el logout real
+  ];
+
   return (
-// devuelve la estructura visual
     <aside className="sidebar">
-      {/* contenedor principal del sidebar */}
+      {/* sidebar lateral */}
 
       <div className="sidebar__top">
-        {/* parte superior del sidebar */}
+        {/* parte de arriba */}
 
         <div className="sidebar__brand">
-          {/* bloque del logo y nombre */}
+          {/* marca del sistema */}
 
           <div className="sidebar__logo">🛡</div>
-          {/* logo simple por ahora */}
+          {/* logo simple temporal */}
 
           <span className="sidebar__title">ActivoGestión</span>
           {/* nombre del sistema */}
         </div>
-        {/* termina el bloque del logo */}
+        {/* termina la marca */}
 
         <button type="button" className="sidebar__primaryButton">
-          {/* boton principal */}
-
+          {/* boton visual temporal */}
           <span className="sidebar__plus">+</span>
-          {/* simbolo de sumar */}
-
+          {/* iconito mas */}
           <span>Nuevo Activo</span>
           {/* texto del boton */}
         </button>
-        {/* termina el boton principal */}
+        {/* termina boton principal */}
 
         <nav className="sidebar__nav">
           {/* navegacion principal */}
 
           <ul className="sidebar__menu">
-            {/* lista del menu principal */}
+            {/* lista principal */}
 
             {mainItems.map((item) => (
               <li key={item.label} className="sidebar__item">
-                {/* cada item del menu */}
+                {/* item del menu */}
 
-                <button
-                  type="button"
-                  className={`sidebar__link ${item.active ? 'sidebar__link--active' : ''}`}
-                >
-                  {/* boton visual del item */}
-
-                  <span className="sidebar__icon">{item.icon}</span>
-                  {/* icono simple del item */}
-
-                  <span className="sidebar__text">{item.label}</span>
-                  {/* nombre del item */}
-                </button>
-                {/* termina el boton del item */}
+                {item.to ? (
+                  // si tiene ruta usamos navlink
+                  <NavLink
+                    to={item.to}
+                    className={({ isActive }) =>
+                      `sidebar__link ${isActive ? 'sidebar__link--active' : ''}`
+                    }
+                  >
+                    {/* link del menu */}
+                    <span className="sidebar__icon">{item.icon}</span>
+                    {/* icono */}
+                    <span className="sidebar__text">{item.label}</span>
+                    {/* texto */}
+                  </NavLink>
+                ) : (
+                  // si aun no tiene ruta usamos boton visual
+                  <button type="button" className="sidebar__link">
+                    {/* boton temporal */}
+                    <span className="sidebar__icon">{item.icon}</span>
+                    {/* icono */}
+                    <span className="sidebar__text">{item.label}</span>
+                    {/* texto */}
+                  </button>
+                )}
               </li>
             ))}
-            {/* recorre y pinta todos los items principales */}
           </ul>
           {/* termina la lista principal */}
         </nav>
-        {/* termina la navegacion principal */}
+        {/* termina nav principal */}
       </div>
-      {/* termina la parte superior */}
+      {/* termina parte superior */}
 
       <div className="sidebar__bottom">
-        {/* parte inferior del sidebar */}
+        {/* parte de abajo */}
 
         <ul className="sidebar__menu">
           {/* lista inferior */}
 
           {bottomItems.map((item) => (
             <li key={item.label} className="sidebar__item">
-              {/* cada item inferior */}
+              {/* item inferior */}
 
-              <button type="button" className="sidebar__link">
-                {/* boton visual inferior */}
-
+              <button
+                type="button"
+                className="sidebar__link"
+                onClick={item.action}
+              >
+                {/* boton inferior */}
                 <span className="sidebar__icon">{item.icon}</span>
-                {/* icono simple inferior */}
-
+                {/* icono */}
                 <span className="sidebar__text">{item.label}</span>
-                {/* texto del item inferior */}
+                {/* texto */}
               </button>
-              {/* termina el boton inferior */}
             </li>
           ))}
-          {/* recorre y pinta los items de abajo */}
         </ul>
-        {/* termina la lista inferior */}
+        {/* termina lista inferior */}
       </div>
-      {/* termina la parte inferior */}
+      {/* termina parte de abajo */}
     </aside>
   );
-// termina lo que renderiza el componente
 }
-// termina el componente
