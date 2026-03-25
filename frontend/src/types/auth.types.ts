@@ -1,26 +1,31 @@
-export interface LoginRequest {
-  identifier: string;
-  password: string;
-}
+export type AuthUser = {
+  id: number;
 
-export interface UsuarioAutenticado {
-  id: string;
   nombres: string;
   apellidos: string;
+
   correo: string;
   nombreUsuario: string;
+
   estado: string;
+
   rol: {
-    id: string;
+    id: number;
     nombre: string;
   };
+
   area: {
-    id: string;
+    id: number;
     nombre: string;
   } | null;
-}
+};
 
-export interface LoginResponse {
+export type LoginRequest = {
+  identifier: string;
+  password: string;
+};
+
+export type LoginResponse = {
   accessToken: string;
-  usuario: UsuarioAutenticado;
-}
+  usuario: AuthUser;
+};
