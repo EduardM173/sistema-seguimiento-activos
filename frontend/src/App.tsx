@@ -16,6 +16,8 @@ import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 // pagina del dashboard
 
+import UsersPage from './pages/UsersPage';
+
 export default function App() {
   return (
     <AuthProvider>
@@ -34,7 +36,7 @@ export default function App() {
             {/* layout con navbar */}
 
             <Route path="/dashboard" element={<DashboardPage />} />
-            {/* dashboard */}
+            <Route path="/users" element={<UsersPage />} />
           </Route>
         </Route>
 

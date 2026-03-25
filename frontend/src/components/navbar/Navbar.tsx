@@ -25,7 +25,7 @@ export default function Navbar() {
     { label: 'Inventario', icon: '◫' },
     { label: 'Transferencias', icon: '⇄' },
     { label: 'Reportes', icon: '▥' },
-    { label: 'Usuarios', icon: '◌' },
+    { label: 'Usuarios', icon: '◌', to: '/users' },
     { label: 'Auditoría', icon: '🛡' },
   ];
 

@@ -203,3 +203,29 @@
     padding: 18px;
   }
 }
+
+.appLayout {
+  min-height: 100vh;
+  background: #f1f5f9;
+}
+
+.appContent {
+  min-height: 100vh;
+  margin-left: 280px;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+/* responsive */
+@media (max-width: 900px) {
+  .appContent {
+    margin-left: 240px;
+  }
+}
+
+@media (max-width: 768px) {
+  .appContent {
+    margin-left: 0;
+    padding: 18px;
+  }
+}
