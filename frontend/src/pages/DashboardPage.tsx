@@ -1,32 +1,12 @@
-import Navbar from '../components/navbar/Navbar';
-// importa el componente del navbar lateral
-
 export default function DashboardPage() {
-  // crea la pagina del dashboard
+  // pagina principal interna
 
   return (
-    // devuelve lo que se vera en pantalla
-    <div className="dashboardPage">
-      {/* contenedor general de la pagina */}
+    <section className="pageSection">
+      {/* contenedor de la pagina */}
 
-      <Navbar />
-      {/* muestra el navbar lateral */}
-
-      <main className="dashboardContent">
-        {/* contenedor del contenido principal */}
-
-        <section className="dashboardCard">
-          {/* tarjeta simple de contenido */}
-
-          <h1>Panel principal</h1>
-          {/* titulo pequeño de la pagina */}
-        </section>
-        {/* termina la tarjeta */}
-      </main>
-      {/* termina el contenido principal */}
-    </div>
-    // termina lo que renderiza la pagina
+      <h1 className="pageTitle">Panel principal</h1>
+      {/* titulo simple por ahora */}
+    </section>
   );
-  // termina el return
 }
-// termina el componente

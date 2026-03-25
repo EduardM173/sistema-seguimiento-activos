@@ -1,55 +1,46 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
+// importa las rutas
+
+import { AuthProvider } from './context/AuthContext';
+// provider global de autenticacion
+
+import ProtectedRoute from './components/auth/ProtectedRoute';
+// protege rutas privadas
+
+import PrivateLayout from './components/layout/PrivateLayout';
+// layout con navbar
+
 import LoginPage from './pages/LoginPage';
+// pagina de login
+
 import DashboardPage from './pages/DashboardPage';
-
-function getToken() {
-  return (
-    localStorage.getItem('access_token') ||
-    sessionStorage.getItem('access_token')
-  );
-}
-
-function PrivateRoute({ children }: { children: React.ReactNode }) {
-  const token = getToken();
-
-  if (!token) {
-    return <Navigate to="/" replace />;
-  }
-
-  return <>{children}</>;
-}
-
-function PublicRoute({ children }: { children: React.ReactNode }) {
-  const token = getToken();
-
-  if (token) {
-    return <Navigate to="/dashboard" replace />;
-  }
-
-  return <>{children}</>;
-}
+// pagina del dashboard
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <AuthProvider>
+      {/* contexto global */}
+
       <Routes>
-        <Route
-          path="/"
-          element={
-            <PublicRoute>
-              <LoginPage />
-            </PublicRoute>
-          }
-        />
-        <Route
-          path="/dashboard"
-          element={
-            <PrivateRoute>
-              <DashboardPage />
-            </PrivateRoute>
-          }
-        />
+        {/* rutas */}
+
+        <Route path="/" element={<LoginPage />} />
+        {/* login */}
+
+        <Route element={<ProtectedRoute />}>
+          {/* rutas protegidas */}
+
+          <Route element={<PrivateLayout />}>
+            {/* layout con navbar */}
+
+            <Route path="/dashboard" element={<DashboardPage />} />
+            {/* dashboard */}
+          </Route>
+        </Route>
+
+        <Route path="*" element={<Navigate to="/" replace />} />
+        {/* fallback */}
       </Routes>
-    </BrowserRouter>
+    </AuthProvider>
   );
 }
