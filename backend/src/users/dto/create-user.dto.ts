@@ -1,4 +1,10 @@
-import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsString,
+  MinLength,
+  IsOptional,
+} from 'class-validator';
 
 export class CreateUserDto {
   @IsString()
@@ -10,6 +16,7 @@ export class CreateUserDto {
   apellidos: string;
 
   @IsEmail()
+  @IsNotEmpty()
   correo: string;
 
   @IsString()
@@ -19,4 +26,12 @@ export class CreateUserDto {
   @IsString()
   @MinLength(6)
   password: string;
+
+  @IsOptional()
+  @IsString()
+  telefono?: string;
+
+  @IsOptional()
+  @IsString()
+  areaId?: string;
 }

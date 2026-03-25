@@ -8,42 +8,42 @@ export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(createUserDto: CreateUserDto) {
-    const { nombres, apellidos, correo, nombreUsuario, password } = createUserDto;
+    const { nombres, apellidos, correo, nombreUsuario, password, telefono, areaId } = createUserDto;
 
-    // Verificar si ya existe un usuario con ese correo
-    const existingUserByCorreo = await this.prisma.usuario.findUnique({
-      where: { correo },
+    // 🔍 Validar duplicados (correo o username)
+    const existingUser = await this.prisma.usuario.findFirst({
+      where: {
+        OR: [
+          { correo },
+          { nombreUsuario },
+        ],
+      },
     });
 
-    if (existingUserByCorreo) {
-      throw new BadRequestException('Correo ya registrado');
+    if (existingUser) {
+      if (existingUser.correo === correo) {
+        throw new BadRequestException('Correo ya registrado');
+      }
+      if (existingUser.nombreUsuario === nombreUsuario) {
+        throw new BadRequestException('Nombre de usuario ya registrado');
+      }
     }
 
-    // Verificar si ya existe un usuario con ese nombre de usuario
-    const existingUserByUsername = await this.prisma.usuario.findUnique({
-      where: { nombreUsuario },
-    });
-
-    if (existingUserByUsername) {
-      throw new BadRequestException('Nombre de usuario ya registrado');
-    }
-
-    // Encriptar contraseña
+    // 🔐 Encriptar contraseña
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Buscar un rol existente
-    // Cambia el where según cómo esté definido tu modelo Rol
+    // 🔍 Buscar rol por defecto
     const rol = await this.prisma.rol.findUnique({
-        where: { nombre: 'USUARIO_OPERATIVO' },
+      where: { nombre: 'USUARIO_OPERATIVO' },
     });
 
     if (!rol) {
       throw new BadRequestException(
-        'No existe ningún rol USUARIO OPERATIVO en la base de datos',
+        'No existe el rol USUARIO_OPERATIVO en la base de datos',
       );
     }
 
-    // Crear usuario
+    // 🚀 Crear usuario
     const usuarioCreado = await this.prisma.usuario.create({
       data: {
         nombres,
@@ -51,6 +51,8 @@ export class UsersService {
         correo,
         nombreUsuario,
         hashContrasena: hashedPassword,
+        telefono,
+        areaId,
         rolId: rol.id,
       },
       select: {
