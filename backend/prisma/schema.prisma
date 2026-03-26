@@ -63,37 +63,37 @@ enum FormatoReporte {
 }
 
 model Usuario {
-  id                String         @id @default(cuid())
-  nombres           String
-  apellidos         String
-  correo            String         @unique
-  nombreUsuario     String         @unique
-  hashContrasena    String
-  telefono          String?
-  estado            EstadoUsuario  @default(ACTIVO)
-  areaId            String?
-  rolId             String
-  creadoEn          DateTime       @default(now())
-  actualizadoEn     DateTime       @updatedAt
+  id             String        @id @default(cuid())
+  nombres        String
+  apellidos      String
+  correo         String        @unique
+  nombreUsuario  String        @unique
+  hashContrasena String
+  telefono       String?
+  estado         EstadoUsuario @default(ACTIVO)
+  areaId         String?
+  rolId          String
+  creadoEn       DateTime      @default(now())
+  actualizadoEn  DateTime      @updatedAt
 
-  area              Area?          @relation(fields: [areaId], references: [id])
-  rol               Rol            @relation(fields: [rolId], references: [id])
+  area Area? @relation(fields: [areaId], references: [id])
+  rol  Rol   @relation(fields: [rolId], references: [id])
 
-  areasGestionadas  Area[]         @relation("AreaEncargado")
-  activosResponsable Activo[]      @relation("ActivoResponsableActual")
-  activosCreados    Activo[]       @relation("ActivoCreadoPor")
-  activosActualizados Activo[]     @relation("ActivoActualizadoPor")
+  areasGestionadas    Area[]   @relation("AreaEncargado")
+  activosResponsable  Activo[] @relation("ActivoResponsableActual")
+  activosCreados      Activo[] @relation("ActivoCreadoPor")
+  activosActualizados Activo[] @relation("ActivoActualizadoPor")
 
   asignacionesRealizadas AsignacionActivo[] @relation("AsignacionRealizadaPor")
   asignacionesRecibidas  AsignacionActivo[] @relation("AsignacionRecibidaPor")
   asignacionesDirectas   AsignacionActivo[] @relation("AsignacionUsuarioAsignado")
 
   movimientosInventario MovimientoInventario[]
-  movimientosActivo    MovimientoActivo[]
-  incidentesActivo     IncidenteActivo[]
-  auditorias           Auditoria[]
-  notificaciones       Notificacion[]
-  reportesGenerados    ReporteGenerado[]
+  movimientosActivo     MovimientoActivo[]
+  incidentesActivo      IncidenteActivo[]
+  auditorias            Auditoria[]
+  notificaciones        Notificacion[]
+  reportesGenerados     ReporteGenerado[]
 
   @@index([rolId])
   @@index([areaId])
@@ -101,54 +101,54 @@ model Usuario {
 }
 
 model Rol {
-  id          String         @id @default(cuid())
-  nombre      String         @unique
+  id          String   @id @default(cuid())
+  nombre      String   @unique
   descripcion String?
-  creadoEn    DateTime       @default(now())
+  creadoEn    DateTime @default(now())
 
-  usuarios    Usuario[]
-  permisos    RolPermiso[]
+  usuarios Usuario[]
+  permisos RolPermiso[]
 
   @@map("roles")
 }
 
 model Permiso {
-  id          String         @id @default(cuid())
-  codigo      String         @unique
+  id          String  @id @default(cuid())
+  codigo      String  @unique
   nombre      String
   descripcion String?
 
-  roles       RolPermiso[]
+  roles RolPermiso[]
 
   @@map("permisos")
 }
 
 model RolPermiso {
-  rolId       String
-  permisoId   String
+  rolId     String
+  permisoId String
 
-  rol         Rol           @relation(fields: [rolId], references: [id], onDelete: Cascade)
-  permiso     Permiso       @relation(fields: [permisoId], references: [id], onDelete: Cascade)
+  rol     Rol     @relation(fields: [rolId], references: [id], onDelete: Cascade)
+  permiso Permiso @relation(fields: [permisoId], references: [id], onDelete: Cascade)
 
   @@id([rolId, permisoId])
   @@map("roles_permisos")
 }
 
 model Area {
-  id                String           @id @default(cuid())
-  nombre            String           @unique
-  descripcion       String?
-  ubicacionId       String?
-  encargadoId       String?
-  creadoEn          DateTime         @default(now())
-  actualizadoEn     DateTime         @updatedAt
+  id            String   @id @default(cuid())
+  nombre        String   @unique
+  descripcion   String?
+  ubicacionId   String?
+  encargadoId   String?
+  creadoEn      DateTime @default(now())
+  actualizadoEn DateTime @updatedAt
 
-  ubicacion         Ubicacion?       @relation(fields: [ubicacionId], references: [id])
-  encargado         Usuario?         @relation("AreaEncargado", fields: [encargadoId], references: [id])
-  usuarios          Usuario[]
-  activos           Activo[]
-  asignaciones      AsignacionActivo[]
-  notificaciones    Notificacion[]
+  ubicacion      Ubicacion?         @relation(fields: [ubicacionId], references: [id])
+  encargado      Usuario?           @relation("AreaEncargado", fields: [encargadoId], references: [id])
+  usuarios       Usuario[]
+  activos        Activo[]
+  asignaciones   AsignacionActivo[]
+  notificaciones Notificacion[]
 
   @@index([ubicacionId])
   @@index([encargadoId])
@@ -156,67 +156,67 @@ model Area {
 }
 
 model Ubicacion {
-  id                String           @id @default(cuid())
-  nombre            String
-  edificio          String?
-  piso              String?
-  ambiente          String?
-  descripcion       String?
-  creadoEn          DateTime         @default(now())
-  actualizadoEn     DateTime         @updatedAt
+  id            String   @id @default(cuid())
+  nombre        String
+  edificio      String?
+  piso          String?
+  ambiente      String?
+  descripcion   String?
+  creadoEn      DateTime @default(now())
+  actualizadoEn DateTime @updatedAt
 
-  activos           Activo[]
-  areas             Area[]
+  activos Activo[]
+  areas   Area[]
 
   @@unique([nombre, edificio, piso, ambiente])
   @@map("ubicaciones")
 }
 
 model CategoriaActivo {
-  id                String           @id @default(cuid())
-  nombre            String           @unique
-  descripcion       String?
-  creadoEn          DateTime         @default(now())
-  actualizadoEn     DateTime         @updatedAt
+  id            String   @id @default(cuid())
+  nombre        String   @unique
+  descripcion   String?
+  creadoEn      DateTime @default(now())
+  actualizadoEn DateTime @updatedAt
 
-  activos           Activo[]
+  activos Activo[]
 
   @@map("categorias_activos")
 }
 
 model Activo {
-  id                    String           @id @default(cuid())
-  codigo                String           @unique
-  nombre                String
-  descripcion           String?
-  marca                 String?
-  modelo                String?
-  numeroSerie           String?          @unique
-  fechaAdquisicion      DateTime?
-  costoAdquisicion      Decimal?         @db.Decimal(12, 2)
-  vencimientoGarantia   DateTime?
-  estado                EstadoActivo     @default(OPERATIVO)
-  categoriaId           String
-  ubicacionId           String?
-  areaActualId          String?
-  responsableActualId   String?
-  creadoPorId           String
-  actualizadoPorId      String?
-  creadoEn              DateTime         @default(now())
-  actualizadoEn         DateTime         @updatedAt
-  dadoDeBajaEn          DateTime?
+  id                  String       @id @default(cuid())
+  codigo              String       @unique
+  nombre              String
+  descripcion         String?
+  marca               String?
+  modelo              String?
+  numeroSerie         String?      @unique
+  fechaAdquisicion    DateTime?
+  costoAdquisicion    Decimal?     @db.Decimal(12, 2)
+  vencimientoGarantia DateTime?
+  estado              EstadoActivo @default(OPERATIVO)
+  categoriaId         String
+  ubicacionId         String?
+  areaActualId        String?
+  responsableActualId String?
+  creadoPorId         String
+  actualizadoPorId    String?
+  creadoEn            DateTime     @default(now())
+  actualizadoEn       DateTime     @updatedAt
+  dadoDeBajaEn        DateTime?
 
-  categoria             CategoriaActivo  @relation(fields: [categoriaId], references: [id])
-  ubicacion             Ubicacion?       @relation(fields: [ubicacionId], references: [id])
-  areaActual            Area?            @relation(fields: [areaActualId], references: [id])
-  responsableActual     Usuario?         @relation("ActivoResponsableActual", fields: [responsableActualId], references: [id])
-  creadoPor             Usuario          @relation("ActivoCreadoPor", fields: [creadoPorId], references: [id])
-  actualizadoPor        Usuario?         @relation("ActivoActualizadoPor", fields: [actualizadoPorId], references: [id])
+  categoria         CategoriaActivo @relation(fields: [categoriaId], references: [id])
+  ubicacion         Ubicacion?      @relation(fields: [ubicacionId], references: [id])
+  areaActual        Area?           @relation(fields: [areaActualId], references: [id])
+  responsableActual Usuario?        @relation("ActivoResponsableActual", fields: [responsableActualId], references: [id])
+  creadoPor         Usuario         @relation("ActivoCreadoPor", fields: [creadoPorId], references: [id])
+  actualizadoPor    Usuario?        @relation("ActivoActualizadoPor", fields: [actualizadoPorId], references: [id])
 
-  asignaciones          AsignacionActivo[]
-  movimientos           MovimientoActivo[]
-  incidentes            IncidenteActivo[]
-  documentos            DocumentoActivo[]
+  asignaciones AsignacionActivo[]
+  movimientos  MovimientoActivo[]
+  incidentes   IncidenteActivo[]
+  documentos   DocumentoActivo[]
 
   @@index([categoriaId])
   @@index([ubicacionId])
@@ -229,25 +229,25 @@ model Activo {
 }
 
 model AsignacionActivo {
-  id                  String             @id @default(cuid())
-  activoId            String
-  areaAsignadaId      String?
-  usuarioAsignadoId   String?
-  asignadoPorId       String
-  recibidoPorId       String?
-  estado              EstadoAsignacion   @default(PENDIENTE)
-  asignadoEn          DateTime           @default(now())
-  recibidoEn          DateTime?
-  motivoRechazo       String?
-  observaciones       String?
+  id                String           @id @default(cuid())
+  activoId          String
+  areaAsignadaId    String?
+  usuarioAsignadoId String?
+  asignadoPorId     String
+  recibidoPorId     String?
+  estado            EstadoAsignacion @default(PENDIENTE)
+  asignadoEn        DateTime         @default(now())
+  recibidoEn        DateTime?
+  motivoRechazo     String?
+  observaciones     String?
 
-  activo              Activo             @relation(fields: [activoId], references: [id], onDelete: Cascade)
-  areaAsignada        Area?              @relation(fields: [areaAsignadaId], references: [id])
-  usuarioAsignado     Usuario?           @relation("AsignacionUsuarioAsignado", fields: [usuarioAsignadoId], references: [id])
-  asignadoPor         Usuario            @relation("AsignacionRealizadaPor", fields: [asignadoPorId], references: [id])
-  recibidoPor         Usuario?           @relation("AsignacionRecibidaPor", fields: [recibidoPorId], references: [id])
+  activo          Activo   @relation(fields: [activoId], references: [id], onDelete: Cascade)
+  areaAsignada    Area?    @relation(fields: [areaAsignadaId], references: [id])
+  usuarioAsignado Usuario? @relation("AsignacionUsuarioAsignado", fields: [usuarioAsignadoId], references: [id])
+  asignadoPor     Usuario  @relation("AsignacionRealizadaPor", fields: [asignadoPorId], references: [id])
+  recibidoPor     Usuario? @relation("AsignacionRecibidaPor", fields: [recibidoPorId], references: [id])
 
-  movimientos         MovimientoActivo[]
+  movimientos MovimientoActivo[]
 
   @@index([activoId])
   @@index([areaAsignadaId])
@@ -259,21 +259,21 @@ model AsignacionActivo {
 }
 
 model MovimientoActivo {
-  id                  String               @id @default(cuid())
-  activoId            String
-  tipo                TipoMovimientoActivo
-  areaOrigenId        String?
-  areaDestinoId       String?
-  usuarioOrigenId     String?
-  usuarioDestinoId    String?
-  realizadoPorId      String
-  asignacionId        String?
-  detalle             String?
-  creadoEn            DateTime             @default(now())
+  id               String               @id @default(cuid())
+  activoId         String
+  tipo             TipoMovimientoActivo
+  areaOrigenId     String?
+  areaDestinoId    String?
+  usuarioOrigenId  String?
+  usuarioDestinoId String?
+  realizadoPorId   String
+  asignacionId     String?
+  detalle          String?
+  creadoEn         DateTime             @default(now())
 
-  activo              Activo               @relation(fields: [activoId], references: [id], onDelete: Cascade)
-  realizadoPor        Usuario              @relation(fields: [realizadoPorId], references: [id])
-  asignacion          AsignacionActivo?    @relation(fields: [asignacionId], references: [id])
+  activo       Activo            @relation(fields: [activoId], references: [id], onDelete: Cascade)
+  realizadoPor Usuario           @relation(fields: [realizadoPorId], references: [id])
+  asignacion   AsignacionActivo? @relation(fields: [asignacionId], references: [id])
 
   @@index([activoId])
   @@index([realizadoPorId])
@@ -284,18 +284,18 @@ model MovimientoActivo {
 }
 
 model IncidenteActivo {
-  id                  String           @id @default(cuid())
-  activoId            String
-  reportadoPorId      String
-  titulo              String
-  descripcion         String
-  creadoEn            DateTime         @default(now())
-  actualizadoEn       DateTime         @updatedAt
+  id             String   @id @default(cuid())
+  activoId       String
+  reportadoPorId String
+  titulo         String
+  descripcion    String
+  creadoEn       DateTime @default(now())
+  actualizadoEn  DateTime @updatedAt
 
-  activo              Activo           @relation(fields: [activoId], references: [id], onDelete: Cascade)
-  reportadoPor        Usuario          @relation(fields: [reportadoPorId], references: [id])
+  activo       Activo  @relation(fields: [activoId], references: [id], onDelete: Cascade)
+  reportadoPor Usuario @relation(fields: [reportadoPorId], references: [id])
 
-  documentos          DocumentoActivo[]
+  documentos DocumentoActivo[]
 
   @@index([activoId])
   @@index([reportadoPorId])
@@ -303,16 +303,16 @@ model IncidenteActivo {
 }
 
 model DocumentoActivo {
-  id                  String            @id @default(cuid())
-  activoId            String?
-  incidenteId         String?
-  nombreArchivo       String
-  urlArchivo          String
-  tipoMime            String?
-  subidoEn            DateTime          @default(now())
+  id            String   @id @default(cuid())
+  activoId      String?
+  incidenteId   String?
+  nombreArchivo String
+  urlArchivo    String
+  tipoMime      String?
+  subidoEn      DateTime @default(now())
 
-  activo              Activo?           @relation(fields: [activoId], references: [id], onDelete: Cascade)
-  incidente           IncidenteActivo?  @relation(fields: [incidenteId], references: [id], onDelete: Cascade)
+  activo    Activo?          @relation(fields: [activoId], references: [id], onDelete: Cascade)
+  incidente IncidenteActivo? @relation(fields: [incidenteId], references: [id], onDelete: Cascade)
 
   @@index([activoId])
   @@index([incidenteId])
@@ -320,30 +320,30 @@ model DocumentoActivo {
 }
 
 model CategoriaMaterial {
-  id                  String           @id @default(cuid())
-  nombre              String           @unique
-  descripcion         String?
+  id          String  @id @default(cuid())
+  nombre      String  @unique
+  descripcion String?
 
-  materiales          Material[]
+  materiales Material[]
 
   @@map("categorias_materiales")
 }
 
 model Material {
-  id                  String           @id @default(cuid())
-  codigo              String           @unique
-  nombre              String
-  descripcion         String?
-  unidad              String
-  stockActual         Decimal          @db.Decimal(12, 2)
-  stockMinimo         Decimal          @db.Decimal(12, 2)
-  categoriaId         String?
-  creadoEn            DateTime         @default(now())
-  actualizadoEn       DateTime         @updatedAt
+  id            String   @id @default(cuid())
+  codigo        String   @unique
+  nombre        String
+  descripcion   String?
+  unidad        String
+  stockActual   Decimal  @db.Decimal(12, 2)
+  stockMinimo   Decimal  @db.Decimal(12, 2)
+  categoriaId   String?
+  creadoEn      DateTime @default(now())
+  actualizadoEn DateTime @updatedAt
 
-  categoria           CategoriaMaterial?   @relation(fields: [categoriaId], references: [id])
-  movimientos         MovimientoInventario[]
-  notificaciones      Notificacion[]
+  categoria      CategoriaMaterial?     @relation(fields: [categoriaId], references: [id])
+  movimientos    MovimientoInventario[]
+  notificaciones Notificacion[]
 
   @@index([categoriaId])
   @@index([nombre])
@@ -351,18 +351,18 @@ model Material {
 }
 
 model MovimientoInventario {
-  id                  String                    @id @default(cuid())
-  materialId          String
-  tipo                TipoMovimientoInventario
-  cantidad            Decimal                   @db.Decimal(12, 2)
-  stockAnterior       Decimal                   @db.Decimal(12, 2)
-  stockNuevo          Decimal                   @db.Decimal(12, 2)
-  motivo              String?
-  realizadoPorId      String
-  creadoEn            DateTime                  @default(now())
+  id             String                   @id @default(cuid())
+  materialId     String
+  tipo           TipoMovimientoInventario
+  cantidad       Decimal                  @db.Decimal(12, 2)
+  stockAnterior  Decimal                  @db.Decimal(12, 2)
+  stockNuevo     Decimal                  @db.Decimal(12, 2)
+  motivo         String?
+  realizadoPorId String
+  creadoEn       DateTime                 @default(now())
 
-  material            Material                  @relation(fields: [materialId], references: [id], onDelete: Cascade)
-  realizadoPor        Usuario                   @relation(fields: [realizadoPorId], references: [id])
+  material     Material @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  realizadoPor Usuario  @relation(fields: [realizadoPorId], references: [id])
 
   @@index([materialId])
   @@index([realizadoPorId])
@@ -372,20 +372,20 @@ model MovimientoInventario {
 }
 
 model Notificacion {
-  id                  String                @id @default(cuid())
-  usuarioId           String?
-  areaId              String?
-  materialId          String?
-  tipo                TipoNotificacion
-  titulo              String
-  mensaje             String
-  estado              EstadoNotificacion    @default(NO_LEIDA)
-  creadoEn            DateTime              @default(now())
-  leidoEn             DateTime?
+  id         String             @id @default(cuid())
+  usuarioId  String?
+  areaId     String?
+  materialId String?
+  tipo       TipoNotificacion
+  titulo     String
+  mensaje    String
+  estado     EstadoNotificacion @default(NO_LEIDA)
+  creadoEn   DateTime           @default(now())
+  leidoEn    DateTime?
 
-  usuario             Usuario?              @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
-  area                Area?                 @relation(fields: [areaId], references: [id], onDelete: Cascade)
-  material            Material?             @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  usuario  Usuario?  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  area     Area?     @relation(fields: [areaId], references: [id], onDelete: Cascade)
+  material Material? @relation(fields: [materialId], references: [id], onDelete: Cascade)
 
   @@index([usuarioId])
   @@index([areaId])
@@ -395,18 +395,18 @@ model Notificacion {
 }
 
 model Auditoria {
-  id                  String           @id @default(cuid())
-  usuarioId           String?
-  tipoEntidad         String
-  entidadId           String
-  accion              String
-  valoresAnteriores   Json?
-  valoresNuevos       Json?
-  direccionIp         String?
-  userAgent           String?
-  creadoEn            DateTime         @default(now())
+  id                String   @id @default(cuid())
+  usuarioId         String?
+  tipoEntidad       String
+  entidadId         String
+  accion            String
+  valoresAnteriores Json?
+  valoresNuevos     Json?
+  direccionIp       String?
+  userAgent         String?
+  creadoEn          DateTime @default(now())
 
-  usuario             Usuario?         @relation(fields: [usuarioId], references: [id])
+  usuario Usuario? @relation(fields: [usuarioId], references: [id])
 
   @@index([tipoEntidad, entidadId])
   @@index([usuarioId])
@@ -415,16 +415,16 @@ model Auditoria {
 }
 
 model ReporteGenerado {
-  id                  String           @id @default(cuid())
-  generadoPorId       String
-  nombre              String
-  tipo                String
-  formato             FormatoReporte
-  filtros             Json?
-  urlArchivo          String?
-  creadoEn            DateTime         @default(now())
+  id            String         @id @default(cuid())
+  generadoPorId String
+  nombre        String
+  tipo          String
+  formato       FormatoReporte
+  filtros       Json?
+  urlArchivo    String?
+  creadoEn      DateTime       @default(now())
 
-  generadoPor         Usuario          @relation(fields: [generadoPorId], references: [id])
+  generadoPor Usuario @relation(fields: [generadoPorId], references: [id])
 
   @@index([generadoPorId])
   @@index([creadoEn])
