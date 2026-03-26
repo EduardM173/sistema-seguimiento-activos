@@ -18,7 +18,7 @@ export class AssetsService {
    * Paginated list of all assets with optional filters.
    */
   async findAll(query: SearchAssetsDto) {
-    const { page, pageSize, q, estado, categoriaId } = query;
+    const { page, pageSize, q, estado, categoriaId, ubicacionId } = query;
     const skip = (page - 1) * pageSize;
 
     const where: Prisma.ActivoWhereInput = {};
@@ -39,6 +39,12 @@ export class AssetsService {
     // Filter by category
     if (categoriaId) {
       where.categoriaId = categoriaId;
+    }
+
+
+    // Filter by location
+    if(ubicacionId) {
+      where.ubicacionId = ubicacionId;
     }
 
     const [activos, total] = await Promise.all([

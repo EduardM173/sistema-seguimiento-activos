@@ -17,4 +17,8 @@ export class SearchAssetsDto extends PaginationDto {
   @IsOptional()
   @IsString()
   categoriaId?: string;
+
+  @IsOptional()
+  @IsString()
+  ubicacionId?: string;
 }
