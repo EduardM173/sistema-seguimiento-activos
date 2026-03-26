@@ -1,4 +1,4 @@
-import { apiClient } from './api.config';
+import { http as apiClient } from './http.client';
 import type { Activo, CreateActivoDTO, UpdateActivoDTO, FiltrosActivos, MovimientoActivo } from '../types/activos.types';
 import type { PaginatedResponse, ApiResponse } from '../types';
 
@@ -9,7 +9,7 @@ export const activosService = {
       const response = await apiClient.get<PaginatedResponse<Activo>>('/assets', {
         params: filtros,
       });
-      return response.data;
+      return response;
     } catch (error) {
       throw error;
     }
@@ -19,7 +19,7 @@ export const activosService = {
   obtenerPorId: async (id: string) => {
     try {
       const response = await apiClient.get<ApiResponse<Activo>>(`/assets/${id}`);
-      return response.data.data;
+      return response.data;
     } catch (error) {
       throw error;
     }
@@ -29,7 +29,7 @@ export const activosService = {
   crear: async (datos: CreateActivoDTO) => {
     try {
       const response = await apiClient.post<ApiResponse<Activo>>('/assets', datos);
-      return response.data.data;
+      return response.data;
     } catch (error) {
       throw error;
     }
@@ -39,7 +39,7 @@ export const activosService = {
   actualizar: async (id: string, datos: UpdateActivoDTO) => {
     try {
       const response = await apiClient.put<ApiResponse<Activo>>(`/assets/${id}`, datos);
-      return response.data.data;
+      return response.data;
     } catch (error) {
       throw error;
     }
@@ -49,7 +49,7 @@ export const activosService = {
   eliminar: async (id: string) => {
     try {
       const response = await apiClient.delete<ApiResponse<void>>(`/assets/${id}`);
-      return response.data;
+      return response;
     } catch (error) {
       throw error;
     }
@@ -61,7 +61,7 @@ export const activosService = {
       const response = await apiClient.get<ApiResponse<MovimientoActivo[]>>(
         `/assets/${activoId}/movimientos`
       );
-      return response.data.data || [];
+      return response.data || [];
     } catch (error) {
       throw error;
     }
@@ -73,7 +73,7 @@ export const activosService = {
       const response = await apiClient.get<PaginatedResponse<Activo>>('/assets/buscar', {
         params: { q: termino },
       });
-      return response.data;
+      return response;
     } catch (error) {
       throw error;
     }
@@ -86,7 +86,7 @@ export const activosService = {
         params: filtros,
         responseType: 'blob',
       });
-      return response.data;
+      return response;
     } catch (error) {
       throw error;
     }
@@ -96,7 +96,7 @@ export const activosService = {
   obtenerEstadisticas: async () => {
     try {
       const response = await apiClient.get<ApiResponse<any>>('/assets/estadisticas');
-      return response.data.data;
+      return response.data;
     } catch (error) {
       throw error;
     }
@@ -106,7 +106,7 @@ export const activosService = {
   obtenerCategorias: async () => {
     try {
       const response = await apiClient.get<ApiResponse<any[]>>('/catalogs/categorias');
-      return response.data.data || [];
+      return response.data || [];
     } catch (error) {
       throw error;
     }
@@ -116,7 +116,7 @@ export const activosService = {
   obtenerUbicaciones: async () => {
     try {
       const response = await apiClient.get<ApiResponse<any[]>>('/catalogs/ubicaciones');
-      return response.data.data || [];
+      return response.data || [];
     } catch (error) {
       throw error;
     }

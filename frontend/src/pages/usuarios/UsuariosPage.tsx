@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { DataTable, SearchBar, Button, Badge, Alert } from '../../components/common';
+import type { Column } from '../../components/common/DataTable';
 import type { Usuario } from '../../types/usuarios.types';
 import { usuariosService } from '../../services/usuarios.service';
 import '../../styles/modules.css';
@@ -36,7 +37,7 @@ export const UsuariosPage: React.FC = () => {
     return colores[estado] || 'secondary';
   };
 
-  const columns = [
+  const columns: Column<Usuario>[] = [
     {
       header: 'Nombre',
       accessor: (row: Usuario) => `${row.nombres} ${row.apellidos}`,

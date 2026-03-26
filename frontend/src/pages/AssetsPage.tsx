@@ -28,6 +28,7 @@ const PAGE_SIZE = 6;
 export default function AssetsPage() {
   const navigate = useNavigate();
   const { error: notifyError, success: notifySuccess } = useNotification();
+  const notify = useNotification()
 
   const [assets, setAssets] = useState<AssetListItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -74,6 +75,7 @@ export default function AssetsPage() {
       if (debouncedSearch) params.q = debouncedSearch;
       if (filterEstado) params.estado = filterEstado;
       if (filterCategoria) params.categoriaId = filterCategoria;
+      if (filterUbicacion) params.ubicacionId = filterUbicacion;
 
       const result = await searchAssets(params);
       setAssets(result.data ?? []);
@@ -85,7 +87,7 @@ export default function AssetsPage() {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, debouncedSearch, filterEstado, filterCategoria, notifyError]);
+  }, [currentPage, debouncedSearch, filterEstado, filterCategoria, filterUbicacion, notifyError]);
 
   useEffect(() => {
     void loadAssets();

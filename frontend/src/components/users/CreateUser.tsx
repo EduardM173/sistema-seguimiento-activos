@@ -44,7 +44,7 @@ export default function CreateUser() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetch('http://localhost:3000/users')
+    fetch('http://localhost:3000/api/users')
       .then((res) => res.json())
       .then((data) => setExistingUsers(Array.isArray(data) ? data : []))
       .catch((err) => console.error('Error al cargar usuarios existentes:', err));
@@ -195,7 +195,7 @@ export default function CreateUser() {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:3000/users', {
+      const response = await fetch('http://localhost:3000/api/users', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

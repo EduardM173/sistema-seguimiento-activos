@@ -18,6 +18,7 @@ export async function searchAssets(params: SearchAssetsParams = {}) {
   if (params.q) query.set('q', params.q);
   if (params.estado) query.set('estado', params.estado);
   if (params.categoriaId) query.set('categoriaId', params.categoriaId);
+  if (params.ubicacionId) query.set('ubicacionId', params.ubicacionId);
   if (params.page) query.set('page', String(params.page));
   if (params.pageSize) query.set('pageSize', String(params.pageSize));
 

@@ -14,13 +14,15 @@ export class HttpError extends Error {
   }
 }
 
-type RequestOptions = Omit<RequestInit, 'body'> & {
+export type RequestOptions = Omit<RequestInit, 'body'> & {
   body?: unknown;
   skipAuth?: boolean;
+  params?: Record<string, any>;
+  responseType?: 'json' | 'blob';
 };
 
 async function request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
-  const { body, skipAuth, ...fetchOptions } = options;
+  const { body, skipAuth, params, responseType = 'json', ...fetchOptions } = options;
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -34,7 +36,19 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
     }
   }
 
-  const response = await fetch(`${API_URL}/api${endpoint}`, {
+  let url = `${API_URL}/api${endpoint}`;
+  if (params) {
+    const qs = new URLSearchParams();
+    for (const [k, v] of Object.entries(params)) {
+      if (v !== undefined && v !== null && v !== '') {
+        qs.set(k, String(v));
+      }
+    }
+    const qsStr = qs.toString();
+    if (qsStr) url += (endpoint.includes('?') ? '&' : '?') + qsStr;
+  }
+
+  const response = await fetch(url, {
     ...fetchOptions,
     headers,
     body: body ? JSON.stringify(body) : undefined,
@@ -44,6 +58,13 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
     clearAuthSession();
     window.location.replace('/');
     throw new HttpError('Sesión expirada', 401);
+  }
+
+  if (responseType === 'blob') {
+    if (!response.ok) {
+      throw new HttpError('Error al descargar archivo', response.status);
+    }
+    return response.blob() as unknown as T;
   }
 
   const result = await response.json();
@@ -65,6 +86,9 @@ export const http = {
 
   post: <T>(endpoint: string, body?: unknown, options?: RequestOptions) =>
     request<T>(endpoint, { ...options, method: 'POST', body }),
+
+  put: <T>(endpoint: string, body?: unknown, options?: RequestOptions) =>
+    request<T>(endpoint, { ...options, method: 'PUT', body }),
 
   patch: <T>(endpoint: string, body?: unknown, options?: RequestOptions) =>
     request<T>(endpoint, { ...options, method: 'PATCH', body }),

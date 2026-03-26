@@ -81,6 +81,7 @@ export type SearchAssetsParams = {
   q?: string;
   estado?: EstadoActivo | '';
   categoriaId?: string;
+  ubicacionId?: string,
   page?: number;
   pageSize?: number;
 };

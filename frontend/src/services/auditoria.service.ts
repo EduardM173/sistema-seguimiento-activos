@@ -1,4 +1,4 @@
-import { apiClient } from './api.config';
+import { http as apiClient } from './http.client';
 import type { Auditoria, FiltrosAuditoria, ResumenAuditoria, Notificacion, ConfiguracionAuditoria } from '../types/auditoria.types';
 import type { PaginatedResponse, ApiResponse } from '../types';
 
@@ -9,7 +9,7 @@ export const auditoriaService = {
       const response = await apiClient.get<PaginatedResponse<Auditoria>>('/auditoria', {
         params: filtros,
       });
-      return response.data;
+      return response;
     } catch (error) {
       throw error;
     }
@@ -19,7 +19,7 @@ export const auditoriaService = {
   obtenerPorId: async (id: string) => {
     try {
       const response = await apiClient.get<ApiResponse<Auditoria>>(`/auditoria/${id}`);
-      return response.data.data;
+      return response.data;
     } catch (error) {
       throw error;
     }
@@ -29,7 +29,7 @@ export const auditoriaService = {
   obtenerResumen: async () => {
     try {
       const response = await apiClient.get<ApiResponse<ResumenAuditoria>>('/auditoria/resumen');
-      return response.data.data;
+      return response.data;
     } catch (error) {
       throw error;
     }
@@ -41,7 +41,7 @@ export const auditoriaService = {
       const response = await apiClient.get<PaginatedResponse<Auditoria>>(
         `/auditoria/recurso/${recursoTipo}/${recursoId}`
       );
-      return response.data;
+      return response;
     } catch (error) {
       throw error;
     }
@@ -53,7 +53,7 @@ export const auditoriaService = {
       const response = await apiClient.get<PaginatedResponse<Auditoria>>(
         `/auditoria/usuario/${usuarioId}`
       );
-      return response.data;
+      return response;
     } catch (error) {
       throw error;
     }
@@ -66,7 +66,7 @@ export const auditoriaService = {
         params: filtros,
         responseType: 'blob',
       });
-      return response.data;
+      return response;
     } catch (error) {
       throw error;
     }
@@ -78,7 +78,7 @@ export const auditoriaService = {
       const response = await apiClient.get<ApiResponse<ConfiguracionAuditoria>>(
         '/auditoria/configuracion'
       );
-      return response.data.data;
+      return response.data;
     } catch (error) {
       throw error;
     }
@@ -91,7 +91,7 @@ export const auditoriaService = {
         '/auditoria/configuracion',
         datos
       );
-      return response.data.data;
+      return response.data;
     } catch (error) {
       throw error;
     }
@@ -104,7 +104,7 @@ export const auditoriaService = {
         registrosBorrados: number;
         fechaEjecucion: Date;
       }>>('/auditoria/limpiar', { diasAntiguedad });
-      return response.data.data;
+      return response.data;
     } catch (error) {
       throw error;
     }
@@ -121,7 +121,7 @@ export const auditoriaService = {
           params: leidas !== undefined ? { leidas } : {},
         }
       );
-      return response.data;
+      return response;
     } catch (error) {
       throw error;
     }
@@ -133,7 +133,7 @@ export const auditoriaService = {
       const response = await apiClient.post<ApiResponse<Notificacion>>(
         `/auditoria/notificaciones/${notificacionId}/marcar-leida`
       );
-      return response.data.data;
+      return response.data;
     } catch (error) {
       throw error;
     }
@@ -145,7 +145,7 @@ export const auditoriaService = {
       const response = await apiClient.post<ApiResponse<{ marcadas: number }>>(
         '/auditoria/notificaciones/marcar-todas-leidas'
       );
-      return response.data.data;
+      return response.data;
     } catch (error) {
       throw error;
     }
@@ -157,7 +157,7 @@ export const auditoriaService = {
       const response = await apiClient.delete<ApiResponse<void>>(
         `/auditoria/notificaciones/${notificacionId}`
       );
-      return response.data;
+      return response;
     } catch (error) {
       throw error;
     }
@@ -169,7 +169,7 @@ export const auditoriaService = {
       const response = await apiClient.get<ApiResponse<{ total: number }>>(
         '/auditoria/notificaciones/contador'
       );
-      return response.data.data?.total || 0;
+      return response.data?.total || 0;
     } catch (error) {
       throw error;
     }
