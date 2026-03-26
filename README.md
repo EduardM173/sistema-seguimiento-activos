@@ -169,7 +169,7 @@ Reiniciar base local (⚠ borra datos)
 
 ```
 npx prisma migrate reset
-npm run prisma:seed
+npx tsx prisma/seed.ts
 ```
 
 ---
