@@ -8,6 +8,7 @@ type MainItem = {
   label: string;
   icon: string;
   to?: string;
+  requiredPermission?: string;
 };
 
 type BottomItem = {
@@ -17,11 +18,11 @@ type BottomItem = {
 };
 
 export default function Navbar() {
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
 
   const mainItems: MainItem[] = [
     { label: 'Dashboard', icon: '▦', to: '/dashboard' },
-    { label: 'Activos', icon: '≣', to: '/activos' },
+    { label: 'Activos', icon: '≣', to: '/assets' },
     { label: 'Inventario', icon: '◫' },
     { label: 'Transferencias', icon: '⇄' },
     { label: 'Reportes', icon: '▥' },

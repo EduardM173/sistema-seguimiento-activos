@@ -34,8 +34,4 @@ export class CreateUserDto {
   @IsOptional()
   @IsString()
   areaId?: string;
-
-  @IsOptional()
-  @IsString()
-  rolId?: string;
 }

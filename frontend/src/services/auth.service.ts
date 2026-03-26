@@ -1,9 +1,9 @@
-// frontend/src/services/auth.service.ts
 import type { LoginRequest, LoginResponse, AuthUser } from '../types/auth.types';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const ACCESS_TOKEN_KEY = 'access_token';
+
 const AUTH_USER_KEY = 'auth_user';
 
 export async function login(data: LoginRequest): Promise<LoginResponse> {
@@ -21,26 +21,26 @@ export async function login(data: LoginRequest): Promise<LoginResponse> {
     throw new Error(result.message || 'No se pudo iniciar sesión');
   }
 
-  // Guardar automáticamente al hacer login exitoso
-  saveAuthSession(result);
-  
   return result;
 }
 
 export function saveAuthSession(data: LoginResponse): void {
-  console.log('Guardando token:', data.accessToken);
   localStorage.setItem(ACCESS_TOKEN_KEY, data.accessToken);
   localStorage.setItem(AUTH_USER_KEY, JSON.stringify(data.usuario));
 }
 
 export function getAccessToken(): string | null {
-  const token = localStorage.getItem(ACCESS_TOKEN_KEY);
-  console.log('Token obtenido:', token ? 'Presente' : 'No hay token');
-  return token;
+  const localToken = localStorage.getItem(ACCESS_TOKEN_KEY);
+  const sessionToken = sessionStorage.getItem(ACCESS_TOKEN_KEY);
+
+  return localToken || sessionToken;
 }
 
 export function getStoredUser(): AuthUser | null {
-  const rawUser = localStorage.getItem(AUTH_USER_KEY);
+  const localUser = localStorage.getItem(AUTH_USER_KEY);
+  const sessionUser = sessionStorage.getItem(AUTH_USER_KEY);
+
+  const rawUser = localUser || sessionUser;
 
   if (!rawUser) {
     return null;

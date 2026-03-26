@@ -10,6 +10,7 @@
  */
 export type * from './models/Usuario'
 export type * from './models/Rol'
+export type * from './models/Permiso'
 export type * from './models/RolPermiso'
 export type * from './models/Area'
 export type * from './models/Ubicacion'

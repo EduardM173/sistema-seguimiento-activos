@@ -1,4 +1,17 @@
-// frontend/src/types/user.types.ts
+export interface Permission {
+  id: string;
+  codigo: string;
+  nombre: string;
+  descripcion?: string | null;
+}
+
+export interface Role {
+  id: string;
+  nombre: string;
+  descripcion?: string | null;
+  permisos?: Permission[];
+}
+
 export interface CreateUserRequest {
   nombres: string;
   apellidos: string;
@@ -7,7 +20,6 @@ export interface CreateUserRequest {
   password: string;
   telefono?: string;
   areaId?: string;
-  rolId?: string; // AÑADIDO: para asignar rol al crear usuario
 }
 
 export interface User {
@@ -22,9 +34,10 @@ export interface User {
   estado?: string;
   creadoEn?: string;
   actualizadoEn?: string;
-  rol?: {  // AÑADIDO: para incluir información del rol
+  rol?: {
     id: string;
     nombre: string;
+    descripcion?: string | null;
   };
 }
 
@@ -33,25 +46,31 @@ export interface CreateUserResponse {
   user: User;
 }
 
-// NUEVO: Tipos para roles y permisos
-export interface Rol {
-  id: string;
+export interface UpdateUserRoleRequest {
+  rolId: string;
+}
+
+export interface UpdateUserRoleResponse {
+  message: string;
+  user: User;
+}
+
+export interface CreateRoleRequest {
   nombre: string;
   descripcion?: string;
+  permisoIds?: string[];
 }
 
-export interface PermisosRol {
-  [modulo: string]: {
-    ver: boolean;
-    crear: boolean;
-    actualizar: boolean;
-    eliminar: boolean;
-  };
+export interface CreateRoleResponse {
+  message: string;
+  role: Role;
 }
 
-export interface RolConPermisos {
-  id: string;
-  nombre: string;
-  descripcion: string;
-  permisos: PermisosRol;
+export interface UpdateRolePermissionsRequest {
+  permisoIds: string[];
+}
+
+export interface UpdateRolePermissionsResponse {
+  message: string;
+  role: Role;
 }

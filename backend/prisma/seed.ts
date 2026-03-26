@@ -19,10 +19,70 @@ async function main() {
   console.log('🌱 Iniciando seed...');
 
   // =========================
-  // ROLES Y PERMISOS
+  // PERMISOS
   // =========================
-  
-  // Crear roles
+  const permisosData = [
+    {
+      codigo: 'USER_MANAGE',
+      nombre: 'Gestionar usuarios',
+      descripcion: 'Crear, editar, desactivar y consultar usuarios',
+    },
+    {
+      codigo: 'ROLE_ASSIGN',
+      nombre: 'Asignar roles',
+      descripcion: 'Asignar roles a los usuarios del sistema',
+    },
+    {
+      codigo: 'ASSET_CREATE',
+      nombre: 'Registrar activos',
+      descripcion: 'Registrar nuevos activos en el sistema',
+    },
+    {
+      codigo: 'ASSET_UPDATE',
+      nombre: 'Actualizar activos',
+      descripcion: 'Editar información de activos',
+    },
+    {
+      codigo: 'ASSET_VIEW',
+      nombre: 'Ver activos',
+      descripcion: 'Consultar y buscar activos',
+    },
+    {
+      codigo: 'ASSET_ASSIGN',
+      nombre: 'Asignar activos',
+      descripcion: 'Asignar y transferir activos',
+    },
+    {
+      codigo: 'INVENTORY_MANAGE',
+      nombre: 'Gestionar inventario',
+      descripcion: 'Registrar entradas, salidas y ajustes',
+    },
+    {
+      codigo: 'REPORT_VIEW',
+      nombre: 'Generar reportes',
+      descripcion: 'Generar y descargar reportes',
+    },
+    {
+      codigo: 'AUDIT_VIEW',
+      nombre: 'Ver auditoría',
+      descripcion: 'Consultar historial y bitácora',
+    },
+  ];
+
+  for (const permiso of permisosData) {
+    await prisma.permiso.upsert({
+      where: { codigo: permiso.codigo },
+      update: {
+        nombre: permiso.nombre,
+        descripcion: permiso.descripcion,
+      },
+      create: permiso,
+    });
+  }
+
+  // =========================
+  // ROLES
+  // =========================
   const rolAdmin = await prisma.rol.upsert({
     where: { nombre: 'ADMIN_GENERAL' },
     update: {
@@ -56,79 +116,75 @@ async function main() {
     },
   });
 
-  // NUEVO: Rol Auditor
-  const rolAuditor = await prisma.rol.upsert({
-    where: { nombre: 'AUDITOR' },
-    update: {
-      descripcion: 'Auditor del sistema - solo lectura y generación de reportes',
-    },
-    create: {
-      nombre: 'AUDITOR',
-      descripcion: 'Auditor del sistema - solo lectura y generación de reportes',
-    },
-  });
+  const permisos = await prisma.permiso.findMany();
 
-  // Definir permisos por rol (usando la estructura de módulos)
-  const permisosPorRol = {
-    ADMIN_GENERAL: [
-      { modulo: 'Usuarios', ver: true, crear: true, actualizar: true, eliminar: true },
-      { modulo: 'Roles', ver: true, crear: true, actualizar: true, eliminar: true },
-      { modulo: 'Activos', ver: true, crear: true, actualizar: true, eliminar: true },
-      { modulo: 'Asignaciones', ver: true, crear: true, actualizar: true, eliminar: true },
-      { modulo: 'Inventario', ver: true, crear: true, actualizar: true, eliminar: true },
-      { modulo: 'Reportes', ver: true, crear: true, actualizar: true, eliminar: true },
-      { modulo: 'Auditoria', ver: true, crear: false, actualizar: false, eliminar: false },
-    ],
-    USUARIO_OPERATIVO: [
-      { modulo: 'Activos', ver: true, crear: true, actualizar: true, eliminar: false },
-      { modulo: 'Asignaciones', ver: true, crear: true, actualizar: true, eliminar: false },
-      { modulo: 'Inventario', ver: true, crear: true, actualizar: true, eliminar: false },
-      { modulo: 'Reportes', ver: true, crear: true, actualizar: false, eliminar: false },
-    ],
-    RESPONSABLE_AREA: [
-      { modulo: 'Activos', ver: true, crear: false, actualizar: false, eliminar: false },
-      { modulo: 'Asignaciones', ver: true, crear: false, actualizar: true, eliminar: false },
-      { modulo: 'Reportes', ver: true, crear: true, actualizar: false, eliminar: false },
-    ],
-    // NUEVO: Permisos para Auditor - SOLO LECTURA
-    AUDITOR: [
-      { modulo: 'Activos', ver: true, crear: false, actualizar: false, eliminar: false },
-      { modulo: 'Asignaciones', ver: true, crear: false, actualizar: false, eliminar: false },
-      { modulo: 'Inventario', ver: true, crear: false, actualizar: false, eliminar: false },
-      { modulo: 'Reportes', ver: true, crear: true, actualizar: false, eliminar: false },
-      { modulo: 'Auditoria', ver: true, crear: false, actualizar: false, eliminar: false },
-    ],
-  };
+  const codigosPermisosAdmin = [
+    'USER_MANAGE',
+    'ROLE_ASSIGN',
+    'ASSET_CREATE',
+    'ASSET_UPDATE',
+    'ASSET_VIEW',
+    'ASSET_ASSIGN',
+    'INVENTORY_MANAGE',
+    'REPORT_VIEW',
+    'AUDIT_VIEW',
+  ];
 
-  // Asignar permisos
-  for (const [rolNombre, permisos] of Object.entries(permisosPorRol)) {
-    let rolId;
-    if (rolNombre === 'ADMIN_GENERAL') rolId = rolAdmin.id;
-    else if (rolNombre === 'USUARIO_OPERATIVO') rolId = rolOperativo.id;
-    else if (rolNombre === 'RESPONSABLE_AREA') rolId = rolResponsable.id;
-    else if (rolNombre === 'AUDITOR') rolId = rolAuditor.id;
+  const codigosPermisosOperativo = [
+    'ASSET_CREATE',
+    'ASSET_UPDATE',
+    'ASSET_VIEW',
+    'ASSET_ASSIGN',
+    'INVENTORY_MANAGE',
+  ];
 
-    for (const permiso of permisos) {
+  const codigosPermisosResponsable = ['ASSET_VIEW', 'REPORT_VIEW'];
+
+  for (const permiso of permisos) {
+    if (codigosPermisosAdmin.includes(permiso.codigo)) {
       await prisma.rolPermiso.upsert({
         where: {
-          rolId_modulo: {
-            rolId: rolId,
-            modulo: permiso.modulo,
+          rolId_permisoId: {
+            rolId: rolAdmin.id,
+            permisoId: permiso.id,
           },
         },
-        update: {
-          ver: permiso.ver,
-          crear: permiso.crear,
-          actualizar: permiso.actualizar,
-          eliminar: permiso.eliminar,
-        },
+        update: {},
         create: {
-          rolId: rolId,
-          modulo: permiso.modulo,
-          ver: permiso.ver,
-          crear: permiso.crear,
-          actualizar: permiso.actualizar,
-          eliminar: permiso.eliminar,
+          rolId: rolAdmin.id,
+          permisoId: permiso.id,
+        },
+      });
+    }
+
+    if (codigosPermisosOperativo.includes(permiso.codigo)) {
+      await prisma.rolPermiso.upsert({
+        where: {
+          rolId_permisoId: {
+            rolId: rolOperativo.id,
+            permisoId: permiso.id,
+          },
+        },
+        update: {},
+        create: {
+          rolId: rolOperativo.id,
+          permisoId: permiso.id,
+        },
+      });
+    }
+
+    if (codigosPermisosResponsable.includes(permiso.codigo)) {
+      await prisma.rolPermiso.upsert({
+        where: {
+          rolId_permisoId: {
+            rolId: rolResponsable.id,
+            permisoId: permiso.id,
+          },
+        },
+        update: {},
+        create: {
+          rolId: rolResponsable.id,
+          permisoId: permiso.id,
         },
       });
     }
@@ -214,7 +270,6 @@ async function main() {
   const passwordAdmin = await bcrypt.hash('Admin123*', 10);
   const passwordOperativo = await bcrypt.hash('Operativo123*', 10);
   const passwordResponsable = await bcrypt.hash('Responsable123*', 10);
-  const passwordAuditor = await bcrypt.hash('Auditor123*', 10);
 
   const usuarioAdmin = await prisma.usuario.upsert({
     where: { correo: 'admin@activos.bo' },
@@ -283,29 +338,6 @@ async function main() {
       areaId: areaAdministracion.id,
       estado: 'ACTIVO',
       telefono: '70000003',
-    },
-  });
-
-  // NUEVO: Usuario Auditor
-  const usuarioAuditor = await prisma.usuario.upsert({
-    where: { correo: 'auditor@activos.bo' },
-    update: {
-      nombres: 'Laura',
-      apellidos: 'Auditora',
-      nombreUsuario: 'laura.auditor',
-      hashContrasena: passwordAuditor,
-      rolId: rolAuditor.id,
-      estado: 'ACTIVO',
-    },
-    create: {
-      nombres: 'Laura',
-      apellidos: 'Auditora',
-      correo: 'auditor@activos.bo',
-      nombreUsuario: 'laura.auditor',
-      hashContrasena: passwordAuditor,
-      rolId: rolAuditor.id,
-      estado: 'ACTIVO',
-      telefono: '70000004',
     },
   });
 
@@ -735,7 +767,6 @@ async function main() {
   console.log('Admin -> admin@activos.bo / Admin123*');
   console.log('Operativo -> operativo@activos.bo / Operativo123*');
   console.log('Responsable -> responsable@activos.bo / Responsable123*');
-  console.log('Auditor -> auditor@activos.bo / Auditor123*');
 }
 
 main()
