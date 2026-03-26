@@ -27,7 +27,15 @@ export class AuthService {
         ],
       },
       include: {
-        rol: true,
+        rol: {
+          include: {
+            permisos: {
+              include: {
+                permiso: true,
+              },
+            },
+          },
+        },
         area: true,
       },
     });
@@ -77,6 +85,11 @@ export class AuthService {
               nombre: usuario.area.nombre,
             }
           : null,
+        permisos: usuario.rol.permisos.map((item) => ({
+          id: item.permiso.id,
+          codigo: item.permiso.codigo,
+          nombre: item.permiso.nombre,
+        })),
       },
     };
   }
