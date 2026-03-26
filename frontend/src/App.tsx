@@ -12,6 +12,42 @@ import CreateUser from './components/users/CreateUser';
 import AssetsPage from './pages/AssetsPage';
 import CreateAssetPage from './pages/CreateAssetPage';
 
+import ActivosPage from './pages/activos/ActivosPage';
+import InventarioPage from './pages/inventario/InventarioPage';
+import TransferenciasPage from './pages/transferencias/TransferenciasPage';
+import UsuariosPage from './pages/usuarios/UsuariosPage';
+import AuditoriaPage from './pages/auditoria/AuditoriaPage';
+import ReportesPage from './pages/reportes/ReportesPage';
+
+import './App.css';
+
+function getToken() {
+  return (
+    localStorage.getItem('accessToken') ||
+    sessionStorage.getItem('accessToken')
+  );
+}
+
+function PrivateRoute({ children }: { children: React.ReactNode }) {
+  const token = getToken();
+
+  if (!token) {
+    return <Navigate to="/" replace />;
+  }
+
+  return <>{children}</>;
+}
+
+function PublicRoute({ children }: { children: React.ReactNode }) {
+  const token = getToken();
+
+  if (token) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <>{children}</>;
+}
+
 export default function App() {
   return (
     <AuthProvider>
@@ -25,23 +61,17 @@ export default function App() {
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/activos" element={<AssetsPage />} />
               <Route path="/activos/nuevo" element={<CreateAssetPage />} />
+
+              <Route element={<ProtectedRoute requiredPermission="ASSET_VIEW" />}>
+                <Route path="/assets" element={<AssetsPage />} />
+              </Route>
+
+              <Route element={<ProtectedRoute requiredPermission="USER_MANAGE" />}>
+                <Route path="/users" element={<UserList />} />
+                <Route path="/users/create" element={<CreateUser />} />
+              </Route>
             </Route>
           </Route>
-          
-        <Route element={<ProtectedRoute />}>
-          <Route element={<PrivateLayout />}>
-            <Route path="/dashboard" element={<DashboardPage />} />
-
-            <Route element={<ProtectedRoute requiredPermission="ASSET_VIEW" />}>
-              <Route path="/assets" element={<AssetsPage />} />
-            </Route>
-
-            <Route element={<ProtectedRoute requiredPermission="USER_MANAGE" />}>
-              <Route path="/users" element={<UserList />} />
-              <Route path="/users/create" element={<CreateUser />} />
-            </Route>
-          </Route>
-        </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

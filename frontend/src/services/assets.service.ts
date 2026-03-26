@@ -42,9 +42,9 @@ export async function deleteAsset(id: string) {
 }
 
 export async function getCategorias() {
-  return http.get<ApiResponse<Categoria[]>>('/categories');
+  return http.get<ApiResponse<Categoria[]>>('/catalogs/categorias');
 }
 
 export async function getUbicaciones() {
-  return http.get<ApiResponse<Ubicacion[]>>('/locations');
+  return http.get<ApiResponse<Ubicacion[]>>('/catalogs/ubicaciones');
 }

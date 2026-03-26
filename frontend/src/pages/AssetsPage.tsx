@@ -27,7 +27,7 @@ const PAGE_SIZE = 6;
 
 export default function AssetsPage() {
   const navigate = useNavigate();
-  const notify = useNotification();
+  const { error: notifyError, success: notifySuccess } = useNotification();
 
   const [assets, setAssets] = useState<AssetListItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -81,11 +81,11 @@ export default function AssetsPage() {
     } catch (err) {
       const message =
         err instanceof HttpError ? err.message : 'No se pudo cargar la lista de activos';
-      notify.error('Error al cargar activos', message);
+      notifyError('Error al cargar activos', message);
     } finally {
       setLoading(false);
     }
-  }, [currentPage, debouncedSearch, filterEstado, filterCategoria, notify]);
+  }, [currentPage, debouncedSearch, filterEstado, filterCategoria, notifyError]);
 
   useEffect(() => {
     void loadAssets();
@@ -108,11 +108,11 @@ export default function AssetsPage() {
     if (!window.confirm(`¿Está seguro de dar de baja el activo "${nombre}"?`)) return;
     try {
       await deleteAsset(id);
-      notify.success('Activo dado de baja', `"${nombre}" fue dado de baja exitosamente.`);
+      notifySuccess('Activo dado de baja', `"${nombre}" fue dado de baja exitosamente.`);
       void loadAssets();
     } catch (err) {
       const message = err instanceof HttpError ? err.message : 'No se pudo dar de baja el activo';
-      notify.error('Error', message);
+      notifyError('Error', message);
     }
   }
 
