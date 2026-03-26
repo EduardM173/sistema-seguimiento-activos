@@ -7,6 +7,11 @@ export class MaterialResponseDTO {
   stockActual: number;
   stockMinimo: number;
   categoriaId?: string;
+  categoria?: {
+    id: string;
+    nombre: string;
+    descripcion?: string;
+  };
   creadoEn: Date;
   actualizadoEn: Date;
 }

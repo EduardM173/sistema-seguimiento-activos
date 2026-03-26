@@ -20,10 +20,12 @@ export class CreateMaterialDTO {
 
   @IsNumber()
   @Type(() => Number)
+  @Min(0.01)
   stockActual: number;
 
   @IsNumber()
   @Type(() => Number)
+  @Min(0.01)
   stockMinimo: number;
 
   @IsString()

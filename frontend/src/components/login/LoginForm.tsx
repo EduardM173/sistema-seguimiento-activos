@@ -30,11 +30,11 @@ export default function LoginForm() {
       });
 
       if (keepSession) {
-        localStorage.setItem('access_token', response.accessToken);
-        localStorage.setItem('auth_user', JSON.stringify(response.usuario));
+        localStorage.setItem('accessToken', response.accessToken);
+        localStorage.setItem('usuario', JSON.stringify(response.usuario));
       } else {
-        sessionStorage.setItem('access_token', response.accessToken);
-        sessionStorage.setItem('auth_user', JSON.stringify(response.usuario));
+        sessionStorage.setItem('accessToken', response.accessToken);
+        sessionStorage.setItem('usuario', JSON.stringify(response.usuario));
       }
 
       navigate('/dashboard');

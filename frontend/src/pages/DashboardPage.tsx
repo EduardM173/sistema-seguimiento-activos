@@ -1,32 +1,22 @@
-import Navbar from '../components/navbar/Navbar';
-// importa el componente del navbar lateral
+import React from 'react';
+import { Navigate } from 'react-router-dom';
+import { DashboardContent } from '../components/layout';
+import { useAuth } from '../hooks';
+import { LoadingSpinner } from '../components/common';
+import '../styles/dashboard.css';
 
 export default function DashboardPage() {
-  // crea la pagina del dashboard
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return <LoadingSpinner fullscreen message="Cargando panel..." />;
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/" replace />;
+  }
 
   return (
-    // devuelve lo que se vera en pantalla
-    <div className="dashboardPage">
-      {/* contenedor general de la pagina */}
-
-      <Navbar />
-      {/* muestra el navbar lateral */}
-
-      <main className="dashboardContent">
-        {/* contenedor del contenido principal */}
-
-        <section className="dashboardCard">
-          {/* tarjeta simple de contenido */}
-
-          <h1>Panel principal</h1>
-          {/* titulo pequeño de la pagina */}
-        </section>
-        {/* termina la tarjeta */}
-      </main>
-      {/* termina el contenido principal */}
-    </div>
-    // termina lo que renderiza la pagina
+    <DashboardContent />
   );
-  // termina el return
 }
-// termina el componente
