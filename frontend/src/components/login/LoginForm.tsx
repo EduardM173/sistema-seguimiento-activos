@@ -1,9 +1,14 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { loginRequest } from '../../services/auth.service';
+import { login } from '../../services/auth.service';
+import { useAuth } from '../../context/AuthContext';
+// 👈 IMPORTANTE
 
 export default function LoginForm() {
   const navigate = useNavigate();
+
+  const { setLoginData } = useAuth();
+  // 👈 usamos el contexto global
 
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
@@ -24,10 +29,11 @@ export default function LoginForm() {
     try {
       setLoading(true);
 
-      const response = await loginRequest({
+      const response = await login({
         identifier: identifier.trim(),
         password,
       });
+      // 👈 YA NO loginRequest
 
       if (keepSession) {
         localStorage.setItem('accessToken', response.accessToken);
@@ -37,7 +43,10 @@ export default function LoginForm() {
         sessionStorage.setItem('usuario', JSON.stringify(response.usuario));
       }
 
-      navigate('/dashboard');
+      setLoginData(response);
+      // 👈 ESTO ES CLAVE para que el logout funcione global
+
+      navigate('/dashboard', { replace: true });
     } catch (error) {
       const message =
         error instanceof Error ? error.message : 'Ocurrió un error inesperado';

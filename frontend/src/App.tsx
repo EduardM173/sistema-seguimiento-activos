@@ -1,4 +1,11 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
+
+import { AuthProvider } from './context/AuthContext';
+
+import ProtectedRoute from './components/auth/ProtectedRoute';
+
+import PrivateLayout from './components/layout/PrivateLayout';
+
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import ActivosPage from './pages/activos/ActivosPage';
@@ -7,120 +14,32 @@ import TransferenciasPage from './pages/transferencias/TransferenciasPage';
 import UsuariosPage from './pages/usuarios/UsuariosPage';
 import AuditoriaPage from './pages/auditoria/AuditoriaPage';
 import ReportesPage from './pages/reportes/ReportesPage';
+import UserList from './pages/users/UserList';
+import CreateUser from './components/users/CreateUser';
 import './App.css';
-import PrivateLayout from './components/layout/PrivateLayout';
-
-function getToken() {
-  return (
-    localStorage.getItem('accessToken') ||
-    sessionStorage.getItem('accessToken')
-  );
-}
-
-function PrivateRoute({ children }: { children: React.ReactNode }) {
-  const token = getToken();
-
-  if (!token) {
-    return <Navigate to="/" replace />;
-  }
-
-  return <>{children}</>;
-}
-
-function PublicRoute({ children }: { children: React.ReactNode }) {
-  const token = getToken();
-
-  if (token) {
-    return <Navigate to="/dashboard" replace />;
-  }
-
-  return <>{children}</>;
-}
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <AuthProvider>
       <Routes>
-        <Route
-          path="/"
-          element={
-            <PublicRoute>
-              <LoginPage />
-            </PublicRoute>
-          }
-        />
-        <Route
-          path="/dashboard"
-          element={
-            <PrivateRoute>
-              <PrivateLayout>
-                <DashboardPage />
-              </PrivateLayout>
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/activos"
-          element={
-            <PrivateRoute>
-              <PrivateLayout>
-                <ActivosPage />
-              </PrivateLayout>
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/inventario"
-          element={
-            <PrivateRoute>
-              <PrivateLayout>
-                <InventarioPage />
-              </PrivateLayout>
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/transferencias"
-          element={
-            <PrivateRoute>
-              <PrivateLayout>
-                <TransferenciasPage />
-              </PrivateLayout>
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/usuarios"
-          element={
-            <PrivateRoute>
-              <PrivateLayout>
-                <UsuariosPage />
-              </PrivateLayout>
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/auditoria"
-          element={
-            <PrivateRoute>
-              <PrivateLayout>
-                <AuditoriaPage />
-              </PrivateLayout>
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/reportes"
-          element={
-            <PrivateRoute>
-              <PrivateLayout>
-                <ReportesPage />
-              </PrivateLayout>
-            </PrivateRoute>
-          }
-        />
+        <Route path="/" element={<LoginPage />} />
+
+        <Route element={<ProtectedRoute />}>
+          <Route element={<PrivateLayout />}>
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/activos" element={<ActivosPage />} />
+            <Route path="/inventario" element={<InventarioPage />} />
+            <Route path="/transferencias" element={<TransferenciasPage />} />
+            <Route path="/usuarios" element={<UsuariosPage />} />
+            <Route path="/auditoria" element={<AuditoriaPage />} />
+            <Route path="/reportes" element={<ReportesPage />} />
+            <Route path="/users" element={<UserList />} />
+            <Route path="/users/create" element={<CreateUser />} />
+          </Route>
+        </Route>
+
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
-    </BrowserRouter>
+    </AuthProvider>
   );
 }

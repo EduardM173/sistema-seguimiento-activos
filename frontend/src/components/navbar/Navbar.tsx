@@ -1,48 +1,40 @@
-import React from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks';
 import '../../styles/navbar.css';
 
-type MenuItem = {
+type MainItem = {
   label: string;
   icon: string;
-  path: string;
+  to?: string;
 };
 
-const mainItems: MenuItem[] = [
-  { label: 'Dashboard', icon: '📊', path: '/dashboard' },
-  { label: 'Activos', icon: '📦', path: '/activos' },
-  { label: 'Inventario', icon: '📝', path: '/inventario' },
-  { label: 'Transferencias', icon: '🔄', path: '/transferencias' },
-  { label: 'Reportes', icon: '📈', path: '/reportes' },
-  { label: 'Usuarios', icon: '👥', path: '/usuarios' },
-  { label: 'Auditoría', icon: '🛡️', path: '/auditoria' },
-];
-
-const bottomItems: MenuItem[] = [
-  { label: 'Cerrar Sesión', icon: '↩️', path: '/' },
-];
+type BottomItem = {
+  label: string;
+  icon: string;
+  action?: () => void;
+};
 
 export default function Navbar() {
   const navigate = useNavigate();
-  const location = useLocation();
   const { logout } = useAuth();
 
-  const handleNavClick = (path: string, label: string) => {
-    if (label === 'Cerrar Sesión') {
-      logout();
-      navigate('/');
-      return;
-    }
-    navigate(path);
-  };
+  const mainItems: MainItem[] = [
+    { label: 'Dashboard', icon: '📊', to: '/dashboard' },
+    { label: 'Activos', icon: '📦', to: '/activos' },
+    { label: 'Inventario', icon: '📝', to: '/inventario' },
+    { label: 'Transferencias', icon: '🔄', to: '/transferencias' },
+    { label: 'Reportes', icon: '📈', to: '/reportes' },
+    { label: 'Usuarios', icon: '👥', to: '/users' },
+    { label: 'Auditoría', icon: '🛡️', to: '/auditoria' },
+  ];
+
+  const bottomItems: BottomItem[] = [
+    { label: 'Configuración', icon: '⚙️' },
+    { label: 'Cerrar Sesión', icon: '↩️', action: () => { logout(); navigate('/'); } },
+  ];
 
   const handleNewActivo = () => {
     navigate('/activos');
-  };
-
-  const isActive = (path: string) => {
-    return location.pathname === path;
   };
 
   return (
@@ -66,14 +58,22 @@ export default function Navbar() {
           <ul className="sidebar__menu">
             {mainItems.map((item) => (
               <li key={item.label} className="sidebar__item">
-                <button
-                  type="button"
-                  className={`sidebar__link ${isActive(item.path) ? 'sidebar__link--active' : ''}`}
-                  onClick={() => handleNavClick(item.path, item.label)}
-                >
-                  <span className="sidebar__icon">{item.icon}</span>
-                  <span className="sidebar__text">{item.label}</span>
-                </button>
+                {item.to ? (
+                  <NavLink
+                    to={item.to}
+                    className={({ isActive }) =>
+                      `sidebar__link ${isActive ? 'sidebar__link--active' : ''}`
+                    }
+                  >
+                    <span className="sidebar__icon">{item.icon}</span>
+                    <span className="sidebar__text">{item.label}</span>
+                  </NavLink>
+                ) : (
+                  <button type="button" className="sidebar__link">
+                    <span className="sidebar__icon">{item.icon}</span>
+                    <span className="sidebar__text">{item.label}</span>
+                  </button>
+                )}
               </li>
             ))}
           </ul>
@@ -87,7 +87,7 @@ export default function Navbar() {
               <button
                 type="button"
                 className="sidebar__link"
-                onClick={() => handleNavClick(item.path, item.label)}
+                onClick={item.action}
               >
                 <span className="sidebar__icon">{item.icon}</span>
                 <span className="sidebar__text">{item.label}</span>
