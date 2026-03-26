@@ -1,52 +1,34 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
-// importa las rutas
 
 import { AuthProvider } from './context/AuthContext';
-// provider global de autenticacion
-
+import { NotificationProvider } from './context/NotificationContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
-// protege rutas privadas
-
 import PrivateLayout from './components/layout/PrivateLayout';
-// layout con navbar
-
+import ToastContainer from './components/notifications/ToastContainer';
 import LoginPage from './pages/LoginPage';
-// pagina de login
-
 import DashboardPage from './pages/DashboardPage';
-// pagina del dashboard
-
 import AssetsPage from './pages/AssetsPage';
-// pagina de activos
+import CreateAssetPage from './pages/CreateAssetPage';
 
 export default function App() {
   return (
     <AuthProvider>
-      {/* contexto global */}
+      <NotificationProvider>
+        <ToastContainer />
+        <Routes>
+          <Route path="/" element={<LoginPage />} />
 
-      <Routes>
-        {/* rutas */}
-
-        <Route path="/" element={<LoginPage />} />
-        {/* login */}
-
-        <Route element={<ProtectedRoute />}>
-          {/* rutas protegidas */}
-
-          <Route element={<PrivateLayout />}>
-            {/* layout con navbar */}
-
-            <Route path="/dashboard" element={<DashboardPage />} />
-            {/* dashboard */}
-
-            <Route path="/activos" element={<AssetsPage />} />
-            {/* hu13 listado de activos */}
+          <Route element={<ProtectedRoute />}>
+            <Route element={<PrivateLayout />}>
+              <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/activos" element={<AssetsPage />} />
+              <Route path="/activos/nuevo" element={<CreateAssetPage />} />
+            </Route>
           </Route>
-        </Route>
 
-        <Route path="*" element={<Navigate to="/" replace />} />
-        {/* fallback */}
-      </Routes>
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </NotificationProvider>
     </AuthProvider>
   );
 }

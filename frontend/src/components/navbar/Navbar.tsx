@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../../context/AuthContext';
 
@@ -18,6 +18,7 @@ type BottomItem = {
 
 export default function Navbar() {
   const { logout } = useAuth();
+  const navigate = useNavigate();
 
   const mainItems: MainItem[] = [
     { label: 'Dashboard', icon: '▦', to: '/dashboard' },
@@ -42,7 +43,7 @@ export default function Navbar() {
           <span className="sidebar__title">ActivoGestión</span>
         </div>
 
-        <button type="button" className="sidebar__primaryButton">
+        <button type="button" className="sidebar__primaryButton" onClick={() => navigate('/activos/nuevo')}>
           <span className="sidebar__plus">+</span>
           <span>Nuevo Activo</span>
         </button>
