@@ -14,6 +14,7 @@ import type {
 } from '../types/user.types';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const USERS_URL = `${API_URL}/api/users`;
 
 function buildHeaders(): HeadersInit {
   const token = getAccessToken();
@@ -27,7 +28,7 @@ function buildHeaders(): HeadersInit {
 export async function createUser(
   data: CreateUserRequest,
 ): Promise<CreateUserResponse> {
-  const response = await fetch(`${API_URL}/users`, {
+  const response = await fetch(`${USERS_URL}`, {
     method: 'POST',
     headers: buildHeaders(),
     body: JSON.stringify(data),
@@ -43,7 +44,7 @@ export async function createUser(
 }
 
 export async function getUsers(): Promise<User[]> {
-  const response = await fetch(`${API_URL}/users`, {
+  const response = await fetch(`${USERS_URL}`, {
     method: 'GET',
     headers: buildHeaders(),
   });
@@ -58,7 +59,7 @@ export async function getUsers(): Promise<User[]> {
 }
 
 export async function getRoles(): Promise<Role[]> {
-  const response = await fetch(`${API_URL}/users/roles`, {
+  const response = await fetch(`${USERS_URL}/roles`, {
     method: 'GET',
     headers: buildHeaders(),
   });
@@ -73,7 +74,7 @@ export async function getRoles(): Promise<Role[]> {
 }
 
 export async function getPermissions(): Promise<Permission[]> {
-  const response = await fetch(`${API_URL}/users/permissions`, {
+  const response = await fetch(`${USERS_URL}/permissions`, {
     method: 'GET',
     headers: buildHeaders(),
   });
@@ -91,7 +92,7 @@ export async function updateUserRole(
   userId: string,
   data: UpdateUserRoleRequest,
 ): Promise<UpdateUserRoleResponse> {
-  const response = await fetch(`${API_URL}/users/${userId}/role`, {
+  const response = await fetch(`${USERS_URL}/${userId}/role`, {
     method: 'PATCH',
     headers: buildHeaders(),
     body: JSON.stringify(data),
@@ -109,7 +110,7 @@ export async function updateUserRole(
 export async function createRole(
   data: CreateRoleRequest,
 ): Promise<CreateRoleResponse> {
-  const response = await fetch(`${API_URL}/users/roles`, {
+  const response = await fetch(`${USERS_URL}/roles`, {
     method: 'POST',
     headers: buildHeaders(),
     body: JSON.stringify(data),
@@ -128,7 +129,7 @@ export async function updateRolePermissions(
   roleId: string,
   data: UpdateRolePermissionsRequest,
 ): Promise<UpdateRolePermissionsResponse> {
-  const response = await fetch(`${API_URL}/users/roles/${roleId}/permissions`, {
+  const response = await fetch(`${USERS_URL}/roles/${roleId}/permissions`, {
     method: 'PATCH',
     headers: buildHeaders(),
     body: JSON.stringify(data),

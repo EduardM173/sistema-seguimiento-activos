@@ -1,34 +1,217 @@
+/* ═══════════════════════════════════════════════════
+   Assets List Page — Gestión de Activos
+   ═══════════════════════════════════════════════════ */
+
 .assetsPage {
   display: flex;
   flex-direction: column;
-  gap: 24px;
-  padding: 32px;
+  gap: 20px;
+  padding: 0;
   min-height: 100vh;
   background: #f5f7fb;
+  font-family: Inter, system-ui, -apple-system, sans-serif;
 }
 
+/* ── Header ── */
 .assetsPage__header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   gap: 16px;
+  flex-wrap: wrap;
 }
 
 .assetsPage__title {
   margin: 0;
-  font-size: 2rem;
+  font-size: 1.75rem;
   font-weight: 800;
   color: #111827;
 }
 
 .assetsPage__subtitle {
-  margin: 8px 0 0;
-  font-size: 1rem;
+  margin: 6px 0 0;
+  font-size: 0.92rem;
   color: #6b7280;
-  max-width: 760px;
+  max-width: 520px;
   line-height: 1.5;
 }
 
+.assetsPage__actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* ── Shared Buttons ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.btn--primary {
+  background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.3);
+}
+
+.btn--primary:hover {
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+  transform: translateY(-1px);
+}
+
+.btn--primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn--outline {
+  background: #ffffff;
+  color: #374151;
+  border: 1px solid #d1d5db;
+}
+
+.btn--outline:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.btn--ghost {
+  background: transparent;
+  color: #6b7280;
+  border: 1px solid #e5e7eb;
+}
+
+.btn--ghost:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.btn--lg {
+  padding: 12px 28px;
+  font-size: 0.95rem;
+}
+
+/* ── Filter Bar ── */
+.assetsFilters {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 20px 24px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+}
+
+.assetsFilters__group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 140px;
+}
+
+.assetsFilters__group:first-child {
+  flex: 2;
+  min-width: 220px;
+}
+
+.assetsFilters__label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.assetsFilters__inputWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.assetsFilters__searchIcon {
+  position: absolute;
+  left: 12px;
+  font-size: 14px;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.assetsFilters__input {
+  width: 100%;
+  padding: 10px 12px 10px 36px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  color: #1f2937;
+  background: #f9fafb;
+  transition: border-color 0.2s;
+  font-family: inherit;
+}
+
+.assetsFilters__input:focus {
+  outline: none;
+  border-color: #2563eb;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.assetsFilters__select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  color: #1f2937;
+  background: #f9fafb;
+  cursor: pointer;
+  font-family: inherit;
+  appearance: auto;
+}
+
+.assetsFilters__select:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.assetsFilters__clearBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #6b7280;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: inherit;
+  flex-shrink: 0;
+}
+
+.assetsFilters__clearBtn:hover {
+  color: #dc2626;
+  background: #fef2f2;
+}
+
+/* ── Table Card ── */
 .assetsCard {
   background: #ffffff;
   border: 1px solid #e5e7eb;
@@ -45,7 +228,7 @@
 .assetsTable {
   width: 100%;
   border-collapse: collapse;
-  min-width: 720px;
+  min-width: 900px;
 }
 
 .assetsTable thead {
@@ -53,20 +236,26 @@
 }
 
 .assetsTable th {
-  padding: 18px 20px;
+  padding: 16px 18px;
   text-align: left;
-  font-size: 0.95rem;
+  font-size: 0.82rem;
   font-weight: 700;
-  color: #475569;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
   border-bottom: 1px solid #e5e7eb;
 }
 
 .assetsTable td {
-  padding: 18px 20px;
-  font-size: 0.96rem;
-  color: #1f2937;
-  border-bottom: 1px solid #eef2f7;
+  padding: 16px 18px;
+  font-size: 0.92rem;
+  color: #374151;
+  border-bottom: 1px solid #f1f5f9;
   vertical-align: middle;
+}
+
+.assetsTable tbody tr {
+  transition: background 0.15s;
 }
 
 .assetsTable tbody tr:hover {
@@ -76,36 +265,170 @@
 .assetsTable__code {
   color: #2563eb;
   font-weight: 700;
+  cursor: pointer;
 }
 
+.assetsTable__code:hover {
+  text-decoration: underline;
+}
+
+.assetsTable__name {
+  font-weight: 500;
+  color: #111827;
+}
+
+.assetsTable__category {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #475569;
+}
+
+.assetsTable__catIcon {
+  font-size: 14px;
+  opacity: 0.6;
+}
+
+/* ── Status Badges ── */
 .statusBadge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 6px 12px;
+  padding: 5px 12px;
   border-radius: 999px;
-  background: #eff6ff;
-  color: #1d4ed8;
-  font-size: 0.85rem;
-  font-weight: 700;
+  font-size: 0.8rem;
+  font-weight: 600;
   white-space: nowrap;
 }
 
-.assetsFooter {
-  display: flex;
-  justify-content: flex-start;
-  align-items: center;
-  padding: 16px 20px;
-  font-size: 0.95rem;
-  color: #6b7280;
-  background: #ffffff;
+.statusBadge--activo {
+  background: #dcfce7;
+  color: #15803d;
 }
 
+.statusBadge--mantenimiento {
+  background: #fef9c3;
+  color: #a16207;
+}
+
+.statusBadge--fuera {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.statusBadge--baja {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+/* ── Action Buttons ── */
+.assetsTable__actions {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.actionBtn {
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #6b7280;
+  font-size: 15px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.actionBtn:hover {
+  background: #f1f5f9;
+  color: #2563eb;
+}
+
+.actionBtn--danger:hover {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+/* ── Pagination ── */
+.assetsPagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.assetsPagination__info {
+  font-size: 0.88rem;
+  color: #6b7280;
+}
+
+.assetsPagination__info strong {
+  color: #1f2937;
+}
+
+.assetsPagination__controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pageBtn {
+  padding: 8px 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #374151;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+
+.pageBtn:hover:not(:disabled) {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.pageBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pageBtn--num {
+  min-width: 38px;
+  text-align: center;
+  padding: 8px 10px;
+}
+
+.pageBtn--active {
+  background: #2563eb;
+  color: #ffffff;
+  border-color: #2563eb;
+}
+
+.pageBtn--active:hover {
+  background: #1d4ed8;
+}
+
+.pageDots {
+  padding: 0 6px;
+  color: #9ca3af;
+  font-size: 0.85rem;
+}
+
+/* ── Loading / Empty State ── */
 .assetsState {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 240px;
+  min-height: 280px;
   padding: 32px;
   text-align: center;
 }
@@ -118,19 +441,26 @@
   margin: 0;
   font-size: 1rem;
   font-weight: 600;
-  color: inherit;
+  color: #6b7280;
 }
 
+/* ── Responsive ── */
 @media (max-width: 768px) {
-  .assetsPage {
-    padding: 20px;
+  .assetsPage__header {
+    flex-direction: column;
   }
 
-  .assetsPage__title {
-    font-size: 1.6rem;
+  .assetsPage__actions {
+    width: 100%;
   }
 
-  .assetsPage__subtitle {
-    font-size: 0.95rem;
+  .assetsFilters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .assetsPagination {
+    flex-direction: column;
+    text-align: center;
   }
 }

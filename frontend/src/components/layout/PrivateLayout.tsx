@@ -1,15 +1,15 @@
+import React from 'react';
 import { Outlet } from 'react-router-dom';
-
 import Navbar from '../navbar/Navbar';
 
-export default function PrivateLayout() {
+export const PrivateLayout: React.FC = () => {
   return (
-    <div className="appLayout">
+    <div className="dashboardPage">
       <Navbar />
-
-      <main className="appContent">
-        <Outlet />
-      </main>
+      <main className="main-content"><Outlet /></main>
     </div>
   );
-}
+};
+
+export default PrivateLayout;
+

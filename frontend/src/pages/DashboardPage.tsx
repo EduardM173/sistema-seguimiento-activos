@@ -1,12 +1,22 @@
+import React from 'react';
+import { Navigate } from 'react-router-dom';
+import { DashboardContent } from '../components/layout';
+import { useAuth } from '../hooks';
+import { LoadingSpinner } from '../components/common';
+import '../styles/dashboard.css';
+
 export default function DashboardPage() {
-  // pagina principal interna
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return <LoadingSpinner fullscreen message="Cargando panel..." />;
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/" replace />;
+  }
 
   return (
-    <section className="pageSection">
-      {/* contenedor de la pagina */}
-
-      <h1 className="pageTitle">Panel principal</h1>
-      {/* titulo simple por ahora */}
-    </section>
+    <DashboardContent />
   );
 }

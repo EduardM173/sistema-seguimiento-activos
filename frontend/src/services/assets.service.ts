@@ -1,31 +1,50 @@
-import { getAccessToken } from './auth.service';
+import { http } from './http.client';
+import type {
+  ApiResponse,
+  AssetListItem,
+  AssetDetail,
+  CreateAssetPayload,
+  UpdateAssetPayload,
+  SearchAssetsParams,
+  Categoria,
+  Ubicacion,
+} from '../types/assets.types';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+export type { AssetListItem } from '../types/assets.types';
 
-export type AssetItem = {
-  id: string;
-  codigo: string;
-  nombre: string;
-  estado: string;
-  ubicacion: string;
-};
+export async function searchAssets(params: SearchAssetsParams = {}) {
+  const query = new URLSearchParams();
 
-export async function getAssets(): Promise<AssetItem[]> {
-  const token = getAccessToken();
+  if (params.q) query.set('q', params.q);
+  if (params.estado) query.set('estado', params.estado);
+  if (params.categoriaId) query.set('categoriaId', params.categoriaId);
+  if (params.page) query.set('page', String(params.page));
+  if (params.pageSize) query.set('pageSize', String(params.pageSize));
 
-  const response = await fetch(`${API_URL}/assets`, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-  });
+  const qs = query.toString();
+  return http.get<ApiResponse<AssetListItem[]>>(`/assets${qs ? `?${qs}` : ''}`);
+}
 
-  const result = await response.json();
+export async function getAssetById(id: string) {
+  return http.get<ApiResponse<AssetDetail>>(`/assets/${encodeURIComponent(id)}`);
+}
 
-  if (!response.ok) {
-    throw new Error(result.message || 'No se pudo obtener la lista de activos');
-  }
+export async function createAsset(payload: CreateAssetPayload) {
+  return http.post<ApiResponse<AssetDetail>>('/assets', payload);
+}
 
-  return Array.isArray(result) ? result : [];
+export async function updateAsset(id: string, payload: UpdateAssetPayload) {
+  return http.patch<ApiResponse<AssetDetail>>(`/assets/${encodeURIComponent(id)}`, payload);
+}
+
+export async function deleteAsset(id: string) {
+  return http.delete<ApiResponse<AssetDetail>>(`/assets/${encodeURIComponent(id)}`);
+}
+
+export async function getCategorias() {
+  return http.get<ApiResponse<Categoria[]>>('/catalogs/categorias');
+}
+
+export async function getUbicaciones() {
+  return http.get<ApiResponse<Ubicacion[]>>('/catalogs/ubicaciones');
 }
