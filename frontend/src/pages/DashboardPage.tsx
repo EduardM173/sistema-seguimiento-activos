@@ -1,12 +1,11 @@
-export default function DashboardPage() {
-  // pagina principal interna
+import React from 'react';
+import { DashboardContent } from '../components/layout';
+import '../styles/dashboard.css';
 
+export default function DashboardPage() {
   return (
     <section className="pageSection">
-      {/* contenedor de la pagina */}
-
-      <h1 className="pageTitle">Panel principal</h1>
-      {/* titulo simple por ahora */}
+      <DashboardContent />
     </section>
   );
 }
