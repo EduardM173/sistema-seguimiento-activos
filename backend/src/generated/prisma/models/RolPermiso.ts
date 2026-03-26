@@ -25,35 +25,65 @@ export type AggregateRolPermiso = {
 }
 
 export type RolPermisoMinAggregateOutputType = {
+  id: string | null
   rolId: string | null
-  permisoId: string | null
+  modulo: string | null
+  ver: boolean | null
+  crear: boolean | null
+  actualizar: boolean | null
+  eliminar: boolean | null
 }
 
 export type RolPermisoMaxAggregateOutputType = {
+  id: string | null
   rolId: string | null
-  permisoId: string | null
+  modulo: string | null
+  ver: boolean | null
+  crear: boolean | null
+  actualizar: boolean | null
+  eliminar: boolean | null
 }
 
 export type RolPermisoCountAggregateOutputType = {
+  id: number
   rolId: number
-  permisoId: number
+  modulo: number
+  ver: number
+  crear: number
+  actualizar: number
+  eliminar: number
   _all: number
 }
 
 
 export type RolPermisoMinAggregateInputType = {
+  id?: true
   rolId?: true
-  permisoId?: true
+  modulo?: true
+  ver?: true
+  crear?: true
+  actualizar?: true
+  eliminar?: true
 }
 
 export type RolPermisoMaxAggregateInputType = {
+  id?: true
   rolId?: true
-  permisoId?: true
+  modulo?: true
+  ver?: true
+  crear?: true
+  actualizar?: true
+  eliminar?: true
 }
 
 export type RolPermisoCountAggregateInputType = {
+  id?: true
   rolId?: true
-  permisoId?: true
+  modulo?: true
+  ver?: true
+  crear?: true
+  actualizar?: true
+  eliminar?: true
   _all?: true
 }
 
@@ -130,8 +160,13 @@ export type RolPermisoGroupByArgs<ExtArgs extends runtime.Types.Extensions.Inter
 }
 
 export type RolPermisoGroupByOutputType = {
+  id: string
   rolId: string
-  permisoId: string
+  modulo: string
+  ver: boolean
+  crear: boolean
+  actualizar: boolean
+  eliminar: boolean
   _count: RolPermisoCountAggregateOutputType | null
   _min: RolPermisoMinAggregateOutputType | null
   _max: RolPermisoMaxAggregateOutputType | null
@@ -156,33 +191,50 @@ export type RolPermisoWhereInput = {
   AND?: Prisma.RolPermisoWhereInput | Prisma.RolPermisoWhereInput[]
   OR?: Prisma.RolPermisoWhereInput[]
   NOT?: Prisma.RolPermisoWhereInput | Prisma.RolPermisoWhereInput[]
+  id?: Prisma.StringFilter<"RolPermiso"> | string
   rolId?: Prisma.StringFilter<"RolPermiso"> | string
-  permisoId?: Prisma.StringFilter<"RolPermiso"> | string
+  modulo?: Prisma.StringFilter<"RolPermiso"> | string
+  ver?: Prisma.BoolFilter<"RolPermiso"> | boolean
+  crear?: Prisma.BoolFilter<"RolPermiso"> | boolean
+  actualizar?: Prisma.BoolFilter<"RolPermiso"> | boolean
+  eliminar?: Prisma.BoolFilter<"RolPermiso"> | boolean
   rol?: Prisma.XOR<Prisma.RolScalarRelationFilter, Prisma.RolWhereInput>
-  permiso?: Prisma.XOR<Prisma.PermisoScalarRelationFilter, Prisma.PermisoWhereInput>
 }
 
 export type RolPermisoOrderByWithRelationInput = {
+  id?: Prisma.SortOrder
   rolId?: Prisma.SortOrder
-  permisoId?: Prisma.SortOrder
+  modulo?: Prisma.SortOrder
+  ver?: Prisma.SortOrder
+  crear?: Prisma.SortOrder
+  actualizar?: Prisma.SortOrder
+  eliminar?: Prisma.SortOrder
   rol?: Prisma.RolOrderByWithRelationInput
-  permiso?: Prisma.PermisoOrderByWithRelationInput
 }
 
 export type RolPermisoWhereUniqueInput = Prisma.AtLeast<{
-  rolId_permisoId?: Prisma.RolPermisoRolIdPermisoIdCompoundUniqueInput
+  id?: string
+  rolId_modulo?: Prisma.RolPermisoRolIdModuloCompoundUniqueInput
   AND?: Prisma.RolPermisoWhereInput | Prisma.RolPermisoWhereInput[]
   OR?: Prisma.RolPermisoWhereInput[]
   NOT?: Prisma.RolPermisoWhereInput | Prisma.RolPermisoWhereInput[]
   rolId?: Prisma.StringFilter<"RolPermiso"> | string
-  permisoId?: Prisma.StringFilter<"RolPermiso"> | string
+  modulo?: Prisma.StringFilter<"RolPermiso"> | string
+  ver?: Prisma.BoolFilter<"RolPermiso"> | boolean
+  crear?: Prisma.BoolFilter<"RolPermiso"> | boolean
+  actualizar?: Prisma.BoolFilter<"RolPermiso"> | boolean
+  eliminar?: Prisma.BoolFilter<"RolPermiso"> | boolean
   rol?: Prisma.XOR<Prisma.RolScalarRelationFilter, Prisma.RolWhereInput>
-  permiso?: Prisma.XOR<Prisma.PermisoScalarRelationFilter, Prisma.PermisoWhereInput>
-}, "rolId_permisoId">
+}, "id" | "rolId_modulo">
 
 export type RolPermisoOrderByWithAggregationInput = {
+  id?: Prisma.SortOrder
   rolId?: Prisma.SortOrder
-  permisoId?: Prisma.SortOrder
+  modulo?: Prisma.SortOrder
+  ver?: Prisma.SortOrder
+  crear?: Prisma.SortOrder
+  actualizar?: Prisma.SortOrder
+  eliminar?: Prisma.SortOrder
   _count?: Prisma.RolPermisoCountOrderByAggregateInput
   _max?: Prisma.RolPermisoMaxOrderByAggregateInput
   _min?: Prisma.RolPermisoMinOrderByAggregateInput
@@ -192,42 +244,82 @@ export type RolPermisoScalarWhereWithAggregatesInput = {
   AND?: Prisma.RolPermisoScalarWhereWithAggregatesInput | Prisma.RolPermisoScalarWhereWithAggregatesInput[]
   OR?: Prisma.RolPermisoScalarWhereWithAggregatesInput[]
   NOT?: Prisma.RolPermisoScalarWhereWithAggregatesInput | Prisma.RolPermisoScalarWhereWithAggregatesInput[]
+  id?: Prisma.StringWithAggregatesFilter<"RolPermiso"> | string
   rolId?: Prisma.StringWithAggregatesFilter<"RolPermiso"> | string
-  permisoId?: Prisma.StringWithAggregatesFilter<"RolPermiso"> | string
+  modulo?: Prisma.StringWithAggregatesFilter<"RolPermiso"> | string
+  ver?: Prisma.BoolWithAggregatesFilter<"RolPermiso"> | boolean
+  crear?: Prisma.BoolWithAggregatesFilter<"RolPermiso"> | boolean
+  actualizar?: Prisma.BoolWithAggregatesFilter<"RolPermiso"> | boolean
+  eliminar?: Prisma.BoolWithAggregatesFilter<"RolPermiso"> | boolean
 }
 
 export type RolPermisoCreateInput = {
+  id?: string
+  modulo: string
+  ver?: boolean
+  crear?: boolean
+  actualizar?: boolean
+  eliminar?: boolean
   rol: Prisma.RolCreateNestedOneWithoutPermisosInput
-  permiso: Prisma.PermisoCreateNestedOneWithoutRolesInput
 }
 
 export type RolPermisoUncheckedCreateInput = {
+  id?: string
   rolId: string
-  permisoId: string
+  modulo: string
+  ver?: boolean
+  crear?: boolean
+  actualizar?: boolean
+  eliminar?: boolean
 }
 
 export type RolPermisoUpdateInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  modulo?: Prisma.StringFieldUpdateOperationsInput | string
+  ver?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  crear?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  actualizar?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  eliminar?: Prisma.BoolFieldUpdateOperationsInput | boolean
   rol?: Prisma.RolUpdateOneRequiredWithoutPermisosNestedInput
-  permiso?: Prisma.PermisoUpdateOneRequiredWithoutRolesNestedInput
 }
 
 export type RolPermisoUncheckedUpdateInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
   rolId?: Prisma.StringFieldUpdateOperationsInput | string
-  permisoId?: Prisma.StringFieldUpdateOperationsInput | string
+  modulo?: Prisma.StringFieldUpdateOperationsInput | string
+  ver?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  crear?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  actualizar?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  eliminar?: Prisma.BoolFieldUpdateOperationsInput | boolean
 }
 
 export type RolPermisoCreateManyInput = {
+  id?: string
   rolId: string
-  permisoId: string
+  modulo: string
+  ver?: boolean
+  crear?: boolean
+  actualizar?: boolean
+  eliminar?: boolean
 }
 
 export type RolPermisoUpdateManyMutationInput = {
-
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  modulo?: Prisma.StringFieldUpdateOperationsInput | string
+  ver?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  crear?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  actualizar?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  eliminar?: Prisma.BoolFieldUpdateOperationsInput | boolean
 }
 
 export type RolPermisoUncheckedUpdateManyInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
   rolId?: Prisma.StringFieldUpdateOperationsInput | string
-  permisoId?: Prisma.StringFieldUpdateOperationsInput | string
+  modulo?: Prisma.StringFieldUpdateOperationsInput | string
+  ver?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  crear?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  actualizar?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  eliminar?: Prisma.BoolFieldUpdateOperationsInput | boolean
 }
 
 export type RolPermisoListRelationFilter = {
@@ -240,24 +332,39 @@ export type RolPermisoOrderByRelationAggregateInput = {
   _count?: Prisma.SortOrder
 }
 
-export type RolPermisoRolIdPermisoIdCompoundUniqueInput = {
+export type RolPermisoRolIdModuloCompoundUniqueInput = {
   rolId: string
-  permisoId: string
+  modulo: string
 }
 
 export type RolPermisoCountOrderByAggregateInput = {
+  id?: Prisma.SortOrder
   rolId?: Prisma.SortOrder
-  permisoId?: Prisma.SortOrder
+  modulo?: Prisma.SortOrder
+  ver?: Prisma.SortOrder
+  crear?: Prisma.SortOrder
+  actualizar?: Prisma.SortOrder
+  eliminar?: Prisma.SortOrder
 }
 
 export type RolPermisoMaxOrderByAggregateInput = {
+  id?: Prisma.SortOrder
   rolId?: Prisma.SortOrder
-  permisoId?: Prisma.SortOrder
+  modulo?: Prisma.SortOrder
+  ver?: Prisma.SortOrder
+  crear?: Prisma.SortOrder
+  actualizar?: Prisma.SortOrder
+  eliminar?: Prisma.SortOrder
 }
 
 export type RolPermisoMinOrderByAggregateInput = {
+  id?: Prisma.SortOrder
   rolId?: Prisma.SortOrder
-  permisoId?: Prisma.SortOrder
+  modulo?: Prisma.SortOrder
+  ver?: Prisma.SortOrder
+  crear?: Prisma.SortOrder
+  actualizar?: Prisma.SortOrder
+  eliminar?: Prisma.SortOrder
 }
 
 export type RolPermisoCreateNestedManyWithoutRolInput = {
@@ -302,54 +409,26 @@ export type RolPermisoUncheckedUpdateManyWithoutRolNestedInput = {
   deleteMany?: Prisma.RolPermisoScalarWhereInput | Prisma.RolPermisoScalarWhereInput[]
 }
 
-export type RolPermisoCreateNestedManyWithoutPermisoInput = {
-  create?: Prisma.XOR<Prisma.RolPermisoCreateWithoutPermisoInput, Prisma.RolPermisoUncheckedCreateWithoutPermisoInput> | Prisma.RolPermisoCreateWithoutPermisoInput[] | Prisma.RolPermisoUncheckedCreateWithoutPermisoInput[]
-  connectOrCreate?: Prisma.RolPermisoCreateOrConnectWithoutPermisoInput | Prisma.RolPermisoCreateOrConnectWithoutPermisoInput[]
-  createMany?: Prisma.RolPermisoCreateManyPermisoInputEnvelope
-  connect?: Prisma.RolPermisoWhereUniqueInput | Prisma.RolPermisoWhereUniqueInput[]
-}
-
-export type RolPermisoUncheckedCreateNestedManyWithoutPermisoInput = {
-  create?: Prisma.XOR<Prisma.RolPermisoCreateWithoutPermisoInput, Prisma.RolPermisoUncheckedCreateWithoutPermisoInput> | Prisma.RolPermisoCreateWithoutPermisoInput[] | Prisma.RolPermisoUncheckedCreateWithoutPermisoInput[]
-  connectOrCreate?: Prisma.RolPermisoCreateOrConnectWithoutPermisoInput | Prisma.RolPermisoCreateOrConnectWithoutPermisoInput[]
-  createMany?: Prisma.RolPermisoCreateManyPermisoInputEnvelope
-  connect?: Prisma.RolPermisoWhereUniqueInput | Prisma.RolPermisoWhereUniqueInput[]
-}
-
-export type RolPermisoUpdateManyWithoutPermisoNestedInput = {
-  create?: Prisma.XOR<Prisma.RolPermisoCreateWithoutPermisoInput, Prisma.RolPermisoUncheckedCreateWithoutPermisoInput> | Prisma.RolPermisoCreateWithoutPermisoInput[] | Prisma.RolPermisoUncheckedCreateWithoutPermisoInput[]
-  connectOrCreate?: Prisma.RolPermisoCreateOrConnectWithoutPermisoInput | Prisma.RolPermisoCreateOrConnectWithoutPermisoInput[]
-  upsert?: Prisma.RolPermisoUpsertWithWhereUniqueWithoutPermisoInput | Prisma.RolPermisoUpsertWithWhereUniqueWithoutPermisoInput[]
-  createMany?: Prisma.RolPermisoCreateManyPermisoInputEnvelope
-  set?: Prisma.RolPermisoWhereUniqueInput | Prisma.RolPermisoWhereUniqueInput[]
-  disconnect?: Prisma.RolPermisoWhereUniqueInput | Prisma.RolPermisoWhereUniqueInput[]
-  delete?: Prisma.RolPermisoWhereUniqueInput | Prisma.RolPermisoWhereUniqueInput[]
-  connect?: Prisma.RolPermisoWhereUniqueInput | Prisma.RolPermisoWhereUniqueInput[]
-  update?: Prisma.RolPermisoUpdateWithWhereUniqueWithoutPermisoInput | Prisma.RolPermisoUpdateWithWhereUniqueWithoutPermisoInput[]
-  updateMany?: Prisma.RolPermisoUpdateManyWithWhereWithoutPermisoInput | Prisma.RolPermisoUpdateManyWithWhereWithoutPermisoInput[]
-  deleteMany?: Prisma.RolPermisoScalarWhereInput | Prisma.RolPermisoScalarWhereInput[]
-}
-
-export type RolPermisoUncheckedUpdateManyWithoutPermisoNestedInput = {
-  create?: Prisma.XOR<Prisma.RolPermisoCreateWithoutPermisoInput, Prisma.RolPermisoUncheckedCreateWithoutPermisoInput> | Prisma.RolPermisoCreateWithoutPermisoInput[] | Prisma.RolPermisoUncheckedCreateWithoutPermisoInput[]
-  connectOrCreate?: Prisma.RolPermisoCreateOrConnectWithoutPermisoInput | Prisma.RolPermisoCreateOrConnectWithoutPermisoInput[]
-  upsert?: Prisma.RolPermisoUpsertWithWhereUniqueWithoutPermisoInput | Prisma.RolPermisoUpsertWithWhereUniqueWithoutPermisoInput[]
-  createMany?: Prisma.RolPermisoCreateManyPermisoInputEnvelope
-  set?: Prisma.RolPermisoWhereUniqueInput | Prisma.RolPermisoWhereUniqueInput[]
-  disconnect?: Prisma.RolPermisoWhereUniqueInput | Prisma.RolPermisoWhereUniqueInput[]
-  delete?: Prisma.RolPermisoWhereUniqueInput | Prisma.RolPermisoWhereUniqueInput[]
-  connect?: Prisma.RolPermisoWhereUniqueInput | Prisma.RolPermisoWhereUniqueInput[]
-  update?: Prisma.RolPermisoUpdateWithWhereUniqueWithoutPermisoInput | Prisma.RolPermisoUpdateWithWhereUniqueWithoutPermisoInput[]
-  updateMany?: Prisma.RolPermisoUpdateManyWithWhereWithoutPermisoInput | Prisma.RolPermisoUpdateManyWithWhereWithoutPermisoInput[]
-  deleteMany?: Prisma.RolPermisoScalarWhereInput | Prisma.RolPermisoScalarWhereInput[]
+export type BoolFieldUpdateOperationsInput = {
+  set?: boolean
 }
 
 export type RolPermisoCreateWithoutRolInput = {
-  permiso: Prisma.PermisoCreateNestedOneWithoutRolesInput
+  id?: string
+  modulo: string
+  ver?: boolean
+  crear?: boolean
+  actualizar?: boolean
+  eliminar?: boolean
 }
 
 export type RolPermisoUncheckedCreateWithoutRolInput = {
-  permisoId: string
+  id?: string
+  modulo: string
+  ver?: boolean
+  crear?: boolean
+  actualizar?: boolean
+  eliminar?: boolean
 }
 
 export type RolPermisoCreateOrConnectWithoutRolInput = {
@@ -382,127 +461,120 @@ export type RolPermisoScalarWhereInput = {
   AND?: Prisma.RolPermisoScalarWhereInput | Prisma.RolPermisoScalarWhereInput[]
   OR?: Prisma.RolPermisoScalarWhereInput[]
   NOT?: Prisma.RolPermisoScalarWhereInput | Prisma.RolPermisoScalarWhereInput[]
+  id?: Prisma.StringFilter<"RolPermiso"> | string
   rolId?: Prisma.StringFilter<"RolPermiso"> | string
-  permisoId?: Prisma.StringFilter<"RolPermiso"> | string
-}
-
-export type RolPermisoCreateWithoutPermisoInput = {
-  rol: Prisma.RolCreateNestedOneWithoutPermisosInput
-}
-
-export type RolPermisoUncheckedCreateWithoutPermisoInput = {
-  rolId: string
-}
-
-export type RolPermisoCreateOrConnectWithoutPermisoInput = {
-  where: Prisma.RolPermisoWhereUniqueInput
-  create: Prisma.XOR<Prisma.RolPermisoCreateWithoutPermisoInput, Prisma.RolPermisoUncheckedCreateWithoutPermisoInput>
-}
-
-export type RolPermisoCreateManyPermisoInputEnvelope = {
-  data: Prisma.RolPermisoCreateManyPermisoInput | Prisma.RolPermisoCreateManyPermisoInput[]
-  skipDuplicates?: boolean
-}
-
-export type RolPermisoUpsertWithWhereUniqueWithoutPermisoInput = {
-  where: Prisma.RolPermisoWhereUniqueInput
-  update: Prisma.XOR<Prisma.RolPermisoUpdateWithoutPermisoInput, Prisma.RolPermisoUncheckedUpdateWithoutPermisoInput>
-  create: Prisma.XOR<Prisma.RolPermisoCreateWithoutPermisoInput, Prisma.RolPermisoUncheckedCreateWithoutPermisoInput>
-}
-
-export type RolPermisoUpdateWithWhereUniqueWithoutPermisoInput = {
-  where: Prisma.RolPermisoWhereUniqueInput
-  data: Prisma.XOR<Prisma.RolPermisoUpdateWithoutPermisoInput, Prisma.RolPermisoUncheckedUpdateWithoutPermisoInput>
-}
-
-export type RolPermisoUpdateManyWithWhereWithoutPermisoInput = {
-  where: Prisma.RolPermisoScalarWhereInput
-  data: Prisma.XOR<Prisma.RolPermisoUpdateManyMutationInput, Prisma.RolPermisoUncheckedUpdateManyWithoutPermisoInput>
+  modulo?: Prisma.StringFilter<"RolPermiso"> | string
+  ver?: Prisma.BoolFilter<"RolPermiso"> | boolean
+  crear?: Prisma.BoolFilter<"RolPermiso"> | boolean
+  actualizar?: Prisma.BoolFilter<"RolPermiso"> | boolean
+  eliminar?: Prisma.BoolFilter<"RolPermiso"> | boolean
 }
 
 export type RolPermisoCreateManyRolInput = {
-  permisoId: string
+  id?: string
+  modulo: string
+  ver?: boolean
+  crear?: boolean
+  actualizar?: boolean
+  eliminar?: boolean
 }
 
 export type RolPermisoUpdateWithoutRolInput = {
-  permiso?: Prisma.PermisoUpdateOneRequiredWithoutRolesNestedInput
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  modulo?: Prisma.StringFieldUpdateOperationsInput | string
+  ver?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  crear?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  actualizar?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  eliminar?: Prisma.BoolFieldUpdateOperationsInput | boolean
 }
 
 export type RolPermisoUncheckedUpdateWithoutRolInput = {
-  permisoId?: Prisma.StringFieldUpdateOperationsInput | string
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  modulo?: Prisma.StringFieldUpdateOperationsInput | string
+  ver?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  crear?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  actualizar?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  eliminar?: Prisma.BoolFieldUpdateOperationsInput | boolean
 }
 
 export type RolPermisoUncheckedUpdateManyWithoutRolInput = {
-  permisoId?: Prisma.StringFieldUpdateOperationsInput | string
-}
-
-export type RolPermisoCreateManyPermisoInput = {
-  rolId: string
-}
-
-export type RolPermisoUpdateWithoutPermisoInput = {
-  rol?: Prisma.RolUpdateOneRequiredWithoutPermisosNestedInput
-}
-
-export type RolPermisoUncheckedUpdateWithoutPermisoInput = {
-  rolId?: Prisma.StringFieldUpdateOperationsInput | string
-}
-
-export type RolPermisoUncheckedUpdateManyWithoutPermisoInput = {
-  rolId?: Prisma.StringFieldUpdateOperationsInput | string
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  modulo?: Prisma.StringFieldUpdateOperationsInput | string
+  ver?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  crear?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  actualizar?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  eliminar?: Prisma.BoolFieldUpdateOperationsInput | boolean
 }
 
 
 
 export type RolPermisoSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
+  id?: boolean
   rolId?: boolean
-  permisoId?: boolean
+  modulo?: boolean
+  ver?: boolean
+  crear?: boolean
+  actualizar?: boolean
+  eliminar?: boolean
   rol?: boolean | Prisma.RolDefaultArgs<ExtArgs>
-  permiso?: boolean | Prisma.PermisoDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["rolPermiso"]>
 
 export type RolPermisoSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
+  id?: boolean
   rolId?: boolean
-  permisoId?: boolean
+  modulo?: boolean
+  ver?: boolean
+  crear?: boolean
+  actualizar?: boolean
+  eliminar?: boolean
   rol?: boolean | Prisma.RolDefaultArgs<ExtArgs>
-  permiso?: boolean | Prisma.PermisoDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["rolPermiso"]>
 
 export type RolPermisoSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
+  id?: boolean
   rolId?: boolean
-  permisoId?: boolean
+  modulo?: boolean
+  ver?: boolean
+  crear?: boolean
+  actualizar?: boolean
+  eliminar?: boolean
   rol?: boolean | Prisma.RolDefaultArgs<ExtArgs>
-  permiso?: boolean | Prisma.PermisoDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["rolPermiso"]>
 
 export type RolPermisoSelectScalar = {
+  id?: boolean
   rolId?: boolean
-  permisoId?: boolean
+  modulo?: boolean
+  ver?: boolean
+  crear?: boolean
+  actualizar?: boolean
+  eliminar?: boolean
 }
 
-export type RolPermisoOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"rolId" | "permisoId", ExtArgs["result"]["rolPermiso"]>
+export type RolPermisoOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "rolId" | "modulo" | "ver" | "crear" | "actualizar" | "eliminar", ExtArgs["result"]["rolPermiso"]>
 export type RolPermisoInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   rol?: boolean | Prisma.RolDefaultArgs<ExtArgs>
-  permiso?: boolean | Prisma.PermisoDefaultArgs<ExtArgs>
 }
 export type RolPermisoIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   rol?: boolean | Prisma.RolDefaultArgs<ExtArgs>
-  permiso?: boolean | Prisma.PermisoDefaultArgs<ExtArgs>
 }
 export type RolPermisoIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   rol?: boolean | Prisma.RolDefaultArgs<ExtArgs>
-  permiso?: boolean | Prisma.PermisoDefaultArgs<ExtArgs>
 }
 
 export type $RolPermisoPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "RolPermiso"
   objects: {
     rol: Prisma.$RolPayload<ExtArgs>
-    permiso: Prisma.$PermisoPayload<ExtArgs>
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
+    id: string
     rolId: string
-    permisoId: string
+    modulo: string
+    ver: boolean
+    crear: boolean
+    actualizar: boolean
+    eliminar: boolean
   }, ExtArgs["result"]["rolPermiso"]>
   composites: {}
 }
@@ -586,8 +658,8 @@ export interface RolPermisoDelegate<ExtArgs extends runtime.Types.Extensions.Int
    * // Get first 10 RolPermisos
    * const rolPermisos = await prisma.rolPermiso.findMany({ take: 10 })
    * 
-   * // Only select the `rolId`
-   * const rolPermisoWithRolIdOnly = await prisma.rolPermiso.findMany({ select: { rolId: true } })
+   * // Only select the `id`
+   * const rolPermisoWithIdOnly = await prisma.rolPermiso.findMany({ select: { id: true } })
    * 
    */
   findMany<T extends RolPermisoFindManyArgs>(args?: Prisma.SelectSubset<T, RolPermisoFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RolPermisoPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
@@ -631,9 +703,9 @@ export interface RolPermisoDelegate<ExtArgs extends runtime.Types.Extensions.Int
    *   ]
    * })
    * 
-   * // Create many RolPermisos and only return the `rolId`
-   * const rolPermisoWithRolIdOnly = await prisma.rolPermiso.createManyAndReturn({
-   *   select: { rolId: true },
+   * // Create many RolPermisos and only return the `id`
+   * const rolPermisoWithIdOnly = await prisma.rolPermiso.createManyAndReturn({
+   *   select: { id: true },
    *   data: [
    *     // ... provide data here
    *   ]
@@ -722,9 +794,9 @@ export interface RolPermisoDelegate<ExtArgs extends runtime.Types.Extensions.Int
    *   ]
    * })
    * 
-   * // Update zero or more RolPermisos and only return the `rolId`
-   * const rolPermisoWithRolIdOnly = await prisma.rolPermiso.updateManyAndReturn({
-   *   select: { rolId: true },
+   * // Update zero or more RolPermisos and only return the `id`
+   * const rolPermisoWithIdOnly = await prisma.rolPermiso.updateManyAndReturn({
+   *   select: { id: true },
    *   where: {
    *     // ... provide filter here
    *   },
@@ -898,7 +970,6 @@ readonly fields: RolPermisoFieldRefs;
 export interface Prisma__RolPermisoClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   rol<T extends Prisma.RolDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.RolDefaultArgs<ExtArgs>>): Prisma.Prisma__RolClient<runtime.Types.Result.GetResult<Prisma.$RolPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
-  permiso<T extends Prisma.PermisoDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.PermisoDefaultArgs<ExtArgs>>): Prisma.Prisma__PermisoClient<runtime.Types.Result.GetResult<Prisma.$PermisoPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -928,8 +999,13 @@ export interface Prisma__RolPermisoClient<T, Null = never, ExtArgs extends runti
  * Fields of the RolPermiso model
  */
 export interface RolPermisoFieldRefs {
+  readonly id: Prisma.FieldRef<"RolPermiso", 'String'>
   readonly rolId: Prisma.FieldRef<"RolPermiso", 'String'>
-  readonly permisoId: Prisma.FieldRef<"RolPermiso", 'String'>
+  readonly modulo: Prisma.FieldRef<"RolPermiso", 'String'>
+  readonly ver: Prisma.FieldRef<"RolPermiso", 'Boolean'>
+  readonly crear: Prisma.FieldRef<"RolPermiso", 'Boolean'>
+  readonly actualizar: Prisma.FieldRef<"RolPermiso", 'Boolean'>
+  readonly eliminar: Prisma.FieldRef<"RolPermiso", 'Boolean'>
 }
     
 

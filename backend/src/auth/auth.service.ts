@@ -53,6 +53,7 @@ export class AuthService {
       sub: usuario.id,
       correo: usuario.correo,
       nombreUsuario: usuario.nombreUsuario,
+      rolId: usuario.rolId,
       rol: usuario.rol.nombre,
     };
 
@@ -67,6 +68,7 @@ export class AuthService {
         correo: usuario.correo,
         nombreUsuario: usuario.nombreUsuario,
         estado: usuario.estado,
+        rolId: usuario.rolId,
         rol: {
           id: usuario.rol.id,
           nombre: usuario.rol.nombre,

@@ -1,21 +1,18 @@
+// frontend/src/types/auth.types.ts
 export type AuthUser = {
-  id: number;
-
+  id: string;
   nombres: string;
   apellidos: string;
-
   correo: string;
   nombreUsuario: string;
-
   estado: string;
-
+  rolId: string;
   rol: {
-    id: number;
+    id: string;
     nombre: string;
   };
-
   area: {
-    id: number;
+    id: string;
     nombre: string;
   } | null;
 };

@@ -101,36 +101,29 @@ model Usuario {
 }
 
 model Rol {
-  id          String         @id @default(cuid())
-  nombre      String         @unique
+  id          String           @id @default(cuid())
+  nombre      String           @unique
   descripcion String?
-  creadoEn    DateTime       @default(now())
+  creadoEn    DateTime         @default(now())
 
   usuarios    Usuario[]
-  permisos    RolPermiso[]
+  permisos    RolPermiso[]     // Relación con la nueva estructura
 
   @@map("roles")
 }
 
-model Permiso {
-  id          String         @id @default(cuid())
-  codigo      String         @unique
-  nombre      String
-  descripcion String?
-
-  roles       RolPermiso[]
-
-  @@map("permisos")
-}
-
 model RolPermiso {
+  id          String  @id @default(cuid())
   rolId       String
-  permisoId   String
+  modulo      String  // Ej: "Usuarios", "Activos", "Reportes"
+  ver         Boolean @default(false)
+  crear       Boolean @default(false)
+  actualizar  Boolean @default(false)
+  eliminar    Boolean @default(false)
 
-  rol         Rol           @relation(fields: [rolId], references: [id], onDelete: Cascade)
-  permiso     Permiso       @relation(fields: [permisoId], references: [id], onDelete: Cascade)
+  rol         Rol     @relation(fields: [rolId], references: [id], onDelete: Cascade)
 
-  @@id([rolId, permisoId])
+  @@unique([rolId, modulo])
   @@map("roles_permisos")
 }
 
