@@ -67,10 +67,18 @@ export class MaterialService {
         },
       });
 
+      // Obtener el material con la categoría incluida
+      const materialConCategoria = await this.prisma.material.findUnique({
+        where: { id: material.id },
+        include: {
+          categoria: true,
+        },
+      });
+
       // Nota: Registrar movimiento se haría aquí con el usuario autenticado
       // Por ahora se omite para las pruebas iniciales
 
-      return this.mapMaterialToDTO(material);
+      return this.mapMaterialToDTO(materialConCategoria);
     } catch (error) {
       if (error instanceof BadRequestException) {
         throw error;
@@ -115,6 +123,9 @@ export class MaterialService {
           skip,
           take,
           orderBy: { creadoEn: 'desc' },
+          include: {
+            categoria: true,
+          },
         }),
         this.prisma.material.count({ where }),
       ]);
@@ -139,6 +150,9 @@ export class MaterialService {
     try {
       const material = await this.prisma.material.findUnique({
         where: { id },
+        include: {
+          categoria: true,
+        },
       });
 
       if (!material) {
@@ -291,6 +305,7 @@ export class MaterialService {
       stockActual: Number(material.stockActual),
       stockMinimo: Number(material.stockMinimo),
       categoriaId: material.categoriaId,
+      categoria: material.categoria,
       creadoEn: material.creadoEn,
       actualizadoEn: material.actualizadoEn,
     };
