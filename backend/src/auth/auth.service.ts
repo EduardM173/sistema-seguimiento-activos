@@ -1,7 +1,4 @@
-import {
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 
@@ -21,10 +18,7 @@ export class AuthService {
 
     const usuario = await this.prisma.usuario.findFirst({
       where: {
-        OR: [
-          { correo: identifier },
-          { nombreUsuario: identifier },
-        ],
+        OR: [{ correo: identifier }, { nombreUsuario: identifier }],
       },
       include: {
         rol: true,

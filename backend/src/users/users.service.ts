@@ -8,7 +8,15 @@ export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(createUserDto: CreateUserDto) {
-    const { nombres, apellidos, correo, nombreUsuario, password, telefono, areaId } = createUserDto;
+    const {
+      nombres,
+      apellidos,
+      correo,
+      nombreUsuario,
+      password,
+      telefono,
+      areaId,
+    } = createUserDto;
 
     const existingUser = await this.prisma.usuario.findFirst({
       where: {
