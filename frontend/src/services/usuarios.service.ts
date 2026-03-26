@@ -1,4 +1,4 @@
-import { apiClient } from './api.config';
+import { http as apiClient } from './http.client';
 import type { Usuario, CreateUsuarioDTO, UpdateUsuarioDTO, FiltrosUsuarios, Rol, Permiso, CambiarPasswordDTO } from '../types/usuarios.types';
 import type { PaginatedResponse, ApiResponse } from '../types';
 
@@ -9,7 +9,7 @@ export const usuariosService = {
       const response = await apiClient.get<PaginatedResponse<Usuario>>('/users', {
         params: filtros,
       });
-      return response.data;
+      return response;
     } catch (error) {
       throw error;
     }
@@ -19,7 +19,7 @@ export const usuariosService = {
   obtenerPorId: async (id: string) => {
     try {
       const response = await apiClient.get<ApiResponse<Usuario>>(`/users/${id}`);
-      return response.data.data;
+      return response.data;
     } catch (error) {
       throw error;
     }
@@ -29,7 +29,7 @@ export const usuariosService = {
   crear: async (datos: CreateUsuarioDTO) => {
     try {
       const response = await apiClient.post<ApiResponse<Usuario>>('/users', datos);
-      return response.data.data;
+      return response.data;
     } catch (error) {
       throw error;
     }
@@ -39,7 +39,7 @@ export const usuariosService = {
   actualizar: async (id: string, datos: UpdateUsuarioDTO) => {
     try {
       const response = await apiClient.put<ApiResponse<Usuario>>(`/users/${id}`, datos);
-      return response.data.data;
+      return response.data;
     } catch (error) {
       throw error;
     }
@@ -49,7 +49,7 @@ export const usuariosService = {
   eliminar: async (id: string) => {
     try {
       const response = await apiClient.delete<ApiResponse<void>>(`/users/${id}`);
-      return response.data;
+      return response;
     } catch (error) {
       throw error;
     }
@@ -59,7 +59,7 @@ export const usuariosService = {
   cambiarPassword: async (datos: CambiarPasswordDTO) => {
     try {
       const response = await apiClient.post<ApiResponse<void>>('/users/cambiar-password', datos);
-      return response.data;
+      return response;
     } catch (error) {
       throw error;
     }
@@ -71,7 +71,7 @@ export const usuariosService = {
       const response = await apiClient.post<ApiResponse<{ password: string }>>(
         `/users/${usuarioId}/resetear-password`
       );
-      return response.data.data;
+      return response.data;
     } catch (error) {
       throw error;
     }
@@ -81,7 +81,7 @@ export const usuariosService = {
   obtenerRoles: async () => {
     try {
       const response = await apiClient.get<ApiResponse<Rol[]>>('/users/roles');
-      return response.data.data || [];
+      return response.data || [];
     } catch (error) {
       throw error;
     }
@@ -91,7 +91,7 @@ export const usuariosService = {
   obtenerPermisos: async () => {
     try {
       const response = await apiClient.get<ApiResponse<Permiso[]>>('/users/permissions');
-      return response.data.data || [];
+      return response.data || [];
     } catch (error) {
       throw error;
     }
@@ -104,7 +104,7 @@ export const usuariosService = {
         `/users/${usuarioId}/role`,
         { rolId }
       );
-      return response.data.data;
+      return response.data;
     } catch (error) {
       throw error;
     }
@@ -116,7 +116,7 @@ export const usuariosService = {
       const response = await apiClient.get<PaginatedResponse<Usuario>>('/users/buscar', {
         params: { q: termino },
       });
-      return response.data;
+      return response;
     } catch (error) {
       throw error;
     }
@@ -128,7 +128,7 @@ export const usuariosService = {
       const response = await apiClient.get(`/users/exportar/${formato}`, {
         responseType: 'blob',
       });
-      return response.data;
+      return response;
     } catch (error) {
       throw error;
     }
@@ -138,7 +138,7 @@ export const usuariosService = {
   obtenerEstadisticas: async () => {
     try {
       const response = await apiClient.get<ApiResponse<any>>('/users/estadisticas');
-      return response.data.data;
+      return response.data;
     } catch (error) {
       throw error;
     }
@@ -148,7 +148,7 @@ export const usuariosService = {
   obtenerPerfil: async () => {
     try {
       const response = await apiClient.get<ApiResponse<Usuario>>('/usuarios/perfil');
-      return response.data.data;
+      return response.data;
     } catch (error) {
       throw error;
     }

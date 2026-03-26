@@ -1,4 +1,4 @@
-import { apiClient } from './api.config';
+import { http as apiClient } from './http.client';
 import type { ReporteGenerado, ParametrosReporte, ReporteProgramado } from '../types/reportes.types';
 import { tipoReporte } from '../types/reportes.types';
 import type { PaginatedResponse, ApiResponse } from '../types';
@@ -11,7 +11,7 @@ export const reportesService = {
         '/reportes/generar',
         parametros
       );
-      return response.data.data;
+      return response.data;
     } catch (error) {
       throw error;
     }
@@ -26,7 +26,7 @@ export const reportesService = {
           params: { pagina, limite },
         }
       );
-      return response.data;
+      return response;
     } catch (error) {
       throw error;
     }
@@ -38,7 +38,7 @@ export const reportesService = {
       const response = await apiClient.get<ApiResponse<ReporteGenerado>>(
         `/reportes/${id}`
       );
-      return response.data.data;
+      return response.data;
     } catch (error) {
       throw error;
     }
@@ -53,7 +53,7 @@ export const reportesService = {
           responseType: 'blob',
         }
       );
-      return response.data;
+      return response;
     } catch (error) {
       throw error;
     }
@@ -65,7 +65,7 @@ export const reportesService = {
       const response = await apiClient.delete<ApiResponse<void>>(
         `/reportes/${id}`
       );
-      return response.data;
+      return response;
     } catch (error) {
       throw error;
     }
@@ -95,7 +95,7 @@ export const reportesService = {
       const response = await apiClient.get<PaginatedResponse<ReporteProgramado>>(
         '/reportes/programados'
       );
-      return response.data;
+      return response;
     } catch (error) {
       throw error;
     }
@@ -108,7 +108,7 @@ export const reportesService = {
         '/reportes/programados',
         datos
       );
-      return response.data.data;
+      return response.data;
     } catch (error) {
       throw error;
     }
@@ -121,7 +121,7 @@ export const reportesService = {
         `/reportes/programados/${id}`,
         datos
       );
-      return response.data.data;
+      return response.data;
     } catch (error) {
       throw error;
     }
@@ -133,7 +133,7 @@ export const reportesService = {
       const response = await apiClient.delete<ApiResponse<void>>(
         `/reportes/programados/${id}`
       );
-      return response.data;
+      return response;
     } catch (error) {
       throw error;
     }
@@ -147,7 +147,7 @@ export const reportesService = {
       const response = await apiClient.get<ApiResponse<any[]>>(
         '/reportes/ejemplos'
       );
-      return response.data.data || [];
+      return response.data || [];
     } catch (error) {
       throw error;
     }
@@ -160,7 +160,7 @@ export const reportesService = {
         '/reportes/previsualizar',
         parametros
       );
-      return response.data.data;
+      return response.data;
     } catch (error) {
       throw error;
     }
@@ -179,7 +179,7 @@ export const reportesService = {
           responseType: 'blob',
         }
       );
-      return response.data;
+      return response;
     } catch (error) {
       throw error;
     }
@@ -191,7 +191,7 @@ export const reportesService = {
       const response = await apiClient.get<ApiResponse<any>>(
         '/reportes/estadisticas'
       );
-      return response.data.data;
+      return response.data;
     } catch (error) {
       throw error;
     }

@@ -1,7 +1,7 @@
 import React from 'react';
 import '../../styles/components.css';
 
-interface Column<T> {
+export interface Column<T> {
   header: string;
   accessor: keyof T | ((row: T) => any);
   width?: string;

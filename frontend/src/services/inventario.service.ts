@@ -1,4 +1,4 @@
-import { apiClient } from './api.config';
+import { http as apiClient } from './http.client';
 import type { Material, CreateMaterialDTO, UpdateMaterialDTO, FiltrosInventario, MovimientoInventario, CreateMovimientoInventarioDTO, ReporteInventario } from '../types/inventario.types';
 import type { PaginatedResponse, ApiResponse } from '../types';
 
@@ -9,7 +9,7 @@ export const inventarioService = {
       const response = await apiClient.get<PaginatedResponse<Material>>('/inventory-items', {
         params: filtros,
       });
-      return response.data;
+      return response;
     } catch (error) {
       throw error;
     }
@@ -19,7 +19,7 @@ export const inventarioService = {
   obtenerPorId: async (id: string) => {
     try {
       const response = await apiClient.get<ApiResponse<Material>>(`/inventory-items/${id}`);
-      return response.data.data;
+      return response.data;
     } catch (error) {
       throw error;
     }
@@ -29,7 +29,7 @@ export const inventarioService = {
   crear: async (datos: CreateMaterialDTO) => {
     try {
       const response = await apiClient.post<ApiResponse<Material>>('/inventory-items', datos);
-      return response.data.data;
+      return response.data;
     } catch (error) {
       throw error;
     }
@@ -39,7 +39,7 @@ export const inventarioService = {
   actualizar: async (id: string, datos: UpdateMaterialDTO) => {
     try {
       const response = await apiClient.put<ApiResponse<Material>>(`/inventory-items/${id}`, datos);
-      return response.data.data;
+      return response.data;
     } catch (error) {
       throw error;
     }
@@ -49,7 +49,7 @@ export const inventarioService = {
   eliminar: async (id: string) => {
     try {
       const response = await apiClient.delete<ApiResponse<void>>(`/inventory-items/${id}`);
-      return response.data;
+      return response;
     } catch (error) {
       throw error;
     }
@@ -62,7 +62,7 @@ export const inventarioService = {
         '/inventario/movimientos',
         datos
       );
-      return response.data.data;
+      return response.data;
     } catch (error) {
       throw error;
     }
@@ -77,7 +77,7 @@ export const inventarioService = {
           params: materialId ? { materialId } : {},
         }
       );
-      return response.data;
+      return response;
     } catch (error) {
       throw error;
     }
@@ -87,7 +87,7 @@ export const inventarioService = {
   obtenerMaterialesCriticos: async () => {
     try {
       const response = await apiClient.get<ApiResponse<Material[]>>('/inventario/materiales/criticos');
-      return response.data.data || [];
+      return response.data || [];
     } catch (error) {
       throw error;
     }
@@ -99,7 +99,7 @@ export const inventarioService = {
       const response = await apiClient.get<ApiResponse<Material[]>>(
         '/inventario/materiales/reabastecer'
       );
-      return response.data.data || [];
+      return response.data || [];
     } catch (error) {
       throw error;
     }
@@ -111,7 +111,7 @@ export const inventarioService = {
       const response = await apiClient.get<ApiResponse<ReporteInventario>>(
         '/inventario/reporte'
       );
-      return response.data.data;
+      return response.data;
     } catch (error) {
       throw error;
     }
@@ -120,9 +120,9 @@ export const inventarioService = {
   // Obtener categorías de materiales
   obtenerCategorias: async () => {
     try {
-      const response = await apiClient.get<any[]>('/inventory-items/categorias');
+      const response = await apiClient.get<any>('/inventory-items/categorias');
       // Aceptar tanto el formato con wrapper { data: [...] } como el array directo
-      return response.data?.data ?? response.data ?? [];
+      return response?.data ?? response ?? [];
     } catch (error) {
       throw error;
     }
@@ -134,7 +134,7 @@ export const inventarioService = {
       const response = await apiClient.get<PaginatedResponse<Material>>('/inventario/materiales/buscar', {
         params: { q: termino },
       });
-      return response.data;
+      return response;
     } catch (error) {
       throw error;
     }
@@ -146,7 +146,7 @@ export const inventarioService = {
       const response = await apiClient.get(`/inventario/exportar/${formato}`, {
         responseType: 'blob',
       });
-      return response.data;
+      return response;
     } catch (error) {
       throw error;
     }

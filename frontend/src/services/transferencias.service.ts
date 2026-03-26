@@ -1,4 +1,4 @@
-import { apiClient } from './api.config';
+import { http as apiClient } from './http.client';
 import type { AsignacionActivo, TransferenciaActivo, CreateAsignacionDTO, CreateTransferenciaDTO, FiltrosTransferencias, ResumenOperacion, AprobarTransferenciaDTO } from '../types/transferencias.types';
 import type { PaginatedResponse, ApiResponse } from '../types';
 
@@ -11,7 +11,7 @@ export const transferenciasService = {
       const response = await apiClient.get<PaginatedResponse<AsignacionActivo>>(
         '/transferencias/asignaciones'
       );
-      return response.data;
+      return response;
     } catch (error) {
       throw error;
     }
@@ -24,7 +24,7 @@ export const transferenciasService = {
         '/transferencias/asignaciones',
         datos
       );
-      return response.data.data;
+      return response.data;
     } catch (error) {
       throw error;
     }
@@ -36,7 +36,7 @@ export const transferenciasService = {
       const response = await apiClient.post<ApiResponse<AsignacionActivo>>(
         `/transferencias/asignaciones/${asignacionId}/terminar`
       );
-      return response.data.data;
+      return response.data;
     } catch (error) {
       throw error;
     }
@@ -53,7 +53,7 @@ export const transferenciasService = {
           params: filtros,
         }
       );
-      return response.data;
+      return response;
     } catch (error) {
       throw error;
     }
@@ -65,7 +65,7 @@ export const transferenciasService = {
       const response = await apiClient.get<ApiResponse<TransferenciaActivo>>(
         `/transferencias/${id}`
       );
-      return response.data.data;
+      return response.data;
     } catch (error) {
       throw error;
     }
@@ -78,7 +78,7 @@ export const transferenciasService = {
         '/transferencias',
         datos
       );
-      return response.data.data;
+      return response.data;
     } catch (error) {
       throw error;
     }
@@ -91,7 +91,7 @@ export const transferenciasService = {
         `/transferencias/${id}/aprobar`,
         datos
       );
-      return response.data.data;
+      return response.data;
     } catch (error) {
       throw error;
     }
@@ -104,7 +104,7 @@ export const transferenciasService = {
         `/transferencias/${id}/rechazar`,
         { motivo }
       );
-      return response.data.data;
+      return response.data;
     } catch (error) {
       throw error;
     }
@@ -116,7 +116,7 @@ export const transferenciasService = {
       const response = await apiClient.post<ApiResponse<TransferenciaActivo>>(
         `/transferencias/${id}/completar`
       );
-      return response.data.data;
+      return response.data;
     } catch (error) {
       throw error;
     }
@@ -128,7 +128,7 @@ export const transferenciasService = {
       const response = await apiClient.get<PaginatedResponse<TransferenciaActivo>>(
         '/transferencias/pendientes'
       );
-      return response.data;
+      return response;
     } catch (error) {
       throw error;
     }
@@ -140,7 +140,7 @@ export const transferenciasService = {
       const response = await apiClient.get<PaginatedResponse<TransferenciaActivo>>(
         `/transferencias/usuario/${usuarioId}`
       );
-      return response.data;
+      return response;
     } catch (error) {
       throw error;
     }
@@ -152,7 +152,7 @@ export const transferenciasService = {
       const response = await apiClient.get<ApiResponse<ResumenOperacion>>(
         '/transferencias/resumen'
       );
-      return response.data.data;
+      return response.data;
     } catch (error) {
       throw error;
     }
