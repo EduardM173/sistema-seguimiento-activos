@@ -1,0 +1,281 @@
+/* Estilos para los módulos */
+
+.module-page {
+  padding: 24px;
+  width: 100%;
+  max-width: 1800px;
+  margin: 0;
+  box-sizing: border-box;
+  color: #e2e8f0;
+}
+
+.module-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.module-header h1 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+  color: #e2e8f0;
+}
+
+.module-list {
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  overflow: hidden;
+}
+
+.list-header {
+  padding: 16px;
+  border-bottom: 1px solid #e0e0e0;
+  background-color: #f8f9fa;
+}
+
+.error-message {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background-color: #f8d7da;
+  color: #721c24;
+  border-bottom: 1px solid #f5c6cb;
+  border-radius: 4px 4px 0 0;
+}
+
+/* Acciones de fila */
+.actions-group {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-action {
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.btn-action:hover {
+  background-color: #f0f0f0;
+  transform: scale(1.2);
+}
+
+.btn-view {
+  color: #0056b3;
+}
+
+.btn-edit {
+  color: #ffc107;
+}
+
+.btn-delete {
+  color: #dc3545;
+}
+
+/* Formularios */
+.form-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group.form-full {
+  grid-column: 1 / -1;
+}
+
+.form-group label {
+  font-weight: 600;
+  color: #212529;
+  font-size: 14px;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  font-family: inherit;
+  transition: border-color 0.2s ease;
+  width: 100%;
+  box-sizing: border-box;
+  color: #212529;
+  background-color: #ffffff;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #0056b3;
+  box-shadow: 0 0 0 2px rgba(0, 86, 179, 0.1);
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+/* Detalles */
+.activo-detail-container {
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.detail-header h2 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.detail-section {
+  padding: 16px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+}
+
+.detail-section h3 {
+  margin: 0 0 12px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #212529;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.detail-row .label {
+  font-weight: 600;
+  color: #666;
+}
+
+.detail-row .value {
+  color: #212529;
+  text-align: right;
+  flex: 1;
+  margin-left: 12px;
+}
+
+.movimientos-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.movimiento-item {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  background-color: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+}
+
+.movimiento-date {
+  font-weight: 600;
+  color: #0056b3;
+  min-width: 100px;
+}
+
+.movimiento-content {
+  flex: 1;
+}
+
+.movimiento-tipo {
+  margin: 0 0 4px 0;
+  font-weight: 500;
+  color: #212529;
+}
+
+.movimiento-usuario {
+  margin: 0;
+  font-size: 12px;
+  color: #999;
+}
+
+.detail-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid #e0e0e0;
+}
+
+/* Tablas de datos */
+.data-table {
+  margin: 0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .module-header {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+
+  .module-header h1 {
+    font-size: 20px;
+  }
+
+  .module-header .btn {
+    width: 100%;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .movimientos-list {
+    max-height: 200px;
+  }
+}

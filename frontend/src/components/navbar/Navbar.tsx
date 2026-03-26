@@ -1,7 +1,5 @@
-import { NavLink } from 'react-router-dom';
-
-import { useAuth } from '../../context/AuthContext';
-
+import { NavLink, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../hooks';
 import '../../styles/navbar.css';
 
 type MainItem = {
@@ -17,22 +15,27 @@ type BottomItem = {
 };
 
 export default function Navbar() {
+  const navigate = useNavigate();
   const { logout } = useAuth();
 
   const mainItems: MainItem[] = [
-    { label: 'Dashboard', icon: '▦', to: '/dashboard' },
-    { label: 'Activos', icon: '≣', to: '/activos' },
-    { label: 'Inventario', icon: '◫' },
-    { label: 'Transferencias', icon: '⇄' },
-    { label: 'Reportes', icon: '▥' },
-    { label: 'Usuarios', icon: '◌', to: '/users' },
-    { label: 'Auditoría', icon: '🛡' },
+    { label: 'Dashboard', icon: '📊', to: '/dashboard' },
+    { label: 'Activos', icon: '📦', to: '/activos' },
+    { label: 'Inventario', icon: '📝', to: '/inventario' },
+    { label: 'Transferencias', icon: '🔄', to: '/transferencias' },
+    { label: 'Reportes', icon: '📈', to: '/reportes' },
+    { label: 'Usuarios', icon: '👥', to: '/users' },
+    { label: 'Auditoría', icon: '🛡️', to: '/auditoria' },
   ];
 
   const bottomItems: BottomItem[] = [
-    { label: 'Configuración', icon: '⚙' },
-    { label: 'Cerrar Sesión', icon: '↩', action: logout },
+    { label: 'Configuración', icon: '⚙️' },
+    { label: 'Cerrar Sesión', icon: '↩️', action: () => { logout(); navigate('/'); } },
   ];
+
+  const handleNewActivo = () => {
+    navigate('/activos');
+  };
 
   return (
     <aside className="sidebar">
@@ -42,7 +45,11 @@ export default function Navbar() {
           <span className="sidebar__title">ActivoGestión</span>
         </div>
 
-        <button type="button" className="sidebar__primaryButton">
+        <button 
+          type="button" 
+          className="sidebar__primaryButton"
+          onClick={handleNewActivo}
+        >
           <span className="sidebar__plus">+</span>
           <span>Nuevo Activo</span>
         </button>

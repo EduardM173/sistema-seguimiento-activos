@@ -1,6 +1,6 @@
 import type { LoginRequest, LoginResponse, AuthUser } from '../types/auth.types';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 const ACCESS_TOKEN_KEY = 'access_token';
 
