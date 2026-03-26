@@ -52,6 +52,15 @@ export class MaterialController {
   }
 
   /**
+   * GET /inventory-items/categorias
+   * Obtener todas las categorías de materiales
+   */
+  @Get('categorias')
+  async obtenerCategorias(): Promise<{ id: string; nombre: string; descripcion?: string | null }[]> {
+    return this.materialService.obtenerCategorias();
+  }
+
+  /**
    * GET /inventory-items/:id
    * Obtener un material por ID
    */

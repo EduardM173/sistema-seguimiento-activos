@@ -256,6 +256,29 @@ export class MaterialService {
   }
 
   /**
+   * Obtener todas las categorías de materiales
+   */
+  async obtenerCategorias(): Promise<{ id: string; nombre: string; descripcion?: string | null }[]> {
+    try {
+      const categorias = await this.prisma.categoriaMaterial.findMany({
+        select: {
+          id: true,
+          nombre: true,
+          descripcion: true,
+        },
+        orderBy: {
+          nombre: 'asc',
+        },
+      });
+      return categorias;
+    } catch (error) {
+      throw new InternalServerErrorException(
+        'Error al obtener las categorías: ' + error.message,
+      );
+    }
+  }
+
+  /**
    * Mapear entidad Material a DTO de respuesta
    */
   private mapMaterialToDTO(material: any): MaterialResponseDTO {
