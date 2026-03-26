@@ -4,8 +4,11 @@ import { PrismaModule } from './common/prisma.module';
 import { UsersModule } from './users/users.module';
 import { AssetsModule } from './assets/assets.module';
 import { MaterialsModule } from './materials/materials.module';
+import { CatalogsModule } from './catalogs/catalogs.module';
 
 @Module({
-  imports: [PrismaModule, AuthModule, UsersModule, AssetsModule, MaterialsModule],
+  imports: [PrismaModule, AuthModule, UsersModule, AssetsModule, MaterialsModule, CatalogsModule],
+  controllers: [],
+  providers: [],
 })
 export class AppModule {}

@@ -1,3 +1,17 @@
+export interface Permission {
+  id: string;
+  codigo: string;
+  nombre: string;
+  descripcion?: string | null;
+}
+
+export interface Role {
+  id: string;
+  nombre: string;
+  descripcion?: string | null;
+  permisos?: Permission[];
+}
+
 export interface CreateUserRequest {
   nombres: string;
   apellidos: string;
@@ -9,7 +23,7 @@ export interface CreateUserRequest {
 }
 
 export interface User {
-  id: string; // tu backend usa cuid() → string
+  id: string;
   nombres: string;
   apellidos: string;
   correo: string;
@@ -20,9 +34,43 @@ export interface User {
   estado?: string;
   creadoEn?: string;
   actualizadoEn?: string;
+  rol?: {
+    id: string;
+    nombre: string;
+    descripcion?: string | null;
+  };
 }
 
 export interface CreateUserResponse {
   message: string;
   user: User;
+}
+
+export interface UpdateUserRoleRequest {
+  rolId: string;
+}
+
+export interface UpdateUserRoleResponse {
+  message: string;
+  user: User;
+}
+
+export interface CreateRoleRequest {
+  nombre: string;
+  descripcion?: string;
+  permisoIds?: string[];
+}
+
+export interface CreateRoleResponse {
+  message: string;
+  role: Role;
+}
+
+export interface UpdateRolePermissionsRequest {
+  permisoIds: string[];
+}
+
+export interface UpdateRolePermissionsResponse {
+  message: string;
+  role: Role;
 }

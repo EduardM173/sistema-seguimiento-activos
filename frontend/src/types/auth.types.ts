@@ -1,5 +1,5 @@
 export type AuthUser = {
-  id: number;
+  id: string;
 
   nombres: string;
   apellidos: string;
@@ -10,14 +10,20 @@ export type AuthUser = {
   estado: string;
 
   rol: {
-    id: number;
+    id: string;
     nombre: string;
   };
 
   area: {
-    id: number;
+    id: string;
     nombre: string;
   } | null;
+
+  permisos: {
+    id: string;
+    codigo: string;
+    nombre: string;
+  }[];
 };
 
 export type LoginRequest = {

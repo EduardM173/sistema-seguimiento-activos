@@ -1,13 +1,12 @@
-import { NavLink } from 'react-router-dom';
-
+import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-
 import '../../styles/navbar.css';
 
 type MainItem = {
   label: string;
   icon: string;
   to?: string;
+  requiredPermission?: string;
 };
 
 type BottomItem = {
@@ -18,6 +17,7 @@ type BottomItem = {
 
 export default function Navbar() {
   const { logout } = useAuth();
+  const navigate = useNavigate();
 
   const mainItems: MainItem[] = [
     { label: 'Dashboard', icon: '▦', to: '/dashboard' },
@@ -41,12 +41,14 @@ export default function Navbar() {
           <div className="sidebar__logo">🛡</div>
           <span className="sidebar__title">ActivoGestión</span>
         </div>
-
-        <button type="button" className="sidebar__primaryButton">
+        <button
+          type="button"
+          className="sidebar__primaryButton"
+          onClick={() => navigate('/activos/nuevo')}
+        >
           <span className="sidebar__plus">+</span>
           <span>Nuevo Activo</span>
         </button>
-
         <nav className="sidebar__nav">
           <ul className="sidebar__menu">
             {mainItems.map((item) => (
@@ -72,7 +74,6 @@ export default function Navbar() {
           </ul>
         </nav>
       </div>
-
       <div className="sidebar__bottom">
         <ul className="sidebar__menu">
           {bottomItems.map((item) => (
