@@ -1,0 +1,399 @@
+/* ═══════════════════════════════════════════════════
+   Create Asset Page — Registrar Nuevo Activo
+   ═══════════════════════════════════════════════════ */
+
+.createAssetPage {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-height: 100vh;
+  background: #f5f7fb;
+  font-family: Inter, system-ui, -apple-system, sans-serif;
+}
+
+/* ── Page Header ── */
+.createAssetPage__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.createAssetPage__breadcrumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #2563eb;
+  margin-bottom: 4px;
+}
+
+.createAssetPage__title {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #111827;
+}
+
+.createAssetPage__subtitle {
+  margin: 6px 0 0;
+  font-size: 0.92rem;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+.createAssetPage__badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 14px;
+  border-radius: 8px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #475569;
+  white-space: nowrap;
+}
+
+/* ── Form ── */
+.createAssetForm {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ── Form Sections (fieldsets) ── */
+.formSection {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 28px;
+  margin: 0;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+}
+
+.formSection__legend {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 0 0 20px;
+  border-bottom: 1px solid #f1f5f9;
+  margin-bottom: 20px;
+  width: 100%;
+  font-size: inherit;
+}
+
+.formSection__icon {
+  font-size: 20px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.formSection__title {
+  display: block;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.formSection__desc {
+  display: block;
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+/* ── Grid Layouts ── */
+.formGrid {
+  display: grid;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.formGrid:last-child {
+  margin-bottom: 0;
+}
+
+.formGrid--2 {
+  grid-template-columns: 1fr 1fr;
+}
+
+.formGrid--3 {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+@media (max-width: 768px) {
+  .formGrid--2,
+  .formGrid--3 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Form Fields ── */
+.formField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.formField label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.req {
+  color: #dc2626;
+}
+
+.formField input,
+.formField select,
+.formField textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  color: #1f2937;
+  background: #f9fafb;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.formField input::placeholder,
+.formField textarea::placeholder {
+  color: #9ca3af;
+}
+
+.formField input:focus,
+.formField select:focus,
+.formField textarea:focus {
+  outline: none;
+  border-color: #2563eb;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.formField select {
+  appearance: auto;
+  cursor: pointer;
+}
+
+.formField textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+/* Field with inline icon */
+.formField__inputWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.formField__inputWrap input {
+  padding-right: 36px;
+}
+
+.formField__infoIcon {
+  position: absolute;
+  right: 12px;
+  font-size: 16px;
+  color: #9ca3af;
+  cursor: help;
+}
+
+/* Error state */
+.formField--error input,
+.formField--error select {
+  border-color: #dc2626;
+  background: #fef2f2;
+}
+
+.formField--error input:focus,
+.formField--error select:focus {
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+}
+
+.formField__error {
+  font-size: 0.8rem;
+  color: #dc2626;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.formField__error::before {
+  content: '⚠';
+  font-size: 12px;
+}
+
+/* Disabled fields */
+.formField select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Priority Buttons ── */
+.priorityGroup {
+  display: flex;
+  gap: 8px;
+}
+
+.priorityBtn {
+  padding: 8px 18px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.priorityBtn--critico {
+  background: #fef2f2;
+  color: #dc2626;
+  border-color: #fecaca;
+}
+
+.priorityBtn--alto {
+  background: #fefce8;
+  color: #ca8a04;
+  border-color: #fde68a;
+}
+
+.priorityBtn--normal {
+  background: #eff6ff;
+  color: #2563eb;
+  border-color: #bfdbfe;
+}
+
+.priorityBtn--selected.priorityBtn--critico {
+  background: #dc2626;
+  color: #ffffff;
+  border-color: #dc2626;
+}
+
+.priorityBtn--selected.priorityBtn--alto {
+  background: #ca8a04;
+  color: #ffffff;
+  border-color: #ca8a04;
+}
+
+.priorityBtn--selected.priorityBtn--normal {
+  background: #2563eb;
+  color: #ffffff;
+  border-color: #2563eb;
+}
+
+/* ── Upload Area ── */
+.uploadArea {
+  border: 2px dashed #d1d5db;
+  border-radius: 12px;
+  padding: 32px;
+  text-align: center;
+  background: #f9fafb;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.uploadArea:hover {
+  border-color: #2563eb;
+  background: #eff6ff;
+}
+
+.uploadArea__icon {
+  font-size: 32px;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.uploadArea__text {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.uploadArea__hint {
+  margin: 4px 0 0;
+  font-size: 0.8rem;
+  color: #9ca3af;
+}
+
+/* ── System Recommendation Note ── */
+.systemNote {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 16px 20px;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 12px;
+}
+
+.systemNote__icon {
+  font-size: 20px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.systemNote strong {
+  display: block;
+  font-size: 0.9rem;
+  color: #0c4a6e;
+  margin-bottom: 4px;
+}
+
+.systemNote p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #0369a1;
+  line-height: 1.5;
+}
+
+/* ── Error Banner ── */
+.formErrorBanner {
+  padding: 12px 16px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  color: #b91c1c;
+  font-size: 0.88rem;
+  font-weight: 500;
+}
+
+/* ── Footer Buttons ── */
+.createAssetForm__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 8px;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 20px;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .createAssetPage__header {
+    flex-direction: column;
+  }
+
+  .formSection {
+    padding: 20px;
+  }
+
+  .createAssetForm__footer {
+    flex-direction: column-reverse;
+  }
+
+  .createAssetForm__footer .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
