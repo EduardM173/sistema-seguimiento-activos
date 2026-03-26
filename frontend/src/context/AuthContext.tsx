@@ -13,9 +13,15 @@ import {
 
 type AuthContextType = {
   user: AuthUser | null;
+  /** Alias for `user` — exposed for compatibility with the hooks-based consumers. */
+  usuario: AuthUser | null;
   isAuthenticated: boolean;
+  isLoading: boolean;
   setLoginData: (data: LoginResponse) => void;
+  /** Alternative login API: accepts (usuario, token) separately. */
+  login: (usuario: AuthUser, token: string) => void;
   logout: () => void;
+  hasPermission: (permiso: string) => boolean;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -35,11 +41,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setIsAuthenticated(true);
   }
 
+  function login(usuario: AuthUser, token: string) {
+    setLoginData({ usuario, accessToken: token });
+  }
+
   function logout() {
     clearAuthSession();
     setUser(null);
     setIsAuthenticated(false);
     window.location.replace('/');
+  }
+
+  function hasPermission(_permiso: string): boolean {
+    return isAuthenticated;
   }
 
   useEffect(() => {
@@ -58,9 +72,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const value = useMemo(
     () => ({
       user,
+      usuario: user,
       isAuthenticated,
+      isLoading: false,
       setLoginData,
+      login,
       logout,
+      hasPermission,
     }),
     [user, isAuthenticated],
   );

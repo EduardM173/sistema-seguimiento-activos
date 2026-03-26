@@ -1,6 +1,6 @@
 import type { LoginRequest, LoginResponse, AuthUser } from '../types/auth.types';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const ACCESS_TOKEN_KEY = 'access_token';
 
@@ -54,10 +54,16 @@ export function getStoredUser(): AuthUser | null {
 }
 
 export function clearAuthSession(): void {
+  // Canonical keys used by auth.service / AuthContext
   localStorage.removeItem(ACCESS_TOKEN_KEY);
   localStorage.removeItem(AUTH_USER_KEY);
   sessionStorage.removeItem(ACCESS_TOKEN_KEY);
   sessionStorage.removeItem(AUTH_USER_KEY);
+  // Legacy keys written directly by LoginForm (kept for backwards compatibility)
+  localStorage.removeItem('accessToken');
+  localStorage.removeItem('usuario');
+  sessionStorage.removeItem('accessToken');
+  sessionStorage.removeItem('usuario');
 }
 
 export function isAuthenticated(): boolean {

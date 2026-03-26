@@ -147,7 +147,7 @@ export default function AssetsPage() {
           <button type="button" className="btn btn--outline" onClick={() => notify.info('Exportar', 'Funcionalidad en desarrollo')}>
             <span>↓</span> Exportar
           </button>
-          <button type="button" className="btn btn--primary" onClick={() => navigate('/activos/nuevo')}>
+          <button type="button" className="btn btn--primary" onClick={() => navigate('/assets/new')}>
             <span>+</span> Nuevo Activo
           </button>
         </div>

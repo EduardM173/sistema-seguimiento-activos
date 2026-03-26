@@ -20,7 +20,7 @@ export default function Navbar() {
 
   const mainItems: MainItem[] = [
     { label: 'Dashboard', icon: '📊', to: '/dashboard' },
-    { label: 'Activos', icon: '📦', to: '/activos' },
+    { label: 'Activos', icon: '📦', to: '/assets' },
     { label: 'Inventario', icon: '📝', to: '/inventario' },
     { label: 'Transferencias', icon: '🔄', to: '/transferencias' },
     { label: 'Reportes', icon: '📈', to: '/reportes' },
