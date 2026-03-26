@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Button, Modal } from '../common';
 import type { CreateMaterialDTO, Material } from '../../types/inventario.types';
 import { inventarioService } from '../../services/inventario.service';
+import { getCategorias } from '../../services/catalogs.service';
 
 interface MaterialFormProps {
   isOpen: boolean;
@@ -37,7 +38,7 @@ export const MaterialForm: React.FC<MaterialFormProps> = ({ isOpen, onClose, onC
 
   const cargarCategorias = async () => {
     try {
-      const categoriasData = await inventarioService.obtenerCategorias();
+      const categoriasData = await getCategorias();
       setCategorias(categoriasData);
     } catch (error) {
       console.error('Error al cargar categorías:', error);
