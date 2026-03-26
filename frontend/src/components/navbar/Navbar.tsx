@@ -1,7 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-
 import { useAuth } from '../../context/AuthContext';
-
 import '../../styles/navbar.css';
 
 type MainItem = {
@@ -23,8 +21,8 @@ export default function Navbar() {
 
   const mainItems: MainItem[] = [
     { label: 'Dashboard', icon: '▦', to: '/dashboard' },
-    { label: 'Activos', icon: '≣', to: '/assets' },
-    { label: 'Inventario', icon: '◫' },
+    { label: 'Activos', icon: '≣', to: '/activos' },
+    { label: 'Inventario', icon: '◫', to: '/inventario' },
     { label: 'Transferencias', icon: '⇄' },
     { label: 'Reportes', icon: '▥' },
     { label: 'Usuarios', icon: '◌', to: '/users' },
@@ -43,12 +41,14 @@ export default function Navbar() {
           <div className="sidebar__logo">🛡</div>
           <span className="sidebar__title">ActivoGestión</span>
         </div>
-
-        <button type="button" className="sidebar__primaryButton" onClick={() => navigate('/activos/nuevo')}>
+        <button
+          type="button"
+          className="sidebar__primaryButton"
+          onClick={() => navigate('/activos/nuevo')}
+        >
           <span className="sidebar__plus">+</span>
           <span>Nuevo Activo</span>
         </button>
-
         <nav className="sidebar__nav">
           <ul className="sidebar__menu">
             {mainItems.map((item) => (
@@ -74,7 +74,6 @@ export default function Navbar() {
           </ul>
         </nav>
       </div>
-
       <div className="sidebar__bottom">
         <ul className="sidebar__menu">
           {bottomItems.map((item) => (
