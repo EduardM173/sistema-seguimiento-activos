@@ -51,11 +51,15 @@ export default function App() {
           <Route element={<ProtectedRoute />}>
             <Route element={<PrivateLayout />}>
               <Route path="/dashboard" element={<DashboardPage />} />
-              <Route path="/activos" element={<AssetsPage />} />
-              <Route path="/activos/nuevo" element={<CreateAssetPage />} />
-              <Route path="/inventario" element={<InventarioPage />} />
               <Route element={<ProtectedRoute requiredPermission="ASSET_VIEW" />}>
+                <Route path="/activos" element={<AssetsPage />} />
                 <Route path="/assets" element={<AssetsPage />} />
+              </Route>
+              <Route element={<ProtectedRoute requiredPermission="ASSET_CREATE" />}>
+                <Route path="/activos/nuevo" element={<CreateAssetPage />} />
+              </Route>
+              <Route element={<ProtectedRoute requiredPermission="INVENTORY_MANAGE" />}>
+                <Route path="/inventario" element={<InventarioPage />} />
               </Route>
               <Route element={<ProtectedRoute requiredPermission="USER_MANAGE" />}>
                 <Route path="/users" element={<UserList />} />

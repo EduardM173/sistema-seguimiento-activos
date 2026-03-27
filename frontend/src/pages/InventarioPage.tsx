@@ -5,13 +5,12 @@ import MaterialsList from '../components/inventory/MaterialsList';
 import '../styles/inventory.css';
 
 export default function InventarioPage() {
-  const { user } = useAuth();
+  const { user, hasPermission } = useAuth();
   const [showForm, setShowForm] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
   console.log('InventarioPage - User:', user);
 
-  // Solo permitir acceso a USUARIO_OPERATIVO
   if (!user) {
     return (
       <div className="access-denied">
@@ -23,13 +22,13 @@ export default function InventarioPage() {
     );
   }
 
-  if (user.rol?.nombre !== 'USUARIO_OPERATIVO') {
+  if (!hasPermission('INVENTORY_MANAGE')) {
     return (
       <div className="access-denied">
         <div className="access-denied__content">
           <h2>Acceso Denegado</h2>
-          <p>Solo los usuarios operativos pueden acceder a la gestión de inventario.</p>
-          <p>Tu rol: {user.rol?.nombre || 'desconocido'}</p>
+          <p>No tienes el permiso necesario para acceder a la gestión de inventario.</p>
+          <p>Permiso requerido: INVENTORY_MANAGE</p>
         </div>
       </div>
     );

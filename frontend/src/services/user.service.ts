@@ -14,7 +14,7 @@ import type {
 } from '../types/user.types';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-const USERS_URL = `${API_URL}/api/users`;
+const USERS_URL = `${API_URL}/users`;
 
 function buildHeaders(): HeadersInit {
   const token = getAccessToken();

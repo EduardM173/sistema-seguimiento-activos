@@ -16,6 +16,7 @@ type AuthContextType = {
   isAuthenticated: boolean;
   setLoginData: (data: LoginResponse) => void;
   logout: () => void;
+  hasPermission: (permissionCode: string) => boolean;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -42,6 +43,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
     window.location.replace('/');
   }
 
+  function hasPermission(permissionCode: string) {
+    return Boolean(
+      user?.permisos?.some((permission) => permission.codigo === permissionCode),
+    );
+  }
+
   useEffect(() => {
     function syncAuthState() {
       setUser(getStoredUser());
@@ -61,6 +68,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       isAuthenticated,
       setLoginData,
       logout,
+      hasPermission,
     }),
     [user, isAuthenticated],
   );
