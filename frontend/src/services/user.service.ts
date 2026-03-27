@@ -8,6 +8,8 @@ import type {
   Role,
   UpdateRolePermissionsRequest,
   UpdateRolePermissionsResponse,
+  UpdateUserRequest,
+  UpdateUserResponse,
   UpdateUserRoleRequest,
   UpdateUserRoleResponse,
   User,
@@ -56,6 +58,25 @@ export async function getUsers(): Promise<User[]> {
   }
 
   return Array.isArray(result) ? result : [];
+}
+
+export async function updateUser(
+  userId: string,
+  data: UpdateUserRequest,
+): Promise<UpdateUserResponse> {
+  const response = await fetch(`${USERS_URL}/${userId}`, {
+    method: 'PATCH',
+    headers: buildHeaders(),
+    body: JSON.stringify(data),
+  });
+
+  const result = await response.json();
+
+  if (!response.ok) {
+    throw new Error(result.message || 'No se pudo actualizar el usuario');
+  }
+
+  return result;
 }
 
 export async function getRoles(): Promise<Role[]> {

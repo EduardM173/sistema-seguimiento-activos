@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 import { UpdateUserRoleDto } from './dto/update-user-role.dto';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRolePermissionsDto } from './dto/update-role-permissions.dto';
@@ -29,6 +30,11 @@ export class UsersController {
     return this.usersService.findPermissions();
   }
 
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.usersService.findOne(id);
+  }
+
   @Post('roles')
   createRole(@Body() createRoleDto: CreateRoleDto) {
     return this.usersService.createRole(createRoleDto);
@@ -51,5 +57,10 @@ export class UsersController {
     @Body() updateUserRoleDto: UpdateUserRoleDto,
   ) {
     return this.usersService.updateUserRole(id, updateUserRoleDto.rolId);
+  }
+
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
+    return this.usersService.update(id, updateUserDto);
   }
 }

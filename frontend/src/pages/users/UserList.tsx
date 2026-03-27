@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 import { useAuth } from '../../context/AuthContext';
 import {
@@ -19,6 +19,7 @@ type PermissionMatrixState = Record<string, Record<string, boolean>>;
 
 export default function UserList() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user: authUser } = useAuth();
 
   const [activeTab, setActiveTab] = useState<TabKey>('users');
@@ -113,6 +114,29 @@ export default function UserList() {
   useEffect(() => {
     loadAllData();
   }, []);
+
+  useEffect(() => {
+    const state = location.state as { successMessage?: string } | null;
+
+    if (state?.successMessage) {
+      setSuccessMessage(state.successMessage);
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.pathname, location.state, navigate]);
+
+  function getMissingUserFields(user: User) {
+    const missing: string[] = [];
+
+    if (!user.apellidos?.trim()) {
+      missing.push('apellidos');
+    }
+
+    if (!user.telefono?.trim()) {
+      missing.push('telefono');
+    }
+
+    return missing;
+  }
 
   const filteredUsers = useMemo(() => {
     return users.filter((currentUser) =>
@@ -338,10 +362,46 @@ export default function UserList() {
 
           <tbody>
             {filteredUsers.length > 0 ? (
-              filteredUsers.map((currentUser) => (
-                <tr key={currentUser.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
+              filteredUsers.map((currentUser) => {
+                const missingFields = getMissingUserFields(currentUser);
+                const isIncomplete = missingFields.length > 0;
+
+                return (
+                  <tr
+                    key={currentUser.id}
+                    style={{ borderBottom: '1px solid #e5e7eb' }}
+                  >
                   <td style={{ padding: '12px' }}>
-                    {currentUser.nombres} {currentUser.apellidos}
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                      }}
+                    >
+                      <span>
+                        {currentUser.nombres} {currentUser.apellidos}
+                      </span>
+                      {isIncomplete && (
+                        <span
+                          title={`Datos incompletos: ${missingFields.join(', ')}`}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            width: '22px',
+                            height: '22px',
+                            borderRadius: '999px',
+                            backgroundColor: '#fef3c7',
+                            color: '#b45309',
+                            fontSize: '13px',
+                            fontWeight: 700,
+                          }}
+                        >
+                          !
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td style={{ padding: '12px' }}>{currentUser.nombreUsuario}</td>
                   <td style={{ padding: '12px' }}>{currentUser.correo}</td>
@@ -360,24 +420,75 @@ export default function UserList() {
                     </span>
                   </td>
                   <td style={{ padding: '12px' }}>
-                    <span
+                    <div
                       style={{
-                        backgroundColor:
-                          currentUser.estado === 'ACTIVO' ? '#dcfce7' : '#fee2e2',
-                        color:
-                          currentUser.estado === 'ACTIVO' ? '#166534' : '#991b1b',
-                        padding: '4px 8px',
-                        borderRadius: '6px',
-                        fontSize: '13px',
-                        fontWeight: 600,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        flexWrap: 'wrap',
                       }}
                     >
-                      {currentUser.estado || 'Sin estado'}
-                    </span>
+                      <span
+                        style={{
+                          backgroundColor:
+                            currentUser.estado === 'ACTIVO' ? '#dcfce7' : '#fee2e2',
+                          color:
+                            currentUser.estado === 'ACTIVO' ? '#166534' : '#991b1b',
+                          padding: '4px 8px',
+                          borderRadius: '6px',
+                          fontSize: '13px',
+                          fontWeight: 600,
+                        }}
+                      >
+                        {currentUser.estado || 'Sin estado'}
+                      </span>
+                      {isIncomplete && (
+                        <span
+                          style={{
+                            color: '#b45309',
+                            fontSize: '12px',
+                            fontWeight: 600,
+                          }}
+                        >
+                          Incompleto
+                        </span>
+                      )}
+                    </div>
                   </td>
-                  <td style={{ padding: '12px' }}>✏️ 👁️ ⋯</td>
-                </tr>
-              ))
+                  <td style={{ padding: '12px' }}>
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                      }}
+                    >
+                      <button
+                        type="button"
+                        title={
+                          isIncomplete
+                            ? 'Completar datos faltantes'
+                            : 'Editar usuario'
+                        }
+                        onClick={() => navigate(`/users/${currentUser.id}/edit`)}
+                        style={{
+                          border: '1px solid #cbd5e1',
+                          backgroundColor: '#ffffff',
+                          borderRadius: '8px',
+                          padding: '6px 10px',
+                          cursor: 'pointer',
+                          fontSize: '14px',
+                        }}
+                      >
+                        ✏️
+                      </button>
+                      <span title="Vista previa no disponible aun">👁️</span>
+                      <span title="Mas acciones">⋯</span>
+                    </div>
+                  </td>
+                  </tr>
+                );
+              })
             ) : (
               <tr>
                 <td colSpan={6} style={{ padding: '20px', textAlign: 'center' }}>
