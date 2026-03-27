@@ -45,7 +45,9 @@ export default function UserList() {
   const [newRolePermissionIds, setNewRolePermissionIds] = useState<string[]>([]);
   const [creatingRole, setCreatingRole] = useState(false);
 
-  const isAdminGeneral = authUser?.rol?.nombre === 'ADMIN_GENERAL';
+  const canManageRoles = Boolean(
+    authUser?.permisos?.some((permission) => permission.codigo === 'ROLE_ASSIGN'),
+  );
 
   function buildMatrixState(rolesData: Role[]): PermissionMatrixState {
     const nextMatrix: PermissionMatrixState = {};
@@ -394,11 +396,11 @@ export default function UserList() {
       return <p style={{ marginTop: '20px' }}>Cargando roles y permisos...</p>;
     }
 
-    if (!isAdminGeneral) {
+    if (!canManageRoles) {
       return (
         <div style={sectionCardStyle}>
           <p style={{ margin: 0, color: '#9a3412' }}>
-            Solo el Administrador General puede gestionar roles y permisos.
+            No tienes el permiso necesario para gestionar roles y permisos.
           </p>
         </div>
       );

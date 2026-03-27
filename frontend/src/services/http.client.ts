@@ -36,7 +36,7 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
     }
   }
 
-  let url = `${API_URL}/api${endpoint}`;
+  let url = `${API_URL}${endpoint}`;
   if (params) {
     const qs = new URLSearchParams();
     for (const [k, v] of Object.entries(params)) {
