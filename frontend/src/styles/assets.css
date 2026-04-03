@@ -530,6 +530,15 @@
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
 }
 
+.assetsModal__hint {
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.assetsModal__hint--error {
+  color: #dc2626;
+}
+
 .assetsModal__actions {
   display: flex;
   justify-content: flex-end;
