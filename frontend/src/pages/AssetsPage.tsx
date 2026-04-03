@@ -509,6 +509,7 @@ export default function AssetsPage() {
                   value={assignmentTargetId}
                   onChange={(event) => setAssignmentTargetId(event.target.value)}
                   disabled={submittingAssignment}
+                  required
                 >
                   <option value="">
                     {assignmentType === 'usuario' ? 'Seleccione un usuario' : 'Seleccione un área'}
@@ -520,6 +521,11 @@ export default function AssetsPage() {
                     </option>
                   ))}
                 </select>
+                {!assignmentTargetId ? (
+                  <span className="assetsModal__hint assetsModal__hint--error">
+                    Debe seleccionar un responsable o un área antes de guardar la asignación.
+                  </span>
+                ) : null}
               </label>
 
               <label className="assetsModal__field">
@@ -538,7 +544,11 @@ export default function AssetsPage() {
                 <button type="button" className="btn btn--ghost" onClick={closeAssignModal} disabled={submittingAssignment}>
                   Cancelar
                 </button>
-                <button type="submit" className="btn btn--primary" disabled={submittingAssignment}>
+                <button
+                  type="submit"
+                  className="btn btn--primary"
+                  disabled={submittingAssignment || !assignmentTargetId}
+                >
                   {submittingAssignment ? 'Asignando...' : 'Confirmar asignación'}
                 </button>
               </div>
