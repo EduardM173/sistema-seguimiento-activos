@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -8,6 +9,7 @@ import { PrismaService } from '../common/prisma.service';
 import { CreateAssetDto } from './dto/create-asset.dto';
 import { UpdateAssetDto } from './dto/update-asset.dto';
 import { SearchAssetsDto } from './dto/search-assets.dto';
+import { AssignAssetDto } from './dto/assign-asset.dto';
 import { EstadoActivo, Prisma } from '../generated/prisma/client';
 
 @Injectable()
@@ -358,6 +360,147 @@ export class AssetsService {
     return activo;
   }
 
+  async assign(id: string, dto: AssignAssetDto, userId: string) {
+    const assignToUser = dto.usuarioAsignadoId?.trim();
+    const assignToArea = dto.areaAsignadaId?.trim();
+
+    if ((!assignToUser && !assignToArea) || (assignToUser && assignToArea)) {
+      throw new BadRequestException(
+        'Debe asignar el activo a un usuario o a un área, pero no a ambos',
+      );
+    }
+
+    const existing = await this.prisma.activo.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        estado: true,
+        areaActualId: true,
+        responsableActualId: true,
+      },
+    });
+
+    if (!existing) {
+      throw new NotFoundException(`No se encontró el activo con ID: ${id}`);
+    }
+
+    if (existing.estado === EstadoActivo.DADO_DE_BAJA) {
+      throw new ConflictException('No se puede asignar un activo dado de baja');
+    }
+
+    let usuarioAsignado:
+      | {
+          id: string;
+          nombres: string;
+          apellidos: string;
+        }
+      | null = null;
+    let areaAsignada: { id: string; nombre: string } | null = null;
+
+    if (assignToUser) {
+      usuarioAsignado = await this.prisma.usuario.findUnique({
+        where: { id: assignToUser },
+        select: {
+          id: true,
+          nombres: true,
+          apellidos: true,
+        },
+      });
+
+      if (!usuarioAsignado) {
+        throw new NotFoundException(
+          `No se encontró el usuario con ID: ${assignToUser}`,
+        );
+      }
+    }
+
+    if (assignToArea) {
+      areaAsignada = await this.prisma.area.findUnique({
+        where: { id: assignToArea },
+        select: {
+          id: true,
+          nombre: true,
+        },
+      });
+
+      if (!areaAsignada) {
+        throw new NotFoundException(
+          `No se encontró el área con ID: ${assignToArea}`,
+        );
+      }
+    }
+
+    const observaciones = dto.observaciones?.trim() || undefined;
+
+    const result = await this.prisma.$transaction(async (tx) => {
+      const asignacion = await tx.asignacionActivo.create({
+        data: {
+          activoId: id,
+          usuarioAsignadoId: usuarioAsignado?.id,
+          areaAsignadaId: areaAsignada?.id,
+          asignadoPorId: userId,
+          observaciones,
+        },
+        select: {
+          id: true,
+          estado: true,
+          asignadoEn: true,
+          observaciones: true,
+        },
+      });
+
+      await tx.movimientoActivo.create({
+        data: {
+          activoId: id,
+          tipo: 'ASIGNACION',
+          areaOrigenId: existing.areaActualId,
+          areaDestinoId: areaAsignada?.id,
+          usuarioOrigenId: existing.responsableActualId,
+          usuarioDestinoId: usuarioAsignado?.id,
+          realizadoPorId: userId,
+          asignacionId: asignacion.id,
+          detalle: observaciones,
+        },
+      });
+
+      await tx.activo.update({
+        where: { id },
+        data: {
+          areaActualId: areaAsignada?.id ?? null,
+          responsableActualId: usuarioAsignado?.id ?? null,
+          actualizadoPorId: userId,
+        },
+      });
+
+      return asignacion;
+    });
+
+    const activoActualizado = await this.findOne(id);
+
+    return {
+      message: usuarioAsignado
+        ? `Activo asignado al usuario ${this.buildFullName(
+            usuarioAsignado.nombres,
+            usuarioAsignado.apellidos,
+          )}`
+        : `Activo asignado al área ${areaAsignada?.nombre}`,
+      asignacion: {
+        ...result,
+        usuarioAsignado: usuarioAsignado
+          ? {
+              id: usuarioAsignado.id,
+              nombreCompleto: this.buildFullName(
+                usuarioAsignado.nombres,
+                usuarioAsignado.apellidos,
+              ),
+            }
+          : null,
+        areaAsignada: areaAsignada,
+      },
+      asset: activoActualizado,
+    };
+  }
+
   /**
    * Soft-delete an asset (dar de baja).
    * Sets status to DADO_DE_BAJA and records the timestamp.
@@ -399,5 +542,9 @@ export class AssetsService {
     };
 
     return estados[estado] ?? estado;
+  }
+
+  private buildFullName(nombres: string, apellidos?: string | null): string {
+    return [nombres, apellidos].filter(Boolean).join(' ').trim();
   }
 }

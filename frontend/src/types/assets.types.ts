@@ -113,3 +113,22 @@ export type UsuarioResumen = {
   correo: string;
   area: { id: string; nombre: string } | null;
 };
+
+export type AssignAssetPayload = {
+  usuarioAsignadoId?: string;
+  areaAsignadaId?: string;
+  observaciones?: string;
+};
+
+export type AssignAssetResponse = {
+  message: string;
+  asignacion: {
+    id: string;
+    estado: string;
+    asignadoEn: string;
+    observaciones: string | null;
+    usuarioAsignado: { id: string; nombreCompleto: string } | null;
+    areaAsignada: { id: string; nombre: string } | null;
+  };
+  asset: AssetDetail;
+};

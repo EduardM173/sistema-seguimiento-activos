@@ -5,6 +5,8 @@ import type {
   AssetDetail,
   CreateAssetPayload,
   UpdateAssetPayload,
+  AssignAssetPayload,
+  AssignAssetResponse,
   SearchAssetsParams,
   Categoria,
   Ubicacion,
@@ -40,6 +42,13 @@ export async function updateAsset(id: string, payload: UpdateAssetPayload) {
 
 export async function deleteAsset(id: string) {
   return http.delete<ApiResponse<AssetDetail>>(`/assets/${encodeURIComponent(id)}`);
+}
+
+export async function assignAsset(id: string, payload: AssignAssetPayload) {
+  return http.post<ApiResponse<AssignAssetResponse>>(
+    `/assets/${encodeURIComponent(id)}/assign`,
+    payload,
+  );
 }
 
 export async function getCategorias() {

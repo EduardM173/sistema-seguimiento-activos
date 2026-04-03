@@ -16,6 +16,7 @@ import { AssetsService } from './assets.service';
 import { CreateAssetDto } from './dto/create-asset.dto';
 import { UpdateAssetDto } from './dto/update-asset.dto';
 import { SearchAssetsDto } from './dto/search-assets.dto';
+import { AssignAssetDto } from './dto/assign-asset.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ApiResponse } from '../common/api-response';
 
@@ -75,6 +76,21 @@ export class AssetsController {
     const userId = (req.user as { id: string }).id;
     const activo = await this.assetsService.update(id, dto, userId);
     return ApiResponse.success(activo, 'Activo actualizado exitosamente');
+  }
+
+  /**
+   * POST /api/assets/:id/assign
+   * Assign an asset to a user or area.
+   */
+  @Post(':id/assign')
+  async assign(
+    @Param('id') id: string,
+    @Body() dto: AssignAssetDto,
+    @Req() req: Request,
+  ) {
+    const userId = (req.user as { id: string }).id;
+    const result = await this.assetsService.assign(id, dto, userId);
+    return ApiResponse.success(result, 'Activo asignado exitosamente');
   }
 
   /**
