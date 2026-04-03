@@ -46,6 +46,20 @@ export interface CreateUserResponse {
   user: User;
 }
 
+export interface UpdateUserRequest {
+  nombres?: string;
+  apellidos?: string;
+  correo?: string;
+  nombreUsuario?: string;
+  telefono?: string;
+  areaId?: string;
+}
+
+export interface UpdateUserResponse {
+  message: string;
+  user: User;
+}
+
 export interface UpdateUserRoleRequest {
   rolId: string;
 }

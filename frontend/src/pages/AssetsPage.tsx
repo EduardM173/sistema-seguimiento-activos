@@ -1,11 +1,20 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { searchAssets, deleteAsset } from '../services/assets.service';
-import { getCategorias, getUbicaciones } from '../services/catalogs.service';
+import { searchAssets, deleteAsset, assignAsset } from '../services/assets.service';
+import { getCategorias, getUbicaciones, getAreas, getUsuarios } from '../services/catalogs.service';
 import { useNotification } from '../context/NotificationContext';
 import { HttpError } from '../services/http.client';
-import type { AssetListItem, SearchAssetsParams, PaginationMeta, EstadoActivo, Categoria, Ubicacion } from '../types/assets.types';
+import type {
+  AssetListItem,
+  SearchAssetsParams,
+  PaginationMeta,
+  EstadoActivo,
+  Categoria,
+  Ubicacion,
+  Area,
+  UsuarioResumen,
+} from '../types/assets.types';
 
 import '../styles/assets.css';
 
@@ -27,8 +36,8 @@ const PAGE_SIZE = 6;
 
 export default function AssetsPage() {
   const navigate = useNavigate();
-  const { error: notifyError, success: notifySuccess } = useNotification();
-  const notify = useNotification()
+  const notify = useNotification();
+  const { error: notifyError, success: notifySuccess } = notify;
 
   const [assets, setAssets] = useState<AssetListItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,6 +46,8 @@ export default function AssetsPage() {
   // Catalog data
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [ubicaciones, setUbicaciones] = useState<Ubicacion[]>([]);
+  const [areas, setAreas] = useState<Area[]>([]);
+  const [usuarios, setUsuarios] = useState<UsuarioResumen[]>([]);
 
   // Filters
   const [searchText, setSearchText] = useState('');
@@ -44,14 +55,26 @@ export default function AssetsPage() {
   const [filterCategoria, setFilterCategoria] = useState('');
   const [filterUbicacion, setFilterUbicacion] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [assigningAsset, setAssigningAsset] = useState<AssetListItem | null>(null);
+  const [assignmentType, setAssignmentType] = useState<'usuario' | 'area'>('usuario');
+  const [assignmentTargetId, setAssignmentTargetId] = useState('');
+  const [assignmentNotes, setAssignmentNotes] = useState('');
+  const [submittingAssignment, setSubmittingAssignment] = useState(false);
 
   // Load catalogs once
   useEffect(() => {
     async function load() {
       try {
-        const [cats, ubis] = await Promise.all([getCategorias(), getUbicaciones()]);
+        const [cats, ubis, loadedAreas, loadedUsuarios] = await Promise.all([
+          getCategorias(),
+          getUbicaciones(),
+          getAreas(),
+          getUsuarios(),
+        ]);
         setCategorias(cats);
         setUbicaciones(ubis);
+        setAreas(loadedAreas);
+        setUsuarios(loadedUsuarios);
       } catch { /* silently fail — filters will just be empty */ }
     }
     void load();
@@ -117,6 +140,73 @@ export default function AssetsPage() {
       notifyError('Error', message);
     }
   }
+
+  function openAssignModal(asset: AssetListItem) {
+    setAssigningAsset(asset);
+    if (asset.responsable?.id) {
+      setAssignmentType('usuario');
+      setAssignmentTargetId(asset.responsable.id);
+    } else if (asset.area?.id) {
+      setAssignmentType('area');
+      setAssignmentTargetId(asset.area.id);
+    } else {
+      setAssignmentType('usuario');
+      setAssignmentTargetId('');
+    }
+    setAssignmentNotes('');
+  }
+
+  function closeAssignModal() {
+    if (submittingAssignment) return;
+    setAssigningAsset(null);
+    setAssignmentType('usuario');
+    setAssignmentTargetId('');
+    setAssignmentNotes('');
+  }
+
+  async function handleAssignSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!assigningAsset || !assignmentTargetId) {
+      notifyError('Asignación incompleta', 'Seleccione un usuario o un área para continuar.');
+      return;
+    }
+
+    try {
+      setSubmittingAssignment(true);
+      const payload =
+        assignmentType === 'usuario'
+          ? { usuarioAsignadoId: assignmentTargetId, observaciones: assignmentNotes.trim() || undefined }
+          : { areaAsignadaId: assignmentTargetId, observaciones: assignmentNotes.trim() || undefined };
+
+      const response = await assignAsset(assigningAsset.id, payload);
+      notifySuccess('Activo asignado', response.data.message);
+      setAssigningAsset(null);
+      setAssignmentType('usuario');
+      setAssignmentTargetId('');
+      setAssignmentNotes('');
+      await loadAssets();
+    } catch (err) {
+      const message =
+        err instanceof HttpError ? err.message : 'No se pudo asignar el responsable del activo';
+      notifyError('Error al asignar activo', message);
+    } finally {
+      setSubmittingAssignment(false);
+    }
+  }
+
+  const assignmentOptions =
+    assignmentType === 'usuario'
+      ? usuarios.map((usuario) => ({
+          id: usuario.id,
+          label: usuario.nombreCompleto || [usuario.nombres, usuario.apellidos].filter(Boolean).join(' '),
+          helper: usuario.correo,
+        }))
+      : areas.map((area) => ({
+          id: area.id,
+          label: area.nombre,
+          helper: 'Área',
+        }));
 
   const totalPages = meta?.totalPages ?? 1;
 
@@ -263,7 +353,14 @@ export default function AssetsPage() {
                         )}
                       </td>
                       <td>{asset.ubicacion?.nombre ?? '—'}</td>
-                      <td>{asset.responsable?.nombreCompleto ?? '—'}</td>
+                      <td>
+                        <div className="assetsResponsible">
+                          <span>{asset.responsable?.nombreCompleto ?? '—'}</span>
+                          {asset.area?.nombre ? (
+                            <span className="assetsResponsible__meta">Área: {asset.area.nombre}</span>
+                          ) : null}
+                        </div>
+                      </td>
                       <td>
                         <span className={`statusBadge ${ESTADO_CLASS[asset.estado] ?? ''}`}>
                           {asset.estadoLabel}
@@ -291,7 +388,7 @@ export default function AssetsPage() {
                             type="button"
                             className="actionBtn"
                             title="Asignar"
-                            onClick={() => notify.info('Asignar', 'Funcionalidad en desarrollo')}
+                            onClick={() => openAssignModal(asset)}
                           >
                             👤
                           </button>
@@ -362,6 +459,93 @@ export default function AssetsPage() {
           </>
         )}
       </div>
+
+      {assigningAsset ? (
+        <div className="assetsModalBackdrop" role="presentation" onClick={closeAssignModal}>
+          <div
+            className="assetsModal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="assign-asset-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="assetsModal__header">
+              <div>
+                <h2 id="assign-asset-title" className="assetsModal__title">
+                  Asignar activo
+                </h2>
+                <p className="assetsModal__subtitle">
+                  {assigningAsset.codigo} · {assigningAsset.nombre}
+                </p>
+              </div>
+              <button type="button" className="actionBtn" onClick={closeAssignModal} disabled={submittingAssignment}>
+                ✕
+              </button>
+            </div>
+
+            <form className="assetsModal__form" onSubmit={handleAssignSubmit}>
+              <label className="assetsModal__field">
+                <span className="assetsFilters__label">Tipo de asignación</span>
+                <select
+                  className="assetsFilters__select"
+                  value={assignmentType}
+                  onChange={(event) => {
+                    setAssignmentType(event.target.value as 'usuario' | 'area');
+                    setAssignmentTargetId('');
+                  }}
+                  disabled={submittingAssignment}
+                >
+                  <option value="usuario">Usuario</option>
+                  <option value="area">Área</option>
+                </select>
+              </label>
+
+              <label className="assetsModal__field">
+                <span className="assetsFilters__label">
+                  {assignmentType === 'usuario' ? 'Usuario responsable' : 'Área responsable'}
+                </span>
+                <select
+                  className="assetsFilters__select"
+                  value={assignmentTargetId}
+                  onChange={(event) => setAssignmentTargetId(event.target.value)}
+                  disabled={submittingAssignment}
+                >
+                  <option value="">
+                    {assignmentType === 'usuario' ? 'Seleccione un usuario' : 'Seleccione un área'}
+                  </option>
+                  {assignmentOptions.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.label}
+                      {option.helper ? ` · ${option.helper}` : ''}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="assetsModal__field">
+                <span className="assetsFilters__label">Observaciones</span>
+                <textarea
+                  className="assetsModal__textarea"
+                  rows={3}
+                  value={assignmentNotes}
+                  onChange={(event) => setAssignmentNotes(event.target.value)}
+                  placeholder="Opcional"
+                  disabled={submittingAssignment}
+                />
+              </label>
+
+              <div className="assetsModal__actions">
+                <button type="button" className="btn btn--ghost" onClick={closeAssignModal} disabled={submittingAssignment}>
+                  Cancelar
+                </button>
+                <button type="submit" className="btn btn--primary" disabled={submittingAssignment}>
+                  {submittingAssignment ? 'Asignando...' : 'Confirmar asignación'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }

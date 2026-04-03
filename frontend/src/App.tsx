@@ -64,6 +64,7 @@ export default function App() {
               <Route element={<ProtectedRoute requiredPermission="USER_MANAGE" />}>
                 <Route path="/users" element={<UserList />} />
                 <Route path="/users/create" element={<CreateUser />} />
+                <Route path="/users/:id/edit" element={<CreateUser />} />
               </Route>
             </Route>
           </Route>

@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../common/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRolePermissionsDto } from './dto/update-role-permissions.dto';
 import * as bcrypt from 'bcrypt';
@@ -12,6 +13,27 @@ import * as bcrypt from 'bcrypt';
 @Injectable()
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
+
+  private readonly userSelect = {
+    id: true,
+    nombres: true,
+    apellidos: true,
+    correo: true,
+    nombreUsuario: true,
+    telefono: true,
+    estado: true,
+    areaId: true,
+    rolId: true,
+    creadoEn: true,
+    actualizadoEn: true,
+    rol: {
+      select: {
+        id: true,
+        nombre: true,
+        descripcion: true,
+      },
+    },
+  } as const;
 
   private mapRole(role: {
     id: string;
@@ -47,18 +69,28 @@ export class UsersService {
       areaId,
     } = createUserDto;
 
+    const nombresNormalizados = nombres.trim();
+    const apellidosNormalizados = apellidos?.trim() ?? '';
+    const correoNormalizado = correo.trim().toLowerCase();
+    const nombreUsuarioNormalizado = nombreUsuario.trim();
+    const telefonoNormalizado = telefono?.trim() || null;
+    const areaIdNormalizada = areaId?.trim() || null;
+
     const existingUser = await this.prisma.usuario.findFirst({
       where: {
-        OR: [{ correo }, { nombreUsuario }],
+        OR: [
+          { correo: correoNormalizado },
+          { nombreUsuario: nombreUsuarioNormalizado },
+        ],
       },
     });
 
     if (existingUser) {
-      if (existingUser.correo === correo) {
+      if (existingUser.correo === correoNormalizado) {
         throw new BadRequestException('Correo ya registrado');
       }
 
-      if (existingUser.nombreUsuario === nombreUsuario) {
+      if (existingUser.nombreUsuario === nombreUsuarioNormalizado) {
         throw new BadRequestException('Nombre de usuario ya registrado');
       }
     }
@@ -77,35 +109,16 @@ export class UsersService {
 
     const usuarioCreado = await this.prisma.usuario.create({
       data: {
-        nombres,
-        apellidos,
-        correo,
-        nombreUsuario,
+        nombres: nombresNormalizados,
+        apellidos: apellidosNormalizados,
+        correo: correoNormalizado,
+        nombreUsuario: nombreUsuarioNormalizado,
         hashContrasena: hashedPassword,
-        telefono,
-        areaId,
+        telefono: telefonoNormalizado,
+        areaId: areaIdNormalizada,
         rolId: rol.id,
       },
-      select: {
-        id: true,
-        nombres: true,
-        apellidos: true,
-        correo: true,
-        nombreUsuario: true,
-        telefono: true,
-        estado: true,
-        areaId: true,
-        rolId: true,
-        creadoEn: true,
-        actualizadoEn: true,
-        rol: {
-          select: {
-            id: true,
-            nombre: true,
-            descripcion: true,
-          },
-        },
-      },
+      select: this.userSelect,
     });
 
     return {
@@ -116,30 +129,24 @@ export class UsersService {
 
   async findAll() {
     return this.prisma.usuario.findMany({
-      select: {
-        id: true,
-        nombres: true,
-        apellidos: true,
-        correo: true,
-        nombreUsuario: true,
-        telefono: true,
-        estado: true,
-        areaId: true,
-        rolId: true,
-        creadoEn: true,
-        actualizadoEn: true,
-        rol: {
-          select: {
-            id: true,
-            nombre: true,
-            descripcion: true,
-          },
-        },
-      },
+      select: this.userSelect,
       orderBy: {
         creadoEn: 'desc',
       },
     });
+  }
+
+  async findOne(id: string) {
+    const usuario = await this.prisma.usuario.findUnique({
+      where: { id },
+      select: this.userSelect,
+    });
+
+    if (!usuario) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
+
+    return usuario;
   }
 
   async findRoles() {
@@ -213,30 +220,114 @@ export class UsersService {
       data: {
         rolId,
       },
-      select: {
-        id: true,
-        nombres: true,
-        apellidos: true,
-        correo: true,
-        nombreUsuario: true,
-        telefono: true,
-        estado: true,
-        areaId: true,
-        rolId: true,
-        creadoEn: true,
-        actualizadoEn: true,
-        rol: {
-          select: {
-            id: true,
-            nombre: true,
-            descripcion: true,
-          },
-        },
-      },
+      select: this.userSelect,
     });
 
     return {
       message: 'Rol actualizado correctamente',
+      user: usuarioActualizado,
+    };
+  }
+
+  async update(userId: string, updateUserDto: UpdateUserDto) {
+    const usuario = await this.prisma.usuario.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        correo: true,
+        nombreUsuario: true,
+      },
+    });
+
+    if (!usuario) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
+
+    const data: {
+      nombres?: string;
+      apellidos?: string;
+      correo?: string;
+      nombreUsuario?: string;
+      telefono?: string | null;
+      areaId?: string | null;
+    } = {};
+
+    if (typeof updateUserDto.nombres === 'string') {
+      const nombres = updateUserDto.nombres.trim();
+      if (!nombres) {
+        throw new BadRequestException('Los nombres no pueden estar vacios');
+      }
+      data.nombres = nombres;
+    }
+
+    if (typeof updateUserDto.apellidos === 'string') {
+      data.apellidos = updateUserDto.apellidos.trim();
+    }
+
+    if (typeof updateUserDto.correo === 'string') {
+      const correo = updateUserDto.correo.trim().toLowerCase();
+      if (!correo) {
+        throw new BadRequestException('El correo no puede estar vacio');
+      }
+
+      if (correo !== usuario.correo) {
+        const existingCorreo = await this.prisma.usuario.findFirst({
+          where: {
+            correo,
+            id: { not: userId },
+          },
+          select: { id: true },
+        });
+
+        if (existingCorreo) {
+          throw new BadRequestException('Correo ya registrado');
+        }
+      }
+
+      data.correo = correo;
+    }
+
+    if (typeof updateUserDto.nombreUsuario === 'string') {
+      const nombreUsuario = updateUserDto.nombreUsuario.trim();
+      if (!nombreUsuario) {
+        throw new BadRequestException(
+          'El nombre de usuario no puede estar vacio',
+        );
+      }
+
+      if (nombreUsuario !== usuario.nombreUsuario) {
+        const existingUsername = await this.prisma.usuario.findFirst({
+          where: {
+            nombreUsuario,
+            id: { not: userId },
+          },
+          select: { id: true },
+        });
+
+        if (existingUsername) {
+          throw new BadRequestException('Nombre de usuario ya registrado');
+        }
+      }
+
+      data.nombreUsuario = nombreUsuario;
+    }
+
+    if (typeof updateUserDto.telefono === 'string') {
+      data.telefono = updateUserDto.telefono.trim() || null;
+    }
+
+    if (typeof updateUserDto.areaId === 'string') {
+      data.areaId = updateUserDto.areaId.trim() || null;
+    }
+
+    const usuarioActualizado = await this.prisma.usuario.update({
+      where: { id: userId },
+      data,
+      select: this.userSelect,
+    });
+
+    return {
+      message: 'Usuario actualizado correctamente',
       user: usuarioActualizado,
     };
   }
