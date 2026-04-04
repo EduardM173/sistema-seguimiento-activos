@@ -25,11 +25,53 @@ export class AssetsService {
 
     const where: Prisma.ActivoWhereInput = {};
 
-    // Search by name or code
+    // Search by asset data, category, location or responsible person
     if (q) {
+      const searchTerms = q
+        .trim()
+        .split(/\s+/)
+        .filter(Boolean);
+
       where.OR = [
         { nombre: { contains: q, mode: 'insensitive' } },
         { codigo: { contains: q, mode: 'insensitive' } },
+        {
+          categoria: {
+            is: {
+              OR: [
+                { nombre: { contains: q, mode: 'insensitive' } },
+                { descripcion: { contains: q, mode: 'insensitive' } },
+              ],
+            },
+          },
+        },
+        {
+          ubicacion: {
+            is: {
+              OR: [
+                { nombre: { contains: q, mode: 'insensitive' } },
+                { edificio: { contains: q, mode: 'insensitive' } },
+                { piso: { contains: q, mode: 'insensitive' } },
+                { ambiente: { contains: q, mode: 'insensitive' } },
+                { descripcion: { contains: q, mode: 'insensitive' } },
+              ],
+            },
+          },
+        },
+        {
+          responsableActual: {
+            is: {
+              AND: searchTerms.map((term) => ({
+                OR: [
+                  { nombres: { contains: term, mode: 'insensitive' } },
+                  { apellidos: { contains: term, mode: 'insensitive' } },
+                  { correo: { contains: term, mode: 'insensitive' } },
+                  { nombreUsuario: { contains: term, mode: 'insensitive' } },
+                ],
+              })),
+            },
+          },
+        },
       ];
     }
 
