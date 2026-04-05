@@ -144,7 +144,7 @@ export type CategoriaMaterialGroupByOutputType = {
   _max: CategoriaMaterialMaxAggregateOutputType | null
 }
 
-type GetCategoriaMaterialGroupByPayload<T extends CategoriaMaterialGroupByArgs> = Prisma.PrismaPromise<
+export type GetCategoriaMaterialGroupByPayload<T extends CategoriaMaterialGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<CategoriaMaterialGroupByOutputType, T['by']> &
       {

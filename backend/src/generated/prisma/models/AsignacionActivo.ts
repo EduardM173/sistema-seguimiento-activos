@@ -200,7 +200,7 @@ export type AsignacionActivoGroupByOutputType = {
   _max: AsignacionActivoMaxAggregateOutputType | null
 }
 
-type GetAsignacionActivoGroupByPayload<T extends AsignacionActivoGroupByArgs> = Prisma.PrismaPromise<
+export type GetAsignacionActivoGroupByPayload<T extends AsignacionActivoGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<AsignacionActivoGroupByOutputType, T['by']> &
       {

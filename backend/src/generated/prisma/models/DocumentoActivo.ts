@@ -172,7 +172,7 @@ export type DocumentoActivoGroupByOutputType = {
   _max: DocumentoActivoMaxAggregateOutputType | null
 }
 
-type GetDocumentoActivoGroupByPayload<T extends DocumentoActivoGroupByArgs> = Prisma.PrismaPromise<
+export type GetDocumentoActivoGroupByPayload<T extends DocumentoActivoGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<DocumentoActivoGroupByOutputType, T['by']> &
       {

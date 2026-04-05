@@ -179,7 +179,7 @@ export type UbicacionGroupByOutputType = {
   _max: UbicacionMaxAggregateOutputType | null
 }
 
-type GetUbicacionGroupByPayload<T extends UbicacionGroupByArgs> = Prisma.PrismaPromise<
+export type GetUbicacionGroupByPayload<T extends UbicacionGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<UbicacionGroupByOutputType, T['by']> &
       {

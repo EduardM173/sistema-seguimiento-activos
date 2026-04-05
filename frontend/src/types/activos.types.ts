@@ -1,14 +1,20 @@
-// Estados posibles de un activo
+// Estados posibles de un activo (alineado con backend Prisma)
 export const estadoActivo = {
-  OPERACIONAL: "Operacional",
-  MANTENIMIENTO: "Mantenimiento",
-  REPARACION: "Reparación",
-  BAJA: "Baja",
-  ROBADO: "Robado",
-  PERDIDO: "Perdido"
+  OPERATIVO: "OPERATIVO",
+  MANTENIMIENTO: "MANTENIMIENTO",
+  FUERA_DE_SERVICIO: "FUERA_DE_SERVICIO",
+  DADO_DE_BAJA: "DADO_DE_BAJA"
 } as const;
 
 export type EstadoActivo = typeof estadoActivo[keyof typeof estadoActivo];
+
+// Para mostrar en UI (texto amigable)
+export const estadoActivoDisplay: Record<EstadoActivo, string> = {
+  OPERATIVO: "Operativo",
+  MANTENIMIENTO: "En mantenimiento",
+  FUERA_DE_SERVICIO: "Fuera de servicio",
+  DADO_DE_BAJA: "Dado de baja"
+};
 
 // Categorías de activos
 export interface CategoriaActivo {

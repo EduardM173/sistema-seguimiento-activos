@@ -175,7 +175,7 @@ export type ReporteGeneradoGroupByOutputType = {
   _max: ReporteGeneradoMaxAggregateOutputType | null
 }
 
-type GetReporteGeneradoGroupByPayload<T extends ReporteGeneradoGroupByArgs> = Prisma.PrismaPromise<
+export type GetReporteGeneradoGroupByPayload<T extends ReporteGeneradoGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<ReporteGeneradoGroupByOutputType, T['by']> &
       {

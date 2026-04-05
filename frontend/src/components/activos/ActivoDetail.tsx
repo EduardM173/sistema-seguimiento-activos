@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Card, Badge, LoadingSpinner, Modal } from '../common';
-import type { Activo, MovimientoActivo } from '../../types/activos.types';
+import type { Activo, MovimientoActivo, EstadoActivo, estadoActivoDisplay } from '../../types/activos.types';
 import { activosService } from '../../services/activos.service';
 import '../../styles/modules.css';
 
@@ -39,6 +39,22 @@ export const ActivoDetail: React.FC<ActivoDetailProps> = ({
     }
   };
 
+  // PROSIN-185: Función para obtener color según estado (alineado con backend)
+  const getEstadoColor = (estado: EstadoActivo): any => {
+    const colores: Record<EstadoActivo, any> = {
+      'OPERATIVO': 'success',
+      'MANTENIMIENTO': 'warning',
+      'FUERA_DE_SERVICIO': 'danger',
+      'DADO_DE_BAJA': 'secondary',
+    };
+    return colores[estado] || 'secondary';
+  };
+
+  // Obtener texto amigable del estado
+  const getEstadoDisplay = (estado: EstadoActivo): string => {
+    return estadoActivoDisplay[estado] || estado;
+  };
+
   if (loading) {
     return <LoadingSpinner />;
   }
@@ -47,24 +63,16 @@ export const ActivoDetail: React.FC<ActivoDetailProps> = ({
     return <div>Error al cargar el activo</div>;
   }
 
-  const getEstadoColor = (estado: string): any => {
-    const colores: Record<string, any> = {
-      'Operacional': 'success',
-      'Mantenimiento': 'warning',
-      'Reparación': 'warning',
-      'Baja': 'danger',
-      'Robado': 'danger',
-      'Perdido': 'danger',
-    };
-    return colores[estado] || 'secondary';
-  };
-
   return (
     <div className="activo-detail-container">
       <Card padding="lg">
         <div className="detail-header">
           <h2>{activo.nombre}</h2>
-          <Badge label={activo.estado} variant={getEstadoColor(activo.estado)} />
+          {/* PROSIN-185: Estado visible en información del activo */}
+          <Badge 
+            label={getEstadoDisplay(activo.estado)} 
+            variant={getEstadoColor(activo.estado)} 
+          />
         </div>
 
         <div className="detail-grid">

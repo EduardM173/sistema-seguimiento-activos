@@ -185,7 +185,7 @@ export type AuditoriaGroupByOutputType = {
   _max: AuditoriaMaxAggregateOutputType | null
 }
 
-type GetAuditoriaGroupByPayload<T extends AuditoriaGroupByArgs> = Prisma.PrismaPromise<
+export type GetAuditoriaGroupByPayload<T extends AuditoriaGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<AuditoriaGroupByOutputType, T['by']> &
       {
