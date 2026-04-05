@@ -16,9 +16,11 @@ import {
   ApiBearerAuth,
   ApiBody,
   ApiConflictResponse,
+  ApiCreatedResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiParam,
   ApiTags,
 } from '@nestjs/swagger';
 
@@ -43,6 +45,16 @@ export class AssetsController {
    *
    * Query params: q, estado, categoriaId, page, pageSize
    */
+  @ApiOperation({
+    summary: 'Listar activos con filtros',
+    description: 'Obtiene una lista paginada de activos y permite filtrar por texto, estado, categoría y ubicación.',
+  })
+  @ApiOkResponse({
+    description: 'Listado paginado de activos obtenido correctamente',
+  })
+  @ApiBadRequestResponse({
+    description: 'Los filtros o parámetros de paginación enviados no son válidos',
+  })
   @Get()
   async findAll(@Query() query: SearchAssetsDto) {
     const result = await this.assetsService.findAll(query);
@@ -58,6 +70,17 @@ export class AssetsController {
    * GET /api/assets/:id
    * Get single asset with full details.
    */
+  @ApiOperation({
+    summary: 'Obtener detalle de un activo',
+    description: 'Recupera el detalle completo de un activo por su ID.',
+  })
+  @ApiParam({ name: 'id', description: 'ID del activo' })
+  @ApiOkResponse({
+    description: 'Detalle del activo obtenido correctamente',
+  })
+  @ApiNotFoundResponse({
+    description: 'No se encontró el activo solicitado',
+  })
   @Get(':id')
   async findOne(@Param('id') id: string) {
     const activo = await this.assetsService.findOne(id);
@@ -68,6 +91,20 @@ export class AssetsController {
    * POST /api/assets
    * Create a new asset.
    */
+  @ApiOperation({
+    summary: 'Registrar activo',
+    description: 'Crea un nuevo activo dentro del inventario institucional.',
+  })
+  @ApiBody({ type: CreateAssetDto })
+  @ApiCreatedResponse({
+    description: 'Activo registrado exitosamente',
+  })
+  @ApiBadRequestResponse({
+    description: 'Datos inválidos para registrar el activo',
+  })
+  @ApiConflictResponse({
+    description: 'Ya existe un activo con el mismo código o número de serie',
+  })
   @Post()
   async create(@Body() dto: CreateAssetDto, @Req() req: Request) {
     const userId = (req.user as { id: string }).id;
@@ -79,6 +116,21 @@ export class AssetsController {
    * PATCH /api/assets/:id
    * Update an existing asset (partial update).
    */
+  @ApiOperation({
+    summary: 'Actualizar activo',
+    description: 'Actualiza parcialmente la información de un activo existente.',
+  })
+  @ApiParam({ name: 'id', description: 'ID del activo' })
+  @ApiBody({ type: UpdateAssetDto })
+  @ApiOkResponse({
+    description: 'Activo actualizado exitosamente',
+  })
+  @ApiBadRequestResponse({
+    description: 'Datos inválidos para actualizar el activo',
+  })
+  @ApiNotFoundResponse({
+    description: 'No se encontró el activo solicitado',
+  })
   @Patch(':id')
   async update(
     @Param('id') id: string,
@@ -146,6 +198,17 @@ export class AssetsController {
    * DELETE /api/assets/:id
    * Soft-delete (dar de baja) an asset.
    */
+  @ApiOperation({
+    summary: 'Dar de baja un activo',
+    description: 'Realiza la baja lógica de un activo existente.',
+  })
+  @ApiParam({ name: 'id', description: 'ID del activo' })
+  @ApiOkResponse({
+    description: 'Activo dado de baja exitosamente',
+  })
+  @ApiNotFoundResponse({
+    description: 'No se encontró el activo solicitado',
+  })
   @Delete(':id')
   async remove(@Param('id') id: string, @Req() req: Request) {
     const userId = (req.user as { id: string }).id;
