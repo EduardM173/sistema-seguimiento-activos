@@ -18,8 +18,8 @@ export const inventarioService = {
   // Obtener un material específico
   obtenerPorId: async (id: string) => {
     try {
-      const response = await apiClient.get<ApiResponse<Material>>(`/inventory-items/${id}`);
-      return response.data;
+      const response = await apiClient.get<Material>(`/inventory-items/${id}`);
+      return response;
     } catch (error) {
       throw error;
     }
@@ -28,8 +28,8 @@ export const inventarioService = {
   // Crear nuevo material
   crear: async (datos: CreateMaterialDTO) => {
     try {
-      const response = await apiClient.post<ApiResponse<Material>>('/inventory-items', datos);
-      return response.data;
+      const response = await apiClient.post<Material>('/inventory-items', datos);
+      return response;
     } catch (error) {
       throw error;
     }
@@ -38,8 +38,8 @@ export const inventarioService = {
   // Actualizar material
   actualizar: async (id: string, datos: UpdateMaterialDTO) => {
     try {
-      const response = await apiClient.put<ApiResponse<Material>>(`/inventory-items/${id}`, datos);
-      return response.data;
+      const response = await apiClient.put<Material>(`/inventory-items/${id}`, datos);
+      return response;
     } catch (error) {
       throw error;
     }
