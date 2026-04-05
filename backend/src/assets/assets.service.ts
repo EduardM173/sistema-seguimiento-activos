@@ -25,11 +25,53 @@ export class AssetsService {
 
     const where: Prisma.ActivoWhereInput = {};
 
-    // Search by name or code
+    // Search by asset data, category, location or responsible person
     if (q) {
+      const searchTerms = q
+        .trim()
+        .split(/\s+/)
+        .filter(Boolean);
+
       where.OR = [
         { nombre: { contains: q, mode: 'insensitive' } },
         { codigo: { contains: q, mode: 'insensitive' } },
+        {
+          categoria: {
+            is: {
+              OR: [
+                { nombre: { contains: q, mode: 'insensitive' } },
+                { descripcion: { contains: q, mode: 'insensitive' } },
+              ],
+            },
+          },
+        },
+        {
+          ubicacion: {
+            is: {
+              OR: [
+                { nombre: { contains: q, mode: 'insensitive' } },
+                { edificio: { contains: q, mode: 'insensitive' } },
+                { piso: { contains: q, mode: 'insensitive' } },
+                { ambiente: { contains: q, mode: 'insensitive' } },
+                { descripcion: { contains: q, mode: 'insensitive' } },
+              ],
+            },
+          },
+        },
+        {
+          responsableActual: {
+            is: {
+              AND: searchTerms.map((term) => ({
+                OR: [
+                  { nombres: { contains: term, mode: 'insensitive' } },
+                  { apellidos: { contains: term, mode: 'insensitive' } },
+                  { correo: { contains: term, mode: 'insensitive' } },
+                  { nombreUsuario: { contains: term, mode: 'insensitive' } },
+                ],
+              })),
+            },
+          },
+        },
       ];
     }
 
@@ -388,6 +430,9 @@ export class AssetsService {
       throw new ConflictException('No se puede asignar un activo dado de baja');
     }
 
+    const finalUsuarioId = assignToUser ?? existing.responsableActualId ?? null;
+    const finalAreaId = assignToArea ?? existing.areaActualId ?? null;
+
     let usuarioAsignado:
       | {
           id: string;
@@ -430,14 +475,35 @@ export class AssetsService {
       }
     }
 
+    if (!usuarioAsignado && finalUsuarioId) {
+      usuarioAsignado = await this.prisma.usuario.findUnique({
+        where: { id: finalUsuarioId },
+        select: {
+          id: true,
+          nombres: true,
+          apellidos: true,
+        },
+      });
+    }
+
+    if (!areaAsignada && finalAreaId) {
+      areaAsignada = await this.prisma.area.findUnique({
+        where: { id: finalAreaId },
+        select: {
+          id: true,
+          nombre: true,
+        },
+      });
+    }
+
     const observaciones = dto.observaciones?.trim() || undefined;
 
     const result = await this.prisma.$transaction(async (tx) => {
       const asignacion = await tx.asignacionActivo.create({
         data: {
           activoId: id,
-          usuarioAsignadoId: usuarioAsignado?.id,
-          areaAsignadaId: areaAsignada?.id,
+          usuarioAsignadoId: finalUsuarioId,
+          areaAsignadaId: finalAreaId,
           asignadoPorId: userId,
           observaciones,
         },
@@ -454,9 +520,9 @@ export class AssetsService {
           activoId: id,
           tipo: 'ASIGNACION',
           areaOrigenId: existing.areaActualId,
-          areaDestinoId: areaAsignada?.id,
+          areaDestinoId: finalAreaId,
           usuarioOrigenId: existing.responsableActualId,
-          usuarioDestinoId: usuarioAsignado?.id,
+          usuarioDestinoId: finalUsuarioId,
           realizadoPorId: userId,
           asignacionId: asignacion.id,
           detalle: observaciones,
@@ -466,8 +532,8 @@ export class AssetsService {
       await tx.activo.update({
         where: { id },
         data: {
-          areaActualId: areaAsignada?.id ?? null,
-          responsableActualId: usuarioAsignado?.id ?? null,
+          areaActualId: finalAreaId,
+          responsableActualId: finalUsuarioId,
           actualizadoPorId: userId,
         },
       });

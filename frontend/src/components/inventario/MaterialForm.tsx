@@ -2,7 +2,8 @@ import React, { useMemo, useState } from 'react';
 import { Button, Modal } from '../common';
 import type { CreateMaterialDTO, Material } from '../../types/inventario.types';
 import { inventarioService } from '../../services/inventario.service';
-import { getCategorias } from '../../services/catalogs.service';
+import { useAuth } from '../../context/AuthContext';
+import { useNotification } from '../../context/NotificationContext';
 
 interface MaterialFormProps {
   isOpen: boolean;
@@ -11,20 +12,27 @@ interface MaterialFormProps {
 }
 
 export const MaterialForm: React.FC<MaterialFormProps> = ({ isOpen, onClose, onCreated }) => {
+  const { user } = useAuth();
+  const notify = useNotification();
+  const isAdminUser =
+    user?.correo === 'admin@activos.bo' || user?.rol?.nombre === 'ADMIN_GENERAL';
+
   const initialState = useMemo<CreateMaterialDTO>(
     () => ({
       codigo: '',
       nombre: '',
       descripcion: undefined,
       unidad: '',
-      stockActual: 0.01,
-      stockMinimo: 0.01,
+      stockActual: isAdminUser ? 0 : 0.01,
+      stockMinimo: isAdminUser ? 0 : 0.01,
       categoriaId: undefined,
     }),
-    []
+    [isAdminUser]
   );
 
   const [formData, setFormData] = useState<CreateMaterialDTO>(initialState);
+  const [stockActualInput, setStockActualInput] = useState(String(initialState.stockActual));
+  const [stockMinimoInput, setStockMinimoInput] = useState(String(initialState.stockMinimo));
   const [loading, setLoading] = useState(false);
   const [categorias, setCategorias] = useState<{ id: string; nombre: string }[]>([]);
 
@@ -32,13 +40,15 @@ export const MaterialForm: React.FC<MaterialFormProps> = ({ isOpen, onClose, onC
   React.useEffect(() => {
     if (isOpen) {
       setFormData(initialState);
+      setStockActualInput(String(initialState.stockActual));
+      setStockMinimoInput(String(initialState.stockMinimo));
       cargarCategorias();
     }
   }, [isOpen, initialState]);
 
   const cargarCategorias = async () => {
     try {
-      const categoriasData = await getCategorias();
+      const categoriasData = await inventarioService.obtenerCategorias();
       setCategorias(categoriasData);
     } catch (error) {
       console.error('Error al cargar categorías:', error);
@@ -50,9 +60,11 @@ export const MaterialForm: React.FC<MaterialFormProps> = ({ isOpen, onClose, onC
 
     setFormData((prev) => {
       if (name === 'stockActual') {
+        setStockActualInput(value);
         return { ...prev, stockActual: value === '' ? 0 : Number(value) };
       }
       if (name === 'stockMinimo') {
+        setStockMinimoInput(value);
         return { ...prev, stockMinimo: value === '' ? 0 : Number(value) };
       }
 
@@ -77,15 +89,33 @@ export const MaterialForm: React.FC<MaterialFormProps> = ({ isOpen, onClose, onC
 
     try {
       if (!formData.categoriaId) {
-        window.alert('Debe seleccionar una categoría.');
+        notify.warning('Categoría requerida', 'Debe seleccionar una categoría.');
         return;
       }
-      if (formData.stockActual <= 0) {
-        window.alert('El "Stock actual" debe ser mayor a 0.');
+      if (isAdminUser) {
+        if (formData.stockActual === 0) {
+          notify.warning('Stock actual no registrado.');
+          return;
+        }
+      } else if (formData.stockActual <= 0) {
+        notify.warning('Valor inválido', 'El "Stock actual" debe ser mayor a 0.');
         return;
       }
-      if (formData.stockMinimo <= 0) {
-        window.alert('El "Stock mínimo" debe ser mayor a 0.');
+      if (formData.stockActual < 0) {
+        notify.warning('Valor inválido', 'El "Stock actual" no puede ser menor a 0.');
+        return;
+      }
+      if (isAdminUser) {
+        if (formData.stockMinimo === 0) {
+          notify.warning('Stock mínimo no registrado.');
+          return;
+        }
+      } else if (formData.stockMinimo <= 0) {
+        notify.warning('Valor inválido', 'El "Stock mínimo" debe ser mayor a 0.');
+        return;
+      }
+      if (formData.stockMinimo < 0) {
+        notify.warning('Valor inválido', 'El "Stock mínimo" no puede ser menor a 0.');
         return;
       }
 
@@ -95,7 +125,7 @@ export const MaterialForm: React.FC<MaterialFormProps> = ({ isOpen, onClose, onC
       onCreated();
       onClose();
     } catch (err: any) {
-      window.alert(err?.response?.data?.message || 'Error al guardar el material');
+      notify.error('Error al guardar el material', err?.message || 'No se pudo registrar el material.');
     } finally {
       setLoading(false);
     }
@@ -169,9 +199,9 @@ export const MaterialForm: React.FC<MaterialFormProps> = ({ isOpen, onClose, onC
             <input
               type="number"
               name="stockActual"
-              value={formData.stockActual}
+                value={stockActualInput}
               onChange={handleChange}
-              min={0.01}
+              min={isAdminUser ? 0 : 0.01}
               step="0.01"
               required
             />
@@ -182,9 +212,9 @@ export const MaterialForm: React.FC<MaterialFormProps> = ({ isOpen, onClose, onC
             <input
               type="number"
               name="stockMinimo"
-              value={formData.stockMinimo}
+                value={stockMinimoInput}
               onChange={handleChange}
-              min={0.01}
+              min={isAdminUser ? 0 : 0.01}
               step="0.01"
               required
             />

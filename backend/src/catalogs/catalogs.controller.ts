@@ -5,7 +5,6 @@ import {
   ApiOperation,
   ApiTags,
   ApiQuery,
-  ApiResponse as SwaggerApiResponse,
 } from '@nestjs/swagger';
 import { CatalogsService } from './catalogs.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -72,7 +71,7 @@ export class CatalogsController {
     );
   }
 
-  // ========== ENDPOINT PARA ESTADOS DE ACTIVOS (PROSIN-182 y PROSIN-183) ==========
+  // ========== ENDPOINT PARA ESTADOS DE ACTIVOS ==========
   @ApiOperation({
     summary: 'Obtener estados de activos',
     description: 'Retorna la lista de estados disponibles para los activos según el enum del sistema',
@@ -91,7 +90,6 @@ export class CatalogsController {
   async getEstadosActivos(
     @Query('incluirDadosDeBaja') incluirDadosDeBaja?: string,
   ) {
-    // Estados según el enum EstadoActivo del schema Prisma
     let estados = [
       { valor: 'OPERATIVO', label: 'Operativo', descripcion: 'Activo funcionando correctamente' },
       { valor: 'MANTENIMIENTO', label: 'En mantenimiento', descripcion: 'Activo en proceso de mantenimiento' },
@@ -99,7 +97,6 @@ export class CatalogsController {
       { valor: 'DADO_DE_BAJA', label: 'Dado de baja', descripcion: 'Activo retirado del inventario' },
     ];
 
-    // Filtrar DADO_DE_BAJA si no se pide explícitamente
     const incluirBaja = incluirDadosDeBaja === 'true' || incluirDadosDeBaja === '1';
     if (!incluirBaja) {
       estados = estados.filter(e => e.valor !== 'DADO_DE_BAJA');

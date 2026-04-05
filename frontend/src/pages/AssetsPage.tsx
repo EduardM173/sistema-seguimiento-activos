@@ -254,7 +254,7 @@ export default function AssetsPage() {
             <input
               type="text"
               className="assetsFilters__input"
-              placeholder="Código, nombre o responsable..."
+              placeholder="Código, nombre, responsable, categoría o ubicación..."
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
             />

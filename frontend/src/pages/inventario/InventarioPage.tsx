@@ -3,12 +3,14 @@ import { DataTable, SearchBar, Button, Badge, Alert } from '../../components/com
 import type { Material } from '../../types/inventario.types';
 import { inventarioService } from '../../services/inventario.service';
 import MaterialForm from '../../components/inventario/MaterialForm';
+import { useNotification } from '../../context/NotificationContext';
 import '../../styles/modules.css';
 
 export const InventarioPage: React.FC = () => {
+  const notify = useNotification();
   const [materiales, setMateriales] = useState<Material[]>([]);
   const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [message, setMessage] = useState<{ type: 'error'; text: string } | null>(null);
   const [isMaterialModalOpen, setIsMaterialModalOpen] = useState(false);
 
   useEffect(() => {
@@ -30,7 +32,7 @@ export const InventarioPage: React.FC = () => {
 
   const handleMaterialCreated = async () => {
     await cargarMateriales();
-    setMessage({ type: 'success', text: 'Material registrado correctamente' });
+    notify.success('Material registrado correctamente');
   };
 
   const columns = [
