@@ -430,6 +430,9 @@ export class AssetsService {
       throw new ConflictException('No se puede asignar un activo dado de baja');
     }
 
+    const finalUsuarioId = assignToUser ?? existing.responsableActualId ?? null;
+    const finalAreaId = assignToArea ?? existing.areaActualId ?? null;
+
     let usuarioAsignado:
       | {
           id: string;
@@ -472,14 +475,35 @@ export class AssetsService {
       }
     }
 
+    if (!usuarioAsignado && finalUsuarioId) {
+      usuarioAsignado = await this.prisma.usuario.findUnique({
+        where: { id: finalUsuarioId },
+        select: {
+          id: true,
+          nombres: true,
+          apellidos: true,
+        },
+      });
+    }
+
+    if (!areaAsignada && finalAreaId) {
+      areaAsignada = await this.prisma.area.findUnique({
+        where: { id: finalAreaId },
+        select: {
+          id: true,
+          nombre: true,
+        },
+      });
+    }
+
     const observaciones = dto.observaciones?.trim() || undefined;
 
     const result = await this.prisma.$transaction(async (tx) => {
       const asignacion = await tx.asignacionActivo.create({
         data: {
           activoId: id,
-          usuarioAsignadoId: usuarioAsignado?.id,
-          areaAsignadaId: areaAsignada?.id,
+          usuarioAsignadoId: finalUsuarioId,
+          areaAsignadaId: finalAreaId,
           asignadoPorId: userId,
           observaciones,
         },
@@ -496,9 +520,9 @@ export class AssetsService {
           activoId: id,
           tipo: 'ASIGNACION',
           areaOrigenId: existing.areaActualId,
-          areaDestinoId: areaAsignada?.id,
+          areaDestinoId: finalAreaId,
           usuarioOrigenId: existing.responsableActualId,
-          usuarioDestinoId: usuarioAsignado?.id,
+          usuarioDestinoId: finalUsuarioId,
           realizadoPorId: userId,
           asignacionId: asignacion.id,
           detalle: observaciones,
@@ -508,8 +532,8 @@ export class AssetsService {
       await tx.activo.update({
         where: { id },
         data: {
-          areaActualId: areaAsignada?.id ?? null,
-          responsableActualId: usuarioAsignado?.id ?? null,
+          areaActualId: finalAreaId,
+          responsableActualId: finalUsuarioId,
           actualizadoPorId: userId,
         },
       });
