@@ -231,7 +231,7 @@ export type MaterialGroupByOutputType = {
   _max: MaterialMaxAggregateOutputType | null
 }
 
-type GetMaterialGroupByPayload<T extends MaterialGroupByArgs> = Prisma.PrismaPromise<
+export type GetMaterialGroupByPayload<T extends MaterialGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<MaterialGroupByOutputType, T['by']> &
       {

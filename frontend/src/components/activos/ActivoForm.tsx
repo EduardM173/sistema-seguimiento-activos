@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Modal } from '../common';
-import type { Activo, CreateActivoDTO } from '../../types/activos.types';
+import type { Activo, CreateActivoDTO, EstadoActivo, estadoActivo, estadoActivoDisplay } from '../../types/activos.types';
 import { activosService } from '../../services/activos.service';
 import '../../styles/modules.css';
 
@@ -24,7 +24,7 @@ export const ActivoForm: React.FC<ActivoFormProps> = ({
     modelo: '',
     numeroDeSerie: '',
     categoriaActivoId: '',
-    estado: 'Operacional',
+    estado: '', // ← vacío para forzar selección (PROSIN-186)
     ubicacionId: '',
     responsableId: '',
     valorAdquisicion: 0,
@@ -36,6 +36,7 @@ export const ActivoForm: React.FC<ActivoFormProps> = ({
   const [categorias, setCategorias] = useState<any[]>([]);
   const [ubicaciones, setUbicaciones] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [estadoError, setEstadoError] = useState<string>('');
 
   useEffect(() => {
     if (isOpen) {
@@ -48,7 +49,7 @@ export const ActivoForm: React.FC<ActivoFormProps> = ({
           modelo: activo.modelo || '',
           numeroDeSerie: activo.numeroDeSerie || '',
           categoriaActivoId: activo.categoriaActivoId || activo.categoriaActivo?.id || '',
-          estado: activo.estado || 'Operacional',
+          estado: activo.estado || '', // ← puede venir con valor del backend
           ubicacionId: activo.ubicacionId || activo.ubicacion?.id || '',
           responsableId: activo.responsableId || '',
           valorAdquisicion: activo.valorAdquisicion || 0,
@@ -81,10 +82,22 @@ export const ActivoForm: React.FC<ActivoFormProps> = ({
       ...formData,
       [name]: name === 'valorAdquisicion' ? parseFloat(value) : value,
     });
+    // Limpiar error del estado cuando se selecciona uno
+    if (name === 'estado' && value) {
+      setEstadoError('');
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // PROSIN-186: Validación required para estado
+    if (!formData.estado) {
+      setEstadoError('Debe seleccionar un estado para el activo');
+      return;
+    }
+    
+    setEstadoError('');
     setLoading(true);
 
     try {
@@ -103,6 +116,14 @@ export const ActivoForm: React.FC<ActivoFormProps> = ({
       setLoading(false);
     }
   };
+
+  // Opciones de estado según enum del backend (PROSIN-184)
+  const estadoOptions = [
+    { value: 'OPERATIVO', label: 'Operativo' },
+    { value: 'MANTENIMIENTO', label: 'En mantenimiento' },
+    { value: 'FUERA_DE_SERVICIO', label: 'Fuera de servicio' },
+    { value: 'DADO_DE_BAJA', label: 'Dado de baja' },
+  ];
 
   return (
     <Modal
@@ -172,7 +193,12 @@ export const ActivoForm: React.FC<ActivoFormProps> = ({
 
           <div className="form-group">
             <label>Categoría</label>
-            <select name="categoriaActivoId" onChange={handleChange} required>
+            <select 
+              name="categoriaActivoId" 
+              value={formData.categoriaActivoId}
+              onChange={handleChange} 
+              required
+            >
               <option value="">Seleccionar...</option>
               {categorias.map((cat) => (
                 <option key={cat.id} value={cat.id}>
@@ -184,7 +210,12 @@ export const ActivoForm: React.FC<ActivoFormProps> = ({
 
           <div className="form-group">
             <label>Ubicación</label>
-            <select name="ubicacionId" onChange={handleChange} required>
+            <select 
+              name="ubicacionId" 
+              value={formData.ubicacionId}
+              onChange={handleChange} 
+              required
+            >
               <option value="">Seleccionar...</option>
               {ubicaciones.map((ubi) => (
                 <option key={ubi.id} value={ubi.id}>
@@ -194,14 +225,28 @@ export const ActivoForm: React.FC<ActivoFormProps> = ({
             </select>
           </div>
 
+          {/* PROSIN-184: Selector de estado con opciones disponibles */}
           <div className="form-group">
-            <label>Estado</label>
-            <select name="estado" value={formData.estado} onChange={handleChange}>
-              <option>Operacional</option>
-              <option>Mantenimiento</option>
-              <option>Reparación</option>
-              <option>Baja</option>
+            <label>Estado *</label>
+            <select 
+              name="estado" 
+              value={formData.estado} 
+              onChange={handleChange}
+              required
+              className={estadoError ? 'input-error' : ''}
+            >
+              <option value="">Seleccione un estado</option>
+              {estadoOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
             </select>
+            {estadoError && (
+              <span className="error-message" style={{ color: 'red', fontSize: '12px' }}>
+                {estadoError}
+              </span>
+            )}
           </div>
 
           <div className="form-group">

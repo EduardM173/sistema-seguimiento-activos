@@ -1,13 +1,15 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
+import { Controller, Get, UseGuards, Query } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { CatalogsService } from './catalogs.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ApiResponse } from '../common/api-response';
+import { EstadoDto } from './dto/estado.dto';
 
 @ApiTags('catalogs')
 @ApiBearerAuth()
@@ -67,5 +69,39 @@ export class CatalogsController {
         area: u.area,
       })),
     );
+  }
+
+  // ========== ENDPOINT PARA ESTADOS DE ACTIVOS ==========
+  @ApiOperation({
+    summary: 'Obtener estados de activos',
+    description: 'Retorna la lista de estados disponibles para los activos según el enum del sistema',
+  })
+  @ApiOkResponse({
+    description: 'Lista de estados obtenida exitosamente',
+    type: [EstadoDto],
+  })
+  @ApiQuery({
+    name: 'incluirDadosDeBaja',
+    required: false,
+    type: Boolean,
+    description: 'Si es true, incluye el estado DADO_DE_BAJA en la respuesta. Por defecto: false',
+  })
+  @Get('estados')
+  async getEstadosActivos(
+    @Query('incluirDadosDeBaja') incluirDadosDeBaja?: string,
+  ) {
+    let estados = [
+      { valor: 'OPERATIVO', label: 'Operativo', descripcion: 'Activo funcionando correctamente' },
+      { valor: 'MANTENIMIENTO', label: 'En mantenimiento', descripcion: 'Activo en proceso de mantenimiento' },
+      { valor: 'FUERA_DE_SERVICIO', label: 'Fuera de servicio', descripcion: 'Activo no disponible temporalmente' },
+      { valor: 'DADO_DE_BAJA', label: 'Dado de baja', descripcion: 'Activo retirado del inventario' },
+    ];
+
+    const incluirBaja = incluirDadosDeBaja === 'true' || incluirDadosDeBaja === '1';
+    if (!incluirBaja) {
+      estados = estados.filter(e => e.valor !== 'DADO_DE_BAJA');
+    }
+
+    return ApiResponse.success(estados);
   }
 }

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { DataTable, SearchBar, Button, Badge, LoadingSpinner } from '../common';
-import type { Activo, FiltrosActivos } from '../../types/activos.types';
+import type { Activo, FiltrosActivos, EstadoActivo } from '../../types/activos.types';
+import { estadoActivoDisplay } from '../../types/activos.types';
 import { activosService } from '../../services/activos.service';
 import '../../styles/modules.css';
 
@@ -47,16 +48,20 @@ export const ActivosList: React.FC<ActivosListProps> = ({
     setFiltros({ ...filtros, busqueda: termino, pagina: 1 });
   };
 
-  const getEstadoColor = (estado: string): any => {
-    const colores: Record<string, any> = {
-      'Operacional': 'success',
-      'Mantenimiento': 'warning',
-      'Reparación': 'warning',
-      'Baja': 'danger',
-      'Robado': 'danger',
-      'Perdido': 'danger',
+  // PROSIN-185: Función para obtener color según estado (alineado con backend)
+  const getEstadoColor = (estado: EstadoActivo): any => {
+    const colores: Record<EstadoActivo, any> = {
+      'OPERATIVO': 'success',
+      'MANTENIMIENTO': 'warning',
+      'FUERA_DE_SERVICIO': 'danger',
+      'DADO_DE_BAJA': 'secondary',
     };
     return colores[estado] || 'secondary';
+  };
+
+  // Obtener texto amigable del estado
+  const getEstadoDisplay = (estado: EstadoActivo): string => {
+    return estadoActivoDisplay[estado] || estado;
   };
 
   const columns = [
@@ -67,8 +72,13 @@ export const ActivosList: React.FC<ActivosListProps> = ({
     {
       header: 'Estado',
       accessor: 'estado',
-      render: (value: string) => (
-        <Badge label={value} variant={getEstadoColor(value)} size="sm" />
+      // PROSIN-185: Mostrar estado con badge y texto amigable
+      render: (value: EstadoActivo) => (
+        <Badge 
+          label={getEstadoDisplay(value)} 
+          variant={getEstadoColor(value)} 
+          size="sm" 
+        />
       ),
     },
     {

@@ -172,7 +172,7 @@ export type IncidenteActivoGroupByOutputType = {
   _max: IncidenteActivoMaxAggregateOutputType | null
 }
 
-type GetIncidenteActivoGroupByPayload<T extends IncidenteActivoGroupByArgs> = Prisma.PrismaPromise<
+export type GetIncidenteActivoGroupByPayload<T extends IncidenteActivoGroupByArgs> = Prisma.PrismaPromise<
   Array<
     Prisma.PickEnumerable<IncidenteActivoGroupByOutputType, T['by']> &
       {
