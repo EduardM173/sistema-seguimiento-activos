@@ -1,44 +1,63 @@
 import { Controller, Get, UseGuards, Query } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse as SwaggerApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+  ApiQuery,
+  ApiResponse as SwaggerApiResponse,
+} from '@nestjs/swagger';
 import { CatalogsService } from './catalogs.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ApiResponse } from '../common/api-response';
 import { EstadoDto } from './dto/estado.dto';
 
-@ApiTags('Catálogos')
+@ApiTags('catalogs')
+@ApiBearerAuth()
 @Controller('catalogs')
 @UseGuards(JwtAuthGuard)
-@ApiBearerAuth()
 export class CatalogsController {
   constructor(private readonly catalogsService: CatalogsService) {}
 
+  @ApiOperation({
+    summary: 'Listar categorías de activos',
+    description: 'Obtiene el catálogo de categorías usado por los filtros y formularios de activos.',
+  })
+  @ApiOkResponse({ description: 'Categorías obtenidas correctamente' })
   @Get('categorias')
-  @ApiOperation({ summary: 'Obtener categorías de activos' })
-  @SwaggerApiResponse({ status: 200, description: 'Lista de categorías' })
   async getCategorias() {
     const data = await this.catalogsService.findAllCategorias();
     return ApiResponse.success(data);
   }
 
+  @ApiOperation({
+    summary: 'Listar ubicaciones',
+    description: 'Obtiene el catálogo de ubicaciones usado por los filtros y formularios de activos.',
+  })
+  @ApiOkResponse({ description: 'Ubicaciones obtenidas correctamente' })
   @Get('ubicaciones')
-  @ApiOperation({ summary: 'Obtener ubicaciones' })
-  @SwaggerApiResponse({ status: 200, description: 'Lista de ubicaciones' })
   async getUbicaciones() {
     const data = await this.catalogsService.findAllUbicaciones();
     return ApiResponse.success(data);
   }
 
+  @ApiOperation({
+    summary: 'Listar áreas',
+    description: 'Obtiene el catálogo de áreas activas para formularios y asignaciones.',
+  })
+  @ApiOkResponse({ description: 'Áreas obtenidas correctamente' })
   @Get('areas')
-  @ApiOperation({ summary: 'Obtener áreas' })
-  @SwaggerApiResponse({ status: 200, description: 'Lista de áreas' })
   async getAreas() {
     const data = await this.catalogsService.findAllAreas();
     return ApiResponse.success(data);
   }
 
+  @ApiOperation({
+    summary: 'Listar usuarios activos',
+    description: 'Obtiene usuarios activos para selección en filtros, formularios y asignaciones.',
+  })
+  @ApiOkResponse({ description: 'Usuarios activos obtenidos correctamente' })
   @Get('usuarios')
-  @ApiOperation({ summary: 'Obtener usuarios' })
-  @SwaggerApiResponse({ status: 200, description: 'Lista de usuarios' })
   async getUsuarios() {
     const data = await this.catalogsService.findAllUsuarios();
     return ApiResponse.success(
@@ -54,24 +73,21 @@ export class CatalogsController {
   }
 
   // ========== ENDPOINT PARA ESTADOS DE ACTIVOS (PROSIN-182 y PROSIN-183) ==========
-  @Get('estados')
   @ApiOperation({
     summary: 'Obtener estados de activos',
-    description: 'Retorna la lista de estados disponibles para los activos según el enum del sistema'
+    description: 'Retorna la lista de estados disponibles para los activos según el enum del sistema',
+  })
+  @ApiOkResponse({
+    description: 'Lista de estados obtenida exitosamente',
+    type: [EstadoDto],
   })
   @ApiQuery({
     name: 'incluirDadosDeBaja',
     required: false,
     type: Boolean,
-    description: 'Si es true, incluye el estado DADO_DE_BAJA en la respuesta. Por defecto: false'
+    description: 'Si es true, incluye el estado DADO_DE_BAJA en la respuesta. Por defecto: false',
   })
-  @SwaggerApiResponse({
-    status: 200,
-    description: 'Lista de estados obtenida exitosamente',
-    type: [EstadoDto]
-  })
-  @SwaggerApiResponse({ status: 401, description: 'No autorizado - Se requiere token JWT' })
-  @SwaggerApiResponse({ status: 500, description: 'Error interno del servidor' })
+  @Get('estados')
   async getEstadosActivos(
     @Query('incluirDadosDeBaja') incluirDadosDeBaja?: string,
   ) {
