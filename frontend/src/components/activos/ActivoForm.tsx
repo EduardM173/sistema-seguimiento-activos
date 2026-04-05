@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Modal } from '../common';
-import type { Activo, CreateActivoDTO, EstadoActivo, estadoActivo, estadoActivoDisplay } from '../../types/activos.types';
+import type { Activo } from '../../types/activos.types';
 import { activosService } from '../../services/activos.service';
 import '../../styles/modules.css';
 
@@ -24,7 +24,7 @@ export const ActivoForm: React.FC<ActivoFormProps> = ({
     modelo: '',
     numeroDeSerie: '',
     categoriaActivoId: '',
-    estado: '', // ← vacío para forzar selección (PROSIN-186)
+    estado: '',
     ubicacionId: '',
     responsableId: '',
     valorAdquisicion: 0,
@@ -36,7 +36,7 @@ export const ActivoForm: React.FC<ActivoFormProps> = ({
   const [categorias, setCategorias] = useState<any[]>([]);
   const [ubicaciones, setUbicaciones] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-  const [estadoError, setEstadoError] = useState<string>('');
+  const [submitAttempted, setSubmitAttempted] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -49,7 +49,7 @@ export const ActivoForm: React.FC<ActivoFormProps> = ({
           modelo: activo.modelo || '',
           numeroDeSerie: activo.numeroDeSerie || '',
           categoriaActivoId: activo.categoriaActivoId || activo.categoriaActivo?.id || '',
-          estado: activo.estado || '', // ← puede venir con valor del backend
+          estado: activo.estado || '',
           ubicacionId: activo.ubicacionId || activo.ubicacion?.id || '',
           responsableId: activo.responsableId || '',
           valorAdquisicion: activo.valorAdquisicion || 0,
@@ -59,7 +59,17 @@ export const ActivoForm: React.FC<ActivoFormProps> = ({
           proveedor: activo.proveedor || '',
           observaciones: activo.observaciones || '',
         });
+      } else {
+        setFormData(prev => ({
+          ...prev,
+          estado: '',
+          codigoActivo: '',
+          nombre: '',
+          categoriaActivoId: '',
+          ubicacionId: '',
+        }));
       }
+      setSubmitAttempted(false);
     }
   }, [isOpen, activo]);
 
@@ -82,22 +92,26 @@ export const ActivoForm: React.FC<ActivoFormProps> = ({
       ...formData,
       [name]: name === 'valorAdquisicion' ? parseFloat(value) : value,
     });
-    // Limpiar error del estado cuando se selecciona uno
-    if (name === 'estado' && value) {
-      setEstadoError('');
-    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitAttempted(true);
     
-    // PROSIN-186: Validación required para estado
-    if (!formData.estado) {
-      setEstadoError('Debe seleccionar un estado para el activo');
+    // VALIDACIÓN ESTRICTA DEL ESTADO
+    if (!formData.estado || formData.estado === '') {
+      // Alerta visual
+      alert(' Debe seleccionar un estado para el activo (Operativo, Mantenimiento o Fuera de Servicio)');
+      
+      // Enfocar el select
+      const estadoSelect = document.querySelector('select[name="estado"]') as HTMLElement;
+      if (estadoSelect) {
+        estadoSelect.focus();
+        estadoSelect.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
       return;
     }
     
-    setEstadoError('');
     setLoading(true);
 
     try {
@@ -117,13 +131,14 @@ export const ActivoForm: React.FC<ActivoFormProps> = ({
     }
   };
 
-  // Opciones de estado según enum del backend (PROSIN-184)
   const estadoOptions = [
     { value: 'OPERATIVO', label: 'Operativo' },
     { value: 'MANTENIMIENTO', label: 'En mantenimiento' },
     { value: 'FUERA_DE_SERVICIO', label: 'Fuera de servicio' },
     { value: 'DADO_DE_BAJA', label: 'Dado de baja' },
   ];
+
+  const showEstadoError = submitAttempted && !formData.estado;
 
   return (
     <Modal
@@ -136,7 +151,7 @@ export const ActivoForm: React.FC<ActivoFormProps> = ({
       <form onSubmit={handleSubmit} className="form-container">
         <div className="form-grid">
           <div className="form-group">
-            <label>Código de Activo</label>
+            <label>Código de Activo *</label>
             <input
               type="text"
               name="codigoActivo"
@@ -148,7 +163,7 @@ export const ActivoForm: React.FC<ActivoFormProps> = ({
           </div>
 
           <div className="form-group">
-            <label>Nombre</label>
+            <label>Nombre *</label>
             <input
               type="text"
               name="nombre"
@@ -192,14 +207,14 @@ export const ActivoForm: React.FC<ActivoFormProps> = ({
           </div>
 
           <div className="form-group">
-            <label>Categoría</label>
+            <label>Categoría *</label>
             <select 
               name="categoriaActivoId" 
               value={formData.categoriaActivoId}
               onChange={handleChange} 
               required
             >
-              <option value="">Seleccionar...</option>
+              <option value="">Seleccionar categoría</option>
               {categorias.map((cat) => (
                 <option key={cat.id} value={cat.id}>
                   {cat.nombre}
@@ -209,14 +224,14 @@ export const ActivoForm: React.FC<ActivoFormProps> = ({
           </div>
 
           <div className="form-group">
-            <label>Ubicación</label>
+            <label>Ubicación *</label>
             <select 
               name="ubicacionId" 
               value={formData.ubicacionId}
               onChange={handleChange} 
               required
             >
-              <option value="">Seleccionar...</option>
+              <option value="">Seleccionar ubicación</option>
               {ubicaciones.map((ubi) => (
                 <option key={ubi.id} value={ubi.id}>
                   {ubi.nombre}
@@ -225,32 +240,69 @@ export const ActivoForm: React.FC<ActivoFormProps> = ({
             </select>
           </div>
 
-          {/* PROSIN-184: Selector de estado con opciones disponibles */}
-          <div className="form-group">
-            <label>Estado *</label>
+          {/* CAMPO ESTADO - Con validación visible */}
+          <div className="form-group" style={{ marginBottom: '20px' }}>
+            <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '8px' }}>
+              Estado Operativo <span style={{ color: '#dc2626' }}>*</span>
+            </label>
             <select 
               name="estado" 
               value={formData.estado} 
               onChange={handleChange}
               required
-              className={estadoError ? 'input-error' : ''}
+              style={{
+                width: '100%',
+                padding: '12px',
+                borderRadius: '8px',
+                border: showEstadoError ? '2px solid #dc2626' : '1px solid #d1d5db',
+                backgroundColor: showEstadoError ? '#fef2f2' : '#ffffff',
+                fontSize: '14px',
+                cursor: 'pointer',
+                outline: 'none',
+              }}
             >
-              <option value="">Seleccione un estado</option>
+              <option value="" disabled>
+                -- Seleccione un estado --
+              </option>
               {estadoOptions.map((opt) => (
                 <option key={opt.value} value={opt.value}>
                   {opt.label}
                 </option>
               ))}
             </select>
-            {estadoError && (
-              <span className="error-message" style={{ color: 'red', fontSize: '12px' }}>
-                {estadoError}
-              </span>
+            {showEstadoError && (
+              <div style={{ 
+                color: '#dc2626', 
+                fontSize: '13px', 
+                marginTop: '8px', 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '6px',
+                backgroundColor: '#fef2f2',
+                padding: '8px',
+                borderRadius: '6px',
+                borderLeft: '3px solid #dc2626'
+              }}>
+                <span>Debe seleccionar un estado para el activo</span>
+              </div>
+            )}
+            {!showEstadoError && formData.estado && (
+              <div style={{ 
+                color: '#10b981', 
+                fontSize: '12px', 
+                marginTop: '6px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}>
+                <span>✓</span>
+                <span>Estado seleccionado: {estadoOptions.find(o => o.value === formData.estado)?.label}</span>
+              </div>
             )}
           </div>
 
           <div className="form-group">
-            <label>Valor de Adquisición</label>
+            <label>Valor de Adquisición *</label>
             <input
               type="number"
               name="valorAdquisicion"
@@ -263,7 +315,7 @@ export const ActivoForm: React.FC<ActivoFormProps> = ({
           </div>
 
           <div className="form-group">
-            <label>Fecha de Adquisición</label>
+            <label>Fecha de Adquisición *</label>
             <input
               type="date"
               name="fechaAdquisicion"
@@ -299,7 +351,7 @@ export const ActivoForm: React.FC<ActivoFormProps> = ({
         <div className="form-actions">
           <Button label="Cancelar" variant="secondary" onClick={onClose} />
           <Button
-            label={activo ? 'Actualizar' : 'Crear'}
+            label={activo ? 'Actualizar' : 'Guardar y Registrar'}
             variant="primary"
             type="submit"
             isLoading={loading}

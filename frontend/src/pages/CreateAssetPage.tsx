@@ -16,10 +16,10 @@ import type {
 
 import '../styles/create-asset.css';
 
-type FormErrors = Partial<Record<keyof CreateAssetPayload | 'general', string>>;
+type FormErrors = Partial<Record<keyof CreateAssetPayload | 'general' | 'estado', string>>;
 
 const ESTADO_OPTIONS: { value: EstadoActivo; label: string }[] = [
-  { value: 'OPERATIVO', label: 'Excelente / Nuevo' },
+  { value: 'OPERATIVO', label: 'Operativo' },
   { value: 'MANTENIMIENTO', label: 'Mantenimiento' },
   { value: 'FUERA_DE_SERVICIO', label: 'Fuera de Servicio' },
 ];
@@ -68,7 +68,7 @@ export default function CreateAssetPage() {
   const [modelo, setModelo] = useState('');
   const [numeroSerie, setNumeroSerie] = useState('');
   const [categoriaId, setCategoriaId] = useState('');
-  const [estado, setEstado] = useState<EstadoActivo>('OPERATIVO');
+  const [estado, setEstado] = useState<EstadoActivo>('');
   const [ubicacionId, setUbicacionId] = useState('');
   const [areaActualId, setAreaActualId] = useState('');
   const [responsableActualId, setResponsableActualId] = useState('');
@@ -94,6 +94,7 @@ export default function CreateAssetPage() {
     if (!nombre.trim()) errs.nombre = 'El nombre del activo es obligatorio';
     else if (nombre.length > 200) errs.nombre = 'El nombre no puede exceder 200 caracteres';
     if (!categoriaId) errs.categoriaId = 'Debe seleccionar una categoría';
+    if (!estado) errs.estado = 'Debe seleccionar un estado para el activo';
     if (costoAdquisicion && (isNaN(Number(costoAdquisicion)) || Number(costoAdquisicion) < 0))
       errs.costoAdquisicion = 'El valor de adquisición debe ser un número positivo';
 
@@ -111,7 +112,7 @@ export default function CreateAssetPage() {
     e.preventDefault();
 
     // Mark all required fields as touched
-    const allFields = ['codigo', 'nombre', 'categoriaId'];
+    const allFields = ['codigo', 'nombre', 'categoriaId', 'estado'];
     setTouched(new Set([...touched, ...allFields]));
 
     const validationErrors = validate();
@@ -119,6 +120,10 @@ export default function CreateAssetPage() {
 
     if (Object.keys(validationErrors).length > 0) {
       notify.warning('Formulario incompleto', 'Revise los campos marcados en rojo.');
+      // Scroll al campo de estado si es el error
+      if (validationErrors.estado) {
+        document.getElementById('estadoOperativo')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
       return;
     }
 
@@ -139,6 +144,7 @@ export default function CreateAssetPage() {
       if (areaActualId) payload.areaActualId = areaActualId;
       if (responsableActualId) payload.responsableActualId = responsableActualId;
       if (observaciones.trim()) payload.descripcion = observaciones.trim();
+      if (estado) payload.estado = estado;
 
       const result = await createAsset(payload);
       notify.success(result.message ?? 'Activo registrado exitosamente');
@@ -354,21 +360,34 @@ export default function CreateAssetPage() {
                 ))}
               </select>
             </div>
-            <div className="formField">
+            {/* CAMPO ESTADO MODIFICADO - CON VALIDACIÓN */}
+            <div className={`formField ${getFieldError('estado') ? 'formField--error' : ''}`}>
               <label htmlFor="estadoOperativo">
                 Estado Operativo <span className="req">*</span>
               </label>
               <select
                 id="estadoOperativo"
                 value={estado}
-                onChange={(e) => setEstado(e.target.value as EstadoActivo)}
+                onChange={(e) => {
+                  setEstado(e.target.value as EstadoActivo);
+                  markTouched('estado');
+                }}
+                onBlur={() => markTouched('estado')}
+                style={{
+                  borderColor: getFieldError('estado') ? '#dc2626' : undefined,
+                  backgroundColor: getFieldError('estado') ? '#fef2f2' : undefined,
+                }}
               >
+                <option value="" disabled>-- Seleccione un estado --</option>
                 {ESTADO_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>
                     {opt.label}
                   </option>
                 ))}
               </select>
+              {getFieldError('estado') && (
+                <span className="formField__error"> {getFieldError('estado')}</span>
+              )}
             </div>
           </div>
 
