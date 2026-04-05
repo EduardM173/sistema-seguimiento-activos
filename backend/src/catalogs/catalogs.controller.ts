@@ -1,5 +1,5 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse as SwaggerApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { Controller, Get, UseGuards, Query } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse as SwaggerApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { CatalogsService } from './catalogs.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ApiResponse } from '../common/api-response';
@@ -59,6 +59,12 @@ export class CatalogsController {
     summary: 'Obtener estados de activos',
     description: 'Retorna la lista de estados disponibles para los activos según el enum del sistema'
   })
+  @ApiQuery({
+    name: 'incluirDadosDeBaja',
+    required: false,
+    type: Boolean,
+    description: 'Si es true, incluye el estado DADO_DE_BAJA en la respuesta. Por defecto: false'
+  })
   @SwaggerApiResponse({
     status: 200,
     description: 'Lista de estados obtenida exitosamente',
@@ -66,14 +72,23 @@ export class CatalogsController {
   })
   @SwaggerApiResponse({ status: 401, description: 'No autorizado - Se requiere token JWT' })
   @SwaggerApiResponse({ status: 500, description: 'Error interno del servidor' })
-  async getEstadosActivos() {
+  async getEstadosActivos(
+    @Query('incluirDadosDeBaja') incluirDadosDeBaja?: string,
+  ) {
     // Estados según el enum EstadoActivo del schema Prisma
-    const estados = [
+    let estados = [
       { valor: 'OPERATIVO', label: 'Operativo', descripcion: 'Activo funcionando correctamente' },
       { valor: 'MANTENIMIENTO', label: 'En mantenimiento', descripcion: 'Activo en proceso de mantenimiento' },
       { valor: 'FUERA_DE_SERVICIO', label: 'Fuera de servicio', descripcion: 'Activo no disponible temporalmente' },
       { valor: 'DADO_DE_BAJA', label: 'Dado de baja', descripcion: 'Activo retirado del inventario' },
     ];
+
+    // Filtrar DADO_DE_BAJA si no se pide explícitamente
+    const incluirBaja = incluirDadosDeBaja === 'true' || incluirDadosDeBaja === '1';
+    if (!incluirBaja) {
+      estados = estados.filter(e => e.valor !== 'DADO_DE_BAJA');
+    }
+
     return ApiResponse.success(estados);
   }
 }
