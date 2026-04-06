@@ -30,10 +30,6 @@ import { CreateMaterialDTO, UpdateMaterialDTO, MaterialResponseDTO } from './dto
 export class MaterialController {
   constructor(private readonly materialService: MaterialService) {}
 
-  /**
-   * POST /inventory-items
-   * Crear un nuevo material
-   */
   @ApiOperation({
     summary: 'Registrar material',
     description: 'Crea un nuevo material dentro del inventario institucional.',
@@ -52,10 +48,6 @@ export class MaterialController {
     return this.materialService.create(createMaterialDTO);
   }
 
-  /**
-   * GET /inventory-items
-   * Obtener listado de materiales con filtros opcionales
-   */
   @ApiOperation({
     summary: 'Listar materiales',
     description: 'Obtiene el listado de materiales con filtros y paginación opcionales.',
@@ -87,10 +79,6 @@ export class MaterialController {
     });
   }
 
-  /**
-   * GET /inventory-items/categorias
-   * Obtener todas las categorías de materiales
-   */
   @ApiOperation({
     summary: 'Listar categorías de materiales',
     description: 'Obtiene las categorías válidas para registrar materiales.',
@@ -103,10 +91,6 @@ export class MaterialController {
     return this.materialService.obtenerCategorias();
   }
 
-  /**
-   * GET /inventory-items/:id
-   * Obtener un material por ID
-   */
   @ApiOperation({
     summary: 'Obtener material por ID',
     description: 'Recupera el detalle de un material específico.',
@@ -121,10 +105,6 @@ export class MaterialController {
     return this.materialService.findById(id);
   }
 
-  /**
-   * PUT /inventory-items/:id
-   * Actualizar un material
-   */
   @ApiOperation({
     summary: 'Actualizar material',
     description: 'Actualiza los datos de un material existente.',
@@ -146,10 +126,6 @@ export class MaterialController {
     return this.materialService.update(id, updateMaterialDTO);
   }
 
-  /**
-   * DELETE /inventory-items/:id
-   * Eliminar un material
-   */
   @ApiOperation({
     summary: 'Eliminar material',
     description: 'Elimina un material del inventario.',
