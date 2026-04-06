@@ -1,6 +1,6 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Button, Modal } from '../common';
-import type { CreateMaterialDTO, Material } from '../../types/inventario.types';
+import type { CreateMaterialDTO, Material, UpdateMaterialDTO } from '../../types/inventario.types';
 import { inventarioService } from '../../services/inventario.service';
 import { useAuth } from '../../context/AuthContext';
 import { useNotification } from '../../context/NotificationContext';
@@ -9,13 +9,22 @@ interface MaterialFormProps {
   isOpen: boolean;
   onClose: () => void;
   onCreated: () => void | Promise<void>;
+  materialToEdit?: Material | null;
 }
 
-export const MaterialForm: React.FC<MaterialFormProps> = ({ isOpen, onClose, onCreated }) => {
+export const MaterialForm: React.FC<MaterialFormProps> = ({ 
+  isOpen, 
+  onClose, 
+  onCreated,
+  materialToEdit 
+}) => {
   const { user } = useAuth();
   const notify = useNotification();
   const isAdminUser =
     user?.correo === 'admin@activos.bo' || user?.rol?.nombre === 'ADMIN_GENERAL';
+
+  // Admin puede usar 0, usuarios normales deben usar > 0
+  const minStockValue = isAdminUser ? 0 : 0.01;
 
   const initialState = useMemo<CreateMaterialDTO>(
     () => ({
@@ -23,28 +32,46 @@ export const MaterialForm: React.FC<MaterialFormProps> = ({ isOpen, onClose, onC
       nombre: '',
       descripcion: undefined,
       unidad: '',
-      stockActual: isAdminUser ? 0 : 0.01,
-      stockMinimo: isAdminUser ? 0 : 0.01,
+      stockActual: minStockValue,
+      stockMinimo: minStockValue,
       categoriaId: undefined,
     }),
-    [isAdminUser]
+    [minStockValue]
   );
 
-  const [formData, setFormData] = useState<CreateMaterialDTO>(initialState);
+  const [formData, setFormData] = useState<CreateMaterialDTO | UpdateMaterialDTO>(initialState);
   const [stockActualInput, setStockActualInput] = useState(String(initialState.stockActual));
   const [stockMinimoInput, setStockMinimoInput] = useState(String(initialState.stockMinimo));
   const [loading, setLoading] = useState(false);
   const [categorias, setCategorias] = useState<{ id: string; nombre: string }[]>([]);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Reset simple cuando se abre/cierra, para evitar valores “viejos”
-  React.useEffect(() => {
+  // Reset cuando se abre/cierra
+  useEffect(() => {
     if (isOpen) {
-      setFormData(initialState);
-      setStockActualInput(String(initialState.stockActual));
-      setStockMinimoInput(String(initialState.stockMinimo));
       cargarCategorias();
+      
+      if (materialToEdit) {
+        // Modo edición: cargar datos del material
+        setFormData({
+          nombre: materialToEdit.nombre,
+          descripcion: materialToEdit.descripcion,
+          unidad: materialToEdit.unidad,
+          stockActual: materialToEdit.stockActual,
+          stockMinimo: materialToEdit.stockMinimo,
+          categoriaId: materialToEdit.categoriaId || undefined,
+        });
+        setStockActualInput(String(materialToEdit.stockActual));
+        setStockMinimoInput(String(materialToEdit.stockMinimo));
+      } else {
+        // Modo creación: resetear
+        setFormData(initialState);
+        setStockActualInput(String(initialState.stockActual));
+        setStockMinimoInput(String(initialState.stockMinimo));
+      }
+      setErrors({});
     }
-  }, [isOpen, initialState]);
+  }, [isOpen, materialToEdit, initialState]);
 
   const cargarCategorias = async () => {
     try {
@@ -55,123 +82,148 @@ export const MaterialForm: React.FC<MaterialFormProps> = ({ isOpen, onClose, onC
     }
   };
 
+  const validate = (): boolean => {
+    const newErrors: Record<string, string> = {};
+    
+    // Validar campos obligatorios
+    if (!formData.nombre?.trim()) newErrors.nombre = 'El nombre es obligatorio';
+    if (!formData.unidad?.trim()) newErrors.unidad = 'La unidad de medida es obligatoria';
+    if (!materialToEdit && !(formData as CreateMaterialDTO).codigo?.trim()) {
+      newErrors.codigo = 'El código es obligatorio';
+    }
+    if (!formData.categoriaId) newErrors.categoriaId = 'Debe seleccionar una categoría';
+    
+    // Validación de stock actual
+    const stockActual = formData.stockActual ?? 0;
+    if (stockActual < minStockValue) {
+      newErrors.stockActual = `El stock actual debe ser ${minStockValue === 0 ? 'mayor o igual a 0' : 'mayor a 0'}`;
+    }
+    
+    // Validación de stock mínimo
+    const stockMinimo = formData.stockMinimo ?? 0;
+    if (stockMinimo < minStockValue) {
+      newErrors.stockMinimo = `El stock mínimo debe ser ${minStockValue === 0 ? 'mayor o igual a 0' : 'mayor a 0'}`;
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
 
     setFormData((prev) => {
       if (name === 'stockActual') {
         setStockActualInput(value);
-        return { ...prev, stockActual: value === '' ? 0 : Number(value) };
+        const numValue = value === '' ? 0 : Number(value);
+        return { ...prev, stockActual: numValue };
       }
       if (name === 'stockMinimo') {
         setStockMinimoInput(value);
-        return { ...prev, stockMinimo: value === '' ? 0 : Number(value) };
+        const numValue = value === '' ? 0 : Number(value);
+        return { ...prev, stockMinimo: numValue };
       }
-
       if (name === 'descripcion') {
-        // Importante: no recortamos con `trim()` para no "comerse" el espacio
-        // mientras el usuario escribe (por ejemplo, entre palabras).
         const trimmed = value.trim();
         return { ...prev, descripcion: trimmed.length ? value : undefined };
       }
-
       if (name === 'categoriaId') {
         return { ...prev, categoriaId: value || undefined };
       }
-
-      return { ...prev, [name]: value } as CreateMaterialDTO;
+      return { ...prev, [name]: value };
     });
+    
+    // Limpiar error del campo que se está editando
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!validate()) {
+      notify.warning('Formulario incompleto', 'Complete los campos obligatorios correctamente.');
+      return;
+    }
+    
     setLoading(true);
 
     try {
-      if (!formData.categoriaId) {
-        notify.warning('Categoría requerida', 'Debe seleccionar una categoría.');
-        return;
+      if (materialToEdit) {
+        // Modo edición: actualizar material
+        const updateData: UpdateMaterialDTO = {
+          nombre: formData.nombre,
+          descripcion: formData.descripcion,
+          unidad: formData.unidad,
+          stockActual: formData.stockActual,
+          stockMinimo: formData.stockMinimo,
+          categoriaId: formData.categoriaId,
+        };
+        await inventarioService.actualizar(materialToEdit.id, updateData);
+        notify.success('Material actualizado correctamente');
+      } else {
+        // Modo creación: crear nuevo material
+        const createData = formData as CreateMaterialDTO;
+        await inventarioService.crear(createData);
+        notify.success('Material registrado correctamente');
       }
-      if (isAdminUser) {
-        if (formData.stockActual === 0) {
-          notify.warning('Stock actual no registrado.');
-          return;
-        }
-      } else if (formData.stockActual <= 0) {
-        notify.warning('Valor inválido', 'El "Stock actual" debe ser mayor a 0.');
-        return;
-      }
-      if (formData.stockActual < 0) {
-        notify.warning('Valor inválido', 'El "Stock actual" no puede ser menor a 0.');
-        return;
-      }
-      if (isAdminUser) {
-        if (formData.stockMinimo === 0) {
-          notify.warning('Stock mínimo no registrado.');
-          return;
-        }
-      } else if (formData.stockMinimo <= 0) {
-        notify.warning('Valor inválido', 'El "Stock mínimo" debe ser mayor a 0.');
-        return;
-      }
-      if (formData.stockMinimo < 0) {
-        notify.warning('Valor inválido', 'El "Stock mínimo" no puede ser menor a 0.');
-        return;
-      }
-
-      const created: Material = await inventarioService.crear(formData);
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const _ = created;
-      onCreated();
+      await onCreated();
       onClose();
     } catch (err: any) {
-      notify.error('Error al guardar el material', err?.message || 'No se pudo registrar el material.');
+      notify.error('Error', err?.message || 'No se pudo guardar el material.');
     } finally {
       setLoading(false);
     }
   };
 
+  const isEditing = !!materialToEdit;
+
   return (
     <Modal
       isOpen={isOpen}
-      title="Registrar Material"
+      title={isEditing ? 'Editar Material' : 'Registrar Material'}
       onClose={onClose}
       size="lg"
       loading={loading}
     >
       <form onSubmit={handleSubmit} className="form-container">
         <div className="form-grid">
-          <div className="form-group">
-            <label>Código</label>
-            <input
-              type="text"
-              name="codigo"
-              value={formData.codigo}
-              onChange={handleChange}
-              placeholder="ej: MAT-0001"
-              required
-            />
-          </div>
+          {!isEditing && (
+            <div className={`form-group ${errors.codigo ? 'formField--error' : ''}`}>
+              <label>Código *</label>
+              <input
+                type="text"
+                name="codigo"
+                value={(formData as CreateMaterialDTO).codigo || ''}
+                onChange={handleChange}
+                placeholder="ej: MAT-0001"
+                style={{ borderColor: errors.codigo ? '#dc2626' : undefined }}
+              />
+              {errors.codigo && <span style={{ color: '#dc2626', fontSize: '12px' }}>{errors.codigo}</span>}
+            </div>
+          )}
 
-          <div className="form-group">
-            <label>Nombre</label>
+          <div className={`form-group ${errors.nombre ? 'formField--error' : ''}`}>
+            <label>Nombre *</label>
             <input
               type="text"
               name="nombre"
-              value={formData.nombre}
+              value={formData.nombre || ''}
               onChange={handleChange}
               placeholder="ej: Cartucho tinta HP"
-              required
+              style={{ borderColor: errors.nombre ? '#dc2626' : undefined }}
             />
+            {errors.nombre && <span style={{ color: '#dc2626', fontSize: '12px' }}>{errors.nombre}</span>}
           </div>
 
-          <div className="form-group">
+          <div className={`form-group ${errors.categoriaId ? 'formField--error' : ''}`}>
             <label>Categoría *</label>
             <select
               name="categoriaId"
               value={formData.categoriaId || ''}
               onChange={handleChange}
-              required
+              style={{ borderColor: errors.categoriaId ? '#dc2626' : undefined }}
             >
               <option value="" disabled>Seleccionar categoría</option>
               {categorias.map((cat) => (
@@ -180,44 +232,66 @@ export const MaterialForm: React.FC<MaterialFormProps> = ({ isOpen, onClose, onC
                 </option>
               ))}
             </select>
+            {errors.categoriaId && <span style={{ color: '#dc2626', fontSize: '12px' }}>{errors.categoriaId}</span>}
           </div>
 
-          <div className="form-group">
-            <label>Unidad</label>
+          <div className={`form-group ${errors.unidad ? 'formField--error' : ''}`}>
+            <label>Unidad *</label>
             <input
               type="text"
               name="unidad"
-              value={formData.unidad}
+              value={formData.unidad || ''}
               onChange={handleChange}
               placeholder="ej: unidad, caja, litro"
-              required
+              style={{ borderColor: errors.unidad ? '#dc2626' : undefined }}
             />
+            {errors.unidad && <span style={{ color: '#dc2626', fontSize: '12px' }}>{errors.unidad}</span>}
           </div>
 
-          <div className="form-group">
-            <label>Stock actual</label>
+          <div className={`form-group ${errors.stockActual ? 'formField--error' : ''}`}>
+            <label>Stock actual *</label>
             <input
               type="number"
               name="stockActual"
-                value={stockActualInput}
+              value={stockActualInput}
               onChange={handleChange}
-              min={isAdminUser ? 0 : 0.01}
+              min={minStockValue}
               step="0.01"
-              required
+              style={{ borderColor: errors.stockActual ? '#dc2626' : undefined }}
             />
+            {errors.stockActual && (
+              <span style={{ color: '#dc2626', fontSize: '12px' }}>
+                ⚠️ {errors.stockActual}
+              </span>
+            )}
+            {!errors.stockActual && formData.stockActual === minStockValue && minStockValue > 0 && (
+              <span style={{ color: '#f59e0b', fontSize: '11px' }}>
+                El valor mínimo permitido es {minStockValue}
+              </span>
+            )}
           </div>
 
-          <div className="form-group">
-            <label>Stock mínimo</label>
+          <div className={`form-group ${errors.stockMinimo ? 'formField--error' : ''}`}>
+            <label>Stock mínimo *</label>
             <input
               type="number"
               name="stockMinimo"
-                value={stockMinimoInput}
+              value={stockMinimoInput}
               onChange={handleChange}
-              min={isAdminUser ? 0 : 0.01}
+              min={minStockValue}
               step="0.01"
-              required
+              style={{ borderColor: errors.stockMinimo ? '#dc2626' : undefined }}
             />
+            {errors.stockMinimo && (
+              <span style={{ color: '#dc2626', fontSize: '12px' }}>
+                ⚠️ {errors.stockMinimo}
+              </span>
+            )}
+            {!errors.stockMinimo && formData.stockMinimo === minStockValue && minStockValue > 0 && (
+              <span style={{ color: '#f59e0b', fontSize: '11px' }}>
+                El valor mínimo permitido es {minStockValue}
+              </span>
+            )}
           </div>
 
           <div className="form-group form-full">
@@ -234,7 +308,7 @@ export const MaterialForm: React.FC<MaterialFormProps> = ({ isOpen, onClose, onC
 
         <div className="form-actions">
           <Button label="Cancelar" variant="secondary" onClick={onClose} disabled={loading} />
-          <Button label="Crear" variant="primary" type="submit" isLoading={loading} />
+          <Button label={isEditing ? 'Actualizar' : 'Crear'} variant="primary" type="submit" isLoading={loading} />
         </div>
       </form>
     </Modal>
@@ -242,4 +316,3 @@ export const MaterialForm: React.FC<MaterialFormProps> = ({ isOpen, onClose, onC
 };
 
 export default MaterialForm;
-
