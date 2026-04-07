@@ -1,13 +1,15 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { searchAssets, deleteAsset, assignAsset } from '../services/assets.service';
+import AssetDetailPanel from '../components/assets/AssetDetailPanel';
+import { searchAssets, deleteAsset, assignAsset, getAssetById } from '../services/assets.service';
 import { getCategorias, getUbicaciones, getAreas, getUsuarios } from '../services/catalogs.service';
 import { useNotification } from '../context/NotificationContext';
 import { HttpError } from '../services/http.client';
 import EditAssetModal from '../components/activos/EditAssetModal';
 import ViewAssetModal from '../components/activos/ViewAssetModal';
 import type {
+  AssetDetail,
   AssetListItem,
   SearchAssetsParams,
   PaginationMeta,
@@ -57,6 +59,10 @@ export default function AssetsPage() {
   const [filterCategoria, setFilterCategoria] = useState('');
   const [filterUbicacion, setFilterUbicacion] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedAssetId, setSelectedAssetId] = useState<string | null>(null);
+  const [selectedAssetDetail, setSelectedAssetDetail] = useState<AssetDetail | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState('');
   const [assigningAsset, setAssigningAsset] = useState<AssetListItem | null>(null);
   const [assignmentType, setAssignmentType] = useState<'usuario' | 'area'>('usuario');
   const [assignmentTargetId, setAssignmentTargetId] = useState('');
@@ -124,6 +130,36 @@ export default function AssetsPage() {
     void loadAssets();
   }, [loadAssets]);
 
+  useEffect(() => {
+    async function loadAssetDetail() {
+      if (!selectedAssetId) {
+        setSelectedAssetDetail(null);
+        setDetailError('');
+        setDetailLoading(false);
+        return;
+      }
+
+      try {
+        setDetailLoading(true);
+        setDetailError('');
+        const response = await getAssetById(selectedAssetId);
+        setSelectedAssetDetail(response.data);
+      } catch (error) {
+        const message =
+          error instanceof HttpError
+            ? error.message
+            : 'No se pudo cargar el detalle del activo';
+        setSelectedAssetDetail(null);
+        setDetailError(message);
+        notifyError('Error al cargar detalle', message);
+      } finally {
+        setDetailLoading(false);
+      }
+    }
+
+    void loadAssetDetail();
+  }, [selectedAssetId, notifyError]);
+
   // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
@@ -135,6 +171,17 @@ export default function AssetsPage() {
     setFilterCategoria('');
     setFilterUbicacion('');
     setCurrentPage(1);
+  }
+
+  function openDetailPanel(assetId: string) {
+    setSelectedAssetId(assetId);
+  }
+
+  function closeDetailPanel() {
+    setSelectedAssetId(null);
+    setSelectedAssetDetail(null);
+    setDetailError('');
+    setDetailLoading(false);
   }
 
   async function handleDelete(id: string, nombre: string) {
@@ -319,153 +366,227 @@ export default function AssetsPage() {
           <span>⊘</span> Limpiar Filtros
         </button>
       </div>
+      <div className={`assetsWorkspace ${selectedAssetId ? 'assetsWorkspace--detailOpen' : ''}`}>
+        <aside className={`assetsWorkspace__panel ${selectedAssetId ? 'assetsWorkspace__panel--open' : ''}`}>
+          <AssetDetailPanel
+            asset={selectedAssetDetail}
+            loading={detailLoading}
+            errorMessage={detailError}
+            onClose={closeDetailPanel}
+            compact
+          />
+        </aside>
 
-      {/* Table Card */}
-      <div className="assetsCard">
-        {loading ? (
-          <div className="assetsState">
-            <p className="assetsState__text">Cargando activos registrados...</p>
-          </div>
-        ) : assets.length === 0 ? (
-          <div className="assetsState">
-            <p className="assetsState__text">No se encontraron activos con los filtros seleccionados.</p>
-          </div>
-        ) : (
-          <>
-            <div className="assetsTableWrapper">
-              <table className="assetsTable">
-                <thead>
-                  <tr>
-                    <th>Código</th>
-                    <th>Activo</th>
-                    <th>Categoría</th>
-                    <th>Ubicación</th>
-                    <th>Responsable</th>
-                    <th>Estado</th>
-                    <th>Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {assets.map((asset) => (
-                    <tr key={asset.id}>
-                      <td className="assetsTable__code">{asset.codigo}</td>
-                      <td className="assetsTable__name">{asset.nombre}</td>
-                      <td>
-                        {asset.categoria ? (
-                          <span className="assetsTable__category">
-                            <span className="assetsTable__catIcon">◫</span>
-                            {asset.categoria.nombre}
-                          </span>
-                        ) : (
-                          '—'
-                        )}
-                      </td>
-                      <td>{asset.ubicacion?.nombre ?? '—'}</td>
-                      <td>
-                        <div className="assetsResponsible">
-                          <span>{asset.responsable?.nombreCompleto ?? '—'}</span>
-                          {asset.area?.nombre ? (
-                            <span className="assetsResponsible__meta">Área: {asset.area.nombre}</span>
-                          ) : null}
-                        </div>
-                      </td>
-                      <td>
-                        <span className={`statusBadge ${ESTADO_CLASS[asset.estado] ?? ''}`}>
-                          {asset.estadoLabel}
-                        </span>
-                      </td>
-                      <td>
-                        <div className="assetsTable__actions">
-                          <button
-                            type="button"
-                            className="actionBtn"
-                            title="Ver detalle"
-                            onClick={() => setViewingAssetId(asset.id)}
-                          >
-                            👁
-                          </button>
-                          <button
-                            type="button"
-                            className="actionBtn"
-                            title="Editar"
-                            onClick={() => setEditingAssetId(asset.id)}
-                          >
-                            ✏️
-                          </button>
-                          <button
-                            type="button"
-                            className="actionBtn"
-                            title="Asignar"
-                            onClick={() => openAssignModal(asset)}
-                          >
-                            👤
-                          </button>
-                          <button
-                            type="button"
-                            className="actionBtn actionBtn--danger"
-                            title="Dar de baja"
-                            onClick={() => handleDelete(asset.id, asset.nombre)}
-                          >
-                            ⋯
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Pagination */}
-            <div className="assetsPagination">
-              <span className="assetsPagination__info">
-                Mostrando{' '}
-                <strong>
-                  {(currentPage - 1) * PAGE_SIZE + 1}-
-                  {Math.min(currentPage * PAGE_SIZE, meta?.total ?? 0)}
-                </strong>{' '}
-                de <strong>{meta?.total ?? 0}</strong> activos registrados
-              </span>
-
-              <div className="assetsPagination__controls">
-                <button
-                  type="button"
-                  className="pageBtn"
-                  disabled={currentPage <= 1}
-                  onClick={() => setCurrentPage((p) => p - 1)}
-                >
-                  &lt; Anterior
-                </button>
-
-                {buildPageNumbers().map((page, i) =>
-                  page === '...' ? (
-                    <span key={`dots-${i}`} className="pageDots">
-                      …
-                    </span>
-                  ) : (
-                    <button
-                      key={page}
-                      type="button"
-                      className={`pageBtn pageBtn--num ${page === currentPage ? 'pageBtn--active' : ''}`}
-                      onClick={() => setCurrentPage(page)}
-                    >
-                      {page}
-                    </button>
-                  ),
-                )}
-
-                <button
-                  type="button"
-                  className="pageBtn"
-                  disabled={currentPage >= totalPages}
-                  onClick={() => setCurrentPage((p) => p + 1)}
-                >
-                  Siguiente &gt;
-                </button>
+        <div className="assetsWorkspace__content">
+          <div className="assetsCard">
+            {loading ? (
+              <div className="assetsState">
+                <p className="assetsState__text">Cargando activos registrados...</p>
               </div>
-            </div>
-          </>
-        )}
+            ) : assets.length === 0 ? (
+              <div className="assetsState">
+                <p className="assetsState__text">No se encontraron activos con los filtros seleccionados.</p>
+              </div>
+            ) : (
+              <>
+                <div className="assetsTableWrapper">
+                  <table className="assetsTable">
+                    <thead>
+                      <tr>
+                        <th>Código</th>
+                        <th>Activo</th>
+                        <th>Categoría</th>
+                        <th>Ubicación</th>
+                        <th>Responsable</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {assets.map((asset) => (
+                        <tr
+                          key={asset.id}
+                          className={selectedAssetId === asset.id ? 'assetsTable__row--selected' : ''}
+                          onClick={() => openDetailPanel(asset.id)}
+                          style={{ cursor: 'pointer' }}
+                        >
+                          <td className="assetsTable__code">{asset.codigo}</td>
+                          <td className="assetsTable__name">{asset.nombre}</td>
+                          <td>
+                            {asset.categoria ? (
+                              <span className="assetsTable__category">
+                                <span className="assetsTable__catIcon">◫</span>
+                                {asset.categoria.nombre}
+                              </span>
+                            ) : (
+                              '—'
+                            )}
+                          </td>
+                          <td>{asset.ubicacion?.nombre ?? '—'}</td>
+                          <td>
+                            <div className="assetsResponsible">
+                              <span>{asset.responsable?.nombreCompleto ?? '—'}</span>
+                              {asset.area?.nombre ? (
+                                <span className="assetsResponsible__meta">Área: {asset.area.nombre}</span>
+                              ) : null}
+                            </div>
+                          </td>
+                          <td>
+                            <span className={`statusBadge ${ESTADO_CLASS[asset.estado] ?? ''}`}>
+                              {asset.estadoLabel}
+                            </span>
+                          </td>
+                          <td>
+                            <div className="assetsTable__actions">
+                              <button
+                                type="button"
+                                className="actionBtn"
+                                title="Ver detalle completo"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  setViewingAssetId(asset.id);
+                                }}
+                              >
+                                👁
+                              </button>
+
+                              <button
+                                type="button"
+                                className="actionBtn"
+                                title="Editar"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  setEditingAssetId(asset.id);
+                                }}
+                              >
+                                ✏️
+                              </button>
+
+                              <button
+                                type="button"
+                                className="actionBtn"
+                                title="Asignar"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  openAssignModal(asset);
+                                }}
+                              >
+                                👤
+                              </button>
+
+                              <button
+                                type="button"
+                                className="actionBtn actionBtn--danger"
+                                title="Dar de baja"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  void handleDelete(asset.id, asset.nombre);
+                                }}
+                              >
+                                ⋯
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="assetsPagination">
+                  <span className="assetsPagination__info">
+                    Mostrando{' '}
+                    <strong>
+                      {(currentPage - 1) * PAGE_SIZE + 1}-
+                      {Math.min(currentPage * PAGE_SIZE, meta?.total ?? 0)}
+                    </strong>{' '}
+                    de <strong>{meta?.total ?? 0}</strong> activos registrados
+                  </span>
+
+                  <div className="assetsPagination__controls">
+                    <button
+                      type="button"
+                      className="pageBtn"
+                      disabled={currentPage <= 1}
+                      onClick={() => setCurrentPage((p) => p - 1)}
+                    >
+                      &lt; Anterior
+                    </button>
+
+                    {buildPageNumbers().map((page, i) =>
+                      page === '...' ? (
+                        <span key={`dots-${i}`} className="pageDots">
+                          …
+                        </span>
+                      ) : (
+                        <button
+                          key={page}
+                          type="button"
+                          className={`pageBtn pageBtn--num ${page === currentPage ? 'pageBtn--active' : ''}`}
+                          onClick={() => setCurrentPage(page)}
+                        >
+                          {page}
+                        </button>
+                      ),
+                    )}
+
+                    <button
+                      type="button"
+                      className="pageBtn"
+                      disabled={currentPage >= totalPages}
+                      onClick={() => setCurrentPage((p) => p + 1)}
+                    >
+                      Siguiente &gt;
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+
+                  <div className="assetsPagination__controls">
+                    <button
+                      type="button"
+                      className="pageBtn"
+                      disabled={currentPage <= 1}
+                      onClick={() => setCurrentPage((p) => p - 1)}
+                    >
+                      &lt; Anterior
+                    </button>
+
+                    {buildPageNumbers().map((page, i) =>
+                      page === '...' ? (
+                        <span key={`dots-${i}`} className="pageDots">
+                          …
+                        </span>
+                      ) : (
+                        <button
+                          key={page}
+                          type="button"
+                          className={`pageBtn pageBtn--num ${page === currentPage ? 'pageBtn--active' : ''}`}
+                          onClick={() => setCurrentPage(page)}
+                        >
+                          {page}
+                        </button>
+                      ),
+                    )}
+
+                    <button
+                      type="button"
+                      className="pageBtn"
+                      disabled={currentPage >= totalPages}
+                      onClick={() => setCurrentPage((p) => p + 1)}
+                    >
+                      Siguiente &gt;
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
       </div>
 
       {assigningAsset ? (

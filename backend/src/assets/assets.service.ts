@@ -194,22 +194,46 @@ export class AssetsService {
     return {
       ...activo,
       estadoLabel: this.formatEstado(activo.estado),
+      area: activo.areaActual
+        ? {
+            id: activo.areaActual.id,
+            nombre: activo.areaActual.nombre,
+          }
+        : null,
+      responsable: activo.responsableActual
+        ? {
+            id: activo.responsableActual.id,
+            nombreCompleto: this.buildFullName(
+              activo.responsableActual.nombres,
+              activo.responsableActual.apellidos,
+            ),
+          }
+        : null,
       responsableActual: activo.responsableActual
         ? {
             ...activo.responsableActual,
-            nombreCompleto: `${activo.responsableActual.nombres} ${activo.responsableActual.apellidos}`,
+            nombreCompleto: this.buildFullName(
+              activo.responsableActual.nombres,
+              activo.responsableActual.apellidos,
+            ),
           }
         : null,
       creadoPor: activo.creadoPor
         ? {
             ...activo.creadoPor,
-            nombreCompleto: `${activo.creadoPor.nombres} ${activo.creadoPor.apellidos}`,
+            nombreCompleto: this.buildFullName(
+              activo.creadoPor.nombres,
+              activo.creadoPor.apellidos,
+            ),
           }
         : null,
       actualizadoPor: activo.actualizadoPor
         ? {
             ...activo.actualizadoPor,
-            nombreCompleto: `${activo.actualizadoPor.nombres} ${activo.actualizadoPor.apellidos}`,
+            nombreCompleto: this.buildFullName(
+              activo.actualizadoPor.nombres,
+              activo.actualizadoPor.apellidos,
+            ),
           }
         : null,
     };

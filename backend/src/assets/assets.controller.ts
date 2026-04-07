@@ -94,6 +94,62 @@ export class AssetsController {
   @ApiParam({ name: 'id', description: 'ID del activo' })
   @ApiOkResponse({
     description: 'Detalle del activo obtenido correctamente',
+    schema: {
+      example: {
+        success: true,
+        data: {
+          id: 'cm1activo123',
+          codigo: 'ACT-001',
+          nombre: 'Laptop Dell Latitude 5420',
+          descripcion: 'Equipo asignado al área de Sistemas',
+          marca: 'Dell',
+          modelo: 'Latitude 5420',
+          numeroSerie: 'SN-5420-001',
+          fechaAdquisicion: '2026-01-15T00:00:00.000Z',
+          costoAdquisicion: '8200.00',
+          vencimientoGarantia: '2028-01-15T00:00:00.000Z',
+          estado: 'OPERATIVO',
+          estadoLabel: 'Operativo',
+          categoria: {
+            id: 'cm1cat123',
+            nombre: 'Laptop',
+          },
+          ubicacion: {
+            id: 'cm1ubi123',
+            nombre: 'Oficina de Sistemas',
+          },
+          area: {
+            id: 'cm1area123',
+            nombre: 'Sistemas',
+          },
+          responsable: {
+            id: 'cm1user123',
+            nombreCompleto: 'Maria Operativa',
+          },
+          responsableActual: {
+            id: 'cm1user123',
+            nombres: 'Maria',
+            apellidos: 'Operativa',
+            correo: 'maria@activos.bo',
+            nombreCompleto: 'Maria Operativa',
+          },
+          areaActual: {
+            id: 'cm1area123',
+            nombre: 'Sistemas',
+          },
+          creadoPor: {
+            id: 'cm1admin123',
+            nombreCompleto: 'Admin General',
+          },
+          actualizadoPor: {
+            id: 'cm1admin123',
+            nombreCompleto: 'Admin General',
+          },
+          creadoEn: '2026-01-15T12:00:00.000Z',
+          actualizadoEn: '2026-01-18T09:30:00.000Z',
+        },
+      },
+    },
   })
   @ApiNotFoundResponse({
     description: 'No se encontró el activo solicitado',
