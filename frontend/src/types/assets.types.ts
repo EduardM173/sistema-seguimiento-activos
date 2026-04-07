@@ -32,8 +32,13 @@ export type AssetListItem = {
 export type AssetDetail = AssetListItem & {
   numeroSerie: string | null;
   fechaAdquisicion: string | null;
-  costoAdquisicion: number | null;
+  costoAdquisicion: number | string | null;
   vencimientoGarantia: string | null;
+  actualizadoEn: string;
+  areaActual: {
+    id: string;
+    nombre: string;
+  } | null;
   responsableActual: {
     id: string;
     nombres: string;
