@@ -221,6 +221,40 @@
   overflow: hidden;
 }
 
+.assetsWorkspace {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.assetsWorkspace__panel {
+  width: 0;
+  min-width: 0;
+  opacity: 0;
+  overflow: hidden;
+  transform: translateX(-24px);
+  transition:
+    width 0.32s ease,
+    opacity 0.28s ease,
+    transform 0.32s ease;
+}
+
+.assetsWorkspace__panel--open {
+  width: 420px;
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.assetsWorkspace__content {
+  flex: 1;
+  min-width: 0;
+  transition: transform 0.32s ease;
+}
+
+.assetsWorkspace--detailOpen .assetsWorkspace__content {
+  transform: translateX(6px);
+}
+
 .assetsTableWrapper {
   width: 100%;
   overflow-x: auto;
@@ -261,6 +295,10 @@
 
 .assetsTable tbody tr:hover {
   background: #f8fbff;
+}
+
+.assetsTable__row--selected {
+  background: #eef4ff;
 }
 
 .assetsTable__code {
@@ -546,6 +584,48 @@
   gap: 10px;
 }
 
+.assetDetailPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-height: 300px;
+}
+
+.assetDetailPanel--compact {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+  padding: 20px;
+}
+
+.assetDetailPanel__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.assetDetailPanel__title {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #111827;
+}
+
+.assetDetailPanel__subtitle {
+  margin: 6px 0 0;
+  color: #6b7280;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.assetDetailPanel__summary {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
 .assetDetailPage {
   display: flex;
   flex-direction: column;
@@ -726,6 +806,21 @@
 
   .assetsModal__actions {
     flex-direction: column-reverse;
+  }
+
+  .assetsWorkspace {
+    flex-direction: column;
+  }
+
+  .assetsWorkspace__panel,
+  .assetsWorkspace__panel--open {
+    width: 100%;
+    opacity: 1;
+    transform: none;
+  }
+
+  .assetsWorkspace--detailOpen .assetsWorkspace__content {
+    transform: none;
   }
 
   .assetDetailPage {
