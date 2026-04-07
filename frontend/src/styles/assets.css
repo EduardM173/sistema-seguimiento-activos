@@ -221,6 +221,40 @@
   overflow: hidden;
 }
 
+.assetsWorkspace {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.assetsWorkspace__panel {
+  width: 0;
+  min-width: 0;
+  opacity: 0;
+  overflow: hidden;
+  transform: translateX(-24px);
+  transition:
+    width 0.32s ease,
+    opacity 0.28s ease,
+    transform 0.32s ease;
+}
+
+.assetsWorkspace__panel--open {
+  width: 520px;
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.assetsWorkspace__content {
+  flex: 1;
+  min-width: 0;
+  transition: transform 0.32s ease;
+}
+
+.assetsWorkspace--detailOpen .assetsWorkspace__content {
+  transform: translateX(6px);
+}
+
 .assetsTableWrapper {
   width: 100%;
   overflow-x: auto;
@@ -261,6 +295,10 @@
 
 .assetsTable tbody tr:hover {
   background: #f8fbff;
+}
+
+.assetsTable__row--selected {
+  background: #eef4ff;
 }
 
 .assetsTable__code {
@@ -546,6 +584,50 @@
   gap: 10px;
 }
 
+.assetDetailPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 300px;
+}
+
+.assetDetailPanel--compact {
+  background:
+    radial-gradient(circle at top left, rgba(37, 99, 235, 0.08), transparent 42%),
+    #f8fbff;
+  border: 1px solid #dbe7ff;
+  border-radius: 24px;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.09);
+  padding: 24px;
+}
+
+.assetDetailPanel__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.assetDetailPanel__title {
+  margin: 0;
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #111827;
+}
+
+.assetDetailPanel__subtitle {
+  margin: 6px 0 0;
+  color: #5b6474;
+  font-size: 0.98rem;
+  line-height: 1.5;
+}
+
+.assetDetailPanel__summary {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
 .assetDetailPage {
   display: flex;
   flex-direction: column;
@@ -584,17 +666,40 @@
 }
 
 .assetDetailHero {
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 20px;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
-  padding: 28px;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+  border: 1px solid #dfe7f5;
+  border-radius: 24px;
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.06);
+  padding: 24px;
 }
 
 .assetDetailHero__summary {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
+}
+
+.assetDetailHero__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.assetDetailHero__identity {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.assetDetailHero__eyebrow {
+  font-size: 0.76rem;
+  font-weight: 800;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
 }
 
 .assetDetailHero__badgeWrap {
@@ -602,12 +707,13 @@
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .assetDetailHero__code {
   display: inline-flex;
   align-items: center;
-  padding: 8px 12px;
+  padding: 9px 14px;
   border-radius: 999px;
   background: #dbeafe;
   color: #1d4ed8;
@@ -617,32 +723,34 @@
 
 .assetDetailHero__name {
   margin: 0;
-  font-size: 1.75rem;
+  font-size: 2rem;
   font-weight: 800;
   color: #111827;
+  line-height: 1.1;
 }
 
 .assetDetailHero__description {
   margin: 0;
-  max-width: 760px;
-  color: #4b5563;
+  max-width: 440px;
+  color: #475569;
   line-height: 1.6;
+  font-size: 0.98rem;
 }
 
 .assetDetailHero__grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
 }
 
 .assetDetailHero__item {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   padding: 16px;
-  border-radius: 14px;
-  background: #f8fafc;
-  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  background: #f8fbff;
+  border: 1px solid #e3ebf8;
 }
 
 .assetDetailHero__label,
@@ -654,45 +762,70 @@
   letter-spacing: 0.5px;
 }
 
+.assetDetailHero__technical {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.assetDetailHero__technicalItem {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  border-radius: 16px;
+  background: #f1f6ff;
+  border: 1px solid #dae6fb;
+}
+
 .assetDetailSections {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 18px;
+  grid-template-columns: 1fr;
+  gap: 16px;
 }
 
 .assetDetailCard {
   background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 18px;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
-  padding: 24px;
+  border: 1px solid #dfe7f5;
+  border-radius: 20px;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.04);
+  padding: 20px;
+}
+
+.assetDetailCard__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
 }
 
 .assetDetailCard__title {
-  margin: 0 0 16px;
-  font-size: 1.05rem;
+  margin: 0;
+  font-size: 1rem;
   font-weight: 800;
   color: #111827;
 }
 
 .assetDetailCard__grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
 }
 
 .assetDetailCard__item {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 14px;
-  border-radius: 14px;
-  background: #f8fafc;
+  padding: 16px;
+  border-radius: 16px;
+  background: #f8fbff;
+  border: 1px solid #e6edf8;
 }
 
 .assetDetailCard__value {
   color: #111827;
   line-height: 1.5;
+  font-size: 0.97rem;
 }
 
 /* ── Responsive ── */
@@ -728,6 +861,21 @@
     flex-direction: column-reverse;
   }
 
+  .assetsWorkspace {
+    flex-direction: column;
+  }
+
+  .assetsWorkspace__panel,
+  .assetsWorkspace__panel--open {
+    width: 100%;
+    opacity: 1;
+    transform: none;
+  }
+
+  .assetsWorkspace--detailOpen .assetsWorkspace__content {
+    transform: none;
+  }
+
   .assetDetailPage {
     padding: 16px;
     margin: 0 10px 16px;
@@ -735,6 +883,12 @@
 
   .assetDetailHero {
     padding: 20px;
+  }
+
+  .assetDetailHero__grid,
+  .assetDetailHero__technical,
+  .assetDetailCard__grid {
+    grid-template-columns: 1fr;
   }
 
   .assetDetailCard {
