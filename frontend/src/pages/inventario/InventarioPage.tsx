@@ -12,15 +12,17 @@ export const InventarioPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<{ type: 'error'; text: string } | null>(null);
   const [isMaterialModalOpen, setIsMaterialModalOpen] = useState(false);
+  const [materialToEdit, setMaterialToEdit] = useState<Material | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     cargarMateriales();
-  }, []);
+  }, [refreshKey]);
 
   const cargarMateriales = async () => {
     try {
       setLoading(true);
-      const resultado = await inventarioService.obtenerTodos({ take: 1000 }); // Mostrar todos
+      const resultado = await inventarioService.obtenerTodos({ take: 1000 });
       setMateriales(resultado.data);
     } catch (err) {
       setMessage({ type: 'error', text: 'Error al cargar inventario' });
@@ -31,8 +33,43 @@ export const InventarioPage: React.FC = () => {
   };
 
   const handleMaterialCreated = async () => {
-    await cargarMateriales();
-    notify.success('Material registrado correctamente');
+    setRefreshKey(prev => prev + 1);
+  };
+
+  const handleEdit = (material: Material) => {
+    setMaterialToEdit(material);
+    setIsMaterialModalOpen(true);
+  };
+
+  const handleDelete = async (material: Material) => {
+    if (confirm(`¿Está seguro de eliminar el material "${material.nombre}"?`)) {
+      try {
+        await inventarioService.eliminar(material.id);
+        notify.success('Material eliminado correctamente');
+        setRefreshKey(prev => prev + 1);
+      } catch (err) {
+        notify.error('Error', 'No se pudo eliminar el material');
+      }
+    }
+  };
+
+  const handleCloseModal = () => {
+    setIsMaterialModalOpen(false);
+    setMaterialToEdit(null);
+  };
+
+  // Función para determinar el color del stock según nivel
+  const getStockColor = (stockActual: number, stockMinimo: number): string => {
+    if (stockActual <= 0) return '#dc2626'; // Rojo - sin stock
+    if (stockActual < stockMinimo) return '#dc2626'; // Rojo - crítico (stock bajo)
+    return '#10b981'; // Verde - stock normal
+  };
+
+  // Función para determinar el estado del material
+  const getStockStatus = (stockActual: number, stockMinimo: number): { label: string; variant: 'danger' | 'warning' | 'success' } => {
+    if (stockActual <= 0) return { label: 'SIN STOCK', variant: 'danger' };
+    if (stockActual < stockMinimo) return { label: 'CRÍTICO', variant: 'danger' };
+    return { label: 'NORMAL', variant: 'success' };
   };
 
   const columns = [
@@ -42,15 +79,48 @@ export const InventarioPage: React.FC = () => {
     {
       header: 'Disponible',
       accessor: (row: Material) => row.stockActual,
-      render: (value: number) => <strong>{value.toFixed(2)}</strong>,
+      render: (value: number, row: Material) => (
+        <strong style={{ color: getStockColor(row.stockActual, row.stockMinimo) }}>
+          {value.toFixed(2)}
+        </strong>
+      ),
     },
-    { header: 'Mínimo', accessor: 'stockMinimo' as keyof Material, render: (value: number) => value.toFixed(2) },
+    { 
+      header: 'Mínimo', 
+      accessor: 'stockMinimo' as keyof Material, 
+      render: (value: number) => value.toFixed(2) 
+    },
     { header: 'Un. Medida', accessor: 'unidad' as keyof Material, width: '100px' },
     {
       header: 'Estado',
-      accessor: (row: Material) => row.stockActual < row.stockMinimo,
-      render: (value: boolean) => (
-        <Badge label={value ? 'CRÍTICO' : 'Normal'} variant={value ? 'danger' : 'success'} size="sm" />
+      accessor: (row: Material) => row,
+      render: (row: Material) => {
+        const status = getStockStatus(row.stockActual, row.stockMinimo);
+        return <Badge label={status.label} variant={status.variant} size="sm" />;
+      },
+    },
+    {
+      header: 'Acciones',
+      accessor: (row: Material) => row.id,
+      render: (id: string, row: Material) => (
+        <div className="actions-group" style={{ display: 'flex', gap: '8px' }}>
+          <button
+            className="btn-action btn-edit"
+            onClick={() => handleEdit(row)}
+            title="Editar"
+            style={{ cursor: 'pointer', padding: '4px 8px', background: '#e0e7ff', borderRadius: '4px', border: 'none' }}
+          >
+            ✏️ Editar
+          </button>
+          <button
+            className="btn-action btn-delete"
+            onClick={() => handleDelete(row)}
+            title="Eliminar"
+            style={{ cursor: 'pointer', padding: '4px 8px', background: '#fee2e2', borderRadius: '4px', border: 'none', color: '#dc2626' }}
+          >
+            🗑️ Eliminar
+          </button>
+        </div>
       ),
     },
   ];
@@ -62,7 +132,10 @@ export const InventarioPage: React.FC = () => {
         <Button
           label="+ Nuevo Material"
           variant="primary"
-          onClick={() => setIsMaterialModalOpen(true)}
+          onClick={() => {
+            setMaterialToEdit(null);
+            setIsMaterialModalOpen(true);
+          }}
         />
       </div>
 
@@ -80,7 +153,7 @@ export const InventarioPage: React.FC = () => {
           columns={columns}
           data={materiales}
           loading={loading}
-          emptyMessage="No hay materiales registrados"
+          emptyMessage="📦 No hay materiales registrados en el inventario"
           striped
           hover
         />
@@ -88,8 +161,9 @@ export const InventarioPage: React.FC = () => {
 
       <MaterialForm
         isOpen={isMaterialModalOpen}
-        onClose={() => setIsMaterialModalOpen(false)}
+        onClose={handleCloseModal}
         onCreated={handleMaterialCreated}
+        materialToEdit={materialToEdit}
       />
     </div>
   );
