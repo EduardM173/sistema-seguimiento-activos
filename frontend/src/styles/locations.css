@@ -1,0 +1,12 @@
+/* ═══════════════════════════════════════════════════
+   Locations Page — additional styles
+   ═══════════════════════════════════════════════════ */
+
+.locationsTable__desc {
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #6b7280;
+  font-size: 0.88rem;
+}

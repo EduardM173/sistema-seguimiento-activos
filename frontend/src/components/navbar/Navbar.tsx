@@ -27,6 +27,7 @@ export default function Navbar() {
     { label: 'Reportes', icon: '▥' },
     { label: 'Usuarios', icon: '◌', to: '/users' },
     { label: 'Auditoría', icon: '🛡' },
+    { label: 'Ubicaciones', icon: '▦', to: '/locations'},
   ];
 
   const bottomItems: BottomItem[] = [

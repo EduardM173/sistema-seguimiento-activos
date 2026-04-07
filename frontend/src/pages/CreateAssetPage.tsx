@@ -1,8 +1,9 @@
-import { useState, useEffect, type FormEvent } from 'react';
+import { useState, useEffect, useCallback, useRef, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { createAsset } from '../services/assets.service';
 import { getCategorias, getUbicaciones, getAreas, getUsuarios } from '../services/catalogs.service';
+import { searchLocations, generateAssetCode, type LocationItem } from '../services/locations.service';
 import { useNotification } from '../context/NotificationContext';
 import { HttpError } from '../services/http.client';
 import type {
@@ -13,6 +14,9 @@ import type {
   Area,
   UsuarioResumen,
 } from '../types/assets.types';
+
+import OverlayModal from '../components/common/OverlayModal';
+import CreateLocationForm from '../components/common/CreateLocationForm';
 
 import '../styles/create-asset.css';
 
@@ -82,6 +86,93 @@ export default function CreateAssetPage() {
   const [errors, setErrors] = useState<FormErrors>({});
   const [touched, setTouched] = useState<Set<string>>(new Set());
   const [submitting, setSubmitting] = useState(false);
+
+  // ── Code generation ──
+  const [generatingCode, setGeneratingCode] = useState(false);
+
+  // ── Location search with pattern ──
+  const [ubicacionSearch, setUbicacionSearch] = useState('');
+  const [ubicacionResults, setUbicacionResults] = useState<Ubicacion[]>([]);
+  const [ubicacionDropdownOpen, setUbicacionDropdownOpen] = useState(false);
+  const [searchingUbicaciones, setSearchingUbicaciones] = useState(false);
+  const ubicacionWrapRef = useRef<HTMLDivElement>(null);
+
+  // ── Create location modal ──
+  const [showCreateLocation, setShowCreateLocation] = useState(false);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ubicacionWrapRef.current && !ubicacionWrapRef.current.contains(e.target as Node)) {
+        setUbicacionDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
+  // Debounced location search
+  useEffect(() => {
+    if (!ubicacionSearch.trim()) {
+      setUbicacionResults(ubicaciones);
+      return;
+    }
+    const timer = setTimeout(() => {
+      void searchLocationsByPattern(ubicacionSearch.trim());
+    }, 350);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ubicacionSearch, ubicaciones]);
+
+  const searchLocationsByPattern = useCallback(async (pattern: string) => {
+    try {
+      setSearchingUbicaciones(true);
+      const res = await searchLocations({ pattern, pageSize: 20 });
+      setUbicacionResults(res.data as unknown as Ubicacion[]);
+    } catch {
+      // Fallback to catalog data
+      setUbicacionResults(ubicaciones.filter((u) =>
+        u.nombre.toLowerCase().includes(pattern.toLowerCase()),
+      ));
+    } finally {
+      setSearchingUbicaciones(false);
+    }
+  }, [ubicaciones]);
+
+  async function handleGenerateCode() {
+    try {
+      setGeneratingCode(true);
+      const res = await generateAssetCode();
+      setCodigo(res.data.code);
+      markTouched('codigo');
+    } catch (err) {
+      const message = err instanceof HttpError ? err.message : 'No se pudo generar el código';
+      notify.error('Error', message);
+    } finally {
+      setGeneratingCode(false);
+    }
+  }
+
+  function handleLocationCreated(loc: LocationItem) {
+    const newUbi: Ubicacion = {
+      id: loc.id,
+      nombre: loc.nombre,
+      edificio: loc.edificio ?? undefined,
+      piso: loc.piso ?? undefined,
+      ambiente: loc.ambiente ?? undefined,
+    };
+    setUbicaciones((prev) => [newUbi, ...prev]);
+    setUbicacionId(loc.id);
+    setUbicacionSearch(loc.nombre);
+    setShowCreateLocation(false);
+    setUbicacionDropdownOpen(false);
+  }
+
+  function selectUbicacion(ubi: Ubicacion) {
+    setUbicacionId(ubi.id);
+    setUbicacionSearch([ubi.nombre, ubi.edificio, ubi.piso].filter(Boolean).join(' — '));
+    setUbicacionDropdownOpen(false);
+  }
 
   function markTouched(field: string) {
     setTouched((prev) => new Set(prev).add(field));
@@ -205,6 +296,16 @@ export default function CreateAssetPage() {
                   onBlur={() => markTouched('codigo')}
                   maxLength={50}
                 />
+                <button
+                  type="button"
+                  className="btn btn--outline btn--sm"
+                  style={{ marginLeft: '8px', whiteSpace: 'nowrap', flexShrink: 0 }}
+                  onClick={handleGenerateCode}
+                  disabled={generatingCode || submitting}
+                  title="Generar código único automáticamente"
+                >
+                  {generatingCode ? '⏳' : '🔄'} Generar
+                </button>
                 <span className="formField__infoIcon" title="Código único institucional">ⓘ</span>
               </div>
               {getFieldError('codigo') && <span className="formField__error">{getFieldError('codigo')}</span>}
@@ -320,25 +421,66 @@ export default function CreateAssetPage() {
           </legend>
 
           <div className="formGrid formGrid--3">
-            <div className="formField">
-              <label htmlFor="ubicacionId">
+            <div className="formField" ref={ubicacionWrapRef} style={{ position: 'relative' }}>
+              <label htmlFor="ubicacionSearch">
                 Ubicación <span className="req">*</span>
               </label>
-              <select
-                id="ubicacionId"
-                value={ubicacionId}
-                onChange={(e) => setUbicacionId(e.target.value)}
-                disabled={catalogsLoading}
-              >
-                <option value="">
-                  {catalogsLoading ? 'Cargando ubicaciones...' : 'Seleccionar ubicación'}
-                </option>
-                {ubicaciones.map((ubi) => (
-                  <option key={ubi.id} value={ubi.id}>
-                    {[ubi.nombre, ubi.edificio, ubi.piso].filter(Boolean).join(' — ')}
-                  </option>
-                ))}
-              </select>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <input
+                  id="ubicacionSearch"
+                  type="text"
+                  placeholder={catalogsLoading ? 'Cargando ubicaciones...' : 'Buscar ubicación...'}
+                  value={ubicacionSearch}
+                  onChange={(e) => {
+                    setUbicacionSearch(e.target.value);
+                    setUbicacionDropdownOpen(true);
+                    if (!e.target.value.trim()) setUbicacionId('');
+                  }}
+                  onFocus={() => {
+                    setUbicacionDropdownOpen(true);
+                    if (!ubicacionSearch.trim()) setUbicacionResults(ubicaciones);
+                  }}
+                  disabled={catalogsLoading}
+                  autoComplete="off"
+                />
+                <button
+                  type="button"
+                  className="btn btn--outline btn--sm"
+                  style={{ flexShrink: 0, padding: '8px 12px' }}
+                  onClick={() => setShowCreateLocation(true)}
+                  title="Crear nueva ubicación"
+                >
+                  +
+                </button>
+              </div>
+              {ubicacionDropdownOpen && (
+                <div className="ubicacionDropdown">
+                  {searchingUbicaciones ? (
+                    <div className="ubicacionDropdown__item ubicacionDropdown__item--disabled">
+                      Buscando...
+                    </div>
+                  ) : ubicacionResults.length === 0 ? (
+                    <div className="ubicacionDropdown__item ubicacionDropdown__item--disabled">
+                      Sin resultados
+                    </div>
+                  ) : (
+                    ubicacionResults.map((ubi) => (
+                      <div
+                        key={ubi.id}
+                        className={`ubicacionDropdown__item ${ubicacionId === ubi.id ? 'ubicacionDropdown__item--selected' : ''}`}
+                        onClick={() => selectUbicacion(ubi)}
+                      >
+                        <strong>{ubi.nombre}</strong>
+                        {ubi.edificio || ubi.piso ? (
+                          <span className="ubicacionDropdown__meta">
+                            {[ubi.edificio, ubi.piso ? `Piso ${ubi.piso}` : null].filter(Boolean).join(' · ')}
+                          </span>
+                        ) : null}
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
             </div>
             <div className="formField">
               <label htmlFor="areaActualId">
@@ -538,6 +680,19 @@ export default function CreateAssetPage() {
           </button>
         </div>
       </form>
+
+      {/* Create Location Modal */}
+      <OverlayModal
+        open={showCreateLocation}
+        onClose={() => setShowCreateLocation(false)}
+        title="Nueva Ubicación"
+        subtitle="Registra una nueva ubicación para asignarla al activo."
+      >
+        <CreateLocationForm
+          onCreated={handleLocationCreated}
+          onCancel={() => setShowCreateLocation(false)}
+        />
+      </OverlayModal>
     </section>
   );
 }

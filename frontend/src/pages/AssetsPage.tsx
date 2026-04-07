@@ -6,6 +6,8 @@ import { searchAssets, deleteAsset, assignAsset, getAssetById } from '../service
 import { getCategorias, getUbicaciones, getAreas, getUsuarios } from '../services/catalogs.service';
 import { useNotification } from '../context/NotificationContext';
 import { HttpError } from '../services/http.client';
+import EditAssetModal from '../components/activos/EditAssetModal';
+import ViewAssetModal from '../components/activos/ViewAssetModal';
 import type {
   AssetDetail,
   AssetListItem,
@@ -66,6 +68,12 @@ export default function AssetsPage() {
   const [assignmentTargetId, setAssignmentTargetId] = useState('');
   const [assignmentNotes, setAssignmentNotes] = useState('');
   const [submittingAssignment, setSubmittingAssignment] = useState(false);
+
+  // Edit modal state
+  const [editingAssetId, setEditingAssetId] = useState<string | null>(null);
+
+  // View detail modal state
+  const [viewingAssetId, setViewingAssetId] = useState<string | null>(null);
 
   // Load catalogs once
   useEffect(() => {
@@ -358,7 +366,6 @@ export default function AssetsPage() {
           <span>⊘</span> Limpiar Filtros
         </button>
       </div>
-
       <div className={`assetsWorkspace ${selectedAssetId ? 'assetsWorkspace--detailOpen' : ''}`}>
         <aside className={`assetsWorkspace__panel ${selectedAssetId ? 'assetsWorkspace__panel--open' : ''}`}>
           <AssetDetailPanel
@@ -400,6 +407,8 @@ export default function AssetsPage() {
                         <tr
                           key={asset.id}
                           className={selectedAssetId === asset.id ? 'assetsTable__row--selected' : ''}
+                          onClick={() => openDetailPanel(asset.id)}
+                          style={{ cursor: 'pointer' }}
                         >
                           <td className="assetsTable__code">{asset.codigo}</td>
                           <td className="assetsTable__name">{asset.nombre}</td>
@@ -432,32 +441,47 @@ export default function AssetsPage() {
                               <button
                                 type="button"
                                 className="actionBtn"
-                                title="Ver detalle"
-                                onClick={() => openDetailPanel(asset.id)}
+                                title="Ver detalle completo"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  setViewingAssetId(asset.id);
+                                }}
                               >
                                 👁
                               </button>
+
                               <button
                                 type="button"
                                 className="actionBtn"
                                 title="Editar"
-                                onClick={() => notify.info('Editar', 'Funcionalidad en desarrollo')}
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  setEditingAssetId(asset.id);
+                                }}
                               >
                                 ✏️
                               </button>
+
                               <button
                                 type="button"
                                 className="actionBtn"
                                 title="Asignar"
-                                onClick={() => openAssignModal(asset)}
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  openAssignModal(asset);
+                                }}
                               >
                                 👤
                               </button>
+
                               <button
                                 type="button"
                                 className="actionBtn actionBtn--danger"
                                 title="Dar de baja"
-                                onClick={() => handleDelete(asset.id, asset.nombre)}
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  void handleDelete(asset.id, asset.nombre);
+                                }}
                               >
                                 ⋯
                               </button>
@@ -478,6 +502,49 @@ export default function AssetsPage() {
                     </strong>{' '}
                     de <strong>{meta?.total ?? 0}</strong> activos registrados
                   </span>
+
+                  <div className="assetsPagination__controls">
+                    <button
+                      type="button"
+                      className="pageBtn"
+                      disabled={currentPage <= 1}
+                      onClick={() => setCurrentPage((p) => p - 1)}
+                    >
+                      &lt; Anterior
+                    </button>
+
+                    {buildPageNumbers().map((page, i) =>
+                      page === '...' ? (
+                        <span key={`dots-${i}`} className="pageDots">
+                          …
+                        </span>
+                      ) : (
+                        <button
+                          key={page}
+                          type="button"
+                          className={`pageBtn pageBtn--num ${page === currentPage ? 'pageBtn--active' : ''}`}
+                          onClick={() => setCurrentPage(page)}
+                        >
+                          {page}
+                        </button>
+                      ),
+                    )}
+
+                    <button
+                      type="button"
+                      className="pageBtn"
+                      disabled={currentPage >= totalPages}
+                      onClick={() => setCurrentPage((p) => p + 1)}
+                    >
+                      Siguiente &gt;
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
 
                   <div className="assetsPagination__controls">
                     <button
@@ -618,6 +685,25 @@ export default function AssetsPage() {
           </div>
         </div>
       ) : null}
+
+      {/* View Asset Detail Modal */}
+      {viewingAssetId && (
+        <ViewAssetModal
+          assetId={viewingAssetId}
+          open={!!viewingAssetId}
+          onClose={() => setViewingAssetId(null)}
+        />
+      )}
+
+      {/* Edit Asset Modal */}
+      {editingAssetId && (
+        <EditAssetModal
+          assetId={editingAssetId}
+          open={!!editingAssetId}
+          onClose={() => setEditingAssetId(null)}
+          onUpdated={() => void loadAssets()}
+        />
+      )}
     </section>
   );
 }

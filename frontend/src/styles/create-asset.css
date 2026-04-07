@@ -397,3 +397,60 @@
     justify-content: center;
   }
 }
+
+/* ── Location searchable dropdown ── */
+.ubicacionDropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+  max-height: 220px;
+  overflow-y: auto;
+  z-index: 20;
+}
+
+.ubicacionDropdown__item {
+  padding: 10px 14px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  transition: background 0.12s;
+}
+
+.ubicacionDropdown__item:hover {
+  background: #f0f5ff;
+}
+
+.ubicacionDropdown__item--selected {
+  background: #eff6ff;
+  border-left: 3px solid #2563eb;
+}
+
+.ubicacionDropdown__item--disabled {
+  color: #9ca3af;
+  cursor: default;
+  padding: 12px 14px;
+  text-align: center;
+}
+
+.ubicacionDropdown__item--disabled:hover {
+  background: transparent;
+}
+
+.ubicacionDropdown__meta {
+  font-size: 0.78rem;
+  color: #6b7280;
+}
+
+/* ── Small button variant ── */
+.btn--sm {
+  padding: 6px 14px;
+  font-size: 0.82rem;
+  border-radius: 8px;
+}
