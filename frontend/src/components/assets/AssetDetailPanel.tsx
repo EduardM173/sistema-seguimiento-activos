@@ -193,39 +193,57 @@ export default function AssetDetailPanel({
       </div>
 
       <div className="assetDetailPanel__summary">
-        <div className="assetDetailHero__badgeWrap">
-          <span className="assetDetailHero__code">{asset.codigo}</span>
-          <span className={`statusBadge ${getStatusClass(asset.estado)}`}>
-            {asset.estadoLabel}
-          </span>
-        </div>
-
         <div className="assetDetailHero">
-          <div className="assetDetailHero__summary">
-            <h3 className="assetDetailHero__name">{asset.nombre}</h3>
-            <p className="assetDetailHero__description">
-              {renderValue(asset.descripcion)}
-            </p>
+          <div className="assetDetailHero__top">
+            <div className="assetDetailHero__identity">
+              <span className="assetDetailHero__eyebrow">Activo Seleccionado</span>
+              <h3 className="assetDetailHero__name">{asset.nombre}</h3>
+              <p className="assetDetailHero__description">
+                {renderValue(asset.descripcion)}
+              </p>
+            </div>
 
-            <div className="assetDetailHero__grid">
-              <div className="assetDetailHero__item">
-                <span className="assetDetailHero__label">Categoria</span>
-                <strong>{asset.categoria?.nombre ?? 'No registrada'}</strong>
-              </div>
-              <div className="assetDetailHero__item">
-                <span className="assetDetailHero__label">Ubicacion</span>
-                <strong>{asset.ubicacion?.nombre ?? 'No registrada'}</strong>
-              </div>
-              <div className="assetDetailHero__item">
-                <span className="assetDetailHero__label">Responsable</span>
-                <strong>
-                  {asset.responsableActual?.nombreCompleto ?? 'No registrado'}
-                </strong>
-              </div>
-              <div className="assetDetailHero__item">
-                <span className="assetDetailHero__label">Area</span>
-                <strong>{asset.areaActual?.nombre ?? 'No registrada'}</strong>
-              </div>
+            <div className="assetDetailHero__badgeWrap">
+              <span className="assetDetailHero__code">{asset.codigo}</span>
+              <span className={`statusBadge ${getStatusClass(asset.estado)}`}>
+                {asset.estadoLabel}
+              </span>
+            </div>
+          </div>
+
+          <div className="assetDetailHero__grid">
+            <div className="assetDetailHero__item">
+              <span className="assetDetailHero__label">Categoria</span>
+              <strong>{asset.categoria?.nombre ?? 'No registrada'}</strong>
+            </div>
+            <div className="assetDetailHero__item">
+              <span className="assetDetailHero__label">Ubicacion</span>
+              <strong>{asset.ubicacion?.nombre ?? 'No registrada'}</strong>
+            </div>
+            <div className="assetDetailHero__item">
+              <span className="assetDetailHero__label">Responsable</span>
+              <strong>
+                {asset.responsableActual?.nombreCompleto ?? 'No registrado'}
+              </strong>
+            </div>
+            <div className="assetDetailHero__item">
+              <span className="assetDetailHero__label">Area</span>
+              <strong>{asset.areaActual?.nombre ?? 'No registrada'}</strong>
+            </div>
+          </div>
+
+          <div className="assetDetailHero__technical">
+            <div className="assetDetailHero__technicalItem">
+              <span className="assetDetailHero__label">Marca</span>
+              <strong>{renderValue(asset.marca)}</strong>
+            </div>
+            <div className="assetDetailHero__technicalItem">
+              <span className="assetDetailHero__label">Modelo</span>
+              <strong>{renderValue(asset.modelo)}</strong>
+            </div>
+            <div className="assetDetailHero__technicalItem">
+              <span className="assetDetailHero__label">Serie</span>
+              <strong>{renderValue(asset.numeroSerie)}</strong>
             </div>
           </div>
         </div>
@@ -234,7 +252,9 @@ export default function AssetDetailPanel({
       <div className="assetDetailSections">
         {detailSections.map((section) => (
           <article key={section.title} className="assetDetailCard">
-            <h3 className="assetDetailCard__title">{section.title}</h3>
+            <div className="assetDetailCard__head">
+              <h3 className="assetDetailCard__title">{section.title}</h3>
+            </div>
             <div className="assetDetailCard__grid">
               {section.items.map((item) => (
                 <div key={item.label} className="assetDetailCard__item">
