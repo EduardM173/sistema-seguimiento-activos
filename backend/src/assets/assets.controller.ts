@@ -67,6 +67,23 @@ export class AssetsController {
   }
 
   /**
+   * GET /api/assets/generate-code
+   * Generate a unique asset code.
+   */
+  @ApiOperation({
+    summary: 'Generar código único de activo',
+    description: 'Genera un código único que no existe en la base de datos para asignar a un nuevo activo.',
+  })
+  @ApiOkResponse({
+    description: 'Código único generado exitosamente',
+  })
+  @Get('generate-code')
+  async generateCode() {
+    const code = await this.assetsService.generateUniqueCode();
+    return ApiResponse.success({ code }, 'Código generado exitosamente');
+  }
+
+  /**
    * GET /api/assets/:id
    * Get single asset with full details.
    */

@@ -4,6 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { randomUUID } from 'crypto';
 
 import { PrismaService } from '../common/prisma.service';
 import { CreateAssetDto } from './dto/create-asset.dto';
@@ -594,6 +595,31 @@ export class AssetsService {
     });
 
     return activo;
+  }
+
+  /**
+   * Generate a unique asset code that does not exist in the database.
+   * Format: ACT-XXXXXXXX (8-char hex from UUID).
+   */
+  async generateUniqueCode(): Promise<string> {
+    const maxAttempts = 10;
+    for (let i = 0; i < maxAttempts; i++) {
+      const uuid = randomUUID().replace(/-/g, '');
+      const code = `ACT-${uuid.substring(0, 8).toUpperCase()}`;
+
+      const existing = await this.prisma.activo.findUnique({
+        where: { codigo: code },
+        select: { id: true },
+      });
+
+      if (!existing) {
+        return code;
+      }
+    }
+
+    // Fallback: use full UUID segment for guaranteed uniqueness
+    const uuid = randomUUID().replace(/-/g, '');
+    return `ACT-${uuid.substring(0, 12).toUpperCase()}`;
   }
 
   /**

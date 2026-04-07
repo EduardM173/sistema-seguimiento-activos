@@ -6,6 +6,7 @@ import { AssetsModule } from './assets/assets.module';
 import { MaterialsModule } from './materials/materials.module';
 import { MaterialModule } from './material/material.module';
 import { CatalogsModule } from './catalogs/catalogs.module';
+import { LocationsModule } from './locations/locations.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { CatalogsModule } from './catalogs/catalogs.module';
     MaterialsModule,
     MaterialModule,
     CatalogsModule,
+    LocationsModule,
   ],
   controllers: [],
   providers: [],

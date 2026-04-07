@@ -26,6 +26,7 @@ export default function Navbar() {
     { label: 'Transferencias', icon: '⇄' },
     { label: 'Reportes', icon: '▥' },
     { label: 'Usuarios', icon: '◌', to: '/users' },
+    { label: 'Ubicaciones', icon: '▦', to: '/locations'},
     { label: 'Auditoría', icon: '🛡' },
   ];
 

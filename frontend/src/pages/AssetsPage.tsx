@@ -5,6 +5,8 @@ import { searchAssets, deleteAsset, assignAsset } from '../services/assets.servi
 import { getCategorias, getUbicaciones, getAreas, getUsuarios } from '../services/catalogs.service';
 import { useNotification } from '../context/NotificationContext';
 import { HttpError } from '../services/http.client';
+import EditAssetModal from '../components/activos/EditAssetModal';
+import ViewAssetModal from '../components/activos/ViewAssetModal';
 import type {
   AssetListItem,
   SearchAssetsParams,
@@ -60,6 +62,12 @@ export default function AssetsPage() {
   const [assignmentTargetId, setAssignmentTargetId] = useState('');
   const [assignmentNotes, setAssignmentNotes] = useState('');
   const [submittingAssignment, setSubmittingAssignment] = useState(false);
+
+  // Edit modal state
+  const [editingAssetId, setEditingAssetId] = useState<string | null>(null);
+
+  // View detail modal state
+  const [viewingAssetId, setViewingAssetId] = useState<string | null>(null);
 
   // Load catalogs once
   useEffect(() => {
@@ -372,7 +380,7 @@ export default function AssetsPage() {
                             type="button"
                             className="actionBtn"
                             title="Ver detalle"
-                            onClick={() => notify.info('Detalle', `Detalle de ${asset.nombre}`)}
+                            onClick={() => setViewingAssetId(asset.id)}
                           >
                             👁
                           </button>
@@ -380,7 +388,7 @@ export default function AssetsPage() {
                             type="button"
                             className="actionBtn"
                             title="Editar"
-                            onClick={() => notify.info('Editar', 'Funcionalidad en desarrollo')}
+                            onClick={() => setEditingAssetId(asset.id)}
                           >
                             ✏️
                           </button>
@@ -556,6 +564,25 @@ export default function AssetsPage() {
           </div>
         </div>
       ) : null}
+
+      {/* View Asset Detail Modal */}
+      {viewingAssetId && (
+        <ViewAssetModal
+          assetId={viewingAssetId}
+          open={!!viewingAssetId}
+          onClose={() => setViewingAssetId(null)}
+        />
+      )}
+
+      {/* Edit Asset Modal */}
+      {editingAssetId && (
+        <EditAssetModal
+          assetId={editingAssetId}
+          open={!!editingAssetId}
+          onClose={() => setEditingAssetId(null)}
+          onUpdated={() => void loadAssets()}
+        />
+      )}
     </section>
   );
 }
