@@ -372,7 +372,7 @@ export default function AssetsPage() {
                             type="button"
                             className="actionBtn"
                             title="Ver detalle"
-                            onClick={() => notify.info('Detalle', `Detalle de ${asset.nombre}`)}
+                            onClick={() => navigate(`/activos/${asset.id}`)}
                           >
                             👁
                           </button>
