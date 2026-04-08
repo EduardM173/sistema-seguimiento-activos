@@ -9,7 +9,11 @@ import { randomUUID } from 'crypto';
 import { PrismaService } from '../common/prisma.service';
 import { CreateAssetDto } from './dto/create-asset.dto';
 import { UpdateAssetDto } from './dto/update-asset.dto';
-import { SearchAssetsDto } from './dto/search-assets.dto';
+import {
+  AssetSortBy,
+  SearchAssetsDto,
+  SortType,
+} from './dto/search-assets.dto';
 import { AssignAssetDto } from './dto/assign-asset.dto';
 import { EstadoActivo, Prisma } from '../generated/prisma/client';
 
@@ -21,7 +25,16 @@ export class AssetsService {
    * Paginated list of all assets with optional filters.
    */
   async findAll(query: SearchAssetsDto) {
-    const { page, pageSize, q, estado, categoriaId, ubicacionId } = query;
+    const {
+      page,
+      pageSize,
+      q,
+      estado,
+      categoriaId,
+      ubicacionId,
+      sortBy = AssetSortBy.CREADO_EN,
+      sortType = SortType.DESC,
+    } = query;
     const skip = (page - 1) * pageSize;
 
     const where: Prisma.ActivoWhereInput = {};
@@ -92,6 +105,24 @@ export class AssetsService {
       where.ubicacionId = ubicacionId;
     }
 
+    const orderDirection: Prisma.SortOrder =
+      sortType === SortType.ASC ? 'asc' : 'desc';
+
+    const orderBy: Prisma.ActivoOrderByWithRelationInput =
+      sortBy === AssetSortBy.CODIGO
+        ? { codigo: orderDirection }
+        : sortBy === AssetSortBy.NOMBRE
+          ? { nombre: orderDirection }
+          : sortBy === AssetSortBy.CATEGORIA
+            ? { categoria: { nombre: orderDirection } }
+            : sortBy === AssetSortBy.UBICACION
+              ? { ubicacion: { nombre: orderDirection } }
+              : sortBy === AssetSortBy.RESPONSABLE
+                ? { responsableActual: { nombres: orderDirection } }
+          : sortBy === AssetSortBy.ESTADO
+            ? { estado: orderDirection }
+            : { creadoEn: orderDirection };
+
     const [activos, total] = await Promise.all([
       this.prisma.activo.findMany({
         where,
@@ -117,7 +148,7 @@ export class AssetsService {
             select: { id: true, nombres: true, apellidos: true },
           },
         },
-        orderBy: { creadoEn: 'desc' },
+        orderBy,
         skip,
         take: pageSize,
       }),
