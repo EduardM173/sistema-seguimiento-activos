@@ -58,9 +58,9 @@ export class CreateAssetDto {
   @IsNotEmpty({ message: 'La categoría del activo es obligatoria' })
   categoriaId: string;
 
-  @IsOptional()
-  @IsString()
-  ubicacionId?: string;
+  @IsString({ message: 'El ID de ubicación debe ser una cadena de texto' })
+  @IsNotEmpty({ message: 'La ubicación del activo es obligatoria' })
+  ubicacionId: string;
 
   @IsOptional()
   @IsString()

@@ -1,6 +1,7 @@
 import {
   IsDateString,
   IsEnum,
+  IsNotEmpty,
   IsNumber,
   IsOptional,
   IsPositive,
@@ -18,11 +19,13 @@ import { EstadoActivo } from '../../generated/prisma/client';
 export class UpdateAssetDto {
   @IsOptional()
   @IsString({ message: 'El código debe ser una cadena de texto' })
+  @IsNotEmpty({ message: 'El código del activo es obligatorio' })
   @MaxLength(50, { message: 'El código no puede exceder 50 caracteres' })
   codigo?: string;
 
   @IsOptional()
   @IsString({ message: 'El nombre debe ser una cadena de texto' })
+  @IsNotEmpty({ message: 'El nombre del activo es obligatorio' })
   @MaxLength(200, { message: 'El nombre no puede exceder 200 caracteres' })
   nombre?: string;
 
@@ -68,6 +71,7 @@ export class UpdateAssetDto {
 
   @IsOptional()
   @IsString()
+  @IsNotEmpty({ message: 'La categoría del activo es obligatoria' })
   categoriaId?: string;
 
   @IsOptional()

@@ -203,10 +203,19 @@ export default function EditAssetModal({ assetId, open, onClose, onUpdated }: Pr
     }
   }
 
+  const codigoError = !codigo.trim() ? 'El código del activo es obligatorio.' : '';
+  const nombreError = !nombre.trim() ? 'El nombre del activo es obligatorio.' : '';
+  const categoriaError = !categoriaId ? 'La categoría del activo es obligatoria.' : '';
+  const hasRequiredErrors = Boolean(codigoError || nombreError || categoriaError);
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!nombre.trim()) {
-      notify.warning('Formulario incompleto', 'El nombre del activo es obligatorio.');
+
+    if (hasRequiredErrors) {
+      notify.warning(
+        'Formulario incompleto',
+        'Complete código, nombre y categoría antes de guardar la actualización.',
+      );
       return;
     }
 
@@ -258,7 +267,7 @@ export default function EditAssetModal({ assetId, open, onClose, onUpdated }: Pr
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {/* Código + Nombre */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              <div className="formField">
+              <div className={`formField ${codigoError ? 'formField--error' : ''}`}>
                 <label htmlFor="edit-codigo">Código <span className="req">*</span></label>
                 <div className="formField__inputWrap">
                   <input
@@ -268,6 +277,8 @@ export default function EditAssetModal({ assetId, open, onClose, onUpdated }: Pr
                     onChange={(e) => setCodigo(e.target.value)}
                     maxLength={50}
                     disabled={submitting}
+                    required
+                    aria-invalid={Boolean(codigoError)}
                   />
                   <button
                     type="button"
@@ -279,8 +290,9 @@ export default function EditAssetModal({ assetId, open, onClose, onUpdated }: Pr
                     {generatingCode ? '⏳' : '🔄'}
                   </button>
                 </div>
+                {codigoError ? <span className="formField__error">{codigoError}</span> : null}
               </div>
-              <div className="formField">
+              <div className={`formField ${nombreError ? 'formField--error' : ''}`}>
                 <label htmlFor="edit-nombre">Nombre <span className="req">*</span></label>
                 <input
                   id="edit-nombre"
@@ -289,7 +301,10 @@ export default function EditAssetModal({ assetId, open, onClose, onUpdated }: Pr
                   onChange={(e) => setNombre(e.target.value)}
                   maxLength={200}
                   disabled={submitting}
+                  required
+                  aria-invalid={Boolean(nombreError)}
                 />
+                {nombreError ? <span className="formField__error">{nombreError}</span> : null}
               </div>
             </div>
 
@@ -311,14 +326,22 @@ export default function EditAssetModal({ assetId, open, onClose, onUpdated }: Pr
 
             {/* Categoría + Estado */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              <div className="formField">
-                <label htmlFor="edit-categoria">Categoría</label>
-                <select id="edit-categoria" value={categoriaId} onChange={(e) => setCategoriaId(e.target.value)} disabled={submitting}>
+              <div className={`formField ${categoriaError ? 'formField--error' : ''}`}>
+                <label htmlFor="edit-categoria">Categoría <span className="req">*</span></label>
+                <select
+                  id="edit-categoria"
+                  value={categoriaId}
+                  onChange={(e) => setCategoriaId(e.target.value)}
+                  disabled={submitting}
+                  required
+                  aria-invalid={Boolean(categoriaError)}
+                >
                   <option value="">Seleccionar</option>
                   {categorias.map((c) => (
                     <option key={c.id} value={c.id}>{c.nombre}</option>
                   ))}
                 </select>
+                {categoriaError ? <span className="formField__error">{categoriaError}</span> : null}
               </div>
               <div className="formField">
                 <label htmlFor="edit-estado">Estado</label>
@@ -441,7 +464,11 @@ export default function EditAssetModal({ assetId, open, onClose, onUpdated }: Pr
               <button type="button" className="btn btn--ghost" onClick={onClose} disabled={submitting}>
                 Cancelar
               </button>
-              <button type="submit" className="btn btn--primary" disabled={submitting}>
+              <button
+                type="submit"
+                className="btn btn--primary"
+                disabled={submitting || hasRequiredErrors}
+              >
                 {submitting ? 'Guardando...' : '💾 Guardar Cambios'}
               </button>
             </div>

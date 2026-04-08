@@ -10,6 +10,7 @@ import {
   UpdateMaterialDTO,
   MaterialResponseDTO,
 } from './dto';
+import { TipoMovimientoInventario } from '../generated/prisma/enums';
 
 @Injectable()
 export class MaterialService {
@@ -311,44 +312,63 @@ export class MaterialService {
     };
   }
 
-  async aumentarStock(id: string, cantidad: number): Promise<MaterialResponseDTO> {
+  async aumentarStock(id: string, cantidad: number, userId: string) {
+    if (!Number.isFinite(cantidad) || cantidad <= 0) {
+      throw new BadRequestException(
+        'La cantidad a ingresar debe ser mayor a 0',
+      );
+    }
+
     const materialExistente = await this.prisma.material.findUnique({
       where: { id },
       include: { categoria: true },
     });
 
     if (!materialExistente) {
-      throw new Error('Material no encontrado');
+      throw new NotFoundException(`Material con ID ${id} no encontrado`);
     }
 
-    const materialActualizado = await this.prisma.material.update({
-      where: { id },
-      data: {
-        stockActual: {
-          increment: cantidad,
+    const stockAnterior = Number(materialExistente.stockActual);
+    const stockNuevo = stockAnterior + Number(cantidad);
+
+    const result = await this.prisma.$transaction(async (tx) => {
+      const materialActualizado = await tx.material.update({
+        where: { id },
+        data: {
+          stockActual: {
+            increment: cantidad,
+          },
         },
-      },
-      include: { categoria: true },
+        include: { categoria: true },
+      });
+
+      const movimiento = await tx.movimientoInventario.create({
+        data: {
+          materialId: id,
+          tipo: TipoMovimientoInventario.ENTRADA,
+          cantidad,
+          stockAnterior,
+          stockNuevo,
+          motivo: 'Ingreso de stock',
+          realizadoPorId: userId,
+        },
+      });
+
+      return { materialActualizado, movimiento };
     });
 
     return {
-      id: materialActualizado.id,
-      codigo: materialActualizado.codigo,
-      nombre: materialActualizado.nombre,
-      descripcion: materialActualizado.descripcion ?? undefined,
-      unidad: materialActualizado.unidad,
-      stockActual: Number(materialActualizado.stockActual),
-      stockMinimo: Number(materialActualizado.stockMinimo),
-      categoriaId: materialActualizado.categoriaId ?? undefined,
-      creadoEn: materialActualizado.creadoEn,
-      actualizadoEn: materialActualizado.actualizadoEn,
-      categoria: materialActualizado.categoria
-      ? {
-          id: materialActualizado.categoria.id,
-          nombre: materialActualizado.categoria.nombre,
-          descripcion: materialActualizado.categoria.descripcion ?? undefined,
-        }
-      : undefined,
+      message: `Se registró el ingreso de ${cantidad} unidades de ${result.materialActualizado.nombre}`,
+      material: this.mapMaterialToDTO(result.materialActualizado),
+      movimiento: {
+        id: result.movimiento.id,
+        tipo: result.movimiento.tipo,
+        cantidad: Number(result.movimiento.cantidad),
+        stockAnterior: Number(result.movimiento.stockAnterior),
+        stockNuevo: Number(result.movimiento.stockNuevo),
+        motivo: result.movimiento.motivo ?? null,
+        creadoEn: result.movimiento.creadoEn,
+      },
     };
   }
 }

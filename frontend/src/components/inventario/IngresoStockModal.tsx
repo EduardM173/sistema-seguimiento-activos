@@ -19,13 +19,13 @@ const IngresoStockModal: React.FC<IngresoStockModalProps> = ({
 }) => {
   const notify = useNotification();
   const [materialId, setMaterialId] = useState('');
-  const [cantidad, setCantidad] = useState<number>(0);
+  const [cantidad, setCantidad] = useState('');
   const [guardando, setGuardando] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
       setMaterialId('');
-      setCantidad(0);
+      setCantidad('');
     }
   }, [isOpen]);
 
@@ -46,15 +46,17 @@ const IngresoStockModal: React.FC<IngresoStockModalProps> = ({
       return;
     }
 
-    if (!cantidad || cantidad <= 0) {
+    const cantidadNumerica = Number(cantidad);
+
+    if (!cantidad || cantidadNumerica <= 0) {
       notify.error('Error', 'La cantidad a ingresar debe ser mayor a 0');
       return;
     }
 
     try {
       setGuardando(true);
-      await inventarioService.aumentarStock(materialId, cantidad);
-      notify.success('Stock actualizado correctamente');
+      const response = await inventarioService.aumentarStock(materialId, cantidadNumerica);
+      notify.success(response.message || response.data?.message || 'Stock actualizado correctamente');
       await onSuccess();
       onClose();
     } catch (err: any) {
@@ -132,6 +134,7 @@ const IngresoStockModal: React.FC<IngresoStockModalProps> = ({
               <select
                 value={materialId}
                 onChange={(e) => setMaterialId(e.target.value)}
+                disabled={guardando}
                 style={{
                   width: '100%',
                   padding: '12px 14px',
@@ -175,7 +178,8 @@ const IngresoStockModal: React.FC<IngresoStockModalProps> = ({
                 type="number"
                 min="1"
                 value={cantidad}
-                onChange={(e) => setCantidad(Number(e.target.value))}
+                onChange={(e) => setCantidad(e.target.value)}
+                disabled={guardando}
                 style={{
                   width: '100%',
                   padding: '12px 14px',
@@ -219,6 +223,7 @@ const IngresoStockModal: React.FC<IngresoStockModalProps> = ({
               label={guardando ? 'Guardando...' : 'Registrar ingreso'}
               variant="primary"
               type="submit"
+              disabled={guardando || !materialId || Number(cantidad) <= 0}
             />
           </div>
         </form>

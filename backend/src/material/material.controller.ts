@@ -10,12 +10,16 @@ import {
   Query,
   HttpCode,
   HttpStatus,
+  Req,
+  UseGuards,
 } from '@nestjs/common';
+import { Request } from 'express';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
   ApiBody,
   ApiCreatedResponse,
+  ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
   ApiParam,
@@ -25,10 +29,13 @@ import {
 import { MaterialService } from './material.service';
 import { CreateMaterialDTO, UpdateMaterialDTO, MaterialResponseDTO } from './dto';
 import { AumentarStockDTO } from './dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { ApiResponse } from '../common/api-response';
 
 @ApiTags('inventory-items')
 @ApiBearerAuth()
 @Controller('inventory-items')
+@UseGuards(JwtAuthGuard)
 export class MaterialController {
   constructor(private readonly materialService: MaterialService) {}
 
@@ -166,11 +173,65 @@ export class MaterialController {
     return this.materialService.delete(id);
   }
 
+  @ApiOperation({
+    summary: 'Registrar ingreso de stock',
+    description:
+      'Registra una entrada de inventario para un material existente y aumenta su stock disponible.',
+  })
+  @ApiParam({ name: 'id', description: 'ID del material' })
+  @ApiBody({
+    type: AumentarStockDTO,
+    examples: {
+      ingresoStock: {
+        summary: 'Ingreso de stock',
+        value: {
+          cantidad: 25,
+        },
+      },
+    },
+  })
+  @ApiOkResponse({
+    description: 'Ingreso registrado correctamente y stock actualizado',
+    schema: {
+      example: {
+        success: true,
+        message: 'Ingreso de stock registrado correctamente',
+        data: {
+          message: 'Se registró el ingreso de 25 unidades de Papel bond carta',
+          material: {
+            id: 'cmnmaterial123',
+            codigo: 'MAT-001',
+            nombre: 'Papel bond carta',
+            unidad: 'paquete',
+            stockActual: 40,
+            stockMinimo: 10,
+          },
+          movimiento: {
+            id: 'cmnmov123',
+            tipo: 'ENTRADA',
+            cantidad: 25,
+            stockAnterior: 15,
+            stockNuevo: 40,
+            motivo: 'Ingreso de stock',
+          },
+        },
+      },
+    },
+  })
+  @ApiBadRequestResponse({
+    description: 'La cantidad ingresada es inválida o menor o igual a cero',
+  })
+  @ApiNotFoundResponse({
+    description: 'No se encontró el material solicitado',
+  })
   @Patch(':id/aumentar-stock')
-  aumentarStock(
+  async aumentarStock(
     @Param('id') id: string,
     @Body() dto: AumentarStockDTO,
+    @Req() req: Request,
   ) {
-  return this.materialService.aumentarStock(id, dto.cantidad);
+    const userId = (req.user as { id: string }).id;
+    const result = await this.materialService.aumentarStock(id, dto.cantidad, userId);
+    return ApiResponse.success(result, 'Ingreso de stock registrado correctamente');
   }
 }
