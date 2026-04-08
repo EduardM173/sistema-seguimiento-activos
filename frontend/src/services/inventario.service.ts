@@ -55,6 +55,18 @@ export const inventarioService = {
     }
   },
 
+  // Aumntar stock
+  aumentarStock: async (id: string, cantidad: number) => {
+    try {
+      const response = await apiClient.patch(`/inventory-items/${id}/aumentar-stock`, {
+        cantidad,
+    });
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
   // Registrar movimiento de inventario
   registrarMovimiento: async (datos: CreateMovimientoInventarioDTO) => {
     try {
