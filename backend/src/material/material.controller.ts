@@ -5,6 +5,7 @@ import {
   Put,
   Delete,
   Body,
+  Patch,
   Param,
   Query,
   HttpCode,
@@ -23,6 +24,7 @@ import {
 } from '@nestjs/swagger';
 import { MaterialService } from './material.service';
 import { CreateMaterialDTO, UpdateMaterialDTO, MaterialResponseDTO } from './dto';
+import { AumentarStockDTO } from './dto';
 
 @ApiTags('inventory-items')
 @ApiBearerAuth()
@@ -162,5 +164,13 @@ export class MaterialController {
   @HttpCode(HttpStatus.OK)
   async delete(@Param('id') id: string): Promise<{ message: string }> {
     return this.materialService.delete(id);
+  }
+
+  @Patch(':id/aumentar-stock')
+  aumentarStock(
+    @Param('id') id: string,
+    @Body() dto: AumentarStockDTO,
+  ) {
+  return this.materialService.aumentarStock(id, dto.cantidad);
   }
 }

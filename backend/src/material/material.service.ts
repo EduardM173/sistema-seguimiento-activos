@@ -310,4 +310,45 @@ export class MaterialService {
       actualizadoEn: material.actualizadoEn,
     };
   }
+
+  async aumentarStock(id: string, cantidad: number): Promise<MaterialResponseDTO> {
+    const materialExistente = await this.prisma.material.findUnique({
+      where: { id },
+      include: { categoria: true },
+    });
+
+    if (!materialExistente) {
+      throw new Error('Material no encontrado');
+    }
+
+    const materialActualizado = await this.prisma.material.update({
+      where: { id },
+      data: {
+        stockActual: {
+          increment: cantidad,
+        },
+      },
+      include: { categoria: true },
+    });
+
+    return {
+      id: materialActualizado.id,
+      codigo: materialActualizado.codigo,
+      nombre: materialActualizado.nombre,
+      descripcion: materialActualizado.descripcion ?? undefined,
+      unidad: materialActualizado.unidad,
+      stockActual: Number(materialActualizado.stockActual),
+      stockMinimo: Number(materialActualizado.stockMinimo),
+      categoriaId: materialActualizado.categoriaId ?? undefined,
+      creadoEn: materialActualizado.creadoEn,
+      actualizadoEn: materialActualizado.actualizadoEn,
+      categoria: materialActualizado.categoria
+      ? {
+          id: materialActualizado.categoria.id,
+          nombre: materialActualizado.categoria.nombre,
+          descripcion: materialActualizado.categoria.descripcion ?? undefined,
+        }
+      : undefined,
+    };
+  }
 }
