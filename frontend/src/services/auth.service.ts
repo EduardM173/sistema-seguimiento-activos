@@ -7,7 +7,7 @@ const ACCESS_TOKEN_KEY = 'access_token';
 const AUTH_USER_KEY = 'auth_user';
 
 export async function login(data: LoginRequest): Promise<LoginResponse> {
-  const response = await fetch(`${API_URL}/auth/login`, {
+  const response = await fetch(`${API_URL}/auth/login`, {    /*AQUI*/
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
