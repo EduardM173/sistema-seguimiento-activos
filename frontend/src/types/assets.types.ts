@@ -86,10 +86,23 @@ export type SearchAssetsParams = {
   q?: string;
   estado?: EstadoActivo | '';
   categoriaId?: string;
-  ubicacionId?: string,
+  ubicacionId?: string;
+  sortBy?: AssetSortBy;
+  sortType?: SortType;
   page?: number;
   pageSize?: number;
 };
+
+export type AssetSortBy =
+  | 'codigo'
+  | 'nombre'
+  | 'categoria'
+  | 'ubicacion'
+  | 'responsable'
+  | 'estado'
+  | 'creadoEn';
+
+export type SortType = 'ASC' | 'DESC';
 
 export type Categoria = {
   id: string;

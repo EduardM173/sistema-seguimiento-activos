@@ -281,6 +281,49 @@
   border-bottom: 1px solid #e5e7eb;
 }
 
+.assetsTable__sortButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-transform: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+  transition: color 0.18s ease;
+}
+
+.assetsTable__sortButton:hover {
+  color: #2563eb;
+}
+
+.assetsTable__sortButton--active {
+  color: #1d4ed8;
+}
+
+.assetsTable__sortIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 14px;
+  font-size: 0.72rem;
+  opacity: 0.55;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.assetsTable__sortButton:hover .assetsTable__sortIcon,
+.assetsTable__sortButton--active .assetsTable__sortIcon {
+  opacity: 1;
+}
+
+.assetsTable__sortIcon--asc,
+.assetsTable__sortIcon--desc {
+  transform: translateY(-1px);
+}
+
 .assetsTable td {
   padding: 16px 18px;
   font-size: 0.92rem;

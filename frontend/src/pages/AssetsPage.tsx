@@ -12,10 +12,12 @@ import type {
   Area,
   AssetDetail,
   AssetListItem,
+  AssetSortBy,
   Categoria,
   EstadoActivo,
   PaginationMeta,
   SearchAssetsParams,
+  SortType,
   Ubicacion,
   UsuarioResumen,
 } from '../types/assets.types';
@@ -56,6 +58,8 @@ export default function AssetsPage() {
   const [filterEstado, setFilterEstado] = useState<EstadoActivo | ''>('');
   const [filterCategoria, setFilterCategoria] = useState('');
   const [filterUbicacion, setFilterUbicacion] = useState('');
+  const [sortBy, setSortBy] = useState<AssetSortBy>('creadoEn');
+  const [sortType, setSortType] = useState<SortType>('DESC');
   const [currentPage, setCurrentPage] = useState(1);
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
@@ -111,6 +115,8 @@ export default function AssetsPage() {
       if (filterEstado) params.estado = filterEstado;
       if (filterCategoria) params.categoriaId = filterCategoria;
       if (filterUbicacion) params.ubicacionId = filterUbicacion;
+      params.sortBy = sortBy;
+      params.sortType = sortType;
 
       const result = await searchAssets(params);
       setAssets(result.data ?? []);
@@ -122,7 +128,16 @@ export default function AssetsPage() {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, debouncedSearch, filterEstado, filterCategoria, filterUbicacion, notifyError]);
+  }, [
+    currentPage,
+    debouncedSearch,
+    filterEstado,
+    filterCategoria,
+    filterUbicacion,
+    sortBy,
+    sortType,
+    notifyError,
+  ]);
 
   const refreshAssetDetail = useCallback(
     async (assetId: string) => {
@@ -161,14 +176,64 @@ export default function AssetsPage() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [debouncedSearch, filterEstado, filterCategoria, filterUbicacion]);
+  }, [debouncedSearch, filterEstado, filterCategoria, filterUbicacion, sortBy, sortType]);
 
   function clearFilters() {
     setSearchText('');
     setFilterEstado('');
     setFilterCategoria('');
     setFilterUbicacion('');
+    setSortBy('creadoEn');
+    setSortType('DESC');
     setCurrentPage(1);
+  }
+
+  function getDefaultSortType(column: AssetSortBy): SortType {
+    return column === 'codigo' ||
+      column === 'nombre' ||
+      column === 'categoria' ||
+      column === 'ubicacion' ||
+      column === 'responsable'
+      ? 'ASC'
+      : 'DESC';
+  }
+
+  function handleSort(column: AssetSortBy) {
+    setCurrentPage(1);
+
+    if (sortBy === column) {
+      setSortType((currentSortType) => (currentSortType === 'ASC' ? 'DESC' : 'ASC'));
+      return;
+    }
+
+    setSortBy(column);
+    setSortType(getDefaultSortType(column));
+  }
+
+  function renderSortLabel(label: string, column: AssetSortBy) {
+    const isActive = sortBy === column;
+    const direction = isActive ? sortType : null;
+
+    return (
+      <button
+        type="button"
+        className={`assetsTable__sortButton ${isActive ? 'assetsTable__sortButton--active' : ''}`}
+        onClick={() => handleSort(column)}
+      >
+        <span>{label}</span>
+        <span
+          className={`assetsTable__sortIcon ${
+            direction === 'ASC'
+              ? 'assetsTable__sortIcon--asc'
+              : direction === 'DESC'
+                ? 'assetsTable__sortIcon--desc'
+                : ''
+          }`}
+        >
+          {direction === 'ASC' ? '▲' : direction === 'DESC' ? '▼' : '↕'}
+        </span>
+      </button>
+    );
   }
 
   function openDetailPanel(assetId: string) {
@@ -436,12 +501,12 @@ export default function AssetsPage() {
                   <table className="assetsTable">
                     <thead>
                       <tr>
-                        <th>Código</th>
-                        <th>Activo</th>
-                        <th>Categoría</th>
-                        <th>Ubicación</th>
-                        <th>Responsable</th>
-                        <th>Estado</th>
+                        <th>{renderSortLabel('Código', 'codigo')}</th>
+                        <th>{renderSortLabel('Activo', 'nombre')}</th>
+                        <th>{renderSortLabel('Categoría', 'categoria')}</th>
+                        <th>{renderSortLabel('Ubicación', 'ubicacion')}</th>
+                        <th>{renderSortLabel('Responsable', 'responsable')}</th>
+                        <th>{renderSortLabel('Estado', 'estado')}</th>
                         <th>Acciones</th>
                       </tr>
                     </thead>
