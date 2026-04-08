@@ -1,22 +1,22 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import AssetDetailPanel from '../components/assets/AssetDetailPanel';
-import { searchAssets, deleteAsset, assignAsset, getAssetById } from '../services/assets.service';
-import { getCategorias, getUbicaciones, getAreas, getUsuarios } from '../services/catalogs.service';
-import { useNotification } from '../context/NotificationContext';
-import { HttpError } from '../services/http.client';
 import EditAssetModal from '../components/activos/EditAssetModal';
 import ViewAssetModal from '../components/activos/ViewAssetModal';
+import AssetDetailPanel from '../components/assets/AssetDetailPanel';
+import { useNotification } from '../context/NotificationContext';
+import { getAreas, getCategorias, getUbicaciones, getUsuarios } from '../services/catalogs.service';
+import { assignAsset, deleteAsset, getAssetById, searchAssets } from '../services/assets.service';
+import { HttpError } from '../services/http.client';
 import type {
+  Area,
   AssetDetail,
   AssetListItem,
-  SearchAssetsParams,
-  PaginationMeta,
-  EstadoActivo,
   Categoria,
+  EstadoActivo,
+  PaginationMeta,
+  SearchAssetsParams,
   Ubicacion,
-  Area,
   UsuarioResumen,
 } from '../types/assets.types';
 
@@ -47,37 +47,34 @@ export default function AssetsPage() {
   const [loading, setLoading] = useState(true);
   const [meta, setMeta] = useState<PaginationMeta | null>(null);
 
-  // Catalog data
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [ubicaciones, setUbicaciones] = useState<Ubicacion[]>([]);
   const [areas, setAreas] = useState<Area[]>([]);
   const [usuarios, setUsuarios] = useState<UsuarioResumen[]>([]);
 
-  // Filters
   const [searchText, setSearchText] = useState('');
   const [filterEstado, setFilterEstado] = useState<EstadoActivo | ''>('');
   const [filterCategoria, setFilterCategoria] = useState('');
   const [filterUbicacion, setFilterUbicacion] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+
   const [selectedAssetId, setSelectedAssetId] = useState<string | null>(null);
   const [selectedAssetDetail, setSelectedAssetDetail] = useState<AssetDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState('');
+
   const [assigningAsset, setAssigningAsset] = useState<AssetListItem | null>(null);
   const [assignmentType, setAssignmentType] = useState<'usuario' | 'area'>('usuario');
   const [assignmentTargetId, setAssignmentTargetId] = useState('');
   const [assignmentNotes, setAssignmentNotes] = useState('');
   const [submittingAssignment, setSubmittingAssignment] = useState(false);
 
-  // Edit modal state
   const [editingAssetId, setEditingAssetId] = useState<string | null>(null);
-
-  // View detail modal state
   const [viewingAssetId, setViewingAssetId] = useState<string | null>(null);
 
-  // Load catalogs once
   useEffect(() => {
-    async function load() {
+    async function loadCatalogs() {
       try {
         const [cats, ubis, loadedAreas, loadedUsuarios] = await Promise.all([
           getCategorias(),
@@ -89,13 +86,13 @@ export default function AssetsPage() {
         setUbicaciones(ubis);
         setAreas(loadedAreas);
         setUsuarios(loadedUsuarios);
-      } catch { /* silently fail — filters will just be empty */ }
+      } catch {
+        // Ignore catalog load failures so the page can still render the table.
+      }
     }
-    void load();
-  }, []);
 
-  // Debounced search
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+    void loadCatalogs();
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(searchText), 350);
@@ -109,6 +106,7 @@ export default function AssetsPage() {
         page: currentPage,
         pageSize: PAGE_SIZE,
       };
+
       if (debouncedSearch) params.q = debouncedSearch;
       if (filterEstado) params.estado = filterEstado;
       if (filterCategoria) params.categoriaId = filterCategoria;
@@ -126,41 +124,41 @@ export default function AssetsPage() {
     }
   }, [currentPage, debouncedSearch, filterEstado, filterCategoria, filterUbicacion, notifyError]);
 
-  useEffect(() => {
-    void loadAssets();
-  }, [loadAssets]);
-
-  useEffect(() => {
-    async function loadAssetDetail() {
-      if (!selectedAssetId) {
-        setSelectedAssetDetail(null);
-        setDetailError('');
-        setDetailLoading(false);
-        return;
-      }
-
+  const refreshAssetDetail = useCallback(
+    async (assetId: string) => {
       try {
         setDetailLoading(true);
         setDetailError('');
-        const response = await getAssetById(selectedAssetId);
+        const response = await getAssetById(assetId);
         setSelectedAssetDetail(response.data);
       } catch (error) {
         const message =
-          error instanceof HttpError
-            ? error.message
-            : 'No se pudo cargar el detalle del activo';
+          error instanceof HttpError ? error.message : 'No se pudo cargar el detalle del activo';
         setSelectedAssetDetail(null);
         setDetailError(message);
         notifyError('Error al cargar detalle', message);
       } finally {
         setDetailLoading(false);
       }
+    },
+    [notifyError],
+  );
+
+  useEffect(() => {
+    void loadAssets();
+  }, [loadAssets]);
+
+  useEffect(() => {
+    if (!selectedAssetId) {
+      setSelectedAssetDetail(null);
+      setDetailError('');
+      setDetailLoading(false);
+      return;
     }
 
-    void loadAssetDetail();
-  }, [selectedAssetId, notifyError]);
+    void refreshAssetDetail(selectedAssetId);
+  }, [selectedAssetId, refreshAssetDetail]);
 
-  // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [debouncedSearch, filterEstado, filterCategoria, filterUbicacion]);
@@ -186,10 +184,16 @@ export default function AssetsPage() {
 
   async function handleDelete(id: string, nombre: string) {
     if (!window.confirm(`¿Está seguro de dar de baja el activo "${nombre}"?`)) return;
+
     try {
       await deleteAsset(id);
       notifySuccess('Activo dado de baja', `"${nombre}" fue dado de baja exitosamente.`);
-      void loadAssets();
+
+      if (selectedAssetId === id) {
+        closeDetailPanel();
+      }
+
+      await loadAssets();
     } catch (err) {
       const message = err instanceof HttpError ? err.message : 'No se pudo dar de baja el activo';
       notifyError('Error', message);
@@ -198,6 +202,7 @@ export default function AssetsPage() {
 
   function openAssignModal(asset: AssetListItem) {
     setAssigningAsset(asset);
+
     if (asset.responsable?.id) {
       setAssignmentType('usuario');
       setAssignmentTargetId(asset.responsable.id);
@@ -208,6 +213,7 @@ export default function AssetsPage() {
       setAssignmentType('usuario');
       setAssignmentTargetId('');
     }
+
     setAssignmentNotes('');
   }
 
@@ -229,18 +235,32 @@ export default function AssetsPage() {
 
     try {
       setSubmittingAssignment(true);
+
       const payload =
         assignmentType === 'usuario'
-          ? { usuarioAsignadoId: assignmentTargetId, observaciones: assignmentNotes.trim() || undefined }
-          : { areaAsignadaId: assignmentTargetId, observaciones: assignmentNotes.trim() || undefined };
+          ? {
+              usuarioAsignadoId: assignmentTargetId,
+              observaciones: assignmentNotes.trim() || undefined,
+            }
+          : {
+              areaAsignadaId: assignmentTargetId,
+              observaciones: assignmentNotes.trim() || undefined,
+            };
 
       const response = await assignAsset(assigningAsset.id, payload);
       notifySuccess('Activo asignado', response.data.message);
+
+      const assignedAssetId = assigningAsset.id;
       setAssigningAsset(null);
       setAssignmentType('usuario');
       setAssignmentTargetId('');
       setAssignmentNotes('');
+
       await loadAssets();
+
+      if (selectedAssetId === assignedAssetId) {
+        await refreshAssetDetail(assignedAssetId);
+      }
     } catch (err) {
       const message =
         err instanceof HttpError ? err.message : 'No se pudo asignar el responsable del activo';
@@ -254,7 +274,9 @@ export default function AssetsPage() {
     assignmentType === 'usuario'
       ? usuarios.map((usuario) => ({
           id: usuario.id,
-          label: usuario.nombreCompleto || [usuario.nombres, usuario.apellidos].filter(Boolean).join(' '),
+          label:
+            usuario.nombreCompleto ||
+            [usuario.nombres, usuario.apellidos].filter(Boolean).join(' '),
           helper: usuario.correo,
         }))
       : areas.map((area) => ({
@@ -267,17 +289,24 @@ export default function AssetsPage() {
 
   function buildPageNumbers(): (number | '...')[] {
     const pages: (number | '...')[] = [];
+
     if (totalPages <= 7) {
-      for (let i = 1; i <= totalPages; i++) pages.push(i);
-    } else {
-      pages.push(1);
-      if (currentPage > 3) pages.push('...');
-      const start = Math.max(2, currentPage - 1);
-      const end = Math.min(totalPages - 1, currentPage + 1);
-      for (let i = start; i <= end; i++) pages.push(i);
-      if (currentPage < totalPages - 2) pages.push('...');
-      pages.push(totalPages);
+      for (let i = 1; i <= totalPages; i += 1) pages.push(i);
+      return pages;
     }
+
+    pages.push(1);
+
+    if (currentPage > 3) pages.push('...');
+
+    const start = Math.max(2, currentPage - 1);
+    const end = Math.min(totalPages - 1, currentPage + 1);
+
+    for (let i = start; i <= end; i += 1) pages.push(i);
+
+    if (currentPage < totalPages - 2) pages.push('...');
+
+    pages.push(totalPages);
     return pages;
   }
 
@@ -291,16 +320,23 @@ export default function AssetsPage() {
           </p>
         </div>
         <div className="assetsPage__actions">
-          <button type="button" className="btn btn--outline" onClick={() => notify.info('Exportar', 'Funcionalidad en desarrollo')}>
+          <button
+            type="button"
+            className="btn btn--outline"
+            onClick={() => notify.info('Exportar', 'Funcionalidad en desarrollo')}
+          >
             <span>↓</span> Exportar
           </button>
-          <button type="button" className="btn btn--primary" onClick={() => navigate('/activos/nuevo')}>
+          <button
+            type="button"
+            className="btn btn--primary"
+            onClick={() => navigate('/activos/nuevo')}
+          >
             <span>+</span> Nuevo Activo
           </button>
         </div>
       </header>
 
-      {/* Filter Bar */}
       <div className="assetsFilters">
         <div className="assetsFilters__group">
           <label className="assetsFilters__label">BUSCAR</label>
@@ -311,7 +347,7 @@ export default function AssetsPage() {
               className="assetsFilters__input"
               placeholder="Código, nombre, responsable, categoría o ubicación..."
               value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
+              onChange={(event) => setSearchText(event.target.value)}
             />
           </div>
         </div>
@@ -321,11 +357,13 @@ export default function AssetsPage() {
           <select
             className="assetsFilters__select"
             value={filterCategoria}
-            onChange={(e) => setFilterCategoria(e.target.value)}
+            onChange={(event) => setFilterCategoria(event.target.value)}
           >
             <option value="">Todas</option>
             {categorias.map((cat) => (
-              <option key={cat.id} value={cat.id}>{cat.nombre}</option>
+              <option key={cat.id} value={cat.id}>
+                {cat.nombre}
+              </option>
             ))}
           </select>
         </div>
@@ -335,7 +373,7 @@ export default function AssetsPage() {
           <select
             className="assetsFilters__select"
             value={filterUbicacion}
-            onChange={(e) => setFilterUbicacion(e.target.value)}
+            onChange={(event) => setFilterUbicacion(event.target.value)}
           >
             <option value="">Cualquiera</option>
             {ubicaciones.map((ubi) => (
@@ -351,12 +389,12 @@ export default function AssetsPage() {
           <select
             className="assetsFilters__select"
             value={filterEstado}
-            onChange={(e) => setFilterEstado(e.target.value as EstadoActivo | '')}
+            onChange={(event) => setFilterEstado(event.target.value as EstadoActivo | '')}
           >
             <option value="">Todos</option>
-            {ESTADO_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
+            {ESTADO_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
               </option>
             ))}
           </select>
@@ -366,8 +404,11 @@ export default function AssetsPage() {
           <span>⊘</span> Limpiar Filtros
         </button>
       </div>
+
       <div className={`assetsWorkspace ${selectedAssetId ? 'assetsWorkspace--detailOpen' : ''}`}>
-        <aside className={`assetsWorkspace__panel ${selectedAssetId ? 'assetsWorkspace__panel--open' : ''}`}>
+        <aside
+          className={`assetsWorkspace__panel ${selectedAssetId ? 'assetsWorkspace__panel--open' : ''}`}
+        >
           <AssetDetailPanel
             asset={selectedAssetDetail}
             loading={detailLoading}
@@ -385,7 +426,9 @@ export default function AssetsPage() {
               </div>
             ) : assets.length === 0 ? (
               <div className="assetsState">
-                <p className="assetsState__text">No se encontraron activos con los filtros seleccionados.</p>
+                <p className="assetsState__text">
+                  No se encontraron activos con los filtros seleccionados.
+                </p>
               </div>
             ) : (
               <>
@@ -406,7 +449,9 @@ export default function AssetsPage() {
                       {assets.map((asset) => (
                         <tr
                           key={asset.id}
-                          className={selectedAssetId === asset.id ? 'assetsTable__row--selected' : ''}
+                          className={
+                            selectedAssetId === asset.id ? 'assetsTable__row--selected' : ''
+                          }
                           onClick={() => openDetailPanel(asset.id)}
                           style={{ cursor: 'pointer' }}
                         >
@@ -427,7 +472,9 @@ export default function AssetsPage() {
                             <div className="assetsResponsible">
                               <span>{asset.responsable?.nombreCompleto ?? '—'}</span>
                               {asset.area?.nombre ? (
-                                <span className="assetsResponsible__meta">Área: {asset.area.nombre}</span>
+                                <span className="assetsResponsible__meta">
+                                  Área: {asset.area.nombre}
+                                </span>
                               ) : null}
                             </div>
                           </td>
@@ -508,21 +555,23 @@ export default function AssetsPage() {
                       type="button"
                       className="pageBtn"
                       disabled={currentPage <= 1}
-                      onClick={() => setCurrentPage((p) => p - 1)}
+                      onClick={() => setCurrentPage((page) => page - 1)}
                     >
                       &lt; Anterior
                     </button>
 
-                    {buildPageNumbers().map((page, i) =>
+                    {buildPageNumbers().map((page, index) =>
                       page === '...' ? (
-                        <span key={`dots-${i}`} className="pageDots">
+                        <span key={`dots-${index}`} className="pageDots">
                           …
                         </span>
                       ) : (
                         <button
                           key={page}
                           type="button"
-                          className={`pageBtn pageBtn--num ${page === currentPage ? 'pageBtn--active' : ''}`}
+                          className={`pageBtn pageBtn--num ${
+                            page === currentPage ? 'pageBtn--active' : ''
+                          }`}
                           onClick={() => setCurrentPage(page)}
                         >
                           {page}
@@ -534,50 +583,7 @@ export default function AssetsPage() {
                       type="button"
                       className="pageBtn"
                       disabled={currentPage >= totalPages}
-                      onClick={() => setCurrentPage((p) => p + 1)}
-                    >
-                      Siguiente &gt;
-                    </button>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      </div>
-
-                  <div className="assetsPagination__controls">
-                    <button
-                      type="button"
-                      className="pageBtn"
-                      disabled={currentPage <= 1}
-                      onClick={() => setCurrentPage((p) => p - 1)}
-                    >
-                      &lt; Anterior
-                    </button>
-
-                    {buildPageNumbers().map((page, i) =>
-                      page === '...' ? (
-                        <span key={`dots-${i}`} className="pageDots">
-                          …
-                        </span>
-                      ) : (
-                        <button
-                          key={page}
-                          type="button"
-                          className={`pageBtn pageBtn--num ${page === currentPage ? 'pageBtn--active' : ''}`}
-                          onClick={() => setCurrentPage(page)}
-                        >
-                          {page}
-                        </button>
-                      ),
-                    )}
-
-                    <button
-                      type="button"
-                      className="pageBtn"
-                      disabled={currentPage >= totalPages}
-                      onClick={() => setCurrentPage((p) => p + 1)}
+                      onClick={() => setCurrentPage((page) => page + 1)}
                     >
                       Siguiente &gt;
                     </button>
@@ -607,7 +613,12 @@ export default function AssetsPage() {
                   {assigningAsset.codigo} · {assigningAsset.nombre}
                 </p>
               </div>
-              <button type="button" className="actionBtn" onClick={closeAssignModal} disabled={submittingAssignment}>
+              <button
+                type="button"
+                className="actionBtn"
+                onClick={closeAssignModal}
+                disabled={submittingAssignment}
+              >
                 ✕
               </button>
             </div>
@@ -641,7 +652,9 @@ export default function AssetsPage() {
                   required
                 >
                   <option value="">
-                    {assignmentType === 'usuario' ? 'Seleccione un usuario' : 'Seleccione un área'}
+                    {assignmentType === 'usuario'
+                      ? 'Seleccione un usuario'
+                      : 'Seleccione un área'}
                   </option>
                   {assignmentOptions.map((option) => (
                     <option key={option.id} value={option.id}>
@@ -650,6 +663,7 @@ export default function AssetsPage() {
                     </option>
                   ))}
                 </select>
+
                 {!assignmentTargetId ? (
                   <span className="assetsModal__hint assetsModal__hint--error">
                     Debe seleccionar un responsable o un área antes de guardar la asignación.
@@ -670,7 +684,12 @@ export default function AssetsPage() {
               </label>
 
               <div className="assetsModal__actions">
-                <button type="button" className="btn btn--ghost" onClick={closeAssignModal} disabled={submittingAssignment}>
+                <button
+                  type="button"
+                  className="btn btn--ghost"
+                  onClick={closeAssignModal}
+                  disabled={submittingAssignment}
+                >
                   Cancelar
                 </button>
                 <button
@@ -686,24 +705,28 @@ export default function AssetsPage() {
         </div>
       ) : null}
 
-      {/* View Asset Detail Modal */}
-      {viewingAssetId && (
+      {viewingAssetId ? (
         <ViewAssetModal
           assetId={viewingAssetId}
-          open={!!viewingAssetId}
+          open={Boolean(viewingAssetId)}
           onClose={() => setViewingAssetId(null)}
         />
-      )}
+      ) : null}
 
-      {/* Edit Asset Modal */}
-      {editingAssetId && (
+      {editingAssetId ? (
         <EditAssetModal
           assetId={editingAssetId}
-          open={!!editingAssetId}
+          open={Boolean(editingAssetId)}
           onClose={() => setEditingAssetId(null)}
-          onUpdated={() => void loadAssets()}
+          onUpdated={async () => {
+            await loadAssets();
+
+            if (selectedAssetId) {
+              await refreshAssetDetail(selectedAssetId);
+            }
+          }}
         />
-      )}
+      ) : null}
     </section>
   );
 }
