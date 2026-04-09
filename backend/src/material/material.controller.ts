@@ -67,14 +67,60 @@ export class MaterialController {
    */
   @ApiOperation({
     summary: 'Listar materiales',
-    description: 'Obtiene el listado de materiales con filtros y paginación opcionales.',
+    description: 'Obtiene el listado de materiales o recursos del inventario, incluyendo su stock actual y stock mínimo.',
   })
-  @ApiQuery({ name: 'nombre', required: false, type: String })
-  @ApiQuery({ name: 'categoriaId', required: false, type: String })
-  @ApiQuery({ name: 'skip', required: false, type: String })
-  @ApiQuery({ name: 'take', required: false, type: String })
+  @ApiQuery({
+    name: 'nombre',
+    required: false,
+    type: String,
+    description: 'Filtra materiales por coincidencia en el nombre',
+    example: 'papel',
+  })
+  @ApiQuery({
+    name: 'categoriaId',
+    required: false,
+    type: String,
+    description: 'Filtra materiales por categoría',
+    example: 'cmnkly3id000w2wl6qls04snz',
+  })
+  @ApiQuery({
+    name: 'skip',
+    required: false,
+    type: String,
+    description: 'Cantidad de registros a omitir para paginación',
+    example: '0',
+  })
+  @ApiQuery({
+    name: 'take',
+    required: false,
+    type: String,
+    description: 'Cantidad máxima de registros a devolver',
+    example: '20',
+  })
   @ApiOkResponse({
     description: 'Listado de materiales obtenido correctamente',
+    schema: {
+      example: {
+        data: [
+          {
+            id: 'cmnmaterial123',
+            codigo: 'MAT-001',
+            nombre: 'Papel bond carta',
+            unidad: 'paquete',
+            stockActual: 15,
+            stockMinimo: 10,
+            categoria: {
+              id: 'cmncat123',
+              nombre: 'Papelería',
+              descripcion: 'Materiales de oficina',
+            },
+          },
+        ],
+        total: 1,
+        skip: 0,
+        take: 20,
+      },
+    },
   })
   @Get()
   async findAll(
@@ -125,6 +171,9 @@ export class MaterialController {
     description: 'Material encontrado correctamente',
     type: MaterialResponseDTO,
   })
+  @ApiNotFoundResponse({
+    description: 'No se encontró el material solicitado',
+  })
   @Get(':id')
   async findById(@Param('id') id: string): Promise<MaterialResponseDTO> {
     return this.materialService.findById(id);
@@ -143,9 +192,23 @@ export class MaterialController {
   @ApiOkResponse({
     description: 'Material actualizado correctamente',
     type: MaterialResponseDTO,
+    schema: {
+      example: {
+        id: 'cmnmaterial123',
+        codigo: 'MAT-001',
+        nombre: 'Papel bond oficio',
+        unidad: 'resma',
+        stockActual: 20,
+        stockMinimo: 5,
+        categoriaId: 'cmncat123',
+      },
+    },
   })
   @ApiBadRequestResponse({
     description: 'Datos inválidos para actualizar el material',
+  })
+  @ApiNotFoundResponse({
+    description: 'No se encontró el material solicitado',
   })
   @Put(':id')
   async update(
