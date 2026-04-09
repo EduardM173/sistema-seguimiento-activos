@@ -58,9 +58,23 @@ export const inventarioService = {
   // Aumntar stock
   aumentarStock: async (id: string, cantidad: number) => {
     try {
-      const response = await apiClient.patch(`/inventory-items/${id}/aumentar-stock`, {
+      const response = await apiClient.patch<
+        ApiResponse<{
+          message: string;
+          material: Material;
+          movimiento: {
+            id: string;
+            tipo: string;
+            cantidad: number;
+            stockAnterior: number;
+            stockNuevo: number;
+            motivo: string | null;
+            creadoEn: string;
+          };
+        }>
+      >(`/inventory-items/${id}/aumentar-stock`, {
         cantidad,
-    });
+      });
       return response;
     } catch (error) {
       throw error;

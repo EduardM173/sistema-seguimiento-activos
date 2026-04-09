@@ -380,15 +380,34 @@ export class AssetsService {
       throw new NotFoundException(`No se encontró el activo con ID: ${id}`);
     }
 
+    const nextCodigo =
+      dto.codigo !== undefined ? dto.codigo.trim() : existing.codigo;
+    const nextNombre =
+      dto.nombre !== undefined ? dto.nombre.trim() : existing.nombre;
+    const nextCategoriaId =
+      dto.categoriaId !== undefined ? dto.categoriaId.trim() : existing.categoriaId;
+
+    if (!nextCodigo) {
+      throw new BadRequestException('El código del activo es obligatorio');
+    }
+
+    if (!nextNombre) {
+      throw new BadRequestException('El nombre del activo es obligatorio');
+    }
+
+    if (!nextCategoriaId) {
+      throw new BadRequestException('La categoría del activo es obligatoria');
+    }
+
     // Validate code uniqueness if changing
-    if (dto.codigo && dto.codigo !== existing.codigo) {
+    if (nextCodigo !== existing.codigo) {
       const existingByCode = await this.prisma.activo.findUnique({
-        where: { codigo: dto.codigo },
+        where: { codigo: nextCodigo },
       });
 
       if (existingByCode) {
         throw new ConflictException(
-          `Ya existe un activo registrado con el código: ${dto.codigo}`,
+          `Ya existe un activo registrado con el código: ${nextCodigo}`,
         );
       }
     }
@@ -407,14 +426,14 @@ export class AssetsService {
     }
 
     // Validate category exists if changing
-    if (dto.categoriaId && dto.categoriaId !== existing.categoriaId) {
+    if (nextCategoriaId !== existing.categoriaId) {
       const categoria = await this.prisma.categoriaActivo.findUnique({
-        where: { id: dto.categoriaId },
+        where: { id: nextCategoriaId },
       });
 
       if (!categoria) {
         throw new NotFoundException(
-          `No se encontró la categoría con ID: ${dto.categoriaId}`,
+          `No se encontró la categoría con ID: ${nextCategoriaId}`,
         );
       }
     }
@@ -422,8 +441,8 @@ export class AssetsService {
     const activo = await this.prisma.activo.update({
       where: { id },
       data: {
-        ...(dto.codigo !== undefined && { codigo: dto.codigo }),
-        ...(dto.nombre !== undefined && { nombre: dto.nombre }),
+        ...(dto.codigo !== undefined && { codigo: nextCodigo }),
+        ...(dto.nombre !== undefined && { nombre: nextNombre }),
         ...(dto.descripcion !== undefined && { descripcion: dto.descripcion }),
         ...(dto.marca !== undefined && { marca: dto.marca }),
         ...(dto.modelo !== undefined && { modelo: dto.modelo }),
@@ -438,7 +457,7 @@ export class AssetsService {
           vencimientoGarantia: new Date(dto.vencimientoGarantia),
         }),
         ...(dto.estado !== undefined && { estado: dto.estado }),
-        ...(dto.categoriaId !== undefined && { categoriaId: dto.categoriaId }),
+        ...(dto.categoriaId !== undefined && { categoriaId: nextCategoriaId }),
         ...(dto.ubicacionId !== undefined && { ubicacionId: dto.ubicacionId }),
         ...(dto.areaActualId !== undefined && {
           areaActualId: dto.areaActualId,

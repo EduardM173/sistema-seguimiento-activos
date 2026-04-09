@@ -21,6 +21,7 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiParam,
+  ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
 
@@ -49,8 +50,85 @@ export class AssetsController {
     summary: 'Listar activos con filtros',
     description: 'Obtiene una lista paginada de activos y permite filtrar por texto, estado, categoría y ubicación.',
   })
+  @ApiQuery({
+    name: 'q',
+    required: false,
+    type: String,
+    description: 'Texto libre para buscar por código, nombre, categoría, ubicación o responsable',
+    example: 'laptop sistemas',
+  })
+  @ApiQuery({
+    name: 'estado',
+    required: false,
+    enum: ['OPERATIVO', 'MANTENIMIENTO', 'FUERA_DE_SERVICIO', 'DADO_DE_BAJA'],
+    description: 'Filtra activos por estado operativo',
+  })
+  @ApiQuery({
+    name: 'categoriaId',
+    required: false,
+    type: String,
+    description: 'Filtra activos por categoría',
+    example: 'cmnkly3gf000j2wl67vioxkws',
+  })
+  @ApiQuery({
+    name: 'ubicacionId',
+    required: false,
+    type: String,
+    description: 'Filtra activos por ubicación',
+    example: 'cmnkly39f000d2wl6qbcilxb2',
+  })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    enum: ['codigo', 'nombre', 'categoria', 'ubicacion', 'responsable', 'estado', 'creadoEn'],
+    description: 'Campo por el cual ordenar el listado',
+  })
+  @ApiQuery({
+    name: 'sortType',
+    required: false,
+    enum: ['ASC', 'DESC'],
+    description: 'Dirección de ordenación',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Número de página',
+    example: 1,
+  })
+  @ApiQuery({
+    name: 'pageSize',
+    required: false,
+    type: Number,
+    description: 'Cantidad de resultados por página',
+    example: 10,
+  })
   @ApiOkResponse({
     description: 'Listado paginado de activos obtenido correctamente',
+    schema: {
+      example: {
+        success: true,
+        data: [
+          {
+            id: 'cm1activo123',
+            codigo: 'ACT-001',
+            nombre: 'Laptop Dell Latitude 5420',
+            estado: 'OPERATIVO',
+            estadoLabel: 'Operativo',
+            categoria: { id: 'cm1cat123', nombre: 'Laptop' },
+            ubicacion: { id: 'cm1ubi123', nombre: 'Oficina de Sistemas' },
+            area: { id: 'cm1area123', nombre: 'Sistemas' },
+            responsable: { id: 'cm1user123', nombreCompleto: 'Maria Operativa' },
+          },
+        ],
+        meta: {
+          total: 1,
+          page: 1,
+          pageSize: 10,
+          totalPages: 1,
+        },
+      },
+    },
   })
   @ApiBadRequestResponse({
     description: 'Los filtros o parámetros de paginación enviados no son válidos',
@@ -76,6 +154,15 @@ export class AssetsController {
   })
   @ApiOkResponse({
     description: 'Código único generado exitosamente',
+    schema: {
+      example: {
+        success: true,
+        message: 'Código generado exitosamente',
+        data: {
+          code: 'ACT-9F3D2A1B',
+        },
+      },
+    },
   })
   @Get('generate-code')
   async generateCode() {
@@ -171,6 +258,19 @@ export class AssetsController {
   @ApiBody({ type: CreateAssetDto })
   @ApiCreatedResponse({
     description: 'Activo registrado exitosamente',
+    schema: {
+      example: {
+        success: true,
+        message: 'Activo registrado exitosamente',
+        data: {
+          id: 'cm1activo123',
+          codigo: 'ACT-9F3D2A1B',
+          nombre: 'Laptop Dell Latitude 5420',
+          categoriaId: 'cm1cat123',
+          ubicacionId: 'cm1ubi123',
+        },
+      },
+    },
   })
   @ApiBadRequestResponse({
     description: 'Datos inválidos para registrar el activo',
@@ -197,12 +297,29 @@ export class AssetsController {
   @ApiBody({ type: UpdateAssetDto })
   @ApiOkResponse({
     description: 'Activo actualizado exitosamente',
+    schema: {
+      example: {
+        success: true,
+        message: 'Activo actualizado exitosamente',
+        data: {
+          id: 'cm1activo123',
+          codigo: 'ACT-9F3D2A1B',
+          nombre: 'Laptop Dell Latitude 7430',
+          estado: 'MANTENIMIENTO',
+          categoria: { id: 'cm1cat123', nombre: 'Laptop' },
+          ubicacion: { id: 'cm1ubi123', nombre: 'Oficina de Sistemas' },
+        },
+      },
+    },
   })
   @ApiBadRequestResponse({
     description: 'Datos inválidos para actualizar el activo',
   })
   @ApiNotFoundResponse({
     description: 'No se encontró el activo solicitado',
+  })
+  @ApiConflictResponse({
+    description: 'Ya existe un activo con el mismo código o número de serie',
   })
   @Patch(':id')
   async update(

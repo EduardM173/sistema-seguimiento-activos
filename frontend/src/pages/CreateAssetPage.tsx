@@ -139,19 +139,24 @@ export default function CreateAssetPage() {
     }
   }, [ubicaciones]);
 
-  async function handleGenerateCode() {
+  const handleGenerateCode = useCallback(async () => {
     try {
       setGeneratingCode(true);
       const res = await generateAssetCode();
       setCodigo(res.data.code);
-      markTouched('codigo');
     } catch (err) {
       const message = err instanceof HttpError ? err.message : 'No se pudo generar el código';
       notify.error('Error', message);
     } finally {
       setGeneratingCode(false);
     }
-  }
+  }, [notify]);
+
+  useEffect(() => {
+    if (!codigo) {
+      void handleGenerateCode();
+    }
+  }, [codigo, handleGenerateCode]);
 
   function handleLocationCreated(loc: LocationItem) {
     const newUbi: Ubicacion = {
@@ -171,6 +176,7 @@ export default function CreateAssetPage() {
   function selectUbicacion(ubi: Ubicacion) {
     setUbicacionId(ubi.id);
     setUbicacionSearch([ubi.nombre, ubi.edificio, ubi.piso].filter(Boolean).join(' — '));
+    markTouched('ubicacionId');
     setUbicacionDropdownOpen(false);
   }
 
@@ -185,6 +191,7 @@ export default function CreateAssetPage() {
     if (!nombre.trim()) errs.nombre = 'El nombre del activo es obligatorio';
     else if (nombre.length > 200) errs.nombre = 'El nombre no puede exceder 200 caracteres';
     if (!categoriaId) errs.categoriaId = 'Debe seleccionar una categoría';
+    if (!ubicacionId) errs.ubicacionId = 'Debe seleccionar una ubicación';
     if (!estado) errs.estado = 'Debe seleccionar un estado para el activo';
     if (costoAdquisicion && (isNaN(Number(costoAdquisicion)) || Number(costoAdquisicion) < 0))
       errs.costoAdquisicion = 'El valor de adquisición debe ser un número positivo';
@@ -203,16 +210,23 @@ export default function CreateAssetPage() {
     e.preventDefault();
 
     // Mark all required fields as touched
-    const allFields = ['codigo', 'nombre', 'categoriaId', 'estado'];
+    const allFields = ['codigo', 'nombre', 'categoriaId', 'ubicacionId', 'estado'];
     setTouched(new Set([...touched, ...allFields]));
 
     const validationErrors = validate();
     setErrors(validationErrors);
 
+    if (generatingCode) {
+      notify.warning('Generando código', 'Espere a que el sistema termine de generar el código único del activo.');
+      return;
+    }
+
     if (Object.keys(validationErrors).length > 0) {
       notify.warning('Formulario incompleto', 'Revise los campos marcados en rojo.');
       // Scroll al campo de estado si es el error
-      if (validationErrors.estado) {
+      if (validationErrors.ubicacionId) {
+        document.getElementById('ubicacionSearch')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else if (validationErrors.estado) {
         document.getElementById('estadoOperativo')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
       return;
@@ -224,6 +238,7 @@ export default function CreateAssetPage() {
         codigo: codigo.trim(),
         nombre: nombre.trim(),
         categoriaId,
+        ubicacionId,
       };
 
       if (marca.trim()) payload.marca = marca.trim();
@@ -231,7 +246,6 @@ export default function CreateAssetPage() {
       if (numeroSerie.trim()) payload.numeroSerie = numeroSerie.trim();
       if (costoAdquisicion) payload.costoAdquisicion = Number(costoAdquisicion);
       if (fechaAdquisicion) payload.fechaAdquisicion = fechaAdquisicion;
-      if (ubicacionId) payload.ubicacionId = ubicacionId;
       if (areaActualId) payload.areaActualId = areaActualId;
       if (responsableActualId) payload.responsableActualId = responsableActualId;
       if (observaciones.trim()) payload.descripcion = observaciones.trim();
@@ -290,23 +304,21 @@ export default function CreateAssetPage() {
                 <input
                   id="codigo"
                   type="text"
-                  placeholder="Ej: UN-2024-0015"
+                  placeholder={generatingCode ? 'Generando código único...' : 'Código generado automáticamente'}
                   value={codigo}
-                  onChange={(e) => setCodigo(e.target.value)}
-                  onBlur={() => markTouched('codigo')}
+                  readOnly
                   maxLength={50}
                 />
-                <button
-                  type="button"
-                  className="btn btn--outline btn--sm"
-                  style={{ marginLeft: '8px', whiteSpace: 'nowrap', flexShrink: 0 }}
-                  onClick={handleGenerateCode}
-                  disabled={generatingCode || submitting}
-                  title="Generar código único automáticamente"
+                <span
+                  className="formField__infoIcon"
+                  title={
+                    generatingCode
+                      ? 'El sistema está generando un código único'
+                      : 'Código único institucional generado automáticamente'
+                  }
                 >
-                  {generatingCode ? '⏳' : '🔄'} Generar
-                </button>
-                <span className="formField__infoIcon" title="Código único institucional">ⓘ</span>
+                  ⓘ
+                </span>
               </div>
               {getFieldError('codigo') && <span className="formField__error">{getFieldError('codigo')}</span>}
             </div>
@@ -421,7 +433,11 @@ export default function CreateAssetPage() {
           </legend>
 
           <div className="formGrid formGrid--3">
-            <div className="formField" ref={ubicacionWrapRef} style={{ position: 'relative' }}>
+            <div
+              className={`formField ${getFieldError('ubicacionId') ? 'formField--error' : ''}`}
+              ref={ubicacionWrapRef}
+              style={{ position: 'relative' }}
+            >
               <label htmlFor="ubicacionSearch">
                 Ubicación <span className="req">*</span>
               </label>
@@ -434,14 +450,19 @@ export default function CreateAssetPage() {
                   onChange={(e) => {
                     setUbicacionSearch(e.target.value);
                     setUbicacionDropdownOpen(true);
-                    if (!e.target.value.trim()) setUbicacionId('');
+                    if (!e.target.value.trim()) {
+                      setUbicacionId('');
+                      markTouched('ubicacionId');
+                    }
                   }}
                   onFocus={() => {
                     setUbicacionDropdownOpen(true);
                     if (!ubicacionSearch.trim()) setUbicacionResults(ubicaciones);
                   }}
+                  onBlur={() => markTouched('ubicacionId')}
                   disabled={catalogsLoading}
                   autoComplete="off"
+                  aria-invalid={Boolean(getFieldError('ubicacionId'))}
                 />
                 <button
                   type="button"
@@ -529,9 +550,12 @@ export default function CreateAssetPage() {
               </select>
               {getFieldError('estado') && (
                 <span className="formField__error"> {getFieldError('estado')}</span>
-              )}
+                )}
+              </div>
+              {getFieldError('ubicacionId') ? (
+                <span className="formField__error">{getFieldError('ubicacionId')}</span>
+              ) : null}
             </div>
-          </div>
 
           <div className="formGrid formGrid--2">
             <div className="formField">
