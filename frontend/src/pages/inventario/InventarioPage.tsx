@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { DataTable, Button, Badge } from '../../components/common';
-import type { Material } from '../../types/inventario.types';
+import type { CategoriaMaterial, Material } from '../../types/inventario.types';
 import { inventarioService } from '../../services/inventario.service';
 import MaterialForm from '../../components/inventario/MaterialForm';
 import { useNotification } from '../../context/NotificationContext';
@@ -16,16 +16,51 @@ export const InventarioPage: React.FC = () => {
   const [materialToEdit, setMaterialToEdit] = useState<Material | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [isIngresoModalOpen, setIsIngresoModalOpen] = useState(false);
+  const [categorias, setCategorias] = useState<CategoriaMaterial[]>([]);
+  const [searchText, setSearchText] = useState('');
+  const [categoriaId, setCategoriaId] = useState('');
+  const [sortBy, setSortBy] = useState<'codigo' | 'nombre' | 'categoria' | 'stockActual' | 'stockMinimo' | 'unidad' | 'creadoEn'>('creadoEn');
+  const [sortType, setSortType] = useState<'ASC' | 'DESC'>('DESC');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [meta, setMeta] = useState({ total: 0, pageSize: 10, totalPages: 1 });
+  const [creatingDemo, setCreatingDemo] = useState(false);
+  const [deletingDemo, setDeletingDemo] = useState(false);
 
   useEffect(() => {
     cargarMateriales();
-  }, [refreshKey]);
+  }, [refreshKey, searchText, categoriaId, sortBy, sortType, currentPage]);
+
+  useEffect(() => {
+    const cargarCategorias = async () => {
+      try {
+        const data = await inventarioService.obtenerCategorias();
+        setCategorias(data);
+      } catch {
+        // noop
+      }
+    };
+
+    void cargarCategorias();
+  }, []);
 
   const cargarMateriales = async () => {
     try {
       setLoading(true);
-      const resultado = await inventarioService.obtenerTodos({ take: 1000 });
+      setMessage(null);
+      const resultado = await inventarioService.obtenerTodos({
+        q: searchText || undefined,
+        categoriaId: categoriaId || undefined,
+        page: currentPage,
+        pageSize: 10,
+        sortBy,
+        sortType,
+      });
       setMateriales(resultado.data);
+      setMeta({
+        total: resultado.total,
+        pageSize: resultado.pageSize,
+        totalPages: resultado.totalPages,
+      });
     } catch (err) {
       setMessage({ type: 'error', text: 'Error al cargar inventario' });
       console.error(err);
@@ -35,6 +70,7 @@ export const InventarioPage: React.FC = () => {
   };
 
   const handleMaterialCreated = async () => {
+    setCurrentPage(1);
     setRefreshKey(prev => prev + 1);
   };
 
@@ -58,6 +94,54 @@ export const InventarioPage: React.FC = () => {
   const handleCloseModal = () => {
     setIsMaterialModalOpen(false);
     setMaterialToEdit(null);
+  };
+
+  const clearFilters = () => {
+    setSearchText('');
+    setCategoriaId('');
+    setSortBy('creadoEn');
+    setSortType('DESC');
+    setCurrentPage(1);
+  };
+
+  const handleCreateDemo = async () => {
+    const confirmed = window.confirm(
+      'Esto insertará 100 materiales ficticios para pruebas de filtros, paginación y ordenación. ¿Desea continuar?',
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setCreatingDemo(true);
+      const response = await inventarioService.crearDemo(100);
+      notify.success('Carga demo completada', `Se insertaron ${response.data?.inserted ?? 100} materiales ficticios.`);
+      setCurrentPage(1);
+      setRefreshKey(prev => prev + 1);
+    } catch (err: any) {
+      notify.error('Error', err?.message || 'No se pudieron generar materiales demo');
+    } finally {
+      setCreatingDemo(false);
+    }
+  };
+
+  const handleDeleteDemo = async () => {
+    const confirmed = window.confirm(
+      'Esto eliminará únicamente los materiales demo generados con el botón rápido. ¿Desea continuar?',
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setDeletingDemo(true);
+      const response = await inventarioService.eliminarDemo();
+      notify.success('Limpieza demo completada', `Se eliminaron ${response.data?.deleted ?? 0} materiales ficticios.`);
+      setCurrentPage(1);
+      setRefreshKey(prev => prev + 1);
+    } catch (err: any) {
+      notify.error('Error', err?.message || 'No se pudieron eliminar materiales demo');
+    } finally {
+      setDeletingDemo(false);
+    }
   };
 
   const getStockColor = (stockActual: number, stockMinimo: number): string => {
@@ -147,6 +231,44 @@ export const InventarioPage: React.FC = () => {
         <h1>Gestión de Inventario</h1>
 
         <div style={{ display: 'flex', gap: '10px' }}>
+          <button
+            type="button"
+            onClick={() => void handleCreateDemo()}
+            disabled={creatingDemo}
+            title="Carga rápida de materiales demo"
+            style={{
+              border: '1px dashed rgba(100, 116, 139, 0.45)',
+              background: 'rgba(255,255,255,0.7)',
+              color: '#64748b',
+              borderRadius: '999px',
+              padding: '6px 10px',
+              fontSize: '0.73rem',
+              fontWeight: 700,
+              opacity: 0.55,
+              cursor: creatingDemo ? 'wait' : 'pointer',
+            }}
+          >
+            {creatingDemo ? 'cargando...' : 'demo x100'}
+          </button>
+          <button
+            type="button"
+            onClick={() => void handleDeleteDemo()}
+            disabled={deletingDemo}
+            title="Eliminar materiales demo"
+            style={{
+              border: '1px dashed rgba(220, 38, 38, 0.35)',
+              background: 'rgba(255,255,255,0.7)',
+              color: '#991b1b',
+              borderRadius: '999px',
+              padding: '6px 10px',
+              fontSize: '0.73rem',
+              fontWeight: 700,
+              opacity: 0.5,
+              cursor: deletingDemo ? 'wait' : 'pointer',
+            }}
+          >
+            {deletingDemo ? 'limpiando...' : 'limpiar demo'}
+          </button>
           <Button
             label="+ Nuevo Material"
             variant="primary"
@@ -172,6 +294,111 @@ export const InventarioPage: React.FC = () => {
         </div>
       )}
 
+      <div
+        style={{
+          display: 'flex',
+          gap: '12px',
+          alignItems: 'flex-end',
+          flexWrap: 'wrap',
+          background: '#ffffff',
+          border: '1px solid #e5e7eb',
+          borderRadius: '14px',
+          padding: '16px',
+          marginBottom: '14px',
+        }}
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: '220px', flex: 2 }}>
+          <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase' }}>
+            Buscar
+          </label>
+          <input
+            type="text"
+            value={searchText}
+            onChange={(e) => {
+              setSearchText(e.target.value);
+              setCurrentPage(1);
+            }}
+            placeholder="Código o nombre..."
+            style={{ padding: '10px 12px', borderRadius: '8px', border: '1px solid #d1d5db' }}
+          />
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: '180px', flex: 1 }}>
+          <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase' }}>
+            Categoría
+          </label>
+          <select
+            value={categoriaId}
+            onChange={(e) => {
+              setCategoriaId(e.target.value);
+              setCurrentPage(1);
+            }}
+            style={{ padding: '10px 12px', borderRadius: '8px', border: '1px solid #d1d5db' }}
+          >
+            <option value="">Todas</option>
+            {categorias.map((categoria) => (
+              <option key={categoria.id} value={categoria.id}>
+                {categoria.nombre}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: '160px', flex: 1 }}>
+          <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase' }}>
+            Ordenar por
+          </label>
+          <select
+            value={sortBy}
+            onChange={(e) => {
+              setSortBy(e.target.value as typeof sortBy);
+              setCurrentPage(1);
+            }}
+            style={{ padding: '10px 12px', borderRadius: '8px', border: '1px solid #d1d5db' }}
+          >
+            <option value="creadoEn">Más recientes</option>
+            <option value="codigo">Código</option>
+            <option value="nombre">Nombre</option>
+            <option value="categoria">Categoría</option>
+            <option value="stockActual">Stock actual</option>
+            <option value="stockMinimo">Stock mínimo</option>
+            <option value="unidad">Unidad</option>
+          </select>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: '130px' }}>
+          <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase' }}>
+            Dirección
+          </label>
+          <select
+            value={sortType}
+            onChange={(e) => {
+              setSortType(e.target.value as 'ASC' | 'DESC');
+              setCurrentPage(1);
+            }}
+            style={{ padding: '10px 12px', borderRadius: '8px', border: '1px solid #d1d5db' }}
+          >
+            <option value="ASC">Ascendente</option>
+            <option value="DESC">Descendente</option>
+          </select>
+        </div>
+
+        <button
+          type="button"
+          onClick={clearFilters}
+          style={{
+            border: 'none',
+            background: 'transparent',
+            color: '#6b7280',
+            padding: '10px 8px',
+            cursor: 'pointer',
+            fontWeight: 600,
+          }}
+        >
+          Limpiar
+        </button>
+      </div>
+
       <div className="module-list">
         <DataTable<Material>
           columns={columns}
@@ -181,6 +408,44 @@ export const InventarioPage: React.FC = () => {
           striped
           hover
         />
+      </div>
+
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: '12px',
+          flexWrap: 'wrap',
+          marginTop: '12px',
+          color: '#6b7280',
+        }}
+      >
+        <span>
+          Mostrando <strong>{materiales.length === 0 ? 0 : (currentPage - 1) * meta.pageSize + 1}-{Math.min(currentPage * meta.pageSize, meta.total)}</strong> de <strong>{meta.total}</strong> materiales
+        </span>
+
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <button
+            type="button"
+            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+            disabled={currentPage === 1}
+            style={{ padding: '8px 14px', borderRadius: '8px', border: '1px solid #d1d5db', background: '#fff' }}
+          >
+            Anterior
+          </button>
+          <span>
+            Página {currentPage} de {meta.totalPages}
+          </span>
+          <button
+            type="button"
+            onClick={() => setCurrentPage(prev => Math.min(meta.totalPages, prev + 1))}
+            disabled={currentPage >= meta.totalPages}
+            style={{ padding: '8px 14px', borderRadius: '8px', border: '1px solid #d1d5db', background: '#fff' }}
+          >
+            Siguiente
+          </button>
+        </div>
       </div>
 
       <MaterialForm

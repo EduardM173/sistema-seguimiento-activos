@@ -9,8 +9,12 @@ import {
   CreateMaterialDTO,
   UpdateMaterialDTO,
   MaterialResponseDTO,
+  MaterialSortBy,
+  MaterialSortType,
+  SearchMaterialDTO,
 } from './dto';
 import { TipoMovimientoInventario } from '../generated/prisma/enums';
+import { Prisma } from '../generated/prisma/client';
 
 @Injectable()
 export class MaterialService {
@@ -93,37 +97,59 @@ export class MaterialService {
   /**
    * Obtener todos los materiales con filtros opcionales
    */
-  async findAll(filters?: {
-    nombre?: string;
-    categoriaId?: string;
-    skip?: number;
-    take?: number;
-  }): Promise<{
+  async findAll(filters?: SearchMaterialDTO): Promise<{
     data: MaterialResponseDTO[];
     total: number;
-    skip?: number;
-    take?: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
   }> {
     try {
-      const skip = filters?.skip || 0;
-      const take = filters?.take || 10;
+      const pageSize = filters?.take ?? filters?.pageSize ?? 10;
+      const page =
+        filters?.skip !== undefined
+          ? Math.floor(filters.skip / pageSize) + 1
+          : (filters?.page ?? 1);
+      const skip =
+        filters?.skip !== undefined ? filters.skip : (page - 1) * pageSize;
 
-      const where: any = {};
+      const where: Prisma.MaterialWhereInput = {};
 
-      if (filters?.nombre) {
-        where.nombre = { contains: filters.nombre, mode: 'insensitive' };
+      if (filters?.q) {
+        where.OR = [
+          { nombre: { contains: filters.q, mode: 'insensitive' } },
+          { codigo: { contains: filters.q, mode: 'insensitive' } },
+        ];
       }
 
       if (filters?.categoriaId) {
         where.categoriaId = filters.categoriaId;
       }
 
+      const orderDirection: Prisma.SortOrder =
+        filters?.sortType === MaterialSortType.ASC ? 'asc' : 'desc';
+
+      const orderBy: Prisma.MaterialOrderByWithRelationInput =
+        filters?.sortBy === MaterialSortBy.CODIGO
+          ? { codigo: orderDirection }
+          : filters?.sortBy === MaterialSortBy.NOMBRE
+            ? { nombre: orderDirection }
+            : filters?.sortBy === MaterialSortBy.CATEGORIA
+              ? { categoria: { nombre: orderDirection } }
+              : filters?.sortBy === MaterialSortBy.STOCK_ACTUAL
+                ? { stockActual: orderDirection }
+                : filters?.sortBy === MaterialSortBy.STOCK_MINIMO
+                  ? { stockMinimo: orderDirection }
+                  : filters?.sortBy === MaterialSortBy.UNIDAD
+                    ? { unidad: orderDirection }
+                    : { creadoEn: orderDirection };
+
       const [materiales, total] = await Promise.all([
         this.prisma.material.findMany({
           where,
           skip,
-          take,
-          orderBy: { creadoEn: 'desc' },
+          take: pageSize,
+          orderBy,
           include: {
             categoria: true,
           },
@@ -134,8 +160,9 @@ export class MaterialService {
       return {
         data: materiales.map((m) => this.mapMaterialToDTO(m)),
         total,
-        skip,
-        take,
+        page,
+        pageSize,
+        totalPages: Math.max(1, Math.ceil(total / pageSize)),
       };
     } catch (error) {
       throw new InternalServerErrorException(
@@ -370,5 +397,63 @@ export class MaterialService {
         creadoEn: result.movimiento.creadoEn,
       },
     };
+  }
+
+  async createFakeBulk(count: number) {
+    const safeCount = Number.isFinite(count) ? Math.trunc(count) : 0;
+
+    if (safeCount <= 0) {
+      throw new BadRequestException(
+        'La cantidad de materiales ficticios debe ser mayor a 0',
+      );
+    }
+
+    if (safeCount > 500) {
+      throw new BadRequestException(
+        'Por seguridad, la carga rápida permite como máximo 500 materiales por vez',
+      );
+    }
+
+    const categorias = await this.prisma.categoriaMaterial.findMany({
+      select: { id: true, nombre: true },
+      take: 10,
+      orderBy: { nombre: 'asc' },
+    });
+
+    const unidades = ['unidad', 'caja', 'paquete', 'resma', 'litro'];
+    const batchId = Date.now().toString(36).toUpperCase();
+
+    const data = Array.from({ length: safeCount }, (_, index) => {
+      const categoria = categorias[index % Math.max(categorias.length, 1)];
+      const sequence = String(index + 1).padStart(3, '0');
+      const stockMinimo = (index % 12) + 2;
+      const stockActual =
+        index % 5 === 0 ? 0 : index % 4 === 0 ? stockMinimo - 1 : stockMinimo + 8;
+
+      return {
+        codigo: `MAT-DEMO-${batchId}-${sequence}`,
+        nombre: `Material Demo ${sequence}`,
+        descripcion: `Registro ficticio para pruebas de inventario${categoria ? ` (${categoria.nombre})` : ''}.`,
+        unidad: unidades[index % unidades.length],
+        stockActual,
+        stockMinimo,
+        categoriaId: categoria?.id,
+      };
+    });
+
+    const result = await this.prisma.material.createMany({ data });
+    return result.count;
+  }
+
+  async deleteFakeBulk() {
+    const result = await this.prisma.material.deleteMany({
+      where: {
+        codigo: {
+          startsWith: 'MAT-DEMO-',
+        },
+      },
+    });
+
+    return result.count;
   }
 }

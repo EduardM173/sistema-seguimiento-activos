@@ -60,3 +60,14 @@ export async function getCategorias() {
 export async function getUbicaciones() {
   return http.get<ApiResponse<Ubicacion[]>>('/catalogs/ubicaciones');
 }
+
+export async function createFakeAssets(count = 1000) {
+  return http.post<ApiResponse<{ inserted: number }>>(
+    `/assets/dev/fake-bulk?count=${encodeURIComponent(String(count))}`,
+    {},
+  );
+}
+
+export async function deleteFakeAssets() {
+  return http.delete<ApiResponse<{ deleted: number }>>('/assets/dev/fake-bulk');
+}

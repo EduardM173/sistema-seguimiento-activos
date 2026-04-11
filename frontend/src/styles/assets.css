@@ -44,6 +44,37 @@
   flex-shrink: 0;
 }
 
+.assetsPage__ghostAction {
+  border: 1px dashed rgba(100, 116, 139, 0.45);
+  background: rgba(255, 255, 255, 0.68);
+  color: #64748b;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 0.73rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: lowercase;
+  cursor: pointer;
+  opacity: 0.5;
+  transition: opacity 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+
+.assetsPage__ghostAction:hover:not(:disabled) {
+  opacity: 0.95;
+  color: #1d4ed8;
+  border-color: rgba(37, 99, 235, 0.5);
+}
+
+.assetsPage__ghostAction--danger:hover:not(:disabled) {
+  color: #b91c1c;
+  border-color: rgba(220, 38, 38, 0.45);
+}
+
+.assetsPage__ghostAction:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
 /* ── Shared Buttons ── */
 .btn {
   display: inline-flex;

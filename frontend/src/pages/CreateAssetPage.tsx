@@ -72,7 +72,7 @@ export default function CreateAssetPage() {
   const [modelo, setModelo] = useState('');
   const [numeroSerie, setNumeroSerie] = useState('');
   const [categoriaId, setCategoriaId] = useState('');
-  const [estado, setEstado] = useState<EstadoActivo>('');
+  const [estado, setEstado] = useState<EstadoActivo | ''>('');
   const [ubicacionId, setUbicacionId] = useState('');
   const [areaActualId, setAreaActualId] = useState('');
   const [responsableActualId, setResponsableActualId] = useState('');

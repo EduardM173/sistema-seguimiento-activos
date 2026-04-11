@@ -81,10 +81,27 @@ export interface CreateMovimientoInventarioDTO {
 
 // Filtros para inventario
 export interface FiltrosInventario {
-  nombre?: string;
+  q?: string;
   categoriaId?: string;
-  skip?: number;
-  take?: number;
+  page?: number;
+  pageSize?: number;
+  sortBy?:
+    | 'codigo'
+    | 'nombre'
+    | 'categoria'
+    | 'stockActual'
+    | 'stockMinimo'
+    | 'unidad'
+    | 'creadoEn';
+  sortType?: 'ASC' | 'DESC';
+}
+
+export interface InventarioListResponse {
+  data: Material[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
 }
 
 // Reporte de inventario
