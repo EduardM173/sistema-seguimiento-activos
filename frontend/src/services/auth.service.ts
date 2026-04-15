@@ -1,16 +1,20 @@
-import type { LoginRequest, LoginResponse, AuthUser } from '../types/auth.types';
+import type {
+  LoginRequest,
+  LoginResponse,
+  AuthUser,
+} from "../types/auth.types";
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
 
-const ACCESS_TOKEN_KEY = 'access_token';
+const ACCESS_TOKEN_KEY = "access_token";
 
-const AUTH_USER_KEY = 'auth_user';
+const AUTH_USER_KEY = "auth_user";
 
 export async function login(data: LoginRequest): Promise<LoginResponse> {
-  const response = await fetch(`${API_URL}/auth/login`, {    /*AQUI*/
-    method: 'POST',
+  const response = await fetch(`${API_URL}/auth/login`, {
+    /*AQUI*/ method: "POST",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
     body: JSON.stringify(data),
   });
@@ -18,7 +22,7 @@ export async function login(data: LoginRequest): Promise<LoginResponse> {
   const result = await response.json();
 
   if (!response.ok) {
-    throw new Error(result.message || 'No se pudo iniciar sesión');
+    throw new Error(result.message || "No se pudo iniciar sesión");
   }
 
   return result;
