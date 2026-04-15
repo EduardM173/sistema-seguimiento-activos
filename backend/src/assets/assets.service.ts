@@ -353,6 +353,7 @@ export class AssetsService {
         ubicacionId: dto.ubicacionId,
         areaActualId: dto.areaActualId,
         responsableActualId: dto.responsableActualId,
+        estado: dto.estado,
         creadoPorId: userId,
         actualizadoPorId: userId,
       },
@@ -694,6 +695,136 @@ export class AssetsService {
     // Fallback: use full UUID segment for guaranteed uniqueness
     const uuid = randomUUID().replace(/-/g, '');
     return `ACT-${uuid.substring(0, 12).toUpperCase()}`;
+  }
+
+  async createFakeBulk(userId: string, count: number): Promise<number> {
+    const safeCount = Number.isFinite(count) ? Math.trunc(count) : 0;
+
+    if (safeCount <= 0) {
+      throw new BadRequestException(
+        'La cantidad de activos ficticios debe ser mayor a 0',
+      );
+    }
+
+    if (safeCount > 5000) {
+      throw new BadRequestException(
+        'Por seguridad, la carga rápida permite como máximo 5000 activos por vez',
+      );
+    }
+
+    const [categorias, ubicaciones] = await Promise.all([
+      this.prisma.categoriaActivo.findMany({
+        select: { id: true, nombre: true },
+        take: 10,
+        orderBy: { creadoEn: 'asc' },
+      }),
+      this.prisma.ubicacion.findMany({
+        select: { id: true, nombre: true },
+        take: 10,
+        orderBy: { creadoEn: 'asc' },
+      }),
+    ]);
+
+    if (categorias.length === 0) {
+      throw new BadRequestException(
+        'No hay categorías registradas para generar activos demo',
+      );
+    }
+
+    if (ubicaciones.length === 0) {
+      throw new BadRequestException(
+        'No hay ubicaciones registradas para generar activos demo',
+      );
+    }
+
+    const batchId = Date.now().toString(36).toUpperCase();
+    const estadosDemo = [
+      EstadoActivo.OPERATIVO,
+      EstadoActivo.OPERATIVO,
+      EstadoActivo.OPERATIVO,
+      EstadoActivo.MANTENIMIENTO,
+      EstadoActivo.FUERA_DE_SERVICIO,
+      EstadoActivo.DADO_DE_BAJA,
+    ];
+    const data: Prisma.ActivoCreateManyInput[] = Array.from(
+      { length: safeCount },
+      (_, index) => {
+        const categoria = categorias[index % categorias.length];
+        const ubicacion = ubicaciones[index % ubicaciones.length];
+        const sequence = String(index + 1).padStart(4, '0');
+        const estado = estadosDemo[index % estadosDemo.length];
+
+        return {
+          codigo: `DEMO-${batchId}-${sequence}`,
+          nombre: `Activo Demo ${sequence}`,
+          descripcion: `Registro ficticio generado automáticamente para pruebas de filtrado (${categoria.nombre}, ${estado}).`,
+          marca: 'DemoTech',
+          modelo: `Serie ${((index % 12) + 1).toString().padStart(2, '0')}`,
+          categoriaId: categoria.id,
+          ubicacionId: ubicacion.id,
+          estado,
+          creadoPorId: userId,
+          actualizadoPorId: userId,
+        };
+      },
+    );
+
+    const result = await this.prisma.activo.createMany({
+      data,
+    });
+
+    return result.count;
+  }
+
+  async deleteFakeBulk(): Promise<number> {
+    const fakeAssets = await this.prisma.activo.findMany({
+      where: {
+        codigo: {
+          startsWith: 'DEMO-',
+        },
+      },
+      select: { id: true },
+    });
+
+    if (fakeAssets.length === 0) {
+      return 0;
+    }
+
+    const fakeAssetIds = fakeAssets.map((asset) => asset.id);
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.asignacionActivo.deleteMany({
+        where: {
+          activoId: { in: fakeAssetIds },
+        },
+      });
+
+      await tx.movimientoActivo.deleteMany({
+        where: {
+          activoId: { in: fakeAssetIds },
+        },
+      });
+
+      await tx.incidenteActivo.deleteMany({
+        where: {
+          activoId: { in: fakeAssetIds },
+        },
+      });
+
+      await tx.documentoActivo.deleteMany({
+        where: {
+          activoId: { in: fakeAssetIds },
+        },
+      });
+
+      await tx.activo.deleteMany({
+        where: {
+          id: { in: fakeAssetIds },
+        },
+      });
+    });
+
+    return fakeAssetIds.length;
   }
 
   /**

@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  ParseIntPipe,
   Param,
   Patch,
   Post,
@@ -168,6 +169,73 @@ export class AssetsController {
   async generateCode() {
     const code = await this.assetsService.generateUniqueCode();
     return ApiResponse.success({ code }, 'Código generado exitosamente');
+  }
+
+  @ApiOperation({
+    summary: 'Cargar activos demo rápidamente',
+    description:
+      'Genera una cantidad de activos ficticios para pruebas rápidas del listado y filtrado.',
+  })
+  @ApiQuery({
+    name: 'count',
+    required: false,
+    type: Number,
+    description: 'Cantidad de activos ficticios a insertar',
+    example: 1000,
+  })
+  @ApiOkResponse({
+    description: 'Activos ficticios insertados correctamente',
+    schema: {
+      example: {
+        success: true,
+        message: 'Se generaron 1000 activos ficticios correctamente',
+        data: {
+          inserted: 1000,
+        },
+      },
+    },
+  })
+  @ApiBadRequestResponse({
+    description:
+      'La cantidad es inválida o faltan categorías/ubicaciones para generar activos demo',
+  })
+  @Post('dev/fake-bulk')
+  async createFakeBulk(
+    @Req() req: Request,
+    @Query('count', new ParseIntPipe({ optional: true })) count?: number,
+  ) {
+    const userId = (req.user as { id: string }).id;
+    const inserted = await this.assetsService.createFakeBulk(userId, count ?? 1000);
+    return ApiResponse.success(
+      { inserted },
+      `Se generaron ${inserted} activos ficticios correctamente`,
+    );
+  }
+
+  @ApiOperation({
+    summary: 'Eliminar activos demo rápidamente',
+    description:
+      'Elimina únicamente los activos ficticios generados por la carga rápida demo.',
+  })
+  @ApiOkResponse({
+    description: 'Activos ficticios eliminados correctamente',
+    schema: {
+      example: {
+        success: true,
+        message: 'Se eliminaron 1000 activos ficticios correctamente',
+        data: {
+          deleted: 1000,
+        },
+      },
+    },
+  })
+  @Delete('dev/fake-bulk')
+  async deleteFakeBulk() {
+    const deleted = await this.assetsService.deleteFakeBulk();
+    return ApiResponse.success(
+      { deleted },
+      `Se eliminaron ${deleted} activos ficticios correctamente`,
+    );
   }
 
   /**

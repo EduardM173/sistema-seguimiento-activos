@@ -1,4 +1,5 @@
 import {
+  IsEnum,
   IsDateString,
   IsNotEmpty,
   IsNumber,
@@ -9,6 +10,7 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { EstadoActivo } from '../../generated/prisma/client';
 
 export class CreateAssetDto {
   @ApiProperty({
@@ -131,5 +133,17 @@ export class CreateAssetDto {
   @IsOptional()
   @IsString()
   responsableActualId?: string;
+
+  @ApiPropertyOptional({
+    enum: EstadoActivo,
+    example: EstadoActivo.OPERATIVO,
+    description: 'Estado operativo inicial del activo',
+  })
+  @IsOptional()
+  @IsEnum(EstadoActivo, {
+    message:
+      'El estado debe ser uno de los siguientes valores: OPERATIVO, MANTENIMIENTO, FUERA_DE_SERVICIO, DADO_DE_BAJA',
+  })
+  estado?: EstadoActivo;
 
 }

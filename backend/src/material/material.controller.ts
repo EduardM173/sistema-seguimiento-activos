@@ -1,4 +1,5 @@
 import {
+  ParseIntPipe,
   Controller,
   Get,
   Post,
@@ -27,8 +28,15 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { MaterialService } from './material.service';
-import { CreateMaterialDTO, UpdateMaterialDTO, MaterialResponseDTO } from './dto';
-import { AumentarStockDTO } from './dto';
+import {
+  CreateMaterialDTO,
+  UpdateMaterialDTO,
+  MaterialResponseDTO,
+  AumentarStockDTO,
+  MaterialSortBy,
+  MaterialSortType,
+  SearchMaterialDTO,
+} from './dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ApiResponse } from '../common/api-response';
 
@@ -70,10 +78,10 @@ export class MaterialController {
     description: 'Obtiene el listado de materiales o recursos del inventario, incluyendo su stock actual y stock mínimo.',
   })
   @ApiQuery({
-    name: 'nombre',
+    name: 'q',
     required: false,
     type: String,
-    description: 'Filtra materiales por coincidencia en el nombre',
+    description: 'Filtra materiales por coincidencia en código o nombre',
     example: 'papel',
   })
   @ApiQuery({
@@ -84,18 +92,30 @@ export class MaterialController {
     example: 'cmnkly3id000w2wl6qls04snz',
   })
   @ApiQuery({
-    name: 'skip',
+    name: 'page',
     required: false,
-    type: String,
-    description: 'Cantidad de registros a omitir para paginación',
-    example: '0',
+    type: Number,
+    description: 'Número de página',
+    example: 1,
   })
   @ApiQuery({
-    name: 'take',
+    name: 'pageSize',
     required: false,
-    type: String,
+    type: Number,
     description: 'Cantidad máxima de registros a devolver',
-    example: '20',
+    example: 10,
+  })
+  @ApiQuery({
+    name: 'sortBy',
+    required: false,
+    enum: MaterialSortBy,
+    description: 'Campo por el cual ordenar el listado',
+  })
+  @ApiQuery({
+    name: 'sortType',
+    required: false,
+    enum: MaterialSortType,
+    description: 'Dirección de ordenación',
   })
   @ApiOkResponse({
     description: 'Listado de materiales obtenido correctamente',
@@ -117,29 +137,21 @@ export class MaterialController {
           },
         ],
         total: 1,
-        skip: 0,
-        take: 20,
+        page: 1,
+        pageSize: 10,
+        totalPages: 1,
       },
     },
   })
   @Get()
-  async findAll(
-    @Query('nombre') nombre?: string,
-    @Query('categoriaId') categoriaId?: string,
-    @Query('skip') skip?: string,
-    @Query('take') take?: string,
-  ): Promise<{
+  async findAll(@Query() query: SearchMaterialDTO): Promise<{
     data: MaterialResponseDTO[];
     total: number;
-    skip?: number;
-    take?: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
   }> {
-    return this.materialService.findAll({
-      nombre,
-      categoriaId,
-      skip: skip ? parseInt(skip, 10) : undefined,
-      take: take ? parseInt(take, 10) : undefined,
-    });
+    return this.materialService.findAll(query);
   }
 
   /**
@@ -296,5 +308,69 @@ export class MaterialController {
     const userId = (req.user as { id: string }).id;
     const result = await this.materialService.aumentarStock(id, dto.cantidad, userId);
     return ApiResponse.success(result, 'Ingreso de stock registrado correctamente');
+  }
+
+  @ApiOperation({
+    summary: 'Cargar materiales demo rápidamente',
+    description:
+      'Genera una cantidad de materiales ficticios para pruebas rápidas del inventario.',
+  })
+  @ApiQuery({
+    name: 'count',
+    required: false,
+    type: Number,
+    description: 'Cantidad de materiales ficticios a insertar',
+    example: 100,
+  })
+  @ApiOkResponse({
+    description: 'Materiales ficticios insertados correctamente',
+    schema: {
+      example: {
+        success: true,
+        message: 'Se generaron 100 materiales ficticios correctamente',
+        data: {
+          inserted: 100,
+        },
+      },
+    },
+  })
+  @ApiBadRequestResponse({
+    description: 'La cantidad es inválida para la carga rápida de materiales demo',
+  })
+  @Post('dev/fake-bulk')
+  async createFakeBulk(
+    @Query('count', new ParseIntPipe({ optional: true })) count?: number,
+  ) {
+    const inserted = await this.materialService.createFakeBulk(count ?? 100);
+    return ApiResponse.success(
+      { inserted },
+      `Se generaron ${inserted} materiales ficticios correctamente`,
+    );
+  }
+
+  @ApiOperation({
+    summary: 'Eliminar materiales demo rápidamente',
+    description:
+      'Elimina únicamente los materiales ficticios generados por la carga rápida demo.',
+  })
+  @ApiOkResponse({
+    description: 'Materiales ficticios eliminados correctamente',
+    schema: {
+      example: {
+        success: true,
+        message: 'Se eliminaron 100 materiales ficticios correctamente',
+        data: {
+          deleted: 100,
+        },
+      },
+    },
+  })
+  @Delete('dev/fake-bulk')
+  async deleteFakeBulk() {
+    const deleted = await this.materialService.deleteFakeBulk();
+    return ApiResponse.success(
+      { deleted },
+      `Se eliminaron ${deleted} materiales ficticios correctamente`,
+    );
   }
 }
