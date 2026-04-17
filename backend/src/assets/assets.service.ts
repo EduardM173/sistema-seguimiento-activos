@@ -387,6 +387,14 @@ export class AssetsService {
       dto.nombre !== undefined ? dto.nombre.trim() : existing.nombre;
     const nextCategoriaId =
       dto.categoriaId !== undefined ? dto.categoriaId.trim() : existing.categoriaId;
+    const nextUbicacionId =
+      dto.ubicacionId !== undefined ? dto.ubicacionId.trim() || null : undefined;
+    const nextAreaActualId =
+      dto.areaActualId !== undefined ? dto.areaActualId.trim() || null : undefined;
+    const nextResponsableActualId =
+      dto.responsableActualId !== undefined
+        ? dto.responsableActualId.trim() || null
+        : undefined;
 
     if (!nextCodigo) {
       throw new BadRequestException('El código del activo es obligatorio');
@@ -439,6 +447,52 @@ export class AssetsService {
       }
     }
 
+    if (nextUbicacionId !== undefined && nextUbicacionId !== existing.ubicacionId) {
+      if (nextUbicacionId) {
+        const ubicacion = await this.prisma.ubicacion.findUnique({
+          where: { id: nextUbicacionId },
+        });
+
+        if (!ubicacion) {
+          throw new NotFoundException(
+            `No se encontró la ubicación con ID: ${nextUbicacionId}`,
+          );
+        }
+      }
+    }
+
+    if (nextAreaActualId !== undefined && nextAreaActualId !== existing.areaActualId) {
+      if (nextAreaActualId) {
+        const area = await this.prisma.area.findUnique({
+          where: { id: nextAreaActualId },
+        });
+
+        if (!area) {
+          throw new NotFoundException(
+            `No se encontró el área con ID: ${nextAreaActualId}`,
+          );
+        }
+      }
+    }
+
+    if (
+      nextResponsableActualId !== undefined &&
+      nextResponsableActualId !== existing.responsableActualId
+    ) {
+      if (nextResponsableActualId) {
+        const responsable = await this.prisma.usuario.findUnique({
+          where: { id: nextResponsableActualId },
+          select: { id: true },
+        });
+
+        if (!responsable) {
+          throw new NotFoundException(
+            `No se encontró el usuario con ID: ${nextResponsableActualId}`,
+          );
+        }
+      }
+    }
+
     const activo = await this.prisma.activo.update({
       where: { id },
       data: {
@@ -459,12 +513,12 @@ export class AssetsService {
         }),
         ...(dto.estado !== undefined && { estado: dto.estado }),
         ...(dto.categoriaId !== undefined && { categoriaId: nextCategoriaId }),
-        ...(dto.ubicacionId !== undefined && { ubicacionId: dto.ubicacionId }),
+        ...(dto.ubicacionId !== undefined && { ubicacionId: nextUbicacionId }),
         ...(dto.areaActualId !== undefined && {
-          areaActualId: dto.areaActualId,
+          areaActualId: nextAreaActualId,
         }),
         ...(dto.responsableActualId !== undefined && {
-          responsableActualId: dto.responsableActualId,
+          responsableActualId: nextResponsableActualId,
         }),
         actualizadoPorId: userId,
       },
