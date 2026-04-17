@@ -408,6 +408,18 @@ export class AssetsService {
       throw new BadRequestException('La categoría del activo es obligatoria');
     }
 
+    const isTransferUpdate =
+      (nextUbicacionId !== undefined && nextUbicacionId !== existing.ubicacionId) ||
+      (nextAreaActualId !== undefined && nextAreaActualId !== existing.areaActualId) ||
+      (nextResponsableActualId !== undefined &&
+        nextResponsableActualId !== existing.responsableActualId);
+
+    if (isTransferUpdate && existing.estado !== EstadoActivo.OPERATIVO) {
+      throw new ConflictException(
+        'Solo se puede transferir un activo cuando está en estado Operativo',
+      );
+    }
+
     // Validate code uniqueness if changing
     if (nextCodigo !== existing.codigo) {
       const existingByCode = await this.prisma.activo.findUnique({
