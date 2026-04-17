@@ -233,7 +233,7 @@ export default function EditAssetModal({ assetId, open, onClose, onUpdated }: Pr
       if (estado) payload.estado = estado;
       if (ubicacionId) payload.ubicacionId = ubicacionId;
       if (areaActualId) payload.areaActualId = areaActualId;
-      if (responsableActualId) payload.responsableActualId = responsableActualId;
+      payload.responsableActualId = responsableActualId;
       if (costoAdquisicion) payload.costoAdquisicion = Number(costoAdquisicion);
       if (fechaAdquisicion) payload.fechaAdquisicion = fechaAdquisicion;
 
@@ -421,9 +421,9 @@ export default function EditAssetModal({ assetId, open, onClose, onUpdated }: Pr
               </div>
             </div>
 
-            {/* Responsable */}
+            {/* Asignado a */}
             <div className="formField">
-              <label htmlFor="edit-responsable">Responsable</label>
+              <label htmlFor="edit-responsable">Asignado a</label>
               <select id="edit-responsable" value={responsableActualId} onChange={(e) => setResponsableActualId(e.target.value)} disabled={submitting}>
                 <option value="">Seleccionar</option>
                 {usuarios.map((u) => (
