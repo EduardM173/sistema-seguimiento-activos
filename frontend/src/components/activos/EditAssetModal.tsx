@@ -56,6 +56,11 @@ export default function EditAssetModal({ assetId, open, onClose, onUpdated }: Pr
   const [responsableActualId, setResponsableActualId] = useState('');
   const [costoAdquisicion, setCostoAdquisicion] = useState('');
   const [fechaAdquisicion, setFechaAdquisicion] = useState('');
+  const [initialTransferValues, setInitialTransferValues] = useState({
+    ubicacionId: '',
+    areaActualId: '',
+    responsableActualId: '',
+  });
 
   // Location search
   const [ubicacionSearch, setUbicacionSearch] = useState('');
@@ -105,6 +110,11 @@ export default function EditAssetModal({ assetId, open, onClose, onUpdated }: Pr
         setUbicacionId(a.ubicacion?.id ?? '');
         setAreaActualId(a.area?.id ?? '');
         setResponsableActualId(a.responsableActual?.id ?? a.responsable?.id ?? '');
+        setInitialTransferValues({
+          ubicacionId: a.ubicacion?.id ?? '',
+          areaActualId: a.area?.id ?? '',
+          responsableActualId: a.responsableActual?.id ?? a.responsable?.id ?? '',
+        });
         setCostoAdquisicion(a.costoAdquisicion != null ? String(a.costoAdquisicion) : '');
         setFechaAdquisicion(a.fechaAdquisicion ? a.fechaAdquisicion.substring(0, 10) : '');
 
@@ -222,20 +232,31 @@ export default function EditAssetModal({ assetId, open, onClose, onUpdated }: Pr
     try {
       setSubmitting(true);
       const payload: UpdateAssetPayload = {};
+      const normalizedUbicacionId = ubicacionId.trim();
+      const normalizedAreaActualId = areaActualId.trim();
+      const normalizedResponsableActualId = responsableActualId.trim();
 
-      payload.codigo = codigo.trim();
-      payload.nombre = nombre.trim();
-      if (descripcion.trim()) payload.descripcion = descripcion.trim();
-      if (marca.trim()) payload.marca = marca.trim();
-      if (modelo.trim()) payload.modelo = modelo.trim();
-      if (numeroSerie.trim()) payload.numeroSerie = numeroSerie.trim();
-      if (categoriaId) payload.categoriaId = categoriaId;
-      if (estado) payload.estado = estado;
-      if (ubicacionId) payload.ubicacionId = ubicacionId;
-      if (areaActualId) payload.areaActualId = areaActualId;
-      payload.responsableActualId = responsableActualId;
-      if (costoAdquisicion) payload.costoAdquisicion = Number(costoAdquisicion);
-      if (fechaAdquisicion) payload.fechaAdquisicion = fechaAdquisicion;
+      if (normalizedUbicacionId !== initialTransferValues.ubicacionId) {
+        payload.ubicacionId = normalizedUbicacionId;
+      }
+
+      if (normalizedAreaActualId !== initialTransferValues.areaActualId) {
+        payload.areaActualId = normalizedAreaActualId;
+      }
+
+      if (
+        normalizedResponsableActualId !== initialTransferValues.responsableActualId
+      ) {
+        payload.responsableActualId = normalizedResponsableActualId;
+      }
+
+      if (Object.keys(payload).length === 0) {
+        notify.warning(
+          'Sin cambios',
+          'No se detectaron cambios en área, ubicación o asignado a.',
+        );
+        return;
+      }
 
       const res = await updateAsset(assetId, payload);
       notify.success(res.message ?? 'Activo actualizado exitosamente');
