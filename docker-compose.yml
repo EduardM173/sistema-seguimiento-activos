@@ -1,0 +1,70 @@
+services:
+  jenkins:  
+    image: jenkins/jenkins:lts
+    container_name: jenkins
+    ports:
+      - "8083:8080"
+      - "50003:50000"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+
+  app-db:
+    image: postgres:16-alpine
+    container_name: activos_db
+    env_file:
+      - ./.env
+
+    ports:
+      - $POSTGRES_PORT:$POSTGRES_PORT
+
+    environment:
+      POSTGRES_PASSWORD: $POSTGRES_PASSWORD
+      POSTGRES_USER: $POSTGRES_USER
+      POSTGRES_DB: $POSTGRES_DB
+      PGPORT: $POSTGRES_PORT
+
+    volumes:
+      - postgres_data:/var/lib/postgres/data
+  backend:
+    container_name: activos_backend
+    build: 
+      dockerfile: dockerfile
+      context: ./backend
+
+    env_file:
+      -  ./.env
+
+    ports: 
+      - 3000:3000
+
+    depends_on: 
+      app-db: 
+        condition: service_started
+
+    volumes:
+      - ./backend:/app/
+    command: "npm run start:dev"
+  
+  frontend:
+    container_name: activos_frontend
+
+    build:
+      dockerfile: dockerfile2
+      context: ./frontend
+
+    env_file: 
+      - ./.env
+    
+    ports:
+      - 80:80
+
+    volumes:
+      - ./frontend:/app/
+  
+    depends_on:
+      backend:
+        condition: service_started
+  
+volumes:
+  postgres_data:
+  jenkins_home:
