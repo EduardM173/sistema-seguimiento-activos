@@ -263,7 +263,13 @@ export default function EditAssetModal({ assetId, open, onClose, onUpdated }: Pr
       onUpdated();
       onClose();
     } catch (err) {
-      const message = err instanceof HttpError ? err.message : 'No se pudo actualizar el activo';
+      const message =
+        err instanceof HttpError &&
+        err.message.includes('Solo se puede transferir un activo cuando está en estado Operativo')
+          ? 'Este activo debe estar en estado Operativo para poder transferirse.'
+          : err instanceof HttpError
+            ? err.message
+            : 'No se pudo actualizar el activo';
       notify.error('Error al actualizar', message);
     } finally {
       setSubmitting(false);

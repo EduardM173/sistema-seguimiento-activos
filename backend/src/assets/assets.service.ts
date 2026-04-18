@@ -15,7 +15,11 @@ import {
   SortType,
 } from './dto/search-assets.dto';
 import { AssignAssetDto } from './dto/assign-asset.dto';
-import { EstadoActivo, Prisma } from '../generated/prisma/client';
+import {
+  EstadoActivo,
+  Prisma,
+  TipoMovimientoActivo,
+} from '../generated/prisma/client';
 
 @Injectable()
 export class AssetsService {
@@ -505,40 +509,102 @@ export class AssetsService {
       }
     }
 
-    const activo = await this.prisma.activo.update({
-      where: { id },
-      data: {
-        ...(dto.codigo !== undefined && { codigo: nextCodigo }),
-        ...(dto.nombre !== undefined && { nombre: nextNombre }),
-        ...(dto.descripcion !== undefined && { descripcion: dto.descripcion }),
-        ...(dto.marca !== undefined && { marca: dto.marca }),
-        ...(dto.modelo !== undefined && { modelo: dto.modelo }),
-        ...(dto.numeroSerie !== undefined && { numeroSerie: dto.numeroSerie }),
-        ...(dto.fechaAdquisicion !== undefined && {
-          fechaAdquisicion: new Date(dto.fechaAdquisicion),
-        }),
-        ...(dto.costoAdquisicion !== undefined && {
-          costoAdquisicion: dto.costoAdquisicion,
-        }),
-        ...(dto.vencimientoGarantia !== undefined && {
-          vencimientoGarantia: new Date(dto.vencimientoGarantia),
-        }),
-        ...(dto.estado !== undefined && { estado: dto.estado }),
-        ...(dto.categoriaId !== undefined && { categoriaId: nextCategoriaId }),
-        ...(dto.ubicacionId !== undefined && { ubicacionId: nextUbicacionId }),
-        ...(dto.areaActualId !== undefined && {
-          areaActualId: nextAreaActualId,
-        }),
-        ...(dto.responsableActualId !== undefined && {
-          responsableActualId: nextResponsableActualId,
-        }),
-        actualizadoPorId: userId,
-      },
-      include: {
-        categoria: true,
-        ubicacion: true,
-        areaActual: true,
-      },
+    const finalAreaActualId =
+      nextAreaActualId !== undefined ? nextAreaActualId : existing.areaActualId;
+    const finalResponsableActualId =
+      nextResponsableActualId !== undefined
+        ? nextResponsableActualId
+        : existing.responsableActualId;
+    const finalUbicacionId =
+      nextUbicacionId !== undefined ? nextUbicacionId : existing.ubicacionId;
+
+    const describeChange = (
+      label: string,
+      previousValue: string | null,
+      nextValue: string | null,
+    ) =>
+      `${label}: ${previousValue ?? 'sin asignar'} -> ${nextValue ?? 'sin asignar'}`;
+
+    const activo = await this.prisma.$transaction(async (tx) => {
+      const updatedAsset = await tx.activo.update({
+        where: { id },
+        data: {
+          ...(dto.codigo !== undefined && { codigo: nextCodigo }),
+          ...(dto.nombre !== undefined && { nombre: nextNombre }),
+          ...(dto.descripcion !== undefined && { descripcion: dto.descripcion }),
+          ...(dto.marca !== undefined && { marca: dto.marca }),
+          ...(dto.modelo !== undefined && { modelo: dto.modelo }),
+          ...(dto.numeroSerie !== undefined && { numeroSerie: dto.numeroSerie }),
+          ...(dto.fechaAdquisicion !== undefined && {
+            fechaAdquisicion: new Date(dto.fechaAdquisicion),
+          }),
+          ...(dto.costoAdquisicion !== undefined && {
+            costoAdquisicion: dto.costoAdquisicion,
+          }),
+          ...(dto.vencimientoGarantia !== undefined && {
+            vencimientoGarantia: new Date(dto.vencimientoGarantia),
+          }),
+          ...(dto.estado !== undefined && { estado: dto.estado }),
+          ...(dto.categoriaId !== undefined && { categoriaId: nextCategoriaId }),
+          ...(dto.ubicacionId !== undefined && { ubicacionId: nextUbicacionId }),
+          ...(dto.areaActualId !== undefined && {
+            areaActualId: nextAreaActualId,
+          }),
+          ...(dto.responsableActualId !== undefined && {
+            responsableActualId: nextResponsableActualId,
+          }),
+          actualizadoPorId: userId,
+        },
+        include: {
+          categoria: true,
+          ubicacion: true,
+          areaActual: true,
+        },
+      });
+
+      if (isTransferUpdate) {
+        const detailParts: string[] = [];
+
+        if (nextUbicacionId !== undefined && nextUbicacionId !== existing.ubicacionId) {
+          detailParts.push(
+            describeChange('Ubicación', existing.ubicacionId, finalUbicacionId),
+          );
+        }
+
+        if (nextAreaActualId !== undefined && nextAreaActualId !== existing.areaActualId) {
+          detailParts.push(
+            describeChange('Área', existing.areaActualId, finalAreaActualId),
+          );
+        }
+
+        if (
+          nextResponsableActualId !== undefined &&
+          nextResponsableActualId !== existing.responsableActualId
+        ) {
+          detailParts.push(
+            describeChange(
+              'Asignado a',
+              existing.responsableActualId,
+              finalResponsableActualId,
+            ),
+          );
+        }
+
+        await tx.movimientoActivo.create({
+          data: {
+            activoId: id,
+            tipo: TipoMovimientoActivo.TRANSFERENCIA,
+            areaOrigenId: existing.areaActualId,
+            areaDestinoId: finalAreaActualId,
+            usuarioOrigenId: existing.responsableActualId,
+            usuarioDestinoId: finalResponsableActualId,
+            realizadoPorId: userId,
+            detalle: detailParts.join(' | '),
+          },
+        });
+      }
+
+      return updatedAsset;
     });
 
     return activo;
