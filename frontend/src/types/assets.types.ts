@@ -68,6 +68,7 @@ export type CreateAssetPayload = {
   vencimientoGarantia?: string;
   categoriaId: string;
   ubicacionId?: string;
+  estado?: EstadoActivo;
   areaActualId?: string;
   responsableActualId?: string;
 };

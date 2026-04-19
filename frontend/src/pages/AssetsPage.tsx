@@ -6,7 +6,14 @@ import ViewAssetModal from '../components/activos/ViewAssetModal';
 import AssetDetailPanel from '../components/assets/AssetDetailPanel';
 import { useNotification } from '../context/NotificationContext';
 import { getAreas, getCategorias, getUbicaciones, getUsuarios } from '../services/catalogs.service';
-import { assignAsset, deleteAsset, getAssetById, searchAssets } from '../services/assets.service';
+import {
+  assignAsset,
+  createFakeAssets,
+  deleteFakeAssets,
+  deleteAsset,
+  getAssetById,
+  searchAssets,
+} from '../services/assets.service';
 import { HttpError } from '../services/http.client';
 import type {
   Area,
@@ -38,7 +45,7 @@ const ESTADO_CLASS: Record<string, string> = {
   DADO_DE_BAJA: 'statusBadge--baja',
 };
 
-const PAGE_SIZE = 6;
+const PAGE_SIZE = 10;
 
 export default function AssetsPage() {
   const navigate = useNavigate();
@@ -73,6 +80,8 @@ export default function AssetsPage() {
   const [assignmentTargetId, setAssignmentTargetId] = useState('');
   const [assignmentNotes, setAssignmentNotes] = useState('');
   const [submittingAssignment, setSubmittingAssignment] = useState(false);
+  const [creatingFakeAssets, setCreatingFakeAssets] = useState(false);
+  const [deletingFakeAssets, setDeletingFakeAssets] = useState(false);
 
   const [editingAssetId, setEditingAssetId] = useState<string | null>(null);
   const [viewingAssetId, setViewingAssetId] = useState<string | null>(null);
@@ -335,6 +344,61 @@ export default function AssetsPage() {
     }
   }
 
+  async function handleCreateFakeAssets() {
+    const confirmed = window.confirm(
+      'Esto insertará 1000 activos ficticios para pruebas de filtros y ordenación. ¿Desea continuar?',
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setCreatingFakeAssets(true);
+      const response = await createFakeAssets(1000);
+      notifySuccess(
+        'Carga demo completada',
+        `Se insertaron ${response.data.inserted} activos ficticios.`,
+      );
+      setCurrentPage(1);
+      await loadAssets();
+    } catch (error) {
+      const message =
+        error instanceof HttpError
+          ? error.message
+          : 'No se pudieron generar los activos ficticios';
+      notifyError('Error al cargar datos demo', message);
+    } finally {
+      setCreatingFakeAssets(false);
+    }
+  }
+
+  async function handleDeleteFakeAssets() {
+    const confirmed = window.confirm(
+      'Esto eliminará únicamente los activos demo generados con el botón rápido. ¿Desea continuar?',
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setDeletingFakeAssets(true);
+      const response = await deleteFakeAssets();
+      notifySuccess(
+        'Limpieza demo completada',
+        `Se eliminaron ${response.data.deleted} activos ficticios.`,
+      );
+      closeDetailPanel();
+      setCurrentPage(1);
+      await loadAssets();
+    } catch (error) {
+      const message =
+        error instanceof HttpError
+          ? error.message
+          : 'No se pudieron eliminar los activos ficticios';
+      notifyError('Error al limpiar datos demo', message);
+    } finally {
+      setDeletingFakeAssets(false);
+    }
+  }
+
   const assignmentOptions =
     assignmentType === 'usuario'
       ? usuarios.map((usuario) => ({
@@ -385,6 +449,24 @@ export default function AssetsPage() {
           </p>
         </div>
         <div className="assetsPage__actions">
+          <button
+            type="button"
+            className="assetsPage__ghostAction"
+            onClick={() => void handleCreateFakeAssets()}
+            disabled={creatingFakeAssets}
+            title="Carga rápida de activos demo"
+          >
+            {creatingFakeAssets ? 'Cargando demo...' : 'demo x1000'}
+          </button>
+          <button
+            type="button"
+            className="assetsPage__ghostAction assetsPage__ghostAction--danger"
+            onClick={() => void handleDeleteFakeAssets()}
+            disabled={deletingFakeAssets}
+            title="Eliminar activos demo"
+          >
+            {deletingFakeAssets ? 'Limpiando...' : 'limpiar demo'}
+          </button>
           <button
             type="button"
             className="btn btn--outline"

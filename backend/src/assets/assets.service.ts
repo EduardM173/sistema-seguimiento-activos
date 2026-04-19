@@ -15,7 +15,11 @@ import {
   SortType,
 } from './dto/search-assets.dto';
 import { AssignAssetDto } from './dto/assign-asset.dto';
-import { EstadoActivo, Prisma } from '../generated/prisma/client';
+import {
+  EstadoActivo,
+  Prisma,
+  TipoMovimientoActivo,
+} from '../generated/prisma/client';
 
 @Injectable()
 export class AssetsService {
@@ -353,6 +357,7 @@ export class AssetsService {
         ubicacionId: dto.ubicacionId,
         areaActualId: dto.areaActualId,
         responsableActualId: dto.responsableActualId,
+        estado: dto.estado,
         creadoPorId: userId,
         actualizadoPorId: userId,
       },
@@ -386,6 +391,14 @@ export class AssetsService {
       dto.nombre !== undefined ? dto.nombre.trim() : existing.nombre;
     const nextCategoriaId =
       dto.categoriaId !== undefined ? dto.categoriaId.trim() : existing.categoriaId;
+    const nextUbicacionId =
+      dto.ubicacionId !== undefined ? dto.ubicacionId.trim() || null : undefined;
+    const nextAreaActualId =
+      dto.areaActualId !== undefined ? dto.areaActualId.trim() || null : undefined;
+    const nextResponsableActualId =
+      dto.responsableActualId !== undefined
+        ? dto.responsableActualId.trim() || null
+        : undefined;
 
     if (!nextCodigo) {
       throw new BadRequestException('El código del activo es obligatorio');
@@ -397,6 +410,18 @@ export class AssetsService {
 
     if (!nextCategoriaId) {
       throw new BadRequestException('La categoría del activo es obligatoria');
+    }
+
+    const isTransferUpdate =
+      (nextUbicacionId !== undefined && nextUbicacionId !== existing.ubicacionId) ||
+      (nextAreaActualId !== undefined && nextAreaActualId !== existing.areaActualId) ||
+      (nextResponsableActualId !== undefined &&
+        nextResponsableActualId !== existing.responsableActualId);
+
+    if (isTransferUpdate && existing.estado !== EstadoActivo.OPERATIVO) {
+      throw new ConflictException(
+        'Solo se puede transferir un activo cuando está en estado Operativo',
+      );
     }
 
     // Validate code uniqueness if changing
@@ -438,40 +463,148 @@ export class AssetsService {
       }
     }
 
-    const activo = await this.prisma.activo.update({
-      where: { id },
-      data: {
-        ...(dto.codigo !== undefined && { codigo: nextCodigo }),
-        ...(dto.nombre !== undefined && { nombre: nextNombre }),
-        ...(dto.descripcion !== undefined && { descripcion: dto.descripcion }),
-        ...(dto.marca !== undefined && { marca: dto.marca }),
-        ...(dto.modelo !== undefined && { modelo: dto.modelo }),
-        ...(dto.numeroSerie !== undefined && { numeroSerie: dto.numeroSerie }),
-        ...(dto.fechaAdquisicion !== undefined && {
-          fechaAdquisicion: new Date(dto.fechaAdquisicion),
-        }),
-        ...(dto.costoAdquisicion !== undefined && {
-          costoAdquisicion: dto.costoAdquisicion,
-        }),
-        ...(dto.vencimientoGarantia !== undefined && {
-          vencimientoGarantia: new Date(dto.vencimientoGarantia),
-        }),
-        ...(dto.estado !== undefined && { estado: dto.estado }),
-        ...(dto.categoriaId !== undefined && { categoriaId: nextCategoriaId }),
-        ...(dto.ubicacionId !== undefined && { ubicacionId: dto.ubicacionId }),
-        ...(dto.areaActualId !== undefined && {
-          areaActualId: dto.areaActualId,
-        }),
-        ...(dto.responsableActualId !== undefined && {
-          responsableActualId: dto.responsableActualId,
-        }),
-        actualizadoPorId: userId,
-      },
-      include: {
-        categoria: true,
-        ubicacion: true,
-        areaActual: true,
-      },
+    if (nextUbicacionId !== undefined && nextUbicacionId !== existing.ubicacionId) {
+      if (nextUbicacionId) {
+        const ubicacion = await this.prisma.ubicacion.findUnique({
+          where: { id: nextUbicacionId },
+        });
+
+        if (!ubicacion) {
+          throw new NotFoundException(
+            `No se encontró la ubicación con ID: ${nextUbicacionId}`,
+          );
+        }
+      }
+    }
+
+    if (nextAreaActualId !== undefined && nextAreaActualId !== existing.areaActualId) {
+      if (nextAreaActualId) {
+        const area = await this.prisma.area.findUnique({
+          where: { id: nextAreaActualId },
+        });
+
+        if (!area) {
+          throw new NotFoundException(
+            `No se encontró el área con ID: ${nextAreaActualId}`,
+          );
+        }
+      }
+    }
+
+    if (
+      nextResponsableActualId !== undefined &&
+      nextResponsableActualId !== existing.responsableActualId
+    ) {
+      if (nextResponsableActualId) {
+        const responsable = await this.prisma.usuario.findUnique({
+          where: { id: nextResponsableActualId },
+          select: { id: true },
+        });
+
+        if (!responsable) {
+          throw new NotFoundException(
+            `No se encontró el usuario con ID: ${nextResponsableActualId}`,
+          );
+        }
+      }
+    }
+
+    const finalAreaActualId =
+      nextAreaActualId !== undefined ? nextAreaActualId : existing.areaActualId;
+    const finalResponsableActualId =
+      nextResponsableActualId !== undefined
+        ? nextResponsableActualId
+        : existing.responsableActualId;
+    const finalUbicacionId =
+      nextUbicacionId !== undefined ? nextUbicacionId : existing.ubicacionId;
+
+    const describeChange = (
+      label: string,
+      previousValue: string | null,
+      nextValue: string | null,
+    ) =>
+      `${label}: ${previousValue ?? 'sin asignar'} -> ${nextValue ?? 'sin asignar'}`;
+
+    const activo = await this.prisma.$transaction(async (tx) => {
+      const updatedAsset = await tx.activo.update({
+        where: { id },
+        data: {
+          ...(dto.codigo !== undefined && { codigo: nextCodigo }),
+          ...(dto.nombre !== undefined && { nombre: nextNombre }),
+          ...(dto.descripcion !== undefined && { descripcion: dto.descripcion }),
+          ...(dto.marca !== undefined && { marca: dto.marca }),
+          ...(dto.modelo !== undefined && { modelo: dto.modelo }),
+          ...(dto.numeroSerie !== undefined && { numeroSerie: dto.numeroSerie }),
+          ...(dto.fechaAdquisicion !== undefined && {
+            fechaAdquisicion: new Date(dto.fechaAdquisicion),
+          }),
+          ...(dto.costoAdquisicion !== undefined && {
+            costoAdquisicion: dto.costoAdquisicion,
+          }),
+          ...(dto.vencimientoGarantia !== undefined && {
+            vencimientoGarantia: new Date(dto.vencimientoGarantia),
+          }),
+          ...(dto.estado !== undefined && { estado: dto.estado }),
+          ...(dto.categoriaId !== undefined && { categoriaId: nextCategoriaId }),
+          ...(dto.ubicacionId !== undefined && { ubicacionId: nextUbicacionId }),
+          ...(dto.areaActualId !== undefined && {
+            areaActualId: nextAreaActualId,
+          }),
+          ...(dto.responsableActualId !== undefined && {
+            responsableActualId: nextResponsableActualId,
+          }),
+          actualizadoPorId: userId,
+        },
+        include: {
+          categoria: true,
+          ubicacion: true,
+          areaActual: true,
+        },
+      });
+
+      if (isTransferUpdate) {
+        const detailParts: string[] = [];
+
+        if (nextUbicacionId !== undefined && nextUbicacionId !== existing.ubicacionId) {
+          detailParts.push(
+            describeChange('Ubicación', existing.ubicacionId, finalUbicacionId),
+          );
+        }
+
+        if (nextAreaActualId !== undefined && nextAreaActualId !== existing.areaActualId) {
+          detailParts.push(
+            describeChange('Área', existing.areaActualId, finalAreaActualId),
+          );
+        }
+
+        if (
+          nextResponsableActualId !== undefined &&
+          nextResponsableActualId !== existing.responsableActualId
+        ) {
+          detailParts.push(
+            describeChange(
+              'Asignado a',
+              existing.responsableActualId,
+              finalResponsableActualId,
+            ),
+          );
+        }
+
+        await tx.movimientoActivo.create({
+          data: {
+            activoId: id,
+            tipo: TipoMovimientoActivo.TRANSFERENCIA,
+            areaOrigenId: existing.areaActualId,
+            areaDestinoId: finalAreaActualId,
+            usuarioOrigenId: existing.responsableActualId,
+            usuarioDestinoId: finalResponsableActualId,
+            realizadoPorId: userId,
+            detalle: detailParts.join(' | '),
+          },
+        });
+      }
+
+      return updatedAsset;
     });
 
     return activo;
@@ -694,6 +827,136 @@ export class AssetsService {
     // Fallback: use full UUID segment for guaranteed uniqueness
     const uuid = randomUUID().replace(/-/g, '');
     return `ACT-${uuid.substring(0, 12).toUpperCase()}`;
+  }
+
+  async createFakeBulk(userId: string, count: number): Promise<number> {
+    const safeCount = Number.isFinite(count) ? Math.trunc(count) : 0;
+
+    if (safeCount <= 0) {
+      throw new BadRequestException(
+        'La cantidad de activos ficticios debe ser mayor a 0',
+      );
+    }
+
+    if (safeCount > 5000) {
+      throw new BadRequestException(
+        'Por seguridad, la carga rápida permite como máximo 5000 activos por vez',
+      );
+    }
+
+    const [categorias, ubicaciones] = await Promise.all([
+      this.prisma.categoriaActivo.findMany({
+        select: { id: true, nombre: true },
+        take: 10,
+        orderBy: { creadoEn: 'asc' },
+      }),
+      this.prisma.ubicacion.findMany({
+        select: { id: true, nombre: true },
+        take: 10,
+        orderBy: { creadoEn: 'asc' },
+      }),
+    ]);
+
+    if (categorias.length === 0) {
+      throw new BadRequestException(
+        'No hay categorías registradas para generar activos demo',
+      );
+    }
+
+    if (ubicaciones.length === 0) {
+      throw new BadRequestException(
+        'No hay ubicaciones registradas para generar activos demo',
+      );
+    }
+
+    const batchId = Date.now().toString(36).toUpperCase();
+    const estadosDemo = [
+      EstadoActivo.OPERATIVO,
+      EstadoActivo.OPERATIVO,
+      EstadoActivo.OPERATIVO,
+      EstadoActivo.MANTENIMIENTO,
+      EstadoActivo.FUERA_DE_SERVICIO,
+      EstadoActivo.DADO_DE_BAJA,
+    ];
+    const data: Prisma.ActivoCreateManyInput[] = Array.from(
+      { length: safeCount },
+      (_, index) => {
+        const categoria = categorias[index % categorias.length];
+        const ubicacion = ubicaciones[index % ubicaciones.length];
+        const sequence = String(index + 1).padStart(4, '0');
+        const estado = estadosDemo[index % estadosDemo.length];
+
+        return {
+          codigo: `DEMO-${batchId}-${sequence}`,
+          nombre: `Activo Demo ${sequence}`,
+          descripcion: `Registro ficticio generado automáticamente para pruebas de filtrado (${categoria.nombre}, ${estado}).`,
+          marca: 'DemoTech',
+          modelo: `Serie ${((index % 12) + 1).toString().padStart(2, '0')}`,
+          categoriaId: categoria.id,
+          ubicacionId: ubicacion.id,
+          estado,
+          creadoPorId: userId,
+          actualizadoPorId: userId,
+        };
+      },
+    );
+
+    const result = await this.prisma.activo.createMany({
+      data,
+    });
+
+    return result.count;
+  }
+
+  async deleteFakeBulk(): Promise<number> {
+    const fakeAssets = await this.prisma.activo.findMany({
+      where: {
+        codigo: {
+          startsWith: 'DEMO-',
+        },
+      },
+      select: { id: true },
+    });
+
+    if (fakeAssets.length === 0) {
+      return 0;
+    }
+
+    const fakeAssetIds = fakeAssets.map((asset) => asset.id);
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.asignacionActivo.deleteMany({
+        where: {
+          activoId: { in: fakeAssetIds },
+        },
+      });
+
+      await tx.movimientoActivo.deleteMany({
+        where: {
+          activoId: { in: fakeAssetIds },
+        },
+      });
+
+      await tx.incidenteActivo.deleteMany({
+        where: {
+          activoId: { in: fakeAssetIds },
+        },
+      });
+
+      await tx.documentoActivo.deleteMany({
+        where: {
+          activoId: { in: fakeAssetIds },
+        },
+      });
+
+      await tx.activo.deleteMany({
+        where: {
+          id: { in: fakeAssetIds },
+        },
+      });
+    });
+
+    return fakeAssetIds.length;
   }
 
   /**

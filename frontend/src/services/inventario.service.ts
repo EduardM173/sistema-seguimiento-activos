@@ -1,12 +1,21 @@
 import { http as apiClient } from './http.client';
-import type { Material, CreateMaterialDTO, UpdateMaterialDTO, FiltrosInventario, MovimientoInventario, CreateMovimientoInventarioDTO, ReporteInventario } from '../types/inventario.types';
+import type {
+  Material,
+  CreateMaterialDTO,
+  UpdateMaterialDTO,
+  FiltrosInventario,
+  InventarioListResponse,
+  MovimientoInventario,
+  CreateMovimientoInventarioDTO,
+  ReporteInventario,
+} from '../types/inventario.types';
 import type { PaginatedResponse, ApiResponse } from '../types';
 
 export const inventarioService = {
   // Obtener lista de materiales
   obtenerTodos: async (filtros?: FiltrosInventario) => {
     try {
-      const response = await apiClient.get<PaginatedResponse<Material>>('/inventory-items', {
+      const response = await apiClient.get<InventarioListResponse>('/inventory-items', {
         params: filtros,
       });
       return response;
@@ -75,6 +84,29 @@ export const inventarioService = {
       >(`/inventory-items/${id}/aumentar-stock`, {
         cantidad,
       });
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  crearDemo: async (count = 100) => {
+    try {
+      const response = await apiClient.post<ApiResponse<{ inserted: number }>>(
+        `/inventory-items/dev/fake-bulk?count=${encodeURIComponent(String(count))}`,
+        {},
+      );
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  eliminarDemo: async () => {
+    try {
+      const response = await apiClient.delete<ApiResponse<{ deleted: number }>>(
+        '/inventory-items/dev/fake-bulk',
+      );
       return response;
     } catch (error) {
       throw error;

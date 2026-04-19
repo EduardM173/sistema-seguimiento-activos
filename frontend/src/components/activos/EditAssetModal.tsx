@@ -56,6 +56,21 @@ export default function EditAssetModal({ assetId, open, onClose, onUpdated }: Pr
   const [responsableActualId, setResponsableActualId] = useState('');
   const [costoAdquisicion, setCostoAdquisicion] = useState('');
   const [fechaAdquisicion, setFechaAdquisicion] = useState('');
+  const [initialFormValues, setInitialFormValues] = useState({
+    codigo: '',
+    nombre: '',
+    descripcion: '',
+    marca: '',
+    modelo: '',
+    numeroSerie: '',
+    categoriaId: '',
+    estado: 'OPERATIVO' as EstadoActivo,
+    ubicacionId: '',
+    areaActualId: '',
+    responsableActualId: '',
+    costoAdquisicion: '',
+    fechaAdquisicion: '',
+  });
 
   // Location search
   const [ubicacionSearch, setUbicacionSearch] = useState('');
@@ -105,6 +120,21 @@ export default function EditAssetModal({ assetId, open, onClose, onUpdated }: Pr
         setUbicacionId(a.ubicacion?.id ?? '');
         setAreaActualId(a.area?.id ?? '');
         setResponsableActualId(a.responsableActual?.id ?? a.responsable?.id ?? '');
+        setInitialFormValues({
+          codigo: a.codigo,
+          nombre: a.nombre,
+          descripcion: a.descripcion ?? '',
+          marca: a.marca ?? '',
+          modelo: a.modelo ?? '',
+          numeroSerie: a.numeroSerie ?? '',
+          categoriaId: a.categoria?.id ?? '',
+          estado: a.estado as EstadoActivo,
+          ubicacionId: a.ubicacion?.id ?? '',
+          areaActualId: a.area?.id ?? '',
+          responsableActualId: a.responsableActual?.id ?? a.responsable?.id ?? '',
+          costoAdquisicion: a.costoAdquisicion != null ? String(a.costoAdquisicion) : '',
+          fechaAdquisicion: a.fechaAdquisicion ? a.fechaAdquisicion.substring(0, 10) : '',
+        });
         setCostoAdquisicion(a.costoAdquisicion != null ? String(a.costoAdquisicion) : '');
         setFechaAdquisicion(a.fechaAdquisicion ? a.fechaAdquisicion.substring(0, 10) : '');
 
@@ -222,27 +252,97 @@ export default function EditAssetModal({ assetId, open, onClose, onUpdated }: Pr
     try {
       setSubmitting(true);
       const payload: UpdateAssetPayload = {};
+      const normalizedCodigo = codigo.trim();
+      const normalizedNombre = nombre.trim();
+      const normalizedDescripcion = descripcion.trim();
+      const normalizedMarca = marca.trim();
+      const normalizedModelo = modelo.trim();
+      const normalizedNumeroSerie = numeroSerie.trim();
+      const normalizedCategoriaId = categoriaId.trim();
+      const normalizedUbicacionId = ubicacionId.trim();
+      const normalizedAreaActualId = areaActualId.trim();
+      const normalizedResponsableActualId = responsableActualId.trim();
 
-      payload.codigo = codigo.trim();
-      payload.nombre = nombre.trim();
-      if (descripcion.trim()) payload.descripcion = descripcion.trim();
-      if (marca.trim()) payload.marca = marca.trim();
-      if (modelo.trim()) payload.modelo = modelo.trim();
-      if (numeroSerie.trim()) payload.numeroSerie = numeroSerie.trim();
-      if (categoriaId) payload.categoriaId = categoriaId;
-      if (estado) payload.estado = estado;
-      if (ubicacionId) payload.ubicacionId = ubicacionId;
-      if (areaActualId) payload.areaActualId = areaActualId;
-      if (responsableActualId) payload.responsableActualId = responsableActualId;
-      if (costoAdquisicion) payload.costoAdquisicion = Number(costoAdquisicion);
-      if (fechaAdquisicion) payload.fechaAdquisicion = fechaAdquisicion;
+      if (normalizedCodigo !== initialFormValues.codigo) {
+        payload.codigo = normalizedCodigo;
+      }
+
+      if (normalizedNombre !== initialFormValues.nombre) {
+        payload.nombre = normalizedNombre;
+      }
+
+      if (normalizedDescripcion !== initialFormValues.descripcion) {
+        payload.descripcion = normalizedDescripcion;
+      }
+
+      if (normalizedMarca !== initialFormValues.marca) {
+        payload.marca = normalizedMarca;
+      }
+
+      if (normalizedModelo !== initialFormValues.modelo) {
+        payload.modelo = normalizedModelo;
+      }
+
+      if (normalizedNumeroSerie !== initialFormValues.numeroSerie) {
+        payload.numeroSerie = normalizedNumeroSerie;
+      }
+
+      if (normalizedCategoriaId !== initialFormValues.categoriaId) {
+        payload.categoriaId = normalizedCategoriaId;
+      }
+
+      if (estado !== initialFormValues.estado) {
+        payload.estado = estado;
+      }
+
+      if (normalizedUbicacionId !== initialFormValues.ubicacionId) {
+        payload.ubicacionId = normalizedUbicacionId;
+      }
+
+      if (normalizedAreaActualId !== initialFormValues.areaActualId) {
+        payload.areaActualId = normalizedAreaActualId;
+      }
+
+      if (
+        normalizedResponsableActualId !== initialFormValues.responsableActualId
+      ) {
+        payload.responsableActualId = normalizedResponsableActualId;
+      }
+
+      if (
+        costoAdquisicion &&
+        costoAdquisicion !== initialFormValues.costoAdquisicion
+      ) {
+        payload.costoAdquisicion = Number(costoAdquisicion);
+      }
+
+      if (
+        fechaAdquisicion &&
+        fechaAdquisicion !== initialFormValues.fechaAdquisicion
+      ) {
+        payload.fechaAdquisicion = fechaAdquisicion;
+      }
+
+      if (Object.keys(payload).length === 0) {
+        notify.warning(
+          'Sin cambios',
+          'No se detectaron cambios en área, ubicación o asignado a.',
+        );
+        return;
+      }
 
       const res = await updateAsset(assetId, payload);
       notify.success(res.message ?? 'Activo actualizado exitosamente');
       onUpdated();
       onClose();
     } catch (err) {
-      const message = err instanceof HttpError ? err.message : 'No se pudo actualizar el activo';
+      const message =
+        err instanceof HttpError &&
+        err.message.includes('Solo se puede transferir un activo cuando está en estado Operativo')
+          ? 'Este activo debe estar en estado Operativo para poder transferirse.'
+          : err instanceof HttpError
+            ? err.message
+            : 'No se pudo actualizar el activo';
       notify.error('Error al actualizar', message);
     } finally {
       setSubmitting(false);
@@ -353,6 +453,19 @@ export default function EditAssetModal({ assetId, open, onClose, onUpdated }: Pr
               </div>
             </div>
 
+            <div
+              style={{
+                padding: '12px 14px',
+                border: '1px solid #e5e7eb',
+                borderRadius: '10px',
+                background: '#f8fafc',
+                color: '#475569',
+                fontSize: '0.88rem',
+              }}
+            >
+              Actualice ubicación, área o asignado a para registrar una transferencia del activo.
+            </div>
+
             {/* Ubicación searchable + Área */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
               <div className="formField" ref={ubicacionWrapRef} style={{ position: 'relative' }}>
@@ -421,9 +534,9 @@ export default function EditAssetModal({ assetId, open, onClose, onUpdated }: Pr
               </div>
             </div>
 
-            {/* Responsable */}
+            {/* Asignado a */}
             <div className="formField">
-              <label htmlFor="edit-responsable">Responsable</label>
+              <label htmlFor="edit-responsable">Asignado a</label>
               <select id="edit-responsable" value={responsableActualId} onChange={(e) => setResponsableActualId(e.target.value)} disabled={submitting}>
                 <option value="">Seleccionar</option>
                 {usuarios.map((u) => (
