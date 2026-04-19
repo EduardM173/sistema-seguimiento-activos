@@ -56,10 +56,20 @@ export default function EditAssetModal({ assetId, open, onClose, onUpdated }: Pr
   const [responsableActualId, setResponsableActualId] = useState('');
   const [costoAdquisicion, setCostoAdquisicion] = useState('');
   const [fechaAdquisicion, setFechaAdquisicion] = useState('');
-  const [initialTransferValues, setInitialTransferValues] = useState({
+  const [initialFormValues, setInitialFormValues] = useState({
+    codigo: '',
+    nombre: '',
+    descripcion: '',
+    marca: '',
+    modelo: '',
+    numeroSerie: '',
+    categoriaId: '',
+    estado: 'OPERATIVO' as EstadoActivo,
     ubicacionId: '',
     areaActualId: '',
     responsableActualId: '',
+    costoAdquisicion: '',
+    fechaAdquisicion: '',
   });
 
   // Location search
@@ -110,10 +120,20 @@ export default function EditAssetModal({ assetId, open, onClose, onUpdated }: Pr
         setUbicacionId(a.ubicacion?.id ?? '');
         setAreaActualId(a.area?.id ?? '');
         setResponsableActualId(a.responsableActual?.id ?? a.responsable?.id ?? '');
-        setInitialTransferValues({
+        setInitialFormValues({
+          codigo: a.codigo,
+          nombre: a.nombre,
+          descripcion: a.descripcion ?? '',
+          marca: a.marca ?? '',
+          modelo: a.modelo ?? '',
+          numeroSerie: a.numeroSerie ?? '',
+          categoriaId: a.categoria?.id ?? '',
+          estado: a.estado as EstadoActivo,
           ubicacionId: a.ubicacion?.id ?? '',
           areaActualId: a.area?.id ?? '',
           responsableActualId: a.responsableActual?.id ?? a.responsable?.id ?? '',
+          costoAdquisicion: a.costoAdquisicion != null ? String(a.costoAdquisicion) : '',
+          fechaAdquisicion: a.fechaAdquisicion ? a.fechaAdquisicion.substring(0, 10) : '',
         });
         setCostoAdquisicion(a.costoAdquisicion != null ? String(a.costoAdquisicion) : '');
         setFechaAdquisicion(a.fechaAdquisicion ? a.fechaAdquisicion.substring(0, 10) : '');
@@ -232,22 +252,75 @@ export default function EditAssetModal({ assetId, open, onClose, onUpdated }: Pr
     try {
       setSubmitting(true);
       const payload: UpdateAssetPayload = {};
+      const normalizedCodigo = codigo.trim();
+      const normalizedNombre = nombre.trim();
+      const normalizedDescripcion = descripcion.trim();
+      const normalizedMarca = marca.trim();
+      const normalizedModelo = modelo.trim();
+      const normalizedNumeroSerie = numeroSerie.trim();
+      const normalizedCategoriaId = categoriaId.trim();
       const normalizedUbicacionId = ubicacionId.trim();
       const normalizedAreaActualId = areaActualId.trim();
       const normalizedResponsableActualId = responsableActualId.trim();
 
-      if (normalizedUbicacionId !== initialTransferValues.ubicacionId) {
+      if (normalizedCodigo !== initialFormValues.codigo) {
+        payload.codigo = normalizedCodigo;
+      }
+
+      if (normalizedNombre !== initialFormValues.nombre) {
+        payload.nombre = normalizedNombre;
+      }
+
+      if (normalizedDescripcion !== initialFormValues.descripcion) {
+        payload.descripcion = normalizedDescripcion;
+      }
+
+      if (normalizedMarca !== initialFormValues.marca) {
+        payload.marca = normalizedMarca;
+      }
+
+      if (normalizedModelo !== initialFormValues.modelo) {
+        payload.modelo = normalizedModelo;
+      }
+
+      if (normalizedNumeroSerie !== initialFormValues.numeroSerie) {
+        payload.numeroSerie = normalizedNumeroSerie;
+      }
+
+      if (normalizedCategoriaId !== initialFormValues.categoriaId) {
+        payload.categoriaId = normalizedCategoriaId;
+      }
+
+      if (estado !== initialFormValues.estado) {
+        payload.estado = estado;
+      }
+
+      if (normalizedUbicacionId !== initialFormValues.ubicacionId) {
         payload.ubicacionId = normalizedUbicacionId;
       }
 
-      if (normalizedAreaActualId !== initialTransferValues.areaActualId) {
+      if (normalizedAreaActualId !== initialFormValues.areaActualId) {
         payload.areaActualId = normalizedAreaActualId;
       }
 
       if (
-        normalizedResponsableActualId !== initialTransferValues.responsableActualId
+        normalizedResponsableActualId !== initialFormValues.responsableActualId
       ) {
         payload.responsableActualId = normalizedResponsableActualId;
+      }
+
+      if (
+        costoAdquisicion &&
+        costoAdquisicion !== initialFormValues.costoAdquisicion
+      ) {
+        payload.costoAdquisicion = Number(costoAdquisicion);
+      }
+
+      if (
+        fechaAdquisicion &&
+        fechaAdquisicion !== initialFormValues.fechaAdquisicion
+      ) {
+        payload.fechaAdquisicion = fechaAdquisicion;
       }
 
       if (Object.keys(payload).length === 0) {
@@ -378,6 +451,19 @@ export default function EditAssetModal({ assetId, open, onClose, onUpdated }: Pr
                   ))}
                 </select>
               </div>
+            </div>
+
+            <div
+              style={{
+                padding: '12px 14px',
+                border: '1px solid #e5e7eb',
+                borderRadius: '10px',
+                background: '#f8fafc',
+                color: '#475569',
+                fontSize: '0.88rem',
+              }}
+            >
+              Actualice ubicación, área o asignado a para registrar una transferencia del activo.
             </div>
 
             {/* Ubicación searchable + Área */}
