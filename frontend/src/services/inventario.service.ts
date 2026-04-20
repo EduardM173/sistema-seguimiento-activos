@@ -211,8 +211,12 @@ export const inventarioService = {
   },
 
   obtenerHistorialMaterial: async (materialId: string) => {
-  const response = await apiClient.get(`/inventory-items/${materialId}/history`) as any;
-  return response.data;
+  try {
+    const response = await apiClient.get<any>(`/inventory-items/${materialId}/history`);
+    return response?.data ?? response ?? [];
+  } catch (error) {
+    throw error;
+    }
   },
 };
 

@@ -11,25 +11,6 @@ export const InventarioPage: React.FC = () => {
   const notify = useNotification();
   const [materiales, setMateriales] = useState<Material[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showHistorialModal, setShowHistorialModal] = useState(false);
-  const [materialSeleccionado, setMaterialSeleccionado] = useState<Material | null>(null);
-  const [historial, setHistorial] = useState<any[]>([]);
-  const [loadingHistorial, setLoadingHistorial] = useState(false);
-  const abrirHistorial = async (material: Material) => {
-    setMaterialSeleccionado(material);
-    setShowHistorialModal(true);
-    setLoadingHistorial(true);
-
-    try {
-      const data = await inventarioService.obtenerHistorialMaterial(material.id);
-      setHistorial(data);
-    } catch (error) {
-      console.error('Error cargando historial', error);
-      setMessage({ type: 'error', text: 'Error al cargar historial' });
-    } finally {
-      setLoadingHistorial(false);
-    }
-  };  
   const [message, setMessage] = useState<{ type: 'error'; text: string } | null>(null);
   const [isMaterialModalOpen, setIsMaterialModalOpen] = useState(false);
   const [materialToEdit, setMaterialToEdit] = useState<Material | null>(null);
@@ -38,16 +19,22 @@ export const InventarioPage: React.FC = () => {
   const [categorias, setCategorias] = useState<CategoriaMaterial[]>([]);
   const [searchText, setSearchText] = useState('');
   const [categoriaId, setCategoriaId] = useState('');
-  const [sortBy, setSortBy] = useState<'codigo' | 'nombre' | 'categoria' | 'stockActual' | 'stockMinimo' | 'unidad' | 'creadoEn'>('creadoEn');
+  const [sortBy, setSortBy] = useState<
+    'codigo' | 'nombre' | 'categoria' | 'stockActual' | 'stockMinimo' | 'unidad' | 'creadoEn'
+  >('creadoEn');
   const [sortType, setSortType] = useState<'ASC' | 'DESC'>('DESC');
   const [currentPage, setCurrentPage] = useState(1);
   const [meta, setMeta] = useState({ total: 0, pageSize: 10, totalPages: 1 });
   const [creatingDemo, setCreatingDemo] = useState(false);
   const [deletingDemo, setDeletingDemo] = useState(false);
 
+  const [showHistorialModal, setShowHistorialModal] = useState(false);
+  const [materialSeleccionado, setMaterialSeleccionado] = useState<Material | null>(null);
+  const [historial, setHistorial] = useState<any[]>([]);
+  const [loadingHistorial, setLoadingHistorial] = useState(false);
 
   useEffect(() => {
-    cargarMateriales();
+    void cargarMateriales();
   }, [refreshKey, searchText, categoriaId, sortBy, sortType, currentPage]);
 
   useEffect(() => {
@@ -91,7 +78,7 @@ export const InventarioPage: React.FC = () => {
 
   const handleMaterialCreated = async () => {
     setCurrentPage(1);
-    setRefreshKey(prev => prev + 1);
+    setRefreshKey((prev) => prev + 1);
   };
 
   const handleEdit = (material: Material) => {
@@ -104,7 +91,7 @@ export const InventarioPage: React.FC = () => {
       try {
         await inventarioService.eliminar(material.id);
         notify.success('Material eliminado correctamente');
-        setRefreshKey(prev => prev + 1);
+        setRefreshKey((prev) => prev + 1);
       } catch (err) {
         notify.error('Error', 'No se pudo eliminar el material');
       }
@@ -124,6 +111,23 @@ export const InventarioPage: React.FC = () => {
     setCurrentPage(1);
   };
 
+  const abrirHistorial = async (material: Material) => {
+    setMaterialSeleccionado(material);
+    setShowHistorialModal(true);
+    setLoadingHistorial(true);
+
+    try {
+      const data = await inventarioService.obtenerHistorialMaterial(material.id);
+      setHistorial(data);
+    } catch (error) {
+      console.error('Error cargando historial', error);
+      setMessage({ type: 'error', text: 'Error al cargar historial' });
+      setHistorial([]);
+    } finally {
+      setLoadingHistorial(false);
+    }
+  };
+
   const handleCreateDemo = async () => {
     const confirmed = window.confirm(
       'Esto insertará 100 materiales ficticios para pruebas de filtros, paginación y ordenación. ¿Desea continuar?',
@@ -134,9 +138,12 @@ export const InventarioPage: React.FC = () => {
     try {
       setCreatingDemo(true);
       const response = await inventarioService.crearDemo(100);
-      notify.success('Carga demo completada', `Se insertaron ${response.data?.inserted ?? 100} materiales ficticios.`);
+      notify.success(
+        'Carga demo completada',
+        `Se insertaron ${response.data?.inserted ?? 100} materiales ficticios.`,
+      );
       setCurrentPage(1);
-      setRefreshKey(prev => prev + 1);
+      setRefreshKey((prev) => prev + 1);
     } catch (err: any) {
       notify.error('Error', err?.message || 'No se pudieron generar materiales demo');
     } finally {
@@ -154,9 +161,12 @@ export const InventarioPage: React.FC = () => {
     try {
       setDeletingDemo(true);
       const response = await inventarioService.eliminarDemo();
-      notify.success('Limpieza demo completada', `Se eliminaron ${response.data?.deleted ?? 0} materiales ficticios.`);
+      notify.success(
+        'Limpieza demo completada',
+        `Se eliminaron ${response.data?.deleted ?? 0} materiales ficticios.`,
+      );
       setCurrentPage(1);
-      setRefreshKey(prev => prev + 1);
+      setRefreshKey((prev) => prev + 1);
     } catch (err: any) {
       notify.error('Error', err?.message || 'No se pudieron eliminar materiales demo');
     } finally {
@@ -172,7 +182,7 @@ export const InventarioPage: React.FC = () => {
 
   const getStockStatus = (
     stockActual: number,
-    stockMinimo: number
+    stockMinimo: number,
   ): { label: string; variant: 'danger' | 'warning' | 'success' } => {
     if (stockActual <= 0) return { label: 'SIN STOCK', variant: 'danger' };
     if (stockActual < stockMinimo) return { label: 'CRÍTICO', variant: 'danger' };
@@ -225,6 +235,7 @@ export const InventarioPage: React.FC = () => {
           >
             ✏️ Editar
           </button>
+
           <button
             className="btn-action btn-delete"
             onClick={() => handleDelete(row)}
@@ -240,17 +251,18 @@ export const InventarioPage: React.FC = () => {
           >
             🗑️ Eliminar
           </button>
+
           <button
             className="btn-action btn-history"
-            onClick={() => abrirHistorial(row)}
+            onClick={() => void abrirHistorial(row)}
             title="Historial"
             style={{
               cursor: 'pointer',
               padding: '4px 8px',
-              background: '#dbeafe', // azul claro
+              background: '#dbeafe',
               borderRadius: '4px',
               border: 'none',
-              color: '#2563eb', // azul fuerte
+              color: '#2563eb',
             }}
           >
             📊 Historial
@@ -258,8 +270,6 @@ export const InventarioPage: React.FC = () => {
         </div>
       ),
     },
-
-    
   ];
 
   return (
@@ -287,6 +297,7 @@ export const InventarioPage: React.FC = () => {
           >
             {creatingDemo ? 'cargando...' : 'demo x100'}
           </button>
+
           <button
             type="button"
             onClick={() => void handleDeleteDemo()}
@@ -306,6 +317,7 @@ export const InventarioPage: React.FC = () => {
           >
             {deletingDemo ? 'limpiando...' : 'limpiar demo'}
           </button>
+
           <Button
             label="+ Nuevo Material"
             variant="primary"
@@ -344,8 +356,23 @@ export const InventarioPage: React.FC = () => {
           marginBottom: '14px',
         }}
       >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: '220px', flex: 2 }}>
-          <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase' }}>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '6px',
+            minWidth: '220px',
+            flex: 2,
+          }}
+        >
+          <label
+            style={{
+              fontSize: '0.72rem',
+              fontWeight: 700,
+              color: '#6b7280',
+              textTransform: 'uppercase',
+            }}
+          >
             Buscar
           </label>
           <input
@@ -360,8 +387,23 @@ export const InventarioPage: React.FC = () => {
           />
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: '180px', flex: 1 }}>
-          <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase' }}>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '6px',
+            minWidth: '180px',
+            flex: 1,
+          }}
+        >
+          <label
+            style={{
+              fontSize: '0.72rem',
+              fontWeight: 700,
+              color: '#6b7280',
+              textTransform: 'uppercase',
+            }}
+          >
             Categoría
           </label>
           <select
@@ -381,8 +423,23 @@ export const InventarioPage: React.FC = () => {
           </select>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: '160px', flex: 1 }}>
-          <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase' }}>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '6px',
+            minWidth: '160px',
+            flex: 1,
+          }}
+        >
+          <label
+            style={{
+              fontSize: '0.72rem',
+              fontWeight: 700,
+              color: '#6b7280',
+              textTransform: 'uppercase',
+            }}
+          >
             Ordenar por
           </label>
           <select
@@ -403,8 +460,22 @@ export const InventarioPage: React.FC = () => {
           </select>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: '130px' }}>
-          <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase' }}>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '6px',
+            minWidth: '130px',
+          }}
+        >
+          <label
+            style={{
+              fontSize: '0.72rem',
+              fontWeight: 700,
+              color: '#6b7280',
+              textTransform: 'uppercase',
+            }}
+          >
             Dirección
           </label>
           <select
@@ -459,15 +530,25 @@ export const InventarioPage: React.FC = () => {
         }}
       >
         <span>
-          Mostrando <strong>{materiales.length === 0 ? 0 : (currentPage - 1) * meta.pageSize + 1}-{Math.min(currentPage * meta.pageSize, meta.total)}</strong> de <strong>{meta.total}</strong> materiales
+          Mostrando{' '}
+          <strong>
+            {materiales.length === 0 ? 0 : (currentPage - 1) * meta.pageSize + 1}-
+            {Math.min(currentPage * meta.pageSize, meta.total)}
+          </strong>{' '}
+          de <strong>{meta.total}</strong> materiales
         </span>
 
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           <button
             type="button"
-            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+            onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
             disabled={currentPage === 1}
-            style={{ padding: '8px 14px', borderRadius: '8px', border: '1px solid #d1d5db', background: '#fff' }}
+            style={{
+              padding: '8px 14px',
+              borderRadius: '8px',
+              border: '1px solid #d1d5db',
+              background: '#fff',
+            }}
           >
             Anterior
           </button>
@@ -476,9 +557,14 @@ export const InventarioPage: React.FC = () => {
           </span>
           <button
             type="button"
-            onClick={() => setCurrentPage(prev => Math.min(meta.totalPages, prev + 1))}
+            onClick={() => setCurrentPage((prev) => Math.min(meta.totalPages, prev + 1))}
             disabled={currentPage >= meta.totalPages}
-            style={{ padding: '8px 14px', borderRadius: '8px', border: '1px solid #d1d5db', background: '#fff' }}
+            style={{
+              padding: '8px 14px',
+              borderRadius: '8px',
+              border: '1px solid #d1d5db',
+              background: '#fff',
+            }}
           >
             Siguiente
           </button>
@@ -498,6 +584,169 @@ export const InventarioPage: React.FC = () => {
         materiales={materiales}
         onSuccess={handleMaterialCreated}
       />
+
+      {showHistorialModal && materialSeleccionado && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+          }}
+          onClick={() => setShowHistorialModal(false)}
+        >
+          <div
+            style={{
+              background: '#fff',
+              borderRadius: '12px',
+              padding: '24px',
+              width: '90%',
+              maxWidth: '900px',
+              maxHeight: '80vh',
+              overflowY: 'auto',
+              boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '20px',
+              }}
+            >
+              <div>
+                <h2 style={{ margin: 0, color: '#111827' }}>Historial de movimientos</h2>
+                <p style={{ margin: '4px 0 0 0', color: '#6b7280' }}>
+                  {materialSeleccionado?.nombre} ({materialSeleccionado?.codigo})
+                </p>
+              </div>
+
+              <button
+                onClick={() => setShowHistorialModal(false)}
+                style={{
+                  cursor: 'pointer',
+                  padding: '6px 10px',
+                  background: '#f3f4f6',
+                  borderRadius: '6px',
+                  border: 'none',
+                  color: '#374151',
+                }}
+              >
+                ✖ Cerrar
+              </button>
+            </div>
+
+            {loadingHistorial ? (
+              <p>Cargando historial...</p>
+            ) : historial.length === 0 ? (
+              <p>No hay movimientos registrados para este material.</p>
+            ) : (
+              <table
+                style={{
+                  width: '100%',
+                  borderCollapse: 'collapse',
+                  marginTop: '12px',
+                }}
+              >
+                <thead>
+                  <tr style={{ background: '#f9fafb' }}>
+                    <th
+                      style={{
+                        textAlign: 'left',
+                        padding: '10px',
+                        borderBottom: '1px solid #e5e7eb',
+                        color: '#374151',
+                        fontWeight: 700,
+                      }}
+                    >
+                      Tipo
+                    </th>
+                    <th
+                      style={{
+                        textAlign: 'left',
+                        padding: '10px',
+                        borderBottom: '1px solid #e5e7eb',
+                        color: '#374151',
+                        fontWeight: 700,
+                      }}
+                    >
+                      Cantidad
+                    </th>
+                    <th
+                      style={{
+                        textAlign: 'left',
+                        padding: '10px',
+                        borderBottom: '1px solid #e5e7eb',
+                        color: '#374151',
+                        fontWeight: 700,
+                      }}
+                    >
+                      Fecha
+                    </th>
+                    <th
+                      style={{
+                        textAlign: 'left',
+                        padding: '10px',
+                        borderBottom: '1px solid #e5e7eb',
+                        color: '#374151',
+                        fontWeight: 700,
+                      }}
+                    >
+                      Usuario
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {historial.map((item) => (
+                    <tr key={item.id}>
+                      <td
+                        style={{
+                          padding: '10px',
+                          borderBottom: '1px solid #f3f4f6', color: '#111827'
+                        }}
+                      >
+                        {item.tipo}
+                      </td>
+                      <td
+                        style={{
+                          padding: '10px',
+                          borderBottom: '1px solid #f3f4f6', color: '#111827'
+                        }}
+                      >
+                        {item.cantidad}
+                      </td>
+                      <td
+                        style={{
+                          padding: '10px',
+                          borderBottom: '1px solid #f3f4f6', color: '#111827'
+                        }}
+                      >
+                        {new Date(item.fecha).toLocaleString()}
+                      </td>
+                      <td
+                        style={{
+                          padding: '10px',
+                          borderBottom: '1px solid #f3f4f6', color: '#111827'
+                        }}
+                      >
+                        {item.usuario?.nombreCompleto || 'Sin usuario'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
