@@ -83,6 +83,7 @@ export interface CreateMovimientoInventarioDTO {
 export interface FiltrosInventario {
   q?: string;
   categoriaId?: string;
+  estado?: 'CRITICO' | 'NORMAL';
   page?: number;
   pageSize?: number;
   sortBy?:

@@ -19,6 +19,7 @@ export const InventarioPage: React.FC = () => {
   const [categorias, setCategorias] = useState<CategoriaMaterial[]>([]);
   const [searchText, setSearchText] = useState('');
   const [categoriaId, setCategoriaId] = useState('');
+  const [estado, setEstado] = useState<'CRITICO' | 'NORMAL' | ''>('');
   const [sortBy, setSortBy] = useState<'codigo' | 'nombre' | 'categoria' | 'stockActual' | 'stockMinimo' | 'unidad' | 'creadoEn'>('creadoEn');
   const [sortType, setSortType] = useState<'ASC' | 'DESC'>('DESC');
   const [currentPage, setCurrentPage] = useState(1);
@@ -28,7 +29,7 @@ export const InventarioPage: React.FC = () => {
 
   useEffect(() => {
     cargarMateriales();
-  }, [refreshKey, searchText, categoriaId, sortBy, sortType, currentPage]);
+  }, [refreshKey, searchText, categoriaId, estado, sortBy, sortType, currentPage]);
 
   useEffect(() => {
     const cargarCategorias = async () => {
@@ -50,6 +51,7 @@ export const InventarioPage: React.FC = () => {
       const resultado = await inventarioService.obtenerTodos({
         q: searchText || undefined,
         categoriaId: categoriaId || undefined,
+        estado: estado || undefined,
         page: currentPage,
         pageSize: 10,
         sortBy,
@@ -99,6 +101,7 @@ export const InventarioPage: React.FC = () => {
   const clearFilters = () => {
     setSearchText('');
     setCategoriaId('');
+    setEstado('');
     setSortBy('creadoEn');
     setSortType('DESC');
     setCurrentPage(1);
@@ -363,6 +366,24 @@ export const InventarioPage: React.FC = () => {
             <option value="stockActual">Stock actual</option>
             <option value="stockMinimo">Stock mínimo</option>
             <option value="unidad">Unidad</option>
+          </select>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: '160px', flex: 1 }}>
+          <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase' }}>
+            Estado
+          </label>
+          <select
+            value={estado}
+            onChange={(e) => {
+              setEstado(e.target.value as 'CRITICO' | 'NORMAL' | '');
+              setCurrentPage(1);
+            }}
+            style={{ padding: '10px 12px', borderRadius: '8px', border: '1px solid #d1d5db' }}
+          >
+            <option value="">Todos</option>
+            <option value="CRITICO">Crítico</option>
+            <option value="NORMAL">Normal</option>
           </select>
         </div>
 
