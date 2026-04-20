@@ -11,6 +11,25 @@ export const InventarioPage: React.FC = () => {
   const notify = useNotification();
   const [materiales, setMateriales] = useState<Material[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showHistorialModal, setShowHistorialModal] = useState(false);
+  const [materialSeleccionado, setMaterialSeleccionado] = useState<Material | null>(null);
+  const [historial, setHistorial] = useState<any[]>([]);
+  const [loadingHistorial, setLoadingHistorial] = useState(false);
+  const abrirHistorial = async (material: Material) => {
+    setMaterialSeleccionado(material);
+    setShowHistorialModal(true);
+    setLoadingHistorial(true);
+
+    try {
+      const data = await inventarioService.obtenerHistorialMaterial(material.id);
+      setHistorial(data);
+    } catch (error) {
+      console.error('Error cargando historial', error);
+      setMessage({ type: 'error', text: 'Error al cargar historial' });
+    } finally {
+      setLoadingHistorial(false);
+    }
+  };  
   const [message, setMessage] = useState<{ type: 'error'; text: string } | null>(null);
   const [isMaterialModalOpen, setIsMaterialModalOpen] = useState(false);
   const [materialToEdit, setMaterialToEdit] = useState<Material | null>(null);
@@ -25,6 +44,7 @@ export const InventarioPage: React.FC = () => {
   const [meta, setMeta] = useState({ total: 0, pageSize: 10, totalPages: 1 });
   const [creatingDemo, setCreatingDemo] = useState(false);
   const [deletingDemo, setDeletingDemo] = useState(false);
+
 
   useEffect(() => {
     cargarMateriales();
@@ -220,9 +240,26 @@ export const InventarioPage: React.FC = () => {
           >
             🗑️ Eliminar
           </button>
+          <button
+            className="btn-action btn-history"
+            onClick={() => abrirHistorial(row)}
+            title="Historial"
+            style={{
+              cursor: 'pointer',
+              padding: '4px 8px',
+              background: '#dbeafe', // azul claro
+              borderRadius: '4px',
+              border: 'none',
+              color: '#2563eb', // azul fuerte
+            }}
+          >
+            📊 Historial
+          </button>
         </div>
       ),
     },
+
+    
   ];
 
   return (

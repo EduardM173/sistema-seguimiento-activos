@@ -46,13 +46,15 @@ export class MaterialService {
       }
 
       // Convertir strings a números si es necesario
-      const stockActual = typeof createMaterialDTO.stockActual === 'string' 
-        ? parseFloat(createMaterialDTO.stockActual) 
-        : createMaterialDTO.stockActual;
-      
-      const stockMinimo = typeof createMaterialDTO.stockMinimo === 'string' 
-        ? parseFloat(createMaterialDTO.stockMinimo) 
-        : createMaterialDTO.stockMinimo;
+      const stockActual =
+        typeof createMaterialDTO.stockActual === 'string'
+          ? parseFloat(createMaterialDTO.stockActual)
+          : createMaterialDTO.stockActual;
+
+      const stockMinimo =
+        typeof createMaterialDTO.stockMinimo === 'string'
+          ? parseFloat(createMaterialDTO.stockMinimo)
+          : createMaterialDTO.stockMinimo;
 
       // Validar que stock mínimo no sea negativo
       if (stockMinimo < 0) {
@@ -85,11 +87,14 @@ export class MaterialService {
 
       return this.mapMaterialToDTO(materialConCategoria);
     } catch (error) {
-      if (error instanceof BadRequestException) {
+      if (error instanceof NotFoundException) {
         throw error;
       }
+
+      const message = error instanceof Error ? error.message : String(error);
+
       throw new InternalServerErrorException(
-        'Error al crear el material: ' + error.message,
+        'Error al obtener historial del material: ' + message,
       );
     }
   }
@@ -165,8 +170,10 @@ export class MaterialService {
         totalPages: Math.max(1, Math.ceil(total / pageSize)),
       };
     } catch (error) {
+       const message = error instanceof Error ? error.message : String(error);
+
       throw new InternalServerErrorException(
-        'Error al obtener materiales: ' + error.message,
+        'Error al obtener materiales: ' + message,
       );
     }
   }
@@ -189,11 +196,13 @@ export class MaterialService {
 
       return this.mapMaterialToDTO(material);
     } catch (error) {
+       const message = error instanceof Error ? error.message : String(error);
+
       if (error instanceof NotFoundException) {
         throw error;
       }
       throw new InternalServerErrorException(
-        'Error al obtener el material: ' + error.message,
+        'Error al obtener el material: ' + message,
       );
     }
   }
@@ -234,19 +243,23 @@ export class MaterialService {
       if (updateMaterialDTO.categoriaId !== undefined) data.categoriaId = updateMaterialDTO.categoriaId;
 
       if (updateMaterialDTO.stockActual !== undefined) {
-        const actualValue = typeof updateMaterialDTO.stockActual === 'string' 
-          ? parseFloat(updateMaterialDTO.stockActual) 
-          : updateMaterialDTO.stockActual;
+        const actualValue =
+          typeof updateMaterialDTO.stockActual === 'string'
+            ? parseFloat(updateMaterialDTO.stockActual)
+            : updateMaterialDTO.stockActual;
         data.stockActual = actualValue;
       }
 
       if (updateMaterialDTO.stockMinimo !== undefined) {
-        const stockMinimo = typeof updateMaterialDTO.stockMinimo === 'string' 
-          ? parseFloat(updateMaterialDTO.stockMinimo) 
-          : updateMaterialDTO.stockMinimo;
+        const stockMinimo =
+          typeof updateMaterialDTO.stockMinimo === 'string'
+            ? parseFloat(updateMaterialDTO.stockMinimo)
+            : updateMaterialDTO.stockMinimo;
+
         if (stockMinimo < 0) {
           throw new BadRequestException('El stock mínimo no puede ser negativo');
         }
+
         data.stockMinimo = stockMinimo;
       }
 
@@ -258,11 +271,17 @@ export class MaterialService {
 
       return this.mapMaterialToDTO(updatedMaterial);
     } catch (error) {
-      if (error instanceof BadRequestException || error instanceof NotFoundException) {
+       const message = error instanceof Error ? error.message : String(error);
+
+      if (
+        error instanceof BadRequestException ||
+        error instanceof NotFoundException
+      ) {
         throw error;
       }
+
       throw new InternalServerErrorException(
-        'Error al actualizar el material: ' + error.message,
+        'Error al actualizar el material: ' + message,
       );
     }
   }
@@ -288,11 +307,14 @@ export class MaterialService {
 
       return { message: 'Material eliminado correctamente' };
     } catch (error) {
+       const message = error instanceof Error ? error.message : String(error);
+
       if (error instanceof NotFoundException) {
         throw error;
       }
+
       throw new InternalServerErrorException(
-        'Error al eliminar el material: ' + error.message,
+        'Error al eliminar el material: ' + message,
       );
     }
   }
@@ -300,7 +322,9 @@ export class MaterialService {
   /**
    * Obtener todas las categorías de materiales
    */
-  async obtenerCategorias(): Promise<{ id: string; nombre: string; descripcion?: string | null }[]> {
+  async obtenerCategorias(): Promise<
+    { id: string; nombre: string; descripcion?: string | null }[]
+  > {
     try {
       const categorias = await this.prisma.categoriaMaterial.findMany({
         select: {
@@ -312,10 +336,13 @@ export class MaterialService {
           nombre: 'asc',
         },
       });
+
       return categorias;
     } catch (error) {
+       const message = error instanceof Error ? error.message : String(error);
+
       throw new InternalServerErrorException(
-        'Error al obtener las categorías: ' + error.message,
+        'Error al obtener las categorías: ' + message,
       );
     }
   }
@@ -339,6 +366,9 @@ export class MaterialService {
     };
   }
 
+  /**
+   * Registrar ingreso de stock
+   */
   async aumentarStock(id: string, cantidad: number, userId: string) {
     if (!Number.isFinite(cantidad) || cantidad <= 0) {
       throw new BadRequestException(
@@ -399,6 +429,93 @@ export class MaterialService {
     };
   }
 
+  /**
+   * Obtener historial de movimientos de un material
+   */
+ /**
+ * Obtener historial de movimientos de un material
+ */
+async getHistory(
+  id: string,
+  filters?: { startDate?: string; endDate?: string },
+) {
+  try {
+    const material = await this.prisma.material.findUnique({
+      where: { id },
+    });
+
+    if (!material) {
+      throw new NotFoundException(`Material con ID ${id} no encontrado`);
+    }
+
+    const where: Prisma.MovimientoInventarioWhereInput = {
+      materialId: id,
+    };
+
+    const creadoEnFilter: Prisma.DateTimeFilter = {};
+
+    if (filters?.startDate) {
+      creadoEnFilter.gte = new Date(filters.startDate);
+    }
+
+    if (filters?.endDate) {
+      const end = new Date(filters.endDate);
+      end.setHours(23, 59, 59, 999);
+      creadoEnFilter.lte = end;
+    }
+
+    if (filters?.startDate || filters?.endDate) {
+      where.creadoEn = creadoEnFilter;
+    }
+
+    const movimientosRaw = await this.prisma.movimientoInventario.findMany({
+      where,
+      orderBy: {
+        creadoEn: 'desc',
+      },
+      include: {
+        realizadoPor: {
+          select: {
+            id: true,
+            nombres: true,
+            apellidos: true,
+          },
+        },
+      },
+    });
+
+    const movimientos = movimientosRaw as any[];
+
+    return movimientos.map((movimiento) => ({
+      id: movimiento.id,
+      tipo: movimiento.tipo,
+      cantidad: Number(movimiento.cantidad),
+      fecha: movimiento.creadoEn,
+      usuario: movimiento.realizadoPor
+        ? {
+            id: movimiento.realizadoPor.id,
+            nombreCompleto: `${movimiento.realizadoPor.nombres} ${movimiento.realizadoPor.apellidos}`,
+          }
+        : null,
+      material: {
+        id: material.id,
+        codigo: material.codigo,
+        nombre: material.nombre,
+      },
+    }));
+  } catch (error) {
+    if (error instanceof NotFoundException) {
+      throw error;
+    }
+
+    const message = error instanceof Error ? error.message : String(error);
+
+    throw new InternalServerErrorException(
+      'Error al obtener historial del material: ' + message,
+    );
+  }
+}
+
   async createFakeBulk(count: number) {
     const safeCount = Number.isFinite(count) ? Math.trunc(count) : 0;
 
@@ -433,7 +550,9 @@ export class MaterialService {
       return {
         codigo: `MAT-DEMO-${batchId}-${sequence}`,
         nombre: `Material Demo ${sequence}`,
-        descripcion: `Registro ficticio para pruebas de inventario${categoria ? ` (${categoria.nombre})` : ''}.`,
+        descripcion: `Registro ficticio para pruebas de inventario${
+          categoria ? ` (${categoria.nombre})` : ''
+        }.`,
         unidad: unidades[index % unidades.length],
         stockActual,
         stockMinimo,
