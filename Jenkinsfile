@@ -1,5 +1,8 @@
 pipeline {
     agent any 
+    options{
+        quietPeriod(3)
+    }
     
     triggers {
         githubPush()
