@@ -1,105 +1,218 @@
-import React, { useState, useEffect } from 'react';
-import { DataTable, SearchBar, Button, Badge, Alert } from '../../components/common';
-import type { TransferenciaActivo } from '../../types/transferencias.types';
-import { transferenciasService } from '../../services/transferencias.service';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Alert, Button } from '../../components/common';
+import { getAreas } from '../../services/catalogs.service';
+import { searchAssets } from '../../services/assets.service';
+import { HttpError } from '../../services/http.client';
+import type { Area, AssetListItem } from '../../types/assets.types';
 import '../../styles/modules.css';
 
 export const TransferenciasPage: React.FC = () => {
-  const [transferencias, setTransferencias] = useState<TransferenciaActivo[]>([]);
+  const [assets, setAssets] = useState<AssetListItem[]>([]);
+  const [areas, setAreas] = useState<Area[]>([]);
   const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [message, setMessage] = useState<{ type: 'info' | 'error'; text: string } | null>(null);
+  const [activoId, setActivoId] = useState('');
+  const [areaDestinoId, setAreaDestinoId] = useState('');
+  const [submitAttempted, setSubmitAttempted] = useState(false);
 
   useEffect(() => {
-    cargarTransferencias();
+    async function loadData() {
+      try {
+        setLoading(true);
+        setMessage(null);
+
+        const [assetsResponse, availableAreas] = await Promise.all([
+          searchAssets({
+            estado: 'OPERATIVO',
+            page: 1,
+            pageSize: 100,
+            sortBy: 'nombre',
+            sortType: 'ASC',
+          }),
+          getAreas(),
+        ]);
+
+        setAssets(assetsResponse.data ?? []);
+        setAreas(availableAreas);
+      } catch (error) {
+        const errorMessage =
+          error instanceof HttpError
+            ? error.message
+            : 'No se pudo cargar la información inicial de transferencias';
+
+        setMessage({
+          type: 'error',
+          text: errorMessage,
+        });
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    void loadData();
   }, []);
 
-  const cargarTransferencias = async () => {
-    try {
-      setLoading(true);
-      const resultado = await transferenciasService.obtenerTransferencias();
-      setTransferencias(resultado.data);
-    } catch (err) {
-      setMessage({ type: 'error', text: 'Error al cargar transferencias' });
-      console.error(err);
-    } finally {
-      setLoading(false);
+  const selectedAsset = useMemo(
+    () => assets.find((asset) => asset.id === activoId) ?? null,
+    [activoId, assets],
+  );
+
+  const originAreaId = selectedAsset?.area?.id ?? '';
+  const originAreaName = selectedAsset?.area?.nombre ?? 'Sin área asignada';
+
+  const destinationOptions = useMemo(
+    () => areas.filter((area) => area.id !== originAreaId),
+    [areas, originAreaId],
+  );
+
+  const activoError =
+    submitAttempted && !activoId ? 'Debe seleccionar un activo.' : '';
+  const areaDestinoError =
+    submitAttempted && !areaDestinoId ? 'Debe seleccionar un área de destino.' : '';
+  const sameAreaError =
+    activoId && areaDestinoId && originAreaId && areaDestinoId === originAreaId
+      ? 'El área de destino no puede ser la misma que el área de origen.'
+      : '';
+
+  const hasErrors = Boolean(activoError || areaDestinoError || sameAreaError);
+
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSubmitAttempted(true);
+
+    if (hasErrors) {
+      setMessage({
+        type: 'error',
+        text: sameAreaError || activoError || areaDestinoError,
+      });
+      return;
     }
-  };
 
-  const getEstadoColor = (estado: string): any => {
-    const colores: Record<string, any> = {
-      'pendiente': 'warning',
-      'aprobada': 'success',
-      'rechazada': 'danger',
-      'completada': 'info',
-    };
-    return colores[estado] || 'secondary';
-  };
-
-  const columns = [
-    {
-      header: 'Activo',
-      accessor: (row: TransferenciaActivo) => row.activo?.nombre || 'N/A',
-    },
-    { header: 'Área Origen', accessor: 'areaOrigenNombre' },
-    { header: 'Área Destino', accessor: 'areaDestinoNombre' },
-    {
-      header: 'Estado',
-      accessor: 'estado',
-      render: (value: string) => (
-        <Badge label={value.toUpperCase()} variant={getEstadoColor(value)} size="sm" />
-      ),
-    },
-    { header: 'Motivo', accessor: 'motivo' },
-    {
-      header: 'Fecha',
-      accessor: 'fechaSolicitud',
-      render: (value: Date) => new Date(value).toLocaleDateString('es-ES'),
-    },
-    {
-      header: 'Acciones',
-      accessor: 'id',
-      render: (id: string) => (
-        <div className="actions-group">
-          <button className="btn-action btn-view" title="Ver detalles">👁️</button>
-          <button className="btn-action btn-edit" title="Editar">✏️</button>
-        </div>
-      ),
-    },
-  ];
+    setMessage({
+      type: 'info',
+      text: 'La pantalla quedó lista. El registro definitivo de la transferencia se conectará en el siguiente paso.',
+    });
+  }
 
   return (
     <div className="module-page">
       <div className="module-header">
-        <h1>Asignaciones y Transferencias</h1>
-        <Button label="+ Nueva Transferencia" variant="primary" />
+        <div>
+          <h1>Transferencias</h1>
+          <p style={{ marginTop: '6px', color: '#6b7280' }}>
+            Inicie la transferencia de un activo entre áreas usando solo activos elegibles.
+          </p>
+        </div>
       </div>
 
-      {message && (
+      {message ? (
         <Alert
-          type={message.type}
+          type={message.type === 'error' ? 'error' : 'info'}
           message={message.text}
           dismissible
           onClose={() => setMessage(null)}
         />
-      )}
+      ) : null}
 
-      <div className="module-list">
-        <div className="list-header">
-          <SearchBar
-            onSearch={() => {}}
-            placeholder="Buscar transferencias..."
-            showFilters
-          />
-        </div>
-        <DataTable<TransferenciaActivo>
-          columns={columns}
-          data={transferencias}
-          loading={loading}
-          emptyMessage="No hay transferencias registradas"
-          striped
-          hover
-        />
+      <div className="module-list" style={{ maxWidth: '860px' }}>
+        <form onSubmit={handleSubmit} className="form-container">
+          <div className="form-grid">
+            <div className="form-group form-full">
+              <label htmlFor="transfer-activo">
+                Activo <span style={{ color: '#dc2626' }}>*</span>
+              </label>
+              <select
+                id="transfer-activo"
+                value={activoId}
+                onChange={(event) => {
+                  setActivoId(event.target.value);
+                  setAreaDestinoId('');
+                  setMessage(null);
+                  setSubmitAttempted(false);
+                }}
+                disabled={loading}
+                style={{ borderColor: activoError ? '#dc2626' : undefined }}
+              >
+                <option value="">
+                  {loading ? 'Cargando activos operativos...' : 'Seleccione un activo'}
+                </option>
+                {assets.map((asset) => (
+                  <option key={asset.id} value={asset.id}>
+                    {asset.codigo} - {asset.nombre}
+                  </option>
+                ))}
+              </select>
+              {activoError ? (
+                <span style={{ color: '#dc2626', fontSize: '12px' }}>{activoError}</span>
+              ) : null}
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="transfer-area-origen">Área de origen</label>
+              <input
+                id="transfer-area-origen"
+                type="text"
+                value={originAreaName}
+                readOnly
+                style={{ background: '#f9fafb', color: '#374151' }}
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="transfer-area-destino">
+                Área de destino <span style={{ color: '#dc2626' }}>*</span>
+              </label>
+              <select
+                id="transfer-area-destino"
+                value={areaDestinoId}
+                onChange={(event) => {
+                  setAreaDestinoId(event.target.value);
+                  setMessage(null);
+                  setSubmitAttempted(false);
+                }}
+                disabled={loading || !activoId}
+                style={{ borderColor: areaDestinoError || sameAreaError ? '#dc2626' : undefined }}
+              >
+                <option value="">
+                  {!activoId ? 'Primero seleccione un activo' : 'Seleccione un área de destino'}
+                </option>
+                {destinationOptions.map((area) => (
+                  <option key={area.id} value={area.id}>
+                    {area.nombre}
+                  </option>
+                ))}
+              </select>
+              {sameAreaError ? (
+                <span style={{ color: '#dc2626', fontSize: '12px' }}>{sameAreaError}</span>
+              ) : areaDestinoError ? (
+                <span style={{ color: '#dc2626', fontSize: '12px' }}>{areaDestinoError}</span>
+              ) : null}
+            </div>
+          </div>
+
+          <div
+            style={{
+              marginTop: '16px',
+              padding: '12px 14px',
+              borderRadius: '10px',
+              background: '#f8fafc',
+              border: '1px solid #e5e7eb',
+              color: '#475569',
+              fontSize: '0.92rem',
+            }}
+          >
+            Esta pantalla deja listo el flujo visual inicial de transferencias. El guardado definitivo se conectará en el siguiente paso sobre esta misma base.
+          </div>
+
+          <div className="form-actions">
+            <Button
+              label="Preparar transferencia"
+              type="submit"
+              variant="primary"
+              disabled={loading || hasErrors}
+            />
+          </div>
+        </form>
       </div>
     </div>
   );

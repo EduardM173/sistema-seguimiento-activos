@@ -57,6 +57,7 @@ export default function App() {
                 <Route path="/activos" element={<AssetsPage />} />
                 <Route path="/activos/:id" element={<AssetDetailPage />} />
                 <Route path="/assets" element={<AssetsPage />} />
+                <Route path="/transferencias" element={<TransferenciasPage />} />
               </Route>
               <Route element={<ProtectedRoute requiredPermission="ASSET_CREATE" />}>
                 <Route path="/activos/nuevo" element={<CreateAssetPage />} />

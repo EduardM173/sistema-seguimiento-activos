@@ -23,7 +23,7 @@ export default function Navbar() {
     { label: 'Dashboard', icon: '▦', to: '/dashboard' },
     { label: 'Activos', icon: '≣', to: '/activos' },
     { label: 'Inventario', icon: '◫', to: '/inventario' },
-    { label: 'Transferencias', icon: '⇄' },
+    { label: 'Transferencias', icon: '⇄', to: '/transferencias' },
     { label: 'Reportes', icon: '▥' },
     { label: 'Usuarios', icon: '◌', to: '/users' },
     { label: 'Auditoría', icon: '🛡' },
