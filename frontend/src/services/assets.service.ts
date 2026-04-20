@@ -13,6 +13,7 @@ import type {
   Categoria,
   Ubicacion,
   PendienteRecepcion,
+  SolicitudEnviada,
 } from '../types/assets.types';
 
 export type { AssetListItem } from '../types/assets.types';
@@ -89,5 +90,33 @@ export async function deleteFakeAssets() {
 export async function getPendientesRecepcion(areaId: string) {
   return http.get<ApiResponse<PendienteRecepcion[]>>(
     `/assets/pendientes-recepcion?areaId=${encodeURIComponent(areaId)}`,
+  );
+}
+
+// HU41 – Confirmar recepción de una transferencia pendiente
+export async function confirmarRecepcion(asignacionId: string) {
+  return http.patch<ApiResponse<{ message: string }>>(
+    `/assets/asignaciones/${encodeURIComponent(asignacionId)}/confirmar`,
+  );
+}
+
+// HU41 – Rechazar recepción de una transferencia pendiente
+export async function rechazarRecepcion(asignacionId: string) {
+  return http.patch<ApiResponse<{ message: string }>>(
+    `/assets/asignaciones/${encodeURIComponent(asignacionId)}/rechazar`,
+  );
+}
+
+// HU41 – Solicitudes enviadas por área/usuario
+export async function getSolicitudesEnviadas(
+  registradoPorId: string,
+  areaOrigenId?: string,
+) {
+  const qs = new URLSearchParams();
+  qs.set('registradoPorId', registradoPorId);
+  if (areaOrigenId) qs.set('areaOrigenId', areaOrigenId);
+
+  return http.get<ApiResponse<SolicitudEnviada[]>>(
+    `/assets/solicitudes-enviadas?${qs.toString()}`,
   );
 }

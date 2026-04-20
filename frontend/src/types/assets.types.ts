@@ -169,6 +169,17 @@ export type PendienteRecepcion = {
   registradoPor: { id: string; nombreCompleto: string } | null;
 };
 
+export type SolicitudEnviada = {
+  id: string;
+  estado: string;
+  fechaEnvio: string;
+  observaciones: string | null;
+  activo: { id: string; codigo: string; nombre: string };
+  areaOrigen: { id: string; nombre: string } | null;
+  areaDestino: { id: string; nombre: string } | null;
+  registradoPor: { id: string; nombreCompleto: string } | null;
+};
+
 export type TransferAssetResponse = {
   message: string;
   transferencia: {

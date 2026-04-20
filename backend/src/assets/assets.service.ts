@@ -942,6 +942,8 @@ export class AssetsService {
    * de tipo TRANSFERENCIA donde el área asignada coincide con areaId.
    */
   async pendientesDeRecepcion(areaId: string) {
+    if (!areaId) return [];
+
     const asignaciones = await this.prisma.asignacionActivo.findMany({
       where: {
         areaAsignadaId: areaId,
@@ -957,33 +959,18 @@ export class AssetsService {
         asignadoEn: true,
         observaciones: true,
         activo: {
-          select: {
-            id: true,
-            codigo: true,
-            nombre: true,
-          },
+          select: { id: true, codigo: true, nombre: true },
         },
         areaAsignada: {
-          select: {
-            id: true,
-            nombre: true,
-          },
+          select: { id: true, nombre: true },
         },
         asignadoPor: {
-          select: {
-            id: true,
-            nombres: true,
-            apellidos: true,
-          },
+          select: { id: true, nombres: true, apellidos: true },
         },
         movimientos: {
-          where: {
-            tipo: TipoMovimientoActivo.TRANSFERENCIA,
-          },
+          where: { tipo: TipoMovimientoActivo.TRANSFERENCIA },
           select: {
-            areaOrigen: {
-              select: { id: true, nombre: true },
-            },
+            areaOrigenId: true,
             creadoEn: true,
           },
           take: 1,
@@ -993,13 +980,32 @@ export class AssetsService {
       orderBy: { asignadoEn: 'desc' },
     });
 
+    // Resolver nombres de áreas de origen (areaOrigenId es escalar, no relación)
+    const areaOrigenIds = [
+      ...new Set(
+        asignaciones
+          .map((a) => a.movimientos[0]?.areaOrigenId)
+          .filter((id): id is string => Boolean(id)),
+      ),
+    ];
+    const areasOrigen =
+      areaOrigenIds.length > 0
+        ? await this.prisma.area.findMany({
+            where: { id: { in: areaOrigenIds } },
+            select: { id: true, nombre: true },
+          })
+        : [];
+    const areaMap = Object.fromEntries(areasOrigen.map((a) => [a.id, a]));
+
     return asignaciones.map((a) => ({
       id: a.id,
       fechaEnvio: a.movimientos[0]?.creadoEn ?? a.asignadoEn,
       observaciones: a.observaciones,
       activo: a.activo,
       areaDestino: a.areaAsignada,
-      areaOrigen: a.movimientos[0]?.areaOrigen ?? null,
+      areaOrigen: a.movimientos[0]?.areaOrigenId
+        ? (areaMap[a.movimientos[0].areaOrigenId] ?? null)
+        : null,
       registradoPor: a.asignadoPor
         ? {
             id: a.asignadoPor.id,
@@ -1007,6 +1013,191 @@ export class AssetsService {
           }
         : null,
     }));
+  }
+
+  /**
+   * HU41 – Solicitudes de transferencia enviadas por el área del usuario.
+   * Lista las transferencias pendientes registradas por el usuario.
+   * Puede filtrar opcionalmente por área origen.
+   */
+  async solicitudesEnviadas(registradoPorId: string, areaOrigenId?: string) {
+    if (!registradoPorId) return [];
+
+    const where = {
+      estado: EstadoAsignacion.PENDIENTE,
+      asignadoPorId: registradoPorId,
+      movimientos: {
+        some: {
+          tipo: TipoMovimientoActivo.TRANSFERENCIA,
+          ...(areaOrigenId ? { areaOrigenId } : {}),
+        },
+      },
+    };
+
+    const asignaciones = await this.prisma.asignacionActivo.findMany({
+      where,
+      select: {
+        id: true,
+        asignadoEn: true,
+        observaciones: true,
+        activo: {
+          select: { id: true, codigo: true, nombre: true },
+        },
+        areaAsignada: {
+          select: { id: true, nombre: true },
+        },
+        asignadoPor: {
+          select: { id: true, nombres: true, apellidos: true },
+        },
+        movimientos: {
+          where: {
+            tipo: TipoMovimientoActivo.TRANSFERENCIA,
+            ...(areaOrigenId ? { areaOrigenId } : {}),
+          },
+          select: {
+            areaOrigenId: true,
+            creadoEn: true,
+          },
+          take: 1,
+          orderBy: { creadoEn: 'desc' },
+        },
+      },
+      orderBy: { asignadoEn: 'desc' },
+    });
+
+    const areaOrigenIds = [
+      ...new Set(
+        asignaciones
+          .map((a) => a.movimientos[0]?.areaOrigenId)
+          .filter((id): id is string => Boolean(id)),
+      ),
+    ];
+    const areasOrigen =
+      areaOrigenIds.length > 0
+        ? await this.prisma.area.findMany({
+            where: { id: { in: areaOrigenIds } },
+            select: { id: true, nombre: true },
+          })
+        : [];
+    const areaMap = Object.fromEntries(areasOrigen.map((a) => [a.id, a]));
+
+    return asignaciones.map((a) => ({
+      id: a.id,
+      estado: 'PENDIENTE',
+      fechaEnvio: a.movimientos[0]?.creadoEn ?? a.asignadoEn,
+      observaciones: a.observaciones,
+      activo: a.activo,
+      areaOrigen: a.movimientos[0]?.areaOrigenId
+        ? (areaMap[a.movimientos[0].areaOrigenId] ?? null)
+        : null,
+      areaDestino: a.areaAsignada,
+      registradoPor: a.asignadoPor
+        ? {
+            id: a.asignadoPor.id,
+            nombreCompleto: `${a.asignadoPor.nombres} ${a.asignadoPor.apellidos}`,
+          }
+        : null,
+    }));
+  }
+
+  /**
+   * HU41 – Confirmar recepción de una transferencia pendiente.
+   * Cambia el estado de la asignación a RECIBIDO y actualiza el área del activo.
+   */
+  async confirmarRecepcion(asignacionId: string, userId: string) {
+    const [asignacion, usuario] = await Promise.all([
+      this.prisma.asignacionActivo.findUnique({
+        where: { id: asignacionId },
+        select: {
+          id: true,
+          estado: true,
+          activoId: true,
+          areaAsignadaId: true,
+        },
+      }),
+      this.prisma.usuario.findUnique({
+        where: { id: userId },
+        select: { id: true, areaId: true },
+      }),
+    ]);
+
+    if (!usuario || !usuario.areaId) {
+      throw new ConflictException('El usuario no tiene un área asignada para confirmar recepciones');
+    }
+
+    if (asignacion?.areaAsignadaId !== usuario.areaId) {
+      throw new ConflictException('Solo el área destino puede confirmar esta recepción');
+    }
+
+    if (!asignacion) {
+      throw new NotFoundException(`No se encontró la asignación con ID: ${asignacionId}`);
+    }
+
+    if (asignacion.estado !== EstadoAsignacion.PENDIENTE) {
+      throw new ConflictException('Solo se puede confirmar una recepción en estado PENDIENTE');
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.asignacionActivo.update({
+        where: { id: asignacionId },
+        data: {
+          estado: EstadoAsignacion.RECIBIDO,
+          recibidoPorId: userId,
+          recibidoEn: new Date(),
+        },
+      });
+
+      await tx.activo.update({
+        where: { id: asignacion.activoId },
+        data: { areaActualId: asignacion.areaAsignadaId },
+      });
+    });
+
+    return { message: 'Recepción confirmada correctamente' };
+  }
+
+  /**
+   * HU41 – Rechazar recepción de una transferencia pendiente.
+   * Cambia el estado de la asignación a RECHAZADO.
+   */
+  async rechazarRecepcion(asignacionId: string, userId: string) {
+    const [asignacion, usuario] = await Promise.all([
+      this.prisma.asignacionActivo.findUnique({
+        where: { id: asignacionId },
+        select: { id: true, estado: true, areaAsignadaId: true },
+      }),
+      this.prisma.usuario.findUnique({
+        where: { id: userId },
+        select: { id: true, areaId: true },
+      }),
+    ]);
+
+    if (!usuario || !usuario.areaId) {
+      throw new ConflictException('El usuario no tiene un área asignada para rechazar recepciones');
+    }
+
+    if (asignacion?.areaAsignadaId !== usuario.areaId) {
+      throw new ConflictException('Solo el área destino puede rechazar esta recepción');
+    }
+
+    if (!asignacion) {
+      throw new NotFoundException(`No se encontró la asignación con ID: ${asignacionId}`);
+    }
+
+    if (asignacion.estado !== EstadoAsignacion.PENDIENTE) {
+      throw new ConflictException('Solo se puede rechazar una recepción en estado PENDIENTE');
+    }
+
+    await this.prisma.asignacionActivo.update({
+      where: { id: asignacionId },
+      data: {
+        estado: EstadoAsignacion.RECHAZADO,
+        recibidoPorId: userId,
+        recibidoEn: new Date(),
+      },
+    });
+
+    return { message: 'Recepción rechazada correctamente' };
   }
 
   /**
