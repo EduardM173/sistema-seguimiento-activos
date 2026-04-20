@@ -10,10 +10,23 @@
 }
 
 .transfer-workspace {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  align-items: stretch;
+}
+
+.transfer-workspace__top {
   display: grid;
-  grid-template-columns: minmax(0, 1.5fr) minmax(320px, 0.9fr) minmax(280px, 0.8fr);
+  grid-template-columns: minmax(0, 1.8fr) minmax(340px, 0.8fr);
   gap: 20px;
   align-items: start;
+}
+
+.transfer-workspace__side {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
 .transfer-pending-banner {
@@ -100,8 +113,7 @@
 }
 
 .transfer-panel--summary {
-  position: sticky;
-  top: 24px;
+  width: 100%;
 }
 
 .transfer-panel__header {
@@ -162,7 +174,7 @@
 
 .transfer-assets-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
 }
 
@@ -343,13 +355,62 @@
   width: 100%;
 }
 
+.transfer-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.transfer-pagination__info {
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.transfer-pagination__controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.transfer-page-btn {
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #0f172a;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.transfer-page-btn:hover:not(:disabled) {
+  border-color: #93c5fd;
+  background: #f8fbff;
+}
+
+.transfer-page-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.transfer-page-indicator {
+  color: #475569;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
 @media (max-width: 1200px) {
-  .transfer-workspace {
+  .transfer-workspace__top {
     grid-template-columns: 1fr;
   }
 
-  .transfer-panel--summary {
-    position: static;
+  .transfer-workspace__side {
+    gap: 16px;
   }
 
   .transfer-pending-banner__top {
@@ -360,6 +421,15 @@
 @media (max-width: 768px) {
   .transfer-assets-grid {
     grid-template-columns: 1fr;
+  }
+
+  .transfer-pagination {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .transfer-pagination__controls {
+    justify-content: space-between;
   }
 
   .transfer-panel {

@@ -10,6 +10,7 @@ import '../../styles/transferencias.css';
 
 export const TransferenciasPage: React.FC = () => {
   const notify = useNotification();
+  const PAGE_SIZE = 6;
   const [assets, setAssets] = useState<AssetListItem[]>([]);
   const [areas, setAreas] = useState<Area[]>([]);
   const [loading, setLoading] = useState(true);
@@ -18,6 +19,7 @@ export const TransferenciasPage: React.FC = () => {
   const [areaDestinoId, setAreaDestinoId] = useState('');
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const [searchText, setSearchText] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
   const [lastTransferResult, setLastTransferResult] = useState<{
     activoCodigo: string;
     activoNombre: string;
@@ -82,6 +84,17 @@ export const TransferenciasPage: React.FC = () => {
       `${asset.codigo} ${asset.nombre}`.toLowerCase().includes(normalized),
     );
   }, [assets, searchText]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchText]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredAssets.length / PAGE_SIZE));
+
+  const paginatedAssets = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return filteredAssets.slice(start, start + PAGE_SIZE);
+  }, [filteredAssets, currentPage, PAGE_SIZE]);
 
   const destinationOptions = useMemo(
     () => areas.filter((area) => area.id !== originAreaId),
@@ -215,7 +228,8 @@ export const TransferenciasPage: React.FC = () => {
       ) : null}
 
       <form onSubmit={handleSubmit} className="transfer-workspace">
-        <section className="transfer-panel transfer-panel--assets">
+        <div className="transfer-workspace__top">
+          <section className="transfer-panel transfer-panel--assets">
           <div className="transfer-panel__header">
             <div>
               <h2>1. Seleccionar activo</h2>
@@ -251,7 +265,7 @@ export const TransferenciasPage: React.FC = () => {
                 No se encontraron activos con ese criterio de búsqueda.
               </div>
             ) : (
-              filteredAssets.map((asset) => {
+              paginatedAssets.map((asset) => {
                 const isSelected = asset.id === activoId;
                 const hasOriginArea = Boolean(asset.area?.id);
                 const hasResponsible = Boolean(asset.responsable?.id);
@@ -293,119 +307,156 @@ export const TransferenciasPage: React.FC = () => {
               })
             )}
           </div>
-        </section>
 
-        <section className="transfer-panel transfer-panel--movement">
-          <div className="transfer-panel__header">
-            <div>
-              <h2>2. Datos del movimiento</h2>
-              <p>Revise el origen y defina el área de destino.</p>
-            </div>
-          </div>
-
-          <div className="transfer-details-grid">
-            <div className="transfer-detail-card">
-              <span className="transfer-detail-card__label">Activo elegido</span>
-              <strong className="transfer-detail-card__value">
-                {selectedAsset ? `${selectedAsset.codigo} - ${selectedAsset.nombre}` : 'Seleccione un activo'}
-              </strong>
-            </div>
-
-            <div className="transfer-detail-card">
-              <span className="transfer-detail-card__label">Área de origen</span>
-              <strong className="transfer-detail-card__value">{originAreaName}</strong>
-            </div>
-          </div>
-
-          <div className="form-group transfer-field-group">
-            <label htmlFor="transfer-area-destino">
-              Área de destino <span className="transfer-required">*</span>
-            </label>
-            <select
-              id="transfer-area-destino"
-              value={areaDestinoId}
-              onChange={(event) => {
-                setAreaDestinoId(event.target.value);
-                setSubmitAttempted(false);
-              }}
-              disabled={loading || submitting || !activoId}
-              className={areaDestinoError || sameAreaError ? 'transfer-input--error' : ''}
-            >
-              <option value="">
-                {!activoId ? 'Primero seleccione un activo' : 'Seleccione un área de destino'}
-              </option>
-              {destinationOptions.map((area) => (
-                <option key={area.id} value={area.id}>
-                  {area.nombre}
-                </option>
-              ))}
-            </select>
-            {sameAreaError ? (
-              <span className="transfer-field-error">{sameAreaError}</span>
-            ) : areaDestinoError ? (
-              <span className="transfer-field-error">{areaDestinoError}</span>
-            ) : null}
-          </div>
-
-          <div className="transfer-note">
-            La transferencia registrará el movimiento del activo y dejará una recepción pendiente para el área destino.
-          </div>
-        </section>
-
-        <aside className="transfer-panel transfer-panel--summary">
-          <div className="transfer-panel__header">
-            <div>
-              <h2>3. Resumen</h2>
-              <p>Confirme la operación antes de registrarla.</p>
-            </div>
-          </div>
-
-          <div className="transfer-summary">
-            <div className="transfer-summary__item">
-              <span className="transfer-summary__label">Activo</span>
-              <strong className="transfer-summary__value">
-                {selectedAsset ? selectedAsset.nombre : 'Pendiente de selección'}
-              </strong>
-              <span className="transfer-summary__meta">
-                {selectedAsset ? selectedAsset.codigo : 'Seleccione una tarjeta de activo'}
+          {!loading && filteredAssets.length > 0 ? (
+            <div className="transfer-pagination">
+              <span className="transfer-pagination__info">
+                Mostrando{' '}
+                <strong>
+                  {(currentPage - 1) * PAGE_SIZE + 1}-
+                  {Math.min(currentPage * PAGE_SIZE, filteredAssets.length)}
+                </strong>{' '}
+                de <strong>{filteredAssets.length}</strong> activos
               </span>
-            </div>
-
-            <div className="transfer-summary__item">
-              <span className="transfer-summary__label">Área de origen</span>
-              <strong className="transfer-summary__value">{originAreaName}</strong>
-            </div>
-
-            <div className="transfer-summary__item">
-              <span className="transfer-summary__label">Área de destino</span>
-              <strong className="transfer-summary__value">
-                {destinationArea?.nombre ?? 'Pendiente de selección'}
-              </strong>
-            </div>
-
-            {lastTransferResult ? (
-              <div className="transfer-summary__item transfer-summary__item--highlight">
-                <span className="transfer-summary__label">Último registro</span>
-                <strong className="transfer-summary__value">
-                  Recepción {lastTransferResult.estadoRecepcion}
-                </strong>
-                <span className="transfer-summary__meta">
-                  {lastTransferResult.areaDestino.nombre} debe confirmar la recepción del activo transferido.
+              <div className="transfer-pagination__controls">
+                <button
+                  type="button"
+                  className="transfer-page-btn"
+                  onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                  disabled={currentPage === 1}
+                >
+                  &lt; Anterior
+                </button>
+                <span className="transfer-page-indicator">
+                  Página {currentPage} de {totalPages}
                 </span>
+                <button
+                  type="button"
+                  className="transfer-page-btn"
+                  onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  Siguiente &gt;
+                </button>
               </div>
-            ) : null}
-          </div>
+            </div>
+          ) : null}
+          </section>
 
-          <div className="transfer-summary__footer">
-            <Button
-              label={submitting ? 'Registrando...' : 'Registrar transferencia'}
-              type="submit"
-              variant="primary"
-              disabled={loading || submitting || hasErrors}
-              className="transfer-submit-btn"
-            />
+          <div className="transfer-workspace__side">
+            <section className="transfer-panel transfer-panel--movement">
+              <div className="transfer-panel__header">
+                <div>
+                  <h2>2. Datos del movimiento</h2>
+                  <p>Revise el origen y defina el área de destino.</p>
+                </div>
+              </div>
+
+              <div className="transfer-details-grid">
+                <div className="transfer-detail-card">
+                  <span className="transfer-detail-card__label">Activo elegido</span>
+                  <strong className="transfer-detail-card__value">
+                    {selectedAsset ? `${selectedAsset.codigo} - ${selectedAsset.nombre}` : 'Seleccione un activo'}
+                  </strong>
+                </div>
+
+                <div className="transfer-detail-card">
+                  <span className="transfer-detail-card__label">Área de origen</span>
+                  <strong className="transfer-detail-card__value">{originAreaName}</strong>
+                </div>
+              </div>
+
+              <div className="form-group transfer-field-group">
+                <label htmlFor="transfer-area-destino">
+                  Área de destino <span className="transfer-required">*</span>
+                </label>
+                <select
+                  id="transfer-area-destino"
+                  value={areaDestinoId}
+                  onChange={(event) => {
+                    setAreaDestinoId(event.target.value);
+                    setSubmitAttempted(false);
+                  }}
+                  disabled={loading || submitting || !activoId}
+                  className={areaDestinoError || sameAreaError ? 'transfer-input--error' : ''}
+                >
+                  <option value="">
+                    {!activoId ? 'Primero seleccione un activo' : 'Seleccione un área de destino'}
+                  </option>
+                  {destinationOptions.map((area) => (
+                    <option key={area.id} value={area.id}>
+                      {area.nombre}
+                    </option>
+                  ))}
+                </select>
+                {sameAreaError ? (
+                  <span className="transfer-field-error">{sameAreaError}</span>
+                ) : areaDestinoError ? (
+                  <span className="transfer-field-error">{areaDestinoError}</span>
+                ) : null}
+              </div>
+
+              <div className="transfer-note">
+                La transferencia registrará el movimiento del activo y dejará una recepción pendiente para el área destino.
+              </div>
+            </section>
+
+            <section className="transfer-panel transfer-panel--summary">
+              <div className="transfer-panel__header">
+                <div>
+                  <h2>3. Resumen</h2>
+                  <p>Confirme la operación antes de registrarla.</p>
+                </div>
+              </div>
+
+              <div className="transfer-summary">
+                <div className="transfer-summary__item">
+                  <span className="transfer-summary__label">Activo</span>
+                  <strong className="transfer-summary__value">
+                    {selectedAsset ? selectedAsset.nombre : 'Pendiente de selección'}
+                  </strong>
+                  <span className="transfer-summary__meta">
+                    {selectedAsset ? selectedAsset.codigo : 'Seleccione una tarjeta de activo'}
+                  </span>
+                </div>
+
+                <div className="transfer-summary__item">
+                  <span className="transfer-summary__label">Área de origen</span>
+                  <strong className="transfer-summary__value">{originAreaName}</strong>
+                </div>
+
+                <div className="transfer-summary__item">
+                  <span className="transfer-summary__label">Área de destino</span>
+                  <strong className="transfer-summary__value">
+                    {destinationArea?.nombre ?? 'Pendiente de selección'}
+                  </strong>
+                </div>
+
+                {lastTransferResult ? (
+                  <div className="transfer-summary__item transfer-summary__item--highlight">
+                    <span className="transfer-summary__label">Último registro</span>
+                    <strong className="transfer-summary__value">
+                      Recepción {lastTransferResult.estadoRecepcion}
+                    </strong>
+                    <span className="transfer-summary__meta">
+                      {lastTransferResult.areaDestino.nombre} debe confirmar la recepción del activo transferido.
+                    </span>
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="transfer-summary__footer">
+                <Button
+                  label={submitting ? 'Registrando...' : 'Registrar transferencia'}
+                  type="submit"
+                  variant="primary"
+                  disabled={loading || submitting || hasErrors}
+                  className="transfer-submit-btn"
+                />
+              </div>
+            </section>
           </div>
-        </aside>
+        </div>
       </form>
     </div>
   );
