@@ -64,7 +64,7 @@ export const inventarioService = {
     }
   },
 
-  // Aumntar stock
+  // Aumentar stock
   aumentarStock: async (id: string, cantidad: number) => {
     try {
       const response = await apiClient.patch<
@@ -89,6 +89,20 @@ export const inventarioService = {
       throw error;
     }
   },
+
+  // ========== NUEVO MÉTODO PARA HU19 ==========
+  // Obtener materiales del área del usuario autenticado (Responsable de Área)
+  obtenerMaterialesPorArea: async (filtros?: { q?: string }) => {
+    try {
+      const response = await apiClient.get<InventarioListResponse>('/inventory-items/area', {
+        params: filtros,
+      });
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+  // ==========================================
 
   crearDemo: async (count = 100) => {
     try {
