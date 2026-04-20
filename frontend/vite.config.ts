@@ -28,7 +28,7 @@ export default defineConfig((mode) => {
     server: {
       host: '0.0.0.0',
 
-      port: 80,
+      port: 8084,
 
       allowedHosts: [VITE_HOST],
 

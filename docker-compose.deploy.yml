@@ -6,7 +6,6 @@ services:
 
     container_name: jenkins
     restart: unless-stopped
-    user: "1000" 
     group_add:
       - "${DOCKER_HOST_GID}"
     ports:
@@ -39,7 +38,7 @@ services:
     build:
       dockerfile: dockerfile
       context: ./backend
-
+    user: ${UID:-1000}:${GID:-1000}
     env_file:
       - ./.env
 
@@ -59,11 +58,12 @@ services:
       dockerfile: dockerfile2
       context: ./frontend
 
+    user: ${UID:-1000}:${GID:-1000}
     env_file:
       - ./.env
 
     ports:
-      - 80:80
+      - 80:8084
 
     depends_on:
       backend:

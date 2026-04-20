@@ -4,9 +4,9 @@ services:
       context: ./jenkins
       dockerfile: dockerfile
 
-    container_name: jenkins
+    container_name: jenkins_local
     restart: unless-stopped
-    user: "1000" 
+
     group_add:
       - "${DOCKER_HOST_GID}"
     ports:
@@ -17,7 +17,7 @@ services:
       - jenkins_home:/var/jenkins_home
   app-db:
     image: postgres:16-alpine
-    container_name: activos_db
+    container_name: activos_db_local
     env_file:
       - ./.env
 
@@ -33,12 +33,13 @@ services:
     volumes:
       - postgres_data:/var/lib/postgres/data
   backend:
-    container_name: activos_backend
+    container_name: activos_backend_local
     image: ${DOCKER_REGISTRY:-local_activos}/backend:${TAG:-latest}
     build:
       dockerfile: dockerfile
       context: ./backend
 
+    user: ${UID:-1000}:${GID:-1000}
     env_file:
       - ./.env
 
@@ -54,17 +55,18 @@ services:
     command: "npm run start:dev"
 
   frontend:
-    container_name: activos_frontend
+    container_name: activos_frontend_local
     image: ${DOCKER_REGISTRY:-local_activos}/frontend:${TAG:-latest}
     build:
       dockerfile: dockerfile2
       context: ./frontend
 
+    user: ${UID:-1000}:${GID:-1000}
     env_file:
       - ./.env
 
     ports:
-      - 80:80
+      - 80:8084
 
     volumes:
       - ./frontend:/app/
