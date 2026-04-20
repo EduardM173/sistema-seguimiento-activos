@@ -158,6 +158,17 @@ export type TransferAssetPayload = {
   observaciones?: string;
 };
 
+// HU41 – Registro de transferencia pendiente de recepción
+export type PendienteRecepcion = {
+  id: string;
+  fechaEnvio: string;
+  observaciones: string | null;
+  activo: { id: string; codigo: string; nombre: string };
+  areaDestino: { id: string; nombre: string } | null;
+  areaOrigen: { id: string; nombre: string } | null;
+  registradoPor: { id: string; nombreCompleto: string } | null;
+};
+
 export type TransferAssetResponse = {
   message: string;
   transferencia: {

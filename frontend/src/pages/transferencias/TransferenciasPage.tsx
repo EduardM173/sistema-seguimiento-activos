@@ -1,15 +1,17 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Button } from '../../components/common';
 import { useNotification } from '../../context/NotificationContext';
-import { getAreas } from '../../services/catalogs.service';
-import { searchAssets, transferAsset } from '../../services/assets.service';
+import { useAuth } from '../../context/AuthContext';
+import { getAreas, } from '../../services/catalogs.service';
+import { searchAssets, transferAsset, getPendientesRecepcion } from '../../services/assets.service';
 import { HttpError } from '../../services/http.client';
-import type { Area, AssetListItem } from '../../types/assets.types';
+import type { Area, AssetListItem, PendienteRecepcion } from '../../types/assets.types';
 import '../../styles/modules.css';
 import '../../styles/transferencias.css';
 
 export const TransferenciasPage: React.FC = () => {
   const notify = useNotification();
+  const { user } = useAuth();
   const [assets, setAssets] = useState<AssetListItem[]>([]);
   const [areas, setAreas] = useState<Area[]>([]);
   const [loading, setLoading] = useState(true);
@@ -18,6 +20,8 @@ export const TransferenciasPage: React.FC = () => {
   const [areaDestinoId, setAreaDestinoId] = useState('');
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const [searchText, setSearchText] = useState('');
+  const [pendientes, setPendientes] = useState<PendienteRecepcion[]>([]);
+  const [loadingPendientes, setLoadingPendientes] = useState(false);
   const [lastTransferResult, setLastTransferResult] = useState<{
     activoCodigo: string;
     activoNombre: string;
@@ -42,6 +46,18 @@ export const TransferenciasPage: React.FC = () => {
     setAreas(availableAreas);
   }
 
+  async function cargarPendientes(areaId: string) {
+    try {
+      setLoadingPendientes(true);
+      const res = await getPendientesRecepcion(areaId);
+      setPendientes(res.data ?? []);
+    } catch {
+      // No mostramos error si el área no tiene pendientes
+    } finally {
+      setLoadingPendientes(false);
+    }
+  }
+
   useEffect(() => {
     async function loadData() {
       try {
@@ -61,6 +77,12 @@ export const TransferenciasPage: React.FC = () => {
 
     void loadData();
   }, []);
+
+  useEffect(() => {
+    if (user?.area?.id) {
+      void cargarPendientes(user.area.id);
+    }
+  }, [user?.area?.id]);
 
   const selectedAsset = useMemo(
     () => assets.find((asset) => asset.id === activoId) ?? null,
@@ -176,6 +198,85 @@ export const TransferenciasPage: React.FC = () => {
           </p>
         </div>
       </div>
+
+      {/* HU41 – Panel de pendientes de recepción del área del usuario */}
+      {user?.area && (
+        <section style={{
+          background: '#fff8ed',
+          border: '1px solid #fde68a',
+          borderRadius: '14px',
+          padding: '18px 20px',
+          marginBottom: '18px',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+            <div>
+              <h2 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#92400e' }}>
+                ⏳ Pendientes de recepción — {user.area.nombre}
+              </h2>
+              <p style={{ margin: '2px 0 0', fontSize: '0.78rem', color: '#b45309' }}>
+                Activos transferidos a tu área que aún no han sido confirmados.
+              </p>
+            </div>
+            {!loadingPendientes && (
+              <span style={{
+                background: pendientes.length > 0 ? '#fef3c7' : '#f0fdf4',
+                color: pendientes.length > 0 ? '#92400e' : '#166534',
+                border: `1px solid ${pendientes.length > 0 ? '#fde68a' : '#bbf7d0'}`,
+                borderRadius: '999px',
+                padding: '3px 12px',
+                fontWeight: 700,
+                fontSize: '0.82rem',
+              }}>
+                {pendientes.length} pendiente{pendientes.length !== 1 ? 's' : ''}
+              </span>
+            )}
+          </div>
+
+          {loadingPendientes ? (
+            <p style={{ color: '#b45309', fontSize: '0.85rem' }}>Cargando...</p>
+          ) : pendientes.length === 0 ? (
+            <p style={{ color: '#78716c', fontSize: '0.85rem', margin: 0 }}>
+              No hay transferencias pendientes de recepción para tu área.
+            </p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {pendientes.map((p) => (
+                <div key={p.id} style={{
+                  background: '#fff',
+                  border: '1px solid #fde68a',
+                  borderRadius: '10px',
+                  padding: '12px 16px',
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+                  gap: '8px',
+                  alignItems: 'center',
+                }}>
+                  <div>
+                    <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase' }}>Activo</span>
+                    <p style={{ margin: 0, fontWeight: 700, fontSize: '0.9rem' }}>
+                      {p.activo.codigo} — {p.activo.nombre}
+                    </p>
+                  </div>
+                  <div>
+                    <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase' }}>Área de origen</span>
+                    <p style={{ margin: 0, fontSize: '0.88rem' }}>{p.areaOrigen?.nombre ?? '—'}</p>
+                  </div>
+                  <div>
+                    <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase' }}>Registrado por</span>
+                    <p style={{ margin: 0, fontSize: '0.88rem' }}>{p.registradoPor?.nombreCompleto ?? '—'}</p>
+                  </div>
+                  <div>
+                    <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase' }}>Fecha de envío</span>
+                    <p style={{ margin: 0, fontSize: '0.88rem' }}>
+                      {new Date(p.fechaEnvio).toLocaleDateString('es-BO', { day: '2-digit', month: 'short', year: 'numeric' })}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
 
       {lastTransferResult ? (
         <section className="transfer-pending-banner" aria-live="polite">

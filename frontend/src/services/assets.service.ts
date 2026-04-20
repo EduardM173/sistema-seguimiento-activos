@@ -12,6 +12,7 @@ import type {
   SearchAssetsParams,
   Categoria,
   Ubicacion,
+  PendienteRecepcion,
 } from '../types/assets.types';
 
 export type { AssetListItem } from '../types/assets.types';
@@ -82,4 +83,11 @@ export async function createFakeAssets(count = 1000) {
 
 export async function deleteFakeAssets() {
   return http.delete<ApiResponse<{ deleted: number }>>('/assets/dev/fake-bulk');
+}
+
+// HU41 – Transferencias pendientes de recepción para un área
+export async function getPendientesRecepcion(areaId: string) {
+  return http.get<ApiResponse<PendienteRecepcion[]>>(
+    `/assets/pendientes-recepcion?areaId=${encodeURIComponent(areaId)}`,
+  );
 }

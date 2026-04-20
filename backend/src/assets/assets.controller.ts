@@ -462,6 +462,26 @@ export class AssetsController {
   }
 
   @ApiOperation({
+    summary: 'Transferencias pendientes de recepción de un área',
+    description:
+      'HU41 – Devuelve los activos con recepción pendiente cuyo área de destino es el área indicada.',
+  })
+  @ApiQuery({
+    name: 'areaId',
+    required: true,
+    type: String,
+    description: 'ID del área de destino para filtrar las recepciones pendientes',
+  })
+  @ApiOkResponse({
+    description: 'Listado de transferencias pendientes de recepción para el área',
+  })
+  @Get('pendientes-recepcion')
+  async pendientesDeRecepcion(@Query('areaId') areaId: string) {
+    const data = await this.assetsService.pendientesDeRecepcion(areaId ?? '');
+    return ApiResponse.success(data, 'Transferencias pendientes obtenidas correctamente');
+  }
+
+  @ApiOperation({
     summary: 'Registrar transferencia de un activo entre áreas',
     description:
       'Crea la transferencia del activo, registra el movimiento y deja una recepción pendiente para el área de destino.',

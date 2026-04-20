@@ -937,6 +937,79 @@ export class AssetsService {
   }
 
   /**
+   * HU41 – Transferencias pendientes de recepción para un área destino.
+   * Devuelve las asignaciones en estado PENDIENTE que incluyen un movimiento
+   * de tipo TRANSFERENCIA donde el área asignada coincide con areaId.
+   */
+  async pendientesDeRecepcion(areaId: string) {
+    const asignaciones = await this.prisma.asignacionActivo.findMany({
+      where: {
+        areaAsignadaId: areaId,
+        estado: EstadoAsignacion.PENDIENTE,
+        movimientos: {
+          some: {
+            tipo: TipoMovimientoActivo.TRANSFERENCIA,
+          },
+        },
+      },
+      select: {
+        id: true,
+        asignadoEn: true,
+        observaciones: true,
+        activo: {
+          select: {
+            id: true,
+            codigo: true,
+            nombre: true,
+          },
+        },
+        areaAsignada: {
+          select: {
+            id: true,
+            nombre: true,
+          },
+        },
+        asignadoPor: {
+          select: {
+            id: true,
+            nombres: true,
+            apellidos: true,
+          },
+        },
+        movimientos: {
+          where: {
+            tipo: TipoMovimientoActivo.TRANSFERENCIA,
+          },
+          select: {
+            areaOrigen: {
+              select: { id: true, nombre: true },
+            },
+            creadoEn: true,
+          },
+          take: 1,
+          orderBy: { creadoEn: 'desc' },
+        },
+      },
+      orderBy: { asignadoEn: 'desc' },
+    });
+
+    return asignaciones.map((a) => ({
+      id: a.id,
+      fechaEnvio: a.movimientos[0]?.creadoEn ?? a.asignadoEn,
+      observaciones: a.observaciones,
+      activo: a.activo,
+      areaDestino: a.areaAsignada,
+      areaOrigen: a.movimientos[0]?.areaOrigen ?? null,
+      registradoPor: a.asignadoPor
+        ? {
+            id: a.asignadoPor.id,
+            nombreCompleto: `${a.asignadoPor.nombres} ${a.asignadoPor.apellidos}`,
+          }
+        : null,
+    }));
+  }
+
+  /**
    * Soft-delete an asset (dar de baja).
    * Sets status to DADO_DE_BAJA and records the timestamp.
    */
