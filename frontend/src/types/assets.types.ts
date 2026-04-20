@@ -88,6 +88,7 @@ export type SearchAssetsParams = {
   estado?: EstadoActivo | '';
   categoriaId?: string;
   ubicacionId?: string;
+  soloTransferibles?: boolean;
   sortBy?: AssetSortBy;
   sortType?: SortType;
   page?: number;

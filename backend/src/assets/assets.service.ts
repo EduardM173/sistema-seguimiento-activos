@@ -38,6 +38,7 @@ export class AssetsService {
       estado,
       categoriaId,
       ubicacionId,
+      soloTransferibles,
       sortBy = AssetSortBy.CREADO_EN,
       sortType = SortType.DESC,
     } = query;
@@ -109,6 +110,21 @@ export class AssetsService {
     // Filter by location
     if(ubicacionId) {
       where.ubicacionId = ubicacionId;
+    }
+
+    if (soloTransferibles) {
+      where.estado = EstadoActivo.OPERATIVO;
+      where.areaActualId = { not: null };
+      where.asignaciones = {
+        none: {
+          estado: EstadoAsignacion.PENDIENTE,
+          movimientos: {
+            some: {
+              tipo: TipoMovimientoActivo.TRANSFERENCIA,
+            },
+          },
+        },
+      };
     }
 
     const orderDirection: Prisma.SortOrder =

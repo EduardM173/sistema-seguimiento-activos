@@ -29,7 +29,7 @@ export const TransferenciasPage: React.FC = () => {
   async function reloadData() {
     const [assetsResponse, availableAreas] = await Promise.all([
       searchAssets({
-        estado: 'OPERATIVO',
+        soloTransferibles: true,
         page: 1,
         pageSize: 100,
         sortBy: 'nombre',

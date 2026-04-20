@@ -105,6 +105,14 @@ export class AssetsController {
     description: 'Cantidad de resultados por página',
     example: 10,
   })
+  @ApiQuery({
+    name: 'soloTransferibles',
+    required: false,
+    type: Boolean,
+    description:
+      'Cuando es true, devuelve solo activos disponibles para registrar una transferencia',
+    example: true,
+  })
   @ApiOkResponse({
     description: 'Listado paginado de activos obtenido correctamente',
     schema: {
