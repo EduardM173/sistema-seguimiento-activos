@@ -8,6 +8,7 @@ import { PrismaService } from '../common/prisma.service';
 import {
   CreateMaterialDTO,
   UpdateMaterialDTO,
+  MaterialEstadoFilter,
   MaterialResponseDTO,
   MaterialSortBy,
   MaterialSortType,
@@ -124,6 +125,19 @@ export class MaterialService {
 
       if (filters?.categoriaId) {
         where.categoriaId = filters.categoriaId;
+      }
+
+      if (filters?.estado === MaterialEstadoFilter.CRITICO) {
+        where.AND = [
+          { stockActual: { gt: 0 } },
+          { stockActual: { lt: this.prisma.material.fields.stockMinimo } },
+        ];
+      }
+
+      if (filters?.estado === MaterialEstadoFilter.NORMAL) {
+        where.AND = [
+          { stockActual: { gte: this.prisma.material.fields.stockMinimo } },
+        ];
       }
 
       const orderDirection: Prisma.SortOrder =

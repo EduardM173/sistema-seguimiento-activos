@@ -32,6 +32,7 @@ import {
   CreateMaterialDTO,
   UpdateMaterialDTO,
   MaterialResponseDTO,
+  MaterialEstadoFilter,
   AumentarStockDTO,
   MaterialSortBy,
   MaterialSortType,
@@ -110,6 +111,12 @@ export class MaterialController {
     required: false,
     enum: MaterialSortBy,
     description: 'Campo por el cual ordenar el listado',
+  })
+  @ApiQuery({
+    name: 'estado',
+    required: false,
+    enum: MaterialEstadoFilter,
+    description: 'Filtra materiales por estado de stock',
   })
   @ApiQuery({
     name: 'sortType',

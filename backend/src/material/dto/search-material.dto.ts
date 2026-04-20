@@ -24,6 +24,11 @@ export enum MaterialSortType {
   DESC = 'DESC',
 }
 
+export enum MaterialEstadoFilter {
+  CRITICO = 'CRITICO',
+  NORMAL = 'NORMAL',
+}
+
 export class SearchMaterialDTO {
   @ApiPropertyOptional({
     example: 'papel',
@@ -40,6 +45,15 @@ export class SearchMaterialDTO {
   @IsOptional()
   @IsString()
   categoriaId?: string;
+
+  @ApiPropertyOptional({
+    enum: MaterialEstadoFilter,
+    description: 'Filtra por estado del stock',
+    example: MaterialEstadoFilter.CRITICO,
+  })
+  @IsOptional()
+  @IsEnum(MaterialEstadoFilter)
+  estado?: MaterialEstadoFilter;
 
   @ApiPropertyOptional({
     enum: MaterialSortBy,
