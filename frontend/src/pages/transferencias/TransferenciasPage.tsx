@@ -1,39 +1,44 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, Button } from '../../components/common';
 import { getAreas } from '../../services/catalogs.service';
-import { searchAssets } from '../../services/assets.service';
+import { searchAssets, transferAsset } from '../../services/assets.service';
 import { HttpError } from '../../services/http.client';
 import type { Area, AssetListItem } from '../../types/assets.types';
 import '../../styles/modules.css';
+import '../../styles/transferencias.css';
 
 export const TransferenciasPage: React.FC = () => {
   const [assets, setAssets] = useState<AssetListItem[]>([]);
   const [areas, setAreas] = useState<Area[]>([]);
   const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState<{ type: 'info' | 'error'; text: string } | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'info' | 'error'; text: string } | null>(null);
   const [activoId, setActivoId] = useState('');
   const [areaDestinoId, setAreaDestinoId] = useState('');
   const [submitAttempted, setSubmitAttempted] = useState(false);
+  const [searchText, setSearchText] = useState('');
+
+  async function reloadData() {
+    const [assetsResponse, availableAreas] = await Promise.all([
+      searchAssets({
+        estado: 'OPERATIVO',
+        page: 1,
+        pageSize: 100,
+        sortBy: 'nombre',
+        sortType: 'ASC',
+      }),
+      getAreas(),
+    ]);
+
+    setAssets(assetsResponse.data ?? []);
+    setAreas(availableAreas);
+  }
 
   useEffect(() => {
     async function loadData() {
       try {
         setLoading(true);
-        setMessage(null);
-
-        const [assetsResponse, availableAreas] = await Promise.all([
-          searchAssets({
-            estado: 'OPERATIVO',
-            page: 1,
-            pageSize: 100,
-            sortBy: 'nombre',
-            sortType: 'ASC',
-          }),
-          getAreas(),
-        ]);
-
-        setAssets(assetsResponse.data ?? []);
-        setAreas(availableAreas);
+        await reloadData();
       } catch (error) {
         const errorMessage =
           error instanceof HttpError
@@ -59,6 +64,19 @@ export const TransferenciasPage: React.FC = () => {
 
   const originAreaId = selectedAsset?.area?.id ?? '';
   const originAreaName = selectedAsset?.area?.nombre ?? 'Sin área asignada';
+  const destinationArea = areas.find((area) => area.id === areaDestinoId) ?? null;
+
+  const filteredAssets = useMemo(() => {
+    const normalized = searchText.trim().toLowerCase();
+
+    if (!normalized) {
+      return assets;
+    }
+
+    return assets.filter((asset) =>
+      `${asset.codigo} ${asset.nombre}`.toLowerCase().includes(normalized),
+    );
+  }, [assets, searchText]);
 
   const destinationOptions = useMemo(
     () => areas.filter((area) => area.id !== originAreaId),
@@ -76,7 +94,7 @@ export const TransferenciasPage: React.FC = () => {
 
   const hasErrors = Boolean(activoError || areaDestinoError || sameAreaError);
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmitAttempted(true);
 
@@ -88,132 +106,253 @@ export const TransferenciasPage: React.FC = () => {
       return;
     }
 
-    setMessage({
-      type: 'info',
-      text: 'La pantalla quedó lista. El registro definitivo de la transferencia se conectará en el siguiente paso.',
-    });
+    if (!selectedAsset) {
+      setMessage({
+        type: 'error',
+        text: 'Debe seleccionar un activo válido para registrar la transferencia.',
+      });
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      const response = await transferAsset(selectedAsset.id, {
+        areaDestinoId,
+      });
+
+      setActivoId('');
+      setAreaDestinoId('');
+      setSubmitAttempted(false);
+      setMessage({
+        type: 'success',
+        text: response.data.message,
+      });
+      await reloadData();
+    } catch (error) {
+      const rawMessage =
+        error instanceof HttpError
+          ? error.message
+          : 'No se pudo registrar la transferencia del activo';
+
+      const friendlyMessage = rawMessage.includes(
+        'Solo se puede transferir un activo cuando está en estado Operativo',
+      )
+        ? 'El activo debe estar en estado Operativo para poder transferirse.'
+        : rawMessage.includes(
+              'El activo debe tener un área de origen registrada antes de transferirse',
+            )
+          ? 'El activo seleccionado no tiene un área de origen registrada.'
+          : rawMessage.includes(
+                'El activo tiene una recepción pendiente y no puede transferirse nuevamente',
+              )
+            ? 'El activo ya tiene una recepción pendiente y no puede transferirse otra vez todavía.'
+            : rawMessage.includes('El área de destino debe ser distinta del área de origen')
+              ? 'Debe seleccionar un área de destino diferente al área de origen.'
+              : rawMessage;
+
+      setMessage({
+        type: 'error',
+        text: friendlyMessage,
+      });
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
     <div className="module-page">
-      <div className="module-header">
+      <div className="module-header transfer-page__header">
         <div>
           <h1>Transferencias</h1>
-          <p style={{ marginTop: '6px', color: '#6b7280' }}>
-            Inicie la transferencia de un activo entre áreas usando solo activos elegibles.
+          <p className="transfer-page__subtitle">
+            Seleccione el activo, revise su área actual y registre el traslado hacia el área de destino.
           </p>
         </div>
       </div>
 
       {message ? (
         <Alert
-          type={message.type === 'error' ? 'error' : 'info'}
+          type={message.type === 'error' ? 'error' : message.type === 'success' ? 'success' : 'info'}
           message={message.text}
           dismissible
           onClose={() => setMessage(null)}
         />
       ) : null}
 
-      <div className="module-list" style={{ maxWidth: '860px' }}>
-        <form onSubmit={handleSubmit} className="form-container">
-          <div className="form-grid">
-            <div className="form-group form-full">
-              <label htmlFor="transfer-activo">
-                Activo <span style={{ color: '#dc2626' }}>*</span>
-              </label>
-              <select
-                id="transfer-activo"
-                value={activoId}
-                onChange={(event) => {
-                  setActivoId(event.target.value);
-                  setAreaDestinoId('');
-                  setMessage(null);
-                  setSubmitAttempted(false);
-                }}
-                disabled={loading}
-                style={{ borderColor: activoError ? '#dc2626' : undefined }}
-              >
-                <option value="">
-                  {loading ? 'Cargando activos operativos...' : 'Seleccione un activo'}
-                </option>
-                {assets.map((asset) => (
-                  <option key={asset.id} value={asset.id}>
-                    {asset.codigo} - {asset.nombre}
-                  </option>
-                ))}
-              </select>
-              {activoError ? (
-                <span style={{ color: '#dc2626', fontSize: '12px' }}>{activoError}</span>
-              ) : null}
+      <form onSubmit={handleSubmit} className="transfer-workspace">
+        <section className="transfer-panel transfer-panel--assets">
+          <div className="transfer-panel__header">
+            <div>
+              <h2>1. Seleccionar activo</h2>
+              <p>Trabaje con activos operativos y elija cuál será transferido.</p>
             </div>
-
-            <div className="form-group">
-              <label htmlFor="transfer-area-origen">Área de origen</label>
-              <input
-                id="transfer-area-origen"
-                type="text"
-                value={originAreaName}
-                readOnly
-                style={{ background: '#f9fafb', color: '#374151' }}
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="transfer-area-destino">
-                Área de destino <span style={{ color: '#dc2626' }}>*</span>
-              </label>
-              <select
-                id="transfer-area-destino"
-                value={areaDestinoId}
-                onChange={(event) => {
-                  setAreaDestinoId(event.target.value);
-                  setMessage(null);
-                  setSubmitAttempted(false);
-                }}
-                disabled={loading || !activoId}
-                style={{ borderColor: areaDestinoError || sameAreaError ? '#dc2626' : undefined }}
-              >
-                <option value="">
-                  {!activoId ? 'Primero seleccione un activo' : 'Seleccione un área de destino'}
-                </option>
-                {destinationOptions.map((area) => (
-                  <option key={area.id} value={area.id}>
-                    {area.nombre}
-                  </option>
-                ))}
-              </select>
-              {sameAreaError ? (
-                <span style={{ color: '#dc2626', fontSize: '12px' }}>{sameAreaError}</span>
-              ) : areaDestinoError ? (
-                <span style={{ color: '#dc2626', fontSize: '12px' }}>{areaDestinoError}</span>
-              ) : null}
-            </div>
+            <span className="transfer-panel__counter">
+              {loading ? '...' : `${filteredAssets.length} activos`}
+            </span>
           </div>
 
-          <div
-            style={{
-              marginTop: '16px',
-              padding: '12px 14px',
-              borderRadius: '10px',
-              background: '#f8fafc',
-              border: '1px solid #e5e7eb',
-              color: '#475569',
-              fontSize: '0.92rem',
-            }}
-          >
-            Esta pantalla deja listo el flujo visual inicial de transferencias. El guardado definitivo se conectará en el siguiente paso sobre esta misma base.
-          </div>
-
-          <div className="form-actions">
-            <Button
-              label="Preparar transferencia"
-              type="submit"
-              variant="primary"
-              disabled={loading || hasErrors}
+          <div className="transfer-search">
+            <input
+              id="transfer-activo-search"
+              type="text"
+              placeholder="Buscar por código o nombre..."
+              value={searchText}
+              onChange={(event) => setSearchText(event.target.value)}
+              disabled={loading || submitting}
             />
           </div>
-        </form>
-      </div>
+
+          {activoError ? (
+            <p className="transfer-field-error">{activoError}</p>
+          ) : null}
+
+          <div className="transfer-assets-grid">
+            {loading ? (
+              <div className="transfer-empty-state">
+                Cargando activos operativos disponibles...
+              </div>
+            ) : filteredAssets.length === 0 ? (
+              <div className="transfer-empty-state">
+                No se encontraron activos con ese criterio de búsqueda.
+              </div>
+            ) : (
+              filteredAssets.map((asset) => {
+                const isSelected = asset.id === activoId;
+                const hasOriginArea = Boolean(asset.area?.id);
+
+                return (
+                  <button
+                    key={asset.id}
+                    type="button"
+                    className={`transfer-asset-card ${isSelected ? 'transfer-asset-card--selected' : ''} ${!hasOriginArea ? 'transfer-asset-card--disabled' : ''}`}
+                    onClick={() => {
+                      if (!hasOriginArea) return;
+                      setActivoId(asset.id);
+                      setAreaDestinoId('');
+                      setMessage(null);
+                      setSubmitAttempted(false);
+                    }}
+                    disabled={submitting || !hasOriginArea}
+                  >
+                    <div className="transfer-asset-card__top">
+                      <span className="transfer-asset-card__code">{asset.codigo}</span>
+                      <span className={`transfer-asset-card__status ${isSelected ? 'transfer-asset-card__status--selected' : ''}`}>
+                        {isSelected ? 'Seleccionado' : hasOriginArea ? 'Disponible' : 'Sin área'}
+                      </span>
+                    </div>
+                    <strong className="transfer-asset-card__name">{asset.nombre}</strong>
+                    <div className="transfer-asset-card__meta">
+                      <span>{asset.categoria?.nombre ?? 'Sin categoría'}</span>
+                      <span>{asset.area?.nombre ?? 'Área no registrada'}</span>
+                    </div>
+                  </button>
+                );
+              })
+            )}
+          </div>
+        </section>
+
+        <section className="transfer-panel transfer-panel--movement">
+          <div className="transfer-panel__header">
+            <div>
+              <h2>2. Datos del movimiento</h2>
+              <p>Revise el origen y defina el área de destino.</p>
+            </div>
+          </div>
+
+          <div className="transfer-details-grid">
+            <div className="transfer-detail-card">
+              <span className="transfer-detail-card__label">Activo elegido</span>
+              <strong className="transfer-detail-card__value">
+                {selectedAsset ? `${selectedAsset.codigo} - ${selectedAsset.nombre}` : 'Seleccione un activo'}
+              </strong>
+            </div>
+
+            <div className="transfer-detail-card">
+              <span className="transfer-detail-card__label">Área de origen</span>
+              <strong className="transfer-detail-card__value">{originAreaName}</strong>
+            </div>
+          </div>
+
+          <div className="form-group transfer-field-group">
+            <label htmlFor="transfer-area-destino">
+              Área de destino <span className="transfer-required">*</span>
+            </label>
+            <select
+              id="transfer-area-destino"
+              value={areaDestinoId}
+              onChange={(event) => {
+                setAreaDestinoId(event.target.value);
+                setMessage(null);
+                setSubmitAttempted(false);
+              }}
+              disabled={loading || submitting || !activoId}
+              className={areaDestinoError || sameAreaError ? 'transfer-input--error' : ''}
+            >
+              <option value="">
+                {!activoId ? 'Primero seleccione un activo' : 'Seleccione un área de destino'}
+              </option>
+              {destinationOptions.map((area) => (
+                <option key={area.id} value={area.id}>
+                  {area.nombre}
+                </option>
+              ))}
+            </select>
+            {sameAreaError ? (
+              <span className="transfer-field-error">{sameAreaError}</span>
+            ) : areaDestinoError ? (
+              <span className="transfer-field-error">{areaDestinoError}</span>
+            ) : null}
+          </div>
+
+          <div className="transfer-note">
+            La transferencia registrará el movimiento del activo y dejará una recepción pendiente para el área destino.
+          </div>
+        </section>
+
+        <aside className="transfer-panel transfer-panel--summary">
+          <div className="transfer-panel__header">
+            <div>
+              <h2>3. Resumen</h2>
+              <p>Confirme la operación antes de registrarla.</p>
+            </div>
+          </div>
+
+          <div className="transfer-summary">
+            <div className="transfer-summary__item">
+              <span className="transfer-summary__label">Activo</span>
+              <strong className="transfer-summary__value">
+                {selectedAsset ? selectedAsset.nombre : 'Pendiente de selección'}
+              </strong>
+              <span className="transfer-summary__meta">
+                {selectedAsset ? selectedAsset.codigo : 'Seleccione una tarjeta de activo'}
+              </span>
+            </div>
+
+            <div className="transfer-summary__item">
+              <span className="transfer-summary__label">Área de origen</span>
+              <strong className="transfer-summary__value">{originAreaName}</strong>
+            </div>
+
+            <div className="transfer-summary__item">
+              <span className="transfer-summary__label">Área de destino</span>
+              <strong className="transfer-summary__value">
+                {destinationArea?.nombre ?? 'Pendiente de selección'}
+              </strong>
+            </div>
+          </div>
+
+          <div className="transfer-summary__footer">
+            <Button
+              label={submitting ? 'Registrando...' : 'Registrar transferencia'}
+              type="submit"
+              variant="primary"
+              disabled={loading || submitting || hasErrors}
+              className="transfer-submit-btn"
+            />
+          </div>
+        </aside>
+      </form>
     </div>
   );
 };

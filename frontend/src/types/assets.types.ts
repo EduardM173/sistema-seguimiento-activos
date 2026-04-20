@@ -151,3 +151,22 @@ export type AssignAssetResponse = {
   };
   asset: AssetDetail;
 };
+
+export type TransferAssetPayload = {
+  areaDestinoId: string;
+  observaciones?: string;
+};
+
+export type TransferAssetResponse = {
+  message: string;
+  transferencia: {
+    id: string;
+    estado: string;
+    asignadoEn: string;
+    observaciones: string | null;
+    areaOrigen: { id: string; nombre: string };
+    areaDestino: { id: string; nombre: string };
+    registradoPorId: string;
+  };
+  asset: AssetDetail;
+};

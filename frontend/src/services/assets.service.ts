@@ -7,6 +7,8 @@ import type {
   UpdateAssetPayload,
   AssignAssetPayload,
   AssignAssetResponse,
+  TransferAssetPayload,
+  TransferAssetResponse,
   SearchAssetsParams,
   Categoria,
   Ubicacion,
@@ -49,6 +51,13 @@ export async function deleteAsset(id: string) {
 export async function assignAsset(id: string, payload: AssignAssetPayload) {
   return http.post<ApiResponse<AssignAssetResponse>>(
     `/assets/${encodeURIComponent(id)}/assign`,
+    payload,
+  );
+}
+
+export async function transferAsset(id: string, payload: TransferAssetPayload) {
+  return http.post<ApiResponse<TransferAssetResponse>>(
+    `/assets/${encodeURIComponent(id)}/transfer`,
     payload,
   );
 }

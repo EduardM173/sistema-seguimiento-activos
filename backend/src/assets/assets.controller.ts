@@ -31,6 +31,7 @@ import { CreateAssetDto } from './dto/create-asset.dto';
 import { UpdateAssetDto } from './dto/update-asset.dto';
 import { SearchAssetsDto } from './dto/search-assets.dto';
 import { AssignAssetDto } from './dto/assign-asset.dto';
+import { TransferAssetDto } from './dto/transfer-asset.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ApiResponse } from '../common/api-response';
 
@@ -450,6 +451,49 @@ export class AssetsController {
     const userId = (req.user as { id: string }).id;
     const result = await this.assetsService.assign(id, dto, userId);
     return ApiResponse.success(result, 'Activo asignado exitosamente');
+  }
+
+  @ApiOperation({
+    summary: 'Registrar transferencia de un activo entre áreas',
+    description:
+      'Crea la transferencia del activo, registra el movimiento y deja una recepción pendiente para el área de destino.',
+  })
+  @ApiParam({ name: 'id', description: 'ID del activo a transferir' })
+  @ApiBody({
+    type: TransferAssetDto,
+    examples: {
+      transferenciaArea: {
+        summary: 'Transferencia entre áreas',
+        value: {
+          areaDestinoId: 'cm1area124',
+          observaciones: 'Transferencia operativa entre áreas',
+        },
+      },
+    },
+  })
+  @ApiOkResponse({
+    description: 'Transferencia registrada exitosamente',
+  })
+  @ApiBadRequestResponse({
+    description:
+      'Solicitud inválida. El activo no tiene área de origen o el área de destino coincide con la de origen.',
+  })
+  @ApiNotFoundResponse({
+    description: 'Activo o área de destino no encontrado',
+  })
+  @ApiConflictResponse({
+    description:
+      'El activo no está operativo o ya tiene una recepción pendiente por una transferencia o asignación anterior.',
+  })
+  @Post(':id/transfer')
+  async transfer(
+    @Param('id') id: string,
+    @Body() dto: TransferAssetDto,
+    @Req() req: Request,
+  ) {
+    const userId = (req.user as { id: string }).id;
+    const result = await this.assetsService.transfer(id, dto, userId);
+    return ApiResponse.success(result, 'Transferencia registrada exitosamente');
   }
 
   /**
