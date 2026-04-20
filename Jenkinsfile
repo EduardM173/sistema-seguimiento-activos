@@ -5,39 +5,47 @@ pipeline {
         githubPush()
     }
 
-    environment {
+    environment{
+        SECRET_ENV_PATH = credentials('env_activos_dev')
+        
+        TAG = "${env.BUILD_NUMBER}"
         TARGET_BRANCH = "jenkins_test"
     }
 
     stages {
         stage('SCM Checkout') {
             steps {
-                // checkout scm
-
+                checkout scm
                 sh "echo se subio la wea ${env.TARGET_BRANCH}"
             }
         }
-//
-        stage('Docker Build') {
 
+        stage('Setup Environment') {
             steps {
-                sh "docker compose build"
+                sh 'cp $SECRET_ENV_PATH ./.env'
             }
         }
 
-        // stage('Deploy Detached') {
-        //     when {
-        //         branch "${env.TARGET_BRANCH}"
-        //     }
-        //     steps {
-        //         sh "docker compose up --force-recreate frontend backend"
-        //     }
-        // }
+        stage('Docker Build') {
+            steps {
+                sh "docker compose -f docker-compose.deploy.yml build"
+            }
+        }
+
+        stage('Deploy Detached') {  
+            when {
+                branch "${env.TARGET_BRANCH}"
+            }
+            steps {
+                sh "docker compose -f docker-compose.deploy.yml up -d --force-recreate frontend backend"
+            }
+        }
     }
 
-    // post {
-    //     always {
-    //         sh "docker image prune -f"
-    //     }
-    // }
+    post {
+        always {
+            sh "rm -f ./.env"
+            sh "docker image prune -f"
+        }
+    }
 }
