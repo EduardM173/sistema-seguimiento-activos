@@ -254,30 +254,39 @@ export const TransferenciasPage: React.FC = () => {
               filteredAssets.map((asset) => {
                 const isSelected = asset.id === activoId;
                 const hasOriginArea = Boolean(asset.area?.id);
+                const hasResponsible = Boolean(asset.responsable?.id);
+                const isSelectable = hasOriginArea && hasResponsible;
 
                 return (
                   <button
                     key={asset.id}
                     type="button"
-                    className={`transfer-asset-card ${isSelected ? 'transfer-asset-card--selected' : ''} ${!hasOriginArea ? 'transfer-asset-card--disabled' : ''}`}
+                    className={`transfer-asset-card ${isSelected ? 'transfer-asset-card--selected' : ''} ${!isSelectable ? 'transfer-asset-card--disabled' : ''}`}
                     onClick={() => {
-                      if (!hasOriginArea) return;
+                      if (!isSelectable) return;
                       setActivoId(asset.id);
                       setAreaDestinoId('');
                       setSubmitAttempted(false);
                     }}
-                    disabled={submitting || !hasOriginArea}
+                    disabled={submitting || !isSelectable}
                   >
                     <div className="transfer-asset-card__top">
                       <span className="transfer-asset-card__code">{asset.codigo}</span>
                       <span className={`transfer-asset-card__status ${isSelected ? 'transfer-asset-card__status--selected' : ''}`}>
-                        {isSelected ? 'Seleccionado' : hasOriginArea ? 'Disponible' : 'Sin área'}
+                        {isSelected
+                          ? 'Seleccionado'
+                          : isSelectable
+                            ? 'Disponible'
+                            : !hasOriginArea
+                              ? 'Sin área'
+                              : 'Sin responsable'}
                       </span>
                     </div>
                     <strong className="transfer-asset-card__name">{asset.nombre}</strong>
                     <div className="transfer-asset-card__meta">
                       <span>{asset.categoria?.nombre ?? 'Sin categoría'}</span>
                       <span>{asset.area?.nombre ?? 'Área no registrada'}</span>
+                      <span>{asset.responsable?.nombreCompleto ?? 'Responsable no asignado'}</span>
                     </div>
                   </button>
                 );
