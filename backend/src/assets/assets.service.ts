@@ -835,6 +835,11 @@ export class AssetsService {
         where: {
           activoId: id,
           estado: EstadoAsignacion.PENDIENTE,
+          movimientos: {
+            some: {
+              tipo: TipoMovimientoActivo.TRANSFERENCIA,
+            },
+          },
         },
         select: {
           id: true,

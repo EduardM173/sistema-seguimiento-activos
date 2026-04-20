@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Alert, Button } from '../../components/common';
+import { Button } from '../../components/common';
+import { useNotification } from '../../context/NotificationContext';
 import { getAreas } from '../../services/catalogs.service';
 import { searchAssets, transferAsset } from '../../services/assets.service';
 import { HttpError } from '../../services/http.client';
@@ -8,15 +9,22 @@ import '../../styles/modules.css';
 import '../../styles/transferencias.css';
 
 export const TransferenciasPage: React.FC = () => {
+  const notify = useNotification();
   const [assets, setAssets] = useState<AssetListItem[]>([]);
   const [areas, setAreas] = useState<Area[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'info' | 'error'; text: string } | null>(null);
   const [activoId, setActivoId] = useState('');
   const [areaDestinoId, setAreaDestinoId] = useState('');
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const [searchText, setSearchText] = useState('');
+  const [lastTransferResult, setLastTransferResult] = useState<{
+    activoCodigo: string;
+    activoNombre: string;
+    estadoRecepcion: string;
+    areaOrigen: { id: string; nombre: string };
+    areaDestino: { id: string; nombre: string };
+  } | null>(null);
 
   async function reloadData() {
     const [assetsResponse, availableAreas] = await Promise.all([
@@ -45,10 +53,7 @@ export const TransferenciasPage: React.FC = () => {
             ? error.message
             : 'No se pudo cargar la información inicial de transferencias';
 
-        setMessage({
-          type: 'error',
-          text: errorMessage,
-        });
+        notify.error('No se pudo cargar Transferencias', errorMessage);
       } finally {
         setLoading(false);
       }
@@ -99,18 +104,18 @@ export const TransferenciasPage: React.FC = () => {
     setSubmitAttempted(true);
 
     if (hasErrors) {
-      setMessage({
-        type: 'error',
-        text: sameAreaError || activoError || areaDestinoError,
-      });
+      notify.error(
+        'Formulario incompleto',
+        sameAreaError || activoError || areaDestinoError,
+      );
       return;
     }
 
     if (!selectedAsset) {
-      setMessage({
-        type: 'error',
-        text: 'Debe seleccionar un activo válido para registrar la transferencia.',
-      });
+      notify.error(
+        'Activo inválido',
+        'Debe seleccionar un activo válido para registrar la transferencia.',
+      );
       return;
     }
 
@@ -120,13 +125,18 @@ export const TransferenciasPage: React.FC = () => {
         areaDestinoId,
       });
 
+      setLastTransferResult({
+        activoCodigo: selectedAsset.codigo,
+        activoNombre: selectedAsset.nombre,
+        estadoRecepcion: response.data.transferencia.estado,
+        areaOrigen: response.data.transferencia.areaOrigen,
+        areaDestino: response.data.transferencia.areaDestino,
+      });
+
       setActivoId('');
       setAreaDestinoId('');
       setSubmitAttempted(false);
-      setMessage({
-        type: 'success',
-        text: response.data.message,
-      });
+      notify.success('Transferencia registrada', response.data.message);
       await reloadData();
     } catch (error) {
       const rawMessage =
@@ -150,10 +160,7 @@ export const TransferenciasPage: React.FC = () => {
               ? 'Debe seleccionar un área de destino diferente al área de origen.'
               : rawMessage;
 
-      setMessage({
-        type: 'error',
-        text: friendlyMessage,
-      });
+      notify.error('No se pudo registrar la transferencia', friendlyMessage);
     } finally {
       setSubmitting(false);
     }
@@ -170,13 +177,41 @@ export const TransferenciasPage: React.FC = () => {
         </div>
       </div>
 
-      {message ? (
-        <Alert
-          type={message.type === 'error' ? 'error' : message.type === 'success' ? 'success' : 'info'}
-          message={message.text}
-          dismissible
-          onClose={() => setMessage(null)}
-        />
+      {lastTransferResult ? (
+        <section className="transfer-pending-banner" aria-live="polite">
+          <div className="transfer-pending-banner__top">
+            <div>
+              <p className="transfer-pending-banner__eyebrow">Recepción generada</p>
+              <h2>La transferencia dejó una recepción pendiente para el área destino</h2>
+            </div>
+            <span className="transfer-pending-badge">
+              Recepción {lastTransferResult.estadoRecepcion}
+            </span>
+          </div>
+
+          <div className="transfer-pending-banner__grid">
+            <div className="transfer-pending-banner__item">
+              <span className="transfer-pending-banner__label">Activo</span>
+              <strong>
+                {lastTransferResult.activoCodigo} - {lastTransferResult.activoNombre}
+              </strong>
+            </div>
+            <div className="transfer-pending-banner__item">
+              <span className="transfer-pending-banner__label">Área de origen</span>
+              <strong>{lastTransferResult.areaOrigen.nombre}</strong>
+            </div>
+            <div className="transfer-pending-banner__item">
+              <span className="transfer-pending-banner__label">Área de destino</span>
+              <strong>{lastTransferResult.areaDestino.nombre}</strong>
+            </div>
+            <div className="transfer-pending-banner__item">
+              <span className="transfer-pending-banner__label">Estado de recepción</span>
+              <strong className="transfer-pending-banner__state">
+                {lastTransferResult.estadoRecepcion}
+              </strong>
+            </div>
+          </div>
+        </section>
       ) : null}
 
       <form onSubmit={handleSubmit} className="transfer-workspace">
@@ -229,7 +264,6 @@ export const TransferenciasPage: React.FC = () => {
                       if (!hasOriginArea) return;
                       setActivoId(asset.id);
                       setAreaDestinoId('');
-                      setMessage(null);
                       setSubmitAttempted(false);
                     }}
                     disabled={submitting || !hasOriginArea}
@@ -283,7 +317,6 @@ export const TransferenciasPage: React.FC = () => {
               value={areaDestinoId}
               onChange={(event) => {
                 setAreaDestinoId(event.target.value);
-                setMessage(null);
                 setSubmitAttempted(false);
               }}
               disabled={loading || submitting || !activoId}
@@ -340,6 +373,18 @@ export const TransferenciasPage: React.FC = () => {
                 {destinationArea?.nombre ?? 'Pendiente de selección'}
               </strong>
             </div>
+
+            {lastTransferResult ? (
+              <div className="transfer-summary__item transfer-summary__item--highlight">
+                <span className="transfer-summary__label">Último registro</span>
+                <strong className="transfer-summary__value">
+                  Recepción {lastTransferResult.estadoRecepcion}
+                </strong>
+                <span className="transfer-summary__meta">
+                  {lastTransferResult.areaDestino.nombre} debe confirmar la recepción del activo transferido.
+                </span>
+              </div>
+            ) : null}
           </div>
 
           <div className="transfer-summary__footer">
