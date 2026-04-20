@@ -15,6 +15,7 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - jenkins_home:/var/jenkins_home
+
   app-db:
     image: postgres:16-alpine
     container_name: activos_db
@@ -49,8 +50,6 @@ services:
       app-db:
         condition: service_started
 
-    volumes:
-      - ./backend:/app/
     command: "npm run start:dev"
 
   frontend:
@@ -65,9 +64,6 @@ services:
 
     ports:
       - 80:80
-
-    volumes:
-      - ./frontend:/app/
 
     depends_on:
       backend:
