@@ -51,7 +51,7 @@ pipeline {
     post {
         always {
             sh "rm -f ./.env"
-            sh "docker image prune -f"
+            sh "docker image prune -af"
         }
     }
 }
