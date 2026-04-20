@@ -88,6 +88,7 @@ export type SearchAssetsParams = {
   estado?: EstadoActivo | '';
   categoriaId?: string;
   ubicacionId?: string;
+  soloTransferibles?: boolean;
   sortBy?: AssetSortBy;
   sortType?: SortType;
   page?: number;
@@ -148,6 +149,25 @@ export type AssignAssetResponse = {
     observaciones: string | null;
     usuarioAsignado: { id: string; nombreCompleto: string } | null;
     areaAsignada: { id: string; nombre: string } | null;
+  };
+  asset: AssetDetail;
+};
+
+export type TransferAssetPayload = {
+  areaDestinoId: string;
+  observaciones?: string;
+};
+
+export type TransferAssetResponse = {
+  message: string;
+  transferencia: {
+    id: string;
+    estado: string;
+    asignadoEn: string;
+    observaciones: string | null;
+    areaOrigen: { id: string; nombre: string };
+    areaDestino: { id: string; nombre: string };
+    registradoPorId: string;
   };
   asset: AssetDetail;
 };

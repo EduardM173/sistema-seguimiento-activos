@@ -7,6 +7,8 @@ import type {
   UpdateAssetPayload,
   AssignAssetPayload,
   AssignAssetResponse,
+  TransferAssetPayload,
+  TransferAssetResponse,
   SearchAssetsParams,
   Categoria,
   Ubicacion,
@@ -21,6 +23,9 @@ export async function searchAssets(params: SearchAssetsParams = {}) {
   if (params.estado) query.set('estado', params.estado);
   if (params.categoriaId) query.set('categoriaId', params.categoriaId);
   if (params.ubicacionId) query.set('ubicacionId', params.ubicacionId);
+  if (params.soloTransferibles !== undefined) {
+    query.set('soloTransferibles', String(params.soloTransferibles));
+  }
   if (params.sortBy) query.set('sortBy', params.sortBy);
   if (params.sortType) query.set('sortType', params.sortType);
   if (params.page) query.set('page', String(params.page));
@@ -49,6 +54,13 @@ export async function deleteAsset(id: string) {
 export async function assignAsset(id: string, payload: AssignAssetPayload) {
   return http.post<ApiResponse<AssignAssetResponse>>(
     `/assets/${encodeURIComponent(id)}/assign`,
+    payload,
+  );
+}
+
+export async function transferAsset(id: string, payload: TransferAssetPayload) {
+  return http.post<ApiResponse<TransferAssetResponse>>(
+    `/assets/${encodeURIComponent(id)}/transfer`,
     payload,
   );
 }

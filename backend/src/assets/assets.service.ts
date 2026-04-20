@@ -15,7 +15,9 @@ import {
   SortType,
 } from './dto/search-assets.dto';
 import { AssignAssetDto } from './dto/assign-asset.dto';
+import { TransferAssetDto } from './dto/transfer-asset.dto';
 import {
+  EstadoAsignacion,
   EstadoActivo,
   Prisma,
   TipoMovimientoActivo,
@@ -36,6 +38,7 @@ export class AssetsService {
       estado,
       categoriaId,
       ubicacionId,
+      soloTransferibles,
       sortBy = AssetSortBy.CREADO_EN,
       sortType = SortType.DESC,
     } = query;
@@ -107,6 +110,21 @@ export class AssetsService {
     // Filter by location
     if(ubicacionId) {
       where.ubicacionId = ubicacionId;
+    }
+
+    if (soloTransferibles) {
+      where.estado = EstadoActivo.OPERATIVO;
+      where.areaActualId = { not: null };
+      where.asignaciones = {
+        none: {
+          estado: EstadoAsignacion.PENDIENTE,
+          movimientos: {
+            some: {
+              tipo: TipoMovimientoActivo.TRANSFERENCIA,
+            },
+          },
+        },
+      };
     }
 
     const orderDirection: Prisma.SortOrder =
@@ -772,6 +790,149 @@ export class AssetsService {
         areaAsignada: areaAsignada,
       },
       asset: activoActualizado,
+    };
+  }
+
+  async transfer(id: string, dto: TransferAssetDto, userId: string) {
+    const areaDestinoId = dto.areaDestinoId.trim();
+    const observaciones = dto.observaciones?.trim() || undefined;
+
+    const existing = await this.prisma.activo.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        codigo: true,
+        nombre: true,
+        estado: true,
+        areaActualId: true,
+        responsableActualId: true,
+        areaActual: {
+          select: {
+            id: true,
+            nombre: true,
+          },
+        },
+      },
+    });
+
+    if (!existing) {
+      throw new NotFoundException(`No se encontró el activo con ID: ${id}`);
+    }
+
+    if (existing.estado !== EstadoActivo.OPERATIVO) {
+      throw new ConflictException(
+        'Solo se puede transferir un activo cuando está en estado Operativo',
+      );
+    }
+
+    if (!existing.areaActualId || !existing.areaActual) {
+      throw new BadRequestException(
+        'El activo debe tener un área de origen registrada antes de transferirse',
+      );
+    }
+
+    const areaOrigen = existing.areaActual;
+
+    if (areaDestinoId === existing.areaActualId) {
+      throw new BadRequestException(
+        'El área de destino debe ser distinta del área de origen',
+      );
+    }
+
+    const [areaDestino, pendingReception] = await Promise.all([
+      this.prisma.area.findUnique({
+        where: { id: areaDestinoId },
+        select: {
+          id: true,
+          nombre: true,
+        },
+      }),
+      this.prisma.asignacionActivo.findFirst({
+        where: {
+          activoId: id,
+          estado: EstadoAsignacion.PENDIENTE,
+          movimientos: {
+            some: {
+              tipo: TipoMovimientoActivo.TRANSFERENCIA,
+            },
+          },
+        },
+        select: {
+          id: true,
+        },
+      }),
+    ]);
+
+    if (!areaDestino) {
+      throw new NotFoundException(
+        `No se encontró el área con ID: ${areaDestinoId}`,
+      );
+    }
+
+    if (pendingReception) {
+      throw new ConflictException(
+        'El activo tiene una recepción pendiente y no puede transferirse nuevamente',
+      );
+    }
+
+    const result = await this.prisma.$transaction(async (tx) => {
+      const recepcionPendiente = await tx.asignacionActivo.create({
+        data: {
+          activoId: id,
+          areaAsignadaId: areaDestino.id,
+          asignadoPorId: userId,
+          estado: EstadoAsignacion.PENDIENTE,
+          observaciones,
+        },
+        select: {
+          id: true,
+          estado: true,
+          asignadoEn: true,
+          observaciones: true,
+        },
+      });
+
+      await tx.movimientoActivo.create({
+        data: {
+          activoId: id,
+          tipo: TipoMovimientoActivo.TRANSFERENCIA,
+          areaOrigenId: existing.areaActualId,
+          areaDestinoId: areaDestino.id,
+          usuarioOrigenId: existing.responsableActualId,
+          realizadoPorId: userId,
+          asignacionId: recepcionPendiente.id,
+          detalle:
+            observaciones ??
+            `Transferencia registrada de ${areaOrigen.nombre} a ${areaDestino.nombre}`,
+        },
+      });
+
+      await tx.activo.update({
+        where: { id },
+        data: {
+          areaActualId: areaDestino.id,
+          responsableActualId: null,
+          actualizadoPorId: userId,
+        },
+      });
+
+      return recepcionPendiente;
+    });
+
+    const asset = await this.findOne(id);
+
+    return {
+      message: `Transferencia registrada de ${areaOrigen.nombre} a ${areaDestino.nombre}. La recepción quedó pendiente para el área de destino.`,
+      transferencia: {
+        id: result.id,
+        estado: result.estado,
+        asignadoEn: result.asignadoEn,
+        observaciones: result.observaciones,
+        areaOrigen,
+        areaDestino,
+        registradoPorId: userId,
+      },
+      asset,
     };
   }
 

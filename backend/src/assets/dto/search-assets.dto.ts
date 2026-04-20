@@ -1,5 +1,6 @@
-import { IsEnum, IsOptional, IsString } from 'class-validator';
+import { IsBoolean, IsEnum, IsOptional, IsString } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 
 import { PaginationDto } from '../../common/dto/pagination.dto';
 import { EstadoActivo } from '../../generated/prisma/client';
@@ -76,4 +77,16 @@ export class SearchAssetsDto extends PaginationDto {
     message: `La dirección de ordenación debe ser una de: ${Object.values(SortType).join(', ')}`,
   })
   sortType?: SortType = SortType.DESC;
+
+  @ApiPropertyOptional({
+    example: true,
+    description:
+      'Cuando es true, devuelve solo activos transferibles: operativos, con área de origen y sin recepción pendiente por transferencia.',
+  })
+  @IsOptional()
+  @Transform(({ value }) => value === true || value === 'true')
+  @IsBoolean({
+    message: 'El parámetro soloTransferibles debe ser true o false',
+  })
+  soloTransferibles?: boolean;
 }
