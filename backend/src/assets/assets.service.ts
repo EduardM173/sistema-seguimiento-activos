@@ -114,7 +114,6 @@ export class AssetsService {
 
     if (soloTransferibles) {
       where.estado = EstadoActivo.OPERATIVO;
-      where.areaActualId = { not: null };
       where.asignaciones = {
         none: {
           estado: EstadoAsignacion.PENDIENTE,
