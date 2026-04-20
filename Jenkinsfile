@@ -42,7 +42,8 @@ pipeline {
                 }
             }
             steps {
-            
+                sh "docker compose -f docker-compose.deploy.yml stop frontend backend app-db"
+                sh "docker compose -f docker-compose.deploy.yml rm -f frontend backend app-db"
                 sh "docker compose -f docker-compose.deploy.yml up -d --force-recreate --remove-orphans frontend backend app-db"
             }
         }
