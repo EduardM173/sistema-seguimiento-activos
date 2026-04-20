@@ -36,9 +36,9 @@ pipeline {
         }
 
         stage('Deploy Detached') {  
-            when {
-                branch "${env.TARGET_BRANCH}"
-            }
+            expression { 
+                    return env.GIT_BRANCH == "origin/${env.TARGET_BRANCH}" || env.GIT_BRANCH == env.TARGET_BRANCH 
+                }
             steps {
                 sh "docker compose -f docker-compose.deploy.yml up -d --force-recreate frontend backend"
             }
