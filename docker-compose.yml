@@ -1,20 +1,4 @@
 services:
-  jenkins:
-    build:
-      context: ./jenkins
-      dockerfile: dockerfile
-
-    container_name: jenkins_local
-    restart: unless-stopped
-
-    group_add:
-      - "${DOCKER_HOST_GID}"
-    ports:
-      - "8083:8080"
-      - "50003:50000"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-      - jenkins_home:/var/jenkins_home
   app-db:
     image: postgres:16-alpine
     container_name: activos_db_local
@@ -77,4 +61,3 @@ services:
 
 volumes:
   postgres_data:
-  jenkins_home:
