@@ -18,14 +18,12 @@ pipeline {
             }
         }
 //
-        // stage('Docker Build') {
-        //     when {
-        //         branch "${env.TARGET_BRANCH}"
-        //     }
-        //     steps {
-        //         sh "docker compose build"
-        //     }
-        // }
+        stage('Docker Build') {
+
+            steps {
+                sh "docker compose build"
+            }
+        }
 
         // stage('Deploy Detached') {
         //     when {
