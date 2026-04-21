@@ -1,12 +1,12 @@
 services:
-  app-db:
+  app_db_local:
     image: postgres:16-alpine
     container_name: activos_db_local
     env_file:
       - ./.env
 
-    ports:
-      - $POSTGRES_PORT:$POSTGRES_PORT
+    # ports:
+    #   - $POSTGRES_PORT:$POSTGRES_PORT
 
     environment:
       POSTGRES_PASSWORD: $POSTGRES_PASSWORD
@@ -15,30 +15,31 @@ services:
       PGPORT: $POSTGRES_PORT
 
     volumes:
-      - postgres_data:/var/lib/postgres/data
-  backend:
+      - postgres_data:/var/lib/postgresql/data
+  backend_local:
     container_name: activos_backend_local
     image: ${DOCKER_REGISTRY:-local_activos}/backend:${TAG:-latest}
+
     build:
       dockerfile: dockerfile
       context: ./backend
 
     user: ${UID:-1000}:${GID:-1000}
-    env_file:
-      - ./.env
 
-    ports:
-      - 3000:3000
+    environment:
+      POSTGRES_HOST: app_db_local
+    # ports:
+    #   - 3000:3000
 
     depends_on:
-      app-db:
+      app_db_local:
         condition: service_started
 
     volumes:
       - ./backend:/app/
     command: "npm run start:dev"
 
-  frontend:
+  frontend_local:
     container_name: activos_frontend_local
     image: ${DOCKER_REGISTRY:-local_activos}/frontend:${TAG:-latest}
     build:
@@ -46,18 +47,24 @@ services:
       context: ./frontend
 
     user: ${UID:-1000}:${GID:-1000}
-    env_file:
-      - ./.env
+
+    environment:
+      VITE_API_URL: "http://localhost:8085/api"
+      VITE_HOST: "localhost"
+      VITE_BACKEND_URL: "http://backend_local:3000"
 
     ports:
-      - 80:8084
+      - 8085:8084
 
     volumes:
       - ./frontend:/app/
 
     depends_on:
-      backend:
+      backend_local:
         condition: service_started
 
 volumes:
   postgres_data:
+    name: activos_postgres_data
+    external: true
+    

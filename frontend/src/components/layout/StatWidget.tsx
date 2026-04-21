@@ -1,22 +1,23 @@
 import React from 'react';
 import { Card, Badge } from '../common';
+import { IconTrendingUp, IconTrendingDown } from '../common/Icon';
 import '../../styles/dashboard.css';
 
 interface StatWidgetProps {
   title: string;
   value: number | string;
   subtitle?: string;
-  icon?: string;
+  icon?: React.ReactNode;
   variant?: 'primary' | 'success' | 'danger' | 'warning' | 'info';
   onClick?: () => void;
-  trend?: number; // porcentaje de cambio
+  trend?: number;
 }
 
 export const StatWidget: React.FC<StatWidgetProps> = ({
   title,
   value,
   subtitle,
-  icon = '📊',
+  icon,
   variant = 'primary',
   onClick,
   trend,
@@ -24,14 +25,17 @@ export const StatWidget: React.FC<StatWidgetProps> = ({
   return (
     <Card className={`stat-widget stat-${variant}`} onClick={onClick} hoverable>
       <div className="stat-header">
-        <div className="stat-icon">{icon}</div>
+        {icon && <div className="stat-icon">{icon}</div>}
         <h3 className="stat-title">{title}</h3>
       </div>
       <div className="stat-value">{value}</div>
       {subtitle && <p className="stat-subtitle">{subtitle}</p>}
       {trend !== undefined && (
         <div className={`stat-trend ${trend >= 0 ? 'positive' : 'negative'}`}>
-          {trend >= 0 ? '↑' : '↓'} {Math.abs(trend)}%
+          {trend >= 0
+            ? <IconTrendingUp size={13} />
+            : <IconTrendingDown size={13} />}
+          {Math.abs(trend)}%
         </div>
       )}
     </Card>

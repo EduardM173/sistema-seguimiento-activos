@@ -4,16 +4,14 @@ import '../../styles/dashboard.css';
 
 interface QuickActionProps {
   label: string;
-  icon: string;
+  icon: React.ReactNode;
   onClick: () => void;
-  color?: string;
 }
 
 export const QuickAction: React.FC<QuickActionProps> = ({
   label,
   icon,
   onClick,
-  color = '#0056b3',
 }) => {
   return (
     <Card
@@ -23,7 +21,7 @@ export const QuickAction: React.FC<QuickActionProps> = ({
       padding="md"
     >
       <div style={{ textAlign: 'center' }}>
-        <div className="quick-action-icon" style={{ fontSize: '32px', marginBottom: '12px' }}>
+        <div className="quick-action-icon">
           {icon}
         </div>
         <p className="quick-action-label">{label}</p>

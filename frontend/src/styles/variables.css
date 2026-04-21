@@ -1,0 +1,158 @@
+/* ============================================================
+   DESIGN TOKENS — Monochromatic Navy · Gold accent
+   Super-minimal, polygonal, ultra-light typography
+   ============================================================ */
+:root {
+  /* ── Core backgrounds ──────────────────────────────────── */
+  --color-bg:              #060C18;
+  --color-bg-2:            #08101E;
+  --color-bg-elevated:     #0C1624;
+
+  /* ── Glass surfaces ────────────────────────────────────── */
+  --glass-bg:              rgba(255, 255, 255, 0.038);
+  --glass-bg-hover:        rgba(255, 255, 255, 0.062);
+  --glass-bg-active:       rgba(255, 255, 255, 0.082);
+  --glass-bg-strong:       rgba(255, 255, 255, 0.058);
+  --glass-border:          rgba(255, 255, 255, 0.07);
+  --glass-border-hover:    rgba(255, 255, 255, 0.12);
+  --glass-border-highlight:rgba(255, 255, 255, 0.20);
+  --glass-blur:            saturate(140%) blur(20px);
+  /* Subtle top-edge rim light — no spherical specular */
+  --glass-specular:        linear-gradient(180deg, rgba(255,255,255,0.05) 0%, transparent 40%);
+
+  /* ── Surfaces (aliased to glass) ──────────────────────── */
+  --color-surface:         var(--glass-bg);
+  --color-surface-2:       var(--glass-bg-hover);
+  --color-surface-3:       var(--glass-bg-active);
+  --color-surface-solid:   #0C1828;
+
+  /* ── Primary — navy blue ────────────────────────────────── */
+  --color-primary:         #1A5FAD;
+  --color-primary-hover:   #2272D0;
+  --color-primary-dark:    #0D3D75;
+  --color-primary-light:   #5090D8;
+  --color-primary-muted:   rgba(26, 95, 173, 0.14);
+  --color-primary-glow:    rgba(26, 95, 173, 0.22);
+
+  /* ── Accent — gold (extreme restraint: logo + active nav) ── */
+  --color-accent:          #C9A55C;
+  --color-accent-hover:    #D9B56C;
+  --color-accent-dim:      rgba(201, 165, 92, 0.12);
+  --color-accent-glow:     rgba(201, 165, 92, 0.18);
+  --color-accent-text:     #060C18;
+
+  /* ── Semantic ───────────────────────────────────────────── */
+  --color-success:         #4E9B6F;
+  --color-success-light:   rgba(78, 155, 111, 0.12);
+  --color-success-border:  rgba(78, 155, 111, 0.28);
+
+  --color-danger:          #C85A58;
+  --color-danger-light:    rgba(200, 90, 88, 0.12);
+  --color-danger-border:   rgba(200, 90, 88, 0.28);
+
+  --color-warning:         #C9A55C;
+  --color-warning-light:   rgba(201, 165, 92, 0.12);
+  --color-warning-border:  rgba(201, 165, 92, 0.28);
+
+  --color-info:            #1A5FAD;
+  --color-info-light:      rgba(26, 95, 173, 0.12);
+  --color-info-border:     rgba(26, 95, 173, 0.28);
+
+  /* ── Text ──────────────────────────────────────────────── */
+  --color-text:            #B8C4D4;
+  --color-text-secondary:  rgba(184, 196, 212, 0.55);
+  --color-text-muted:      rgba(184, 196, 212, 0.35);
+  --color-text-inverse:    #060C18;
+  --color-text-bright:     #D8E2F0;
+  --color-text-on-primary: #FFFFFF;
+
+  /* ── Borders ───────────────────────────────────────────── */
+  --color-border:          rgba(255, 255, 255, 0.07);
+  --color-border-light:    rgba(255, 255, 255, 0.045);
+  --color-border-strong:   rgba(255, 255, 255, 0.14);
+
+  /* ── Sidebar ───────────────────────────────────────────── */
+  --sidebar-bg:            rgba(4, 9, 20, 0.92);
+  --sidebar-text:          rgba(184, 196, 212, 0.60);
+  --sidebar-text-active:   #D8E2F0;
+  --sidebar-hover-bg:      rgba(255, 255, 255, 0.04);
+  --sidebar-active-bg:     rgba(26, 95, 173, 0.10);
+  --sidebar-active-border: #C9A55C;
+  --sidebar-divider:       rgba(255, 255, 255, 0.05);
+  --sidebar-width:         252px;
+
+  /* ── Typography ─────────────────────────────────────────── */
+  --font-family:           'Raleway', -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+  --font-family-heading:   'Lexend Giga', sans-serif;
+  --font-size-xs:          0.75rem;
+  --font-size-sm:          0.875rem;
+  --font-size-base:        1rem;
+  --font-size-lg:          1.125rem;
+  --font-size-xl:          1.25rem;
+  --font-size-2xl:         1.5rem;
+  --font-size-3xl:         1.875rem;
+  --font-size-4xl:         2.25rem;
+
+  --font-weight-normal:    100;
+  --font-weight-medium:    100;
+  --font-weight-semibold:  200;
+  --font-weight-bold:      200;
+  --font-weight-extrabold: 200;
+
+  --line-height-tight:     1.2;
+  --line-height-base:      1.6;
+  --line-height-loose:     1.8;
+
+  /* ── Spacing ─────────────────────────────────────────────── */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* ── Border radius — polygonal: all flat ────────────────── */
+  --radius-sm:   0;
+  --radius-base: 0;
+  --radius-md:   0;
+  --radius-lg:   0;
+  --radius-xl:   0;
+  --radius-2xl:  0;
+  --radius-full: 9999px;
+
+  /* ── Shadows ─────────────────────────────────────────────── */
+  --shadow-xs:         0 1px 3px rgba(0, 0, 0, 0.32);
+  --shadow-sm:         0 2px 8px rgba(0, 0, 0, 0.38);
+  --shadow-base:       0 4px 18px rgba(0, 0, 0, 0.40);
+  --shadow-md:         0 8px 32px rgba(0, 0, 0, 0.45);
+  --shadow-lg:         0 16px 56px rgba(0, 0, 0, 0.50);
+  --shadow-glow:       0 4px 18px rgba(0, 0, 0, 0.40);
+  --shadow-accent-glow:0 0 20px rgba(201, 165, 92, 0.16), 0 4px 18px rgba(0, 0, 0, 0.40);
+
+  /* ── Transitions ─────────────────────────────────────────── */
+  --transition-fast:   140ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base:   220ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow:   360ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ── Z-index ─────────────────────────────────────────────── */
+  --z-dropdown:  100;
+  --z-sticky:    200;
+  --z-modal:     500;
+  --z-overlay:   600;
+  --z-toast:     999;
+
+  /* ── Input ───────────────────────────────────────────────── */
+  --input-height:       42px;
+  --input-padding-x:    var(--space-3);
+  --input-padding-y:    var(--space-2);
+  --input-border:       1px solid var(--glass-border);
+  --input-border-focus: 1px solid rgba(26, 95, 173, 0.60);
+  --input-bg:           rgba(255, 255, 255, 0.03);
+  --input-bg-focus:     rgba(26, 95, 173, 0.06);
+  --input-radius:       0;
+  --input-shadow-focus: 0 0 0 2px rgba(26, 95, 173, 0.18);
+}

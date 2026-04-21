@@ -16,7 +16,7 @@ services:
       PGPORT: $POSTGRES_PORT
 
     volumes:
-      - postgres_data:/var/lib/postgres/data
+      - postgres_data:/var/lib/postgresql/data
   backend:
     container_name: activos_backend
     image: ${DOCKER_REGISTRY:-local_activos}/backend:${TAG:-latest}
@@ -56,3 +56,5 @@ services:
 
 volumes:
   postgres_data:
+    name: activos_postgres_data
+    external: true
