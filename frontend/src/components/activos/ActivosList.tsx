@@ -3,18 +3,21 @@ import { DataTable, SearchBar, Button, Badge, LoadingSpinner } from '../common';
 import type { Activo, FiltrosActivos, EstadoActivo } from '../../types/activos.types';
 import { estadoActivoDisplay } from '../../types/activos.types';
 import { activosService } from '../../services/activos.service';
+import BajaActivoModal from './BajaActivoModal';
 import '../../styles/modules.css';
 
 interface ActivosListProps {
   onDetails?: (activo: Activo) => void;
   onEdit?: (activo: Activo) => void;
   onDelete?: (activo: Activo) => void;
+  onBaja?: (activo: Activo) => void;
 }
 
 export const ActivosList: React.FC<ActivosListProps> = ({
   onDetails,
   onEdit,
   onDelete,
+  onBaja,
 }) => {
   const [activos, setActivos] = useState<Activo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -24,10 +27,13 @@ export const ActivosList: React.FC<ActivosListProps> = ({
     pagina: 1,
     limite: 10,
   });
+  const [bajaModalOpen, setBajaModalOpen] = useState(false);
+  const [selectedActivo, setSelectedActivo] = useState<Activo | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     cargarActivos();
-  }, [filtros]);
+  }, [filtros, refreshKey]);
 
   const cargarActivos = async () => {
     try {
@@ -48,7 +54,21 @@ export const ActivosList: React.FC<ActivosListProps> = ({
     setFiltros({ ...filtros, busqueda: termino, pagina: 1 });
   };
 
-  // PROSIN-185: Función para obtener color según estado (alineado con backend)
+  const handleOpenBajaModal = (activo: Activo) => {
+    setSelectedActivo(activo);
+    setBajaModalOpen(true);
+  };
+
+  const handleBajaConfirm = async () => {
+    setBajaModalOpen(false);
+    setSelectedActivo(null);
+    setRefreshKey(prev => prev + 1);
+    if (onBaja && selectedActivo) {
+      onBaja(selectedActivo);
+    }
+  };
+
+  // Función para obtener color según estado
   const getEstadoColor = (estado: EstadoActivo): any => {
     const colores: Record<EstadoActivo, any> = {
       'OPERATIVO': 'success',
@@ -72,7 +92,6 @@ export const ActivosList: React.FC<ActivosListProps> = ({
     {
       header: 'Estado',
       accessor: 'estado',
-      // PROSIN-185: Mostrar estado con badge y texto amigable
       render: (value: EstadoActivo) => (
         <Badge 
           label={getEstadoDisplay(value)} 
@@ -90,30 +109,51 @@ export const ActivosList: React.FC<ActivosListProps> = ({
       header: 'Acciones',
       accessor: (row: Activo) => row.id,
       render: (id: string, row: Activo) => (
-        <div className="actions-group">
+        <div className="actions-group" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           {onDetails && (
             <button
               className="btn-action btn-view"
               onClick={() => onDetails(row)}
               title="Ver detalles"
+              style={{ cursor: 'pointer', padding: '4px 8px', borderRadius: '4px' }}
             >
               👁️
             </button>
           )}
-          {onEdit && (
+          {onEdit && row.estado !== 'DADO_DE_BAJA' && (
             <button
               className="btn-action btn-edit"
               onClick={() => onEdit(row)}
               title="Editar"
+              style={{ cursor: 'pointer', padding: '4px 8px', borderRadius: '4px' }}
             >
               ✏️
             </button>
           )}
-          {onDelete && (
+          {/* Botón Dar de Baja - solo si no está dado de baja */}
+          {row.estado !== 'DADO_DE_BAJA' && (
+            <button
+              className="btn-action btn-baja"
+              onClick={() => handleOpenBajaModal(row)}
+              title="Dar de Baja"
+              style={{ 
+                cursor: 'pointer', 
+                padding: '4px 8px', 
+                borderRadius: '4px', 
+                background: '#fee2e2', 
+                color: '#dc2626',
+                border: 'none'
+              }}
+            >
+              🗑️ Dar de Baja
+            </button>
+          )}
+          {onDelete && row.estado === 'DADO_DE_BAJA' && (
             <button
               className="btn-action btn-delete"
               onClick={() => onDelete(row)}
               title="Eliminar"
+              style={{ cursor: 'pointer', padding: '4px 8px', borderRadius: '4px' }}
             >
               🗑️
             </button>
@@ -149,6 +189,17 @@ export const ActivosList: React.FC<ActivosListProps> = ({
         emptyMessage="No hay activos registrados"
         striped
         hover
+      />
+
+      {/* Modal para solicitar motivo de baja */}
+      <BajaActivoModal
+        isOpen={bajaModalOpen}
+        activo={selectedActivo}
+        onClose={() => {
+          setBajaModalOpen(false);
+          setSelectedActivo(null);
+        }}
+        onConfirm={handleBajaConfirm}
       />
     </div>
   );
