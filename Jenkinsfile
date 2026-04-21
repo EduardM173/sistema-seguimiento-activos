@@ -43,7 +43,7 @@ pipeline {
             }
             steps {
                 sh "docker compose -f docker-compose.deploy.yml down"
-                sh "docker compose -f docker-compose.deploy.yml up -d --force-recreate --remove-orphans"
+                sh "docker compose -f docker-compose.deploy.yml up -d"
             }
         }
     }

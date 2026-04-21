@@ -97,7 +97,7 @@
 }
 
 /* Colored top bar — identity accent for each stat type */
-.stat-widget.stat-primary  { border-top: 2px solid rgba(26, 95, 173, 0.60); }
+.stat-widget.stat-primary  { border-top: 2px solid rgba(212, 160, 86, 0.70); }
 .stat-widget.stat-success  { border-top: 2px solid rgba(91, 168, 122, 0.70); }
 .stat-widget.stat-danger   { border-top: 2px solid rgba(224, 112, 110, 0.70); }
 .stat-widget.stat-warning  { border-top: 2px solid rgba(212, 160, 86, 0.70); }
