@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Card, Badge, LoadingSpinner, Modal } from '../common';
+import { Button, Card, Badge, LoadingSpinner } from '../common';
 import type { Activo, MovimientoActivo, EstadoActivo, estadoActivoDisplay } from '../../types/activos.types';
 import { activosService } from '../../services/activos.service';
 import '../../styles/modules.css';

@@ -56,8 +56,8 @@ export default function MaterialsList() {
   }
 
   const columns: ColumnDef<Material>[] = [
-    { id: 'codigo',      header: 'Código',       accessor: 'codigo',       primary: true, width: 120, sortable: true },
-    { id: 'nombre',      header: 'Nombre',        accessor: 'nombre',       width: 200,    sortable: true },
+    { id: 'codigo',      header: 'Código',       accessor: 'codigo', width: 120, sortable: true },
+    { id: 'nombre',      header: 'Nombre',  primary: true,      accessor: 'nombre',       width: 200,    sortable: true },
     { id: 'categoria',   header: 'Categoría',     accessor: (m) => m.categoria?.nombre ?? '-', width: 160 },
     { id: 'unidad',      header: 'Unidad',        accessor: 'unidad',       width: 100 },
     {

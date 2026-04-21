@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { DataTable, Button, Badge } from '../../components/common';
+import { Button, Badge, SmartTable } from '../../components/common';
+import type { ColumnDef, ActionDef } from '../../components/common';
 import type { CategoriaMaterial, Material } from '../../types/inventario.types';
 import { inventarioService } from '../../services/inventario.service';
 import MaterialForm from '../../components/inventario/MaterialForm';
@@ -9,6 +10,7 @@ import '../../styles/assets.css';
 import IngresoStockModal from '../../components/inventario/IngresoStockModal';
 import { FilterRow } from '../../components/common/FilterRow';
 import type { FilterQuery } from '../../components/common/FilterRow';
+import { IconEdit, IconX } from '@/components/common/Icon';
 
 export const InventarioPage: React.FC = () => {
   const notify = useNotification();
@@ -174,69 +176,54 @@ export const InventarioPage: React.FC = () => {
     return { label: 'NORMAL', variant: 'success' };
   };
 
-  const columns = [
-    { header: 'Código', accessor: 'codigo' as keyof Material, width: '100px' },
-    { header: 'Nombre', accessor: 'nombre' as keyof Material },
-    { header: 'Categoría', accessor: (row: Material) => row.categoria?.nombre || 'N/A' },
+  const columns: ColumnDef<Material>[] = [
+    { id: 'codigo', header: 'Código', accessor: 'codigo', width: 100 },
+    { id: 'nombre', header: 'Nombre', primary: true, accessor: 'nombre' },
+    { id: 'categoria', header: 'Categoría', accessor: (row: Material) => row.categoria?.nombre || 'N/A' },
     {
+      id: 'stockActual',
       header: 'Disponible',
       accessor: (row: Material) => row.stockActual,
-      render: (value: number, row: Material) => (
+      render: (value: unknown, row: Material) => (
         <strong style={{ color: getStockColor(row.stockActual, row.stockMinimo) }}>
-          {value.toFixed(2)}
+          {(value as number).toFixed(2)}
         </strong>
       ),
     },
     {
+      id: 'stockMinimo',
       header: 'Mínimo',
-      accessor: 'stockMinimo' as keyof Material,
-      render: (value: number) => value.toFixed(2),
+      accessor: 'stockMinimo',
+      render: (value: unknown) => (value as number).toFixed(2),
     },
-    { header: 'Un. Medida', accessor: 'unidad' as keyof Material, width: '100px' },
+    { id: 'unidad', header: 'Un. Medida', accessor: 'unidad', width: 100 },
     {
+      id: 'estado',
       header: 'Estado',
-      accessor: (row: Material) => row,
-      render: (row: Material) => {
+      accessor: (row: Material) => row.stockActual,
+      render: (_value: unknown, row: Material) => {
         const status = getStockStatus(row.stockActual, row.stockMinimo);
         return <Badge label={status.label} variant={status.variant} size="sm" />;
       },
     },
+  ];
+
+  const materialActions: ActionDef<Material>[] = [
+    // {
+    //   label: 'Ver detalle',
+    //   icon: <IconInfo/>,
+    //   onClick: (asset) => setViewingAssetId(asset),
+    // },
     {
-      header: 'Acciones',
-      accessor: (row: Material) => row.id,
-      render: (_id: string, row: Material) => (
-        <div className="actions-group" style={{ display: 'flex', gap: '8px' }}>
-          <button
-            className="btn-action btn-edit"
-            onClick={() => handleEdit(row)}
-            title="Editar"
-            style={{
-              cursor: 'pointer',
-              padding: '4px 8px',
-              background: '#e0e7ff',
-              borderRadius: '4px',
-              border: 'none',
-            }}
-          >
-            ✏️ Editar
-          </button>
-          <button
-            className="btn-action btn-delete"
-            onClick={() => handleDelete(row)}
-            title="Eliminar"
-            style={{
-              cursor: 'pointer',
-              padding: '4px 8px',
-              background: '#fee2e2',
-              borderRadius: '4px',
-              border: 'none',
-              color: '#dc2626',
-            }}
-          >
-            🗑️ Eliminar
-          </button>
-        </div>
-      ),
+      label: 'Editar',
+      icon: <IconEdit/>,
+      onClick: (material: Material) => handleEdit(material),
+    },
+    {
+      label: 'Eliminar',
+      icon: <IconX/>,
+      variant: 'danger' as const,
+      onClick: (material: Material) => void handleDelete(material),
     },
   ];
 
@@ -365,13 +352,14 @@ export const InventarioPage: React.FC = () => {
       />
 
       <div className="module-list">
-        <DataTable<Material>
+        <SmartTable<Material>
           columns={columns}
           data={materiales}
           loading={loading}
           emptyMessage="📦 No hay materiales registrados en el inventario"
-          striped
-          hover
+          keyExtractor={(m) => m.id}
+          actions={materialActions}
+          onRowClick={(m) => handleEdit(m)}
         />
       </div>
 

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import CreateUser from '../../components/users/CreateUser';
 
 import { useAuth } from '../../context/AuthContext';
 import {
@@ -22,9 +22,10 @@ type TabKey = 'users' | 'roles';
 type PermissionMatrixState = Record<string, Record<string, boolean>>;
 
 export default function UserList() {
-  const navigate = useNavigate();
-  const location = useLocation();
   const { user: authUser } = useAuth();
+
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [editingUserId, setEditingUserId] = useState<string | null>(null);
 
   const [activeTab, setActiveTab] = useState<TabKey>('users');
 
@@ -119,14 +120,7 @@ export default function UserList() {
     loadAllData();
   }, []);
 
-  useEffect(() => {
-    const state = location.state as { successMessage?: string } | null;
 
-    if (state?.successMessage) {
-      setSuccessMessage(state.successMessage);
-      navigate(location.pathname, { replace: true, state: {} });
-    }
-  }, [location.pathname, location.state, navigate]);
 
   function getMissingUserFields(user: User) {
     const missing: string[] = [];
@@ -437,7 +431,7 @@ export default function UserList() {
       {
         label: 'Editar',
         icon: '✏️',
-        onClick: (u) => navigate(`/users/${u.id}/edit`),
+        onClick: (u) => setEditingUserId(u.id),
       },
     ];
 
@@ -449,7 +443,7 @@ export default function UserList() {
           loading={loading}
           keyExtractor={(u) => u.id}
           emptyMessage="No hay usuarios para mostrar."
-          onRowClick={(u) => navigate(`/users/${u.id}/edit`)}
+          onRowClick={(u) => setEditingUserId(u.id)}
           actions={userActions}
         />
       </div>
@@ -815,7 +809,7 @@ export default function UserList() {
         </div>
 
         <button
-          onClick={() => navigate('/users/create')}
+          onClick={() => setShowCreateModal(true)}
           style={{
             backgroundColor: '#2563eb',
             color: 'white',
@@ -916,6 +910,16 @@ export default function UserList() {
       )}
 
       {activeTab === 'users' ? renderUsersTab() : renderRolesTab()}
+
+      <CreateUser
+        open={showCreateModal || Boolean(editingUserId)}
+        userId={editingUserId ?? undefined}
+        onClose={() => {
+          setShowCreateModal(false);
+          setEditingUserId(null);
+          void loadAllData();
+        }}
+      />
     </div>
   );
 }

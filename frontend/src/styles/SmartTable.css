@@ -157,19 +157,27 @@
   Sized to content (inline-flex), not the full cell width.
 */
 .st__primaryCell {
-  display: inline-flex;
-  align-items: stretch;
-  border: 1px solid var(--glass-border);
+  display: flex;
+  justify-content: space-between;
+  outline: 1px solid;
+  outline-color: var(--glass-border);
+  width: 100%;
   max-width: 100%;
   overflow: hidden;
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
   cursor: default;
 }
 
-/* Row hover: light up the box border */
-.st__tr:hover .st__primaryCell {
-  border-color: var(--glass-border-hover);
+.st__primaryCell:hover{
+    outline: 1px solid var(--color-accent);
 }
+
+.st__primaryCell:hover .st__dropdownTrigger{
+    color: var(--color-accent);
+    visibility: visible;
+}
+
+
 
 /* Base style shared by both <button> and <span> variants */
 .st__primaryName {
@@ -195,11 +203,10 @@
 }
 
 .st__primaryName--clickable:hover {
-  background: var(--color-surface-2);
-  color: var(--color-primary-light);
-  text-decoration: underline;
-  text-decoration-style: dotted;
-  text-underline-offset: 3px;
+  /* background: var(--color-surface-2); */
+  color: var(--color-text-bright);
+  font-weight: var(--font-weight-extrabold);
+  text-decoration: none;
 }
 
 /* ── Dropdown trigger — Jenkins-style arrow ──────────────── */
@@ -212,10 +219,9 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  align-self: stretch;
+  /* align-self: left; */
   background: none;
   border: none;
-  border-left: 1px solid var(--glass-border);
   padding: 0 var(--space-2);
   color: var(--color-text-secondary);
   font-size: 11px;
@@ -223,26 +229,20 @@
   cursor: pointer;
   flex-shrink: 0;
   transition:
-    background var(--transition-fast),
     color var(--transition-fast),
     border-color var(--transition-fast);
+    visibility: hidden;
 }
 
 .st__dropdownTrigger:hover {
-  color: var(--color-accent);
-  background: var(--color-accent-dim);
-  border-left-color: var(--glass-border-hover);
+
+  border: none;
+  padding: var(--space-2);
+  color: var(--color-text-secondary);
+  font-size: 15px;
 }
 
-/* Row hover: make the trigger slightly brighter */
-.st__tr:hover .st__dropdownTrigger {
-  color: var(--color-text-muted);
-}
 
-.st__dropdownTrigger:focus-visible {
-  outline: 2px solid var(--color-primary);
-  outline-offset: -2px;
-}
 
 /* ── Dropdown menu (rendered into <body> via portal) ─────── */
 .st__dropdown {

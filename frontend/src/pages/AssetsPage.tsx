@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 
 import EditAssetModal from '../components/activos/EditAssetModal';
 import ViewAssetModal from '../components/activos/ViewAssetModal';
+import OverlayModal from '../components/common/OverlayModal';
+import CreateAssetPage from './CreateAssetPage';
 import AssetDetailPanel from '../components/assets/AssetDetailPanel';
 import { useNotification } from '../context/NotificationContext';
 import { getAreas, getCategorias, getUbicaciones, getUsuarios } from '../services/catalogs.service';
@@ -53,7 +54,6 @@ const ESTADO_CLASS: Record<string, string> = {
 const PAGE_SIZE = 10;
 
 export default function AssetsPage() {
-  const navigate = useNavigate();
   const notify = useNotification();
   const { error: notifyError, success: notifySuccess } = notify;
 
@@ -87,6 +87,7 @@ export default function AssetsPage() {
   const [creatingFakeAssets, setCreatingFakeAssets] = useState(false);
   const [deletingFakeAssets, setDeletingFakeAssets] = useState(false);
 
+  const [showCreateAssetModal, setShowCreateAssetModal] = useState(false);
   const [editingAssetId, setEditingAssetId] = useState<string | null>(null);
   const [viewingAssetId, setViewingAssetId] = useState<string | null>(null);
 
@@ -470,7 +471,7 @@ export default function AssetsPage() {
           <button
             type="button"
             className="btn btn--primary"
-            onClick={() => navigate('/activos/nuevo')}
+            onClick={() => setShowCreateAssetModal(true)}
           >
             <span>+</span> Nuevo Activo
           </button>
@@ -682,35 +683,16 @@ export default function AssetsPage() {
         </div>
       </div>
 
-      {assigningAsset ? (
-        <div className="assetsModalBackdrop" role="presentation" onClick={closeAssignModal}>
-          <div
-            className="assetsModal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="assign-asset-title"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="assetsModal__header">
-              <div>
-                <h2 id="assign-asset-title" className="assetsModal__title">
-                  Asignar activo
-                </h2>
-                <p className="assetsModal__subtitle">
-                  {assigningAsset.codigo} · {assigningAsset.nombre}
-                </p>
-              </div>
-              <button
-                type="button"
-                className="actionBtn"
-                onClick={closeAssignModal}
-                disabled={submittingAssignment}
-              >
-                ✕
-              </button>
-            </div>
-
-            <form className="assetsModal__form" onSubmit={handleAssignSubmit}>
+      <OverlayModal
+        open={Boolean(assigningAsset)}
+        onClose={closeAssignModal}
+        title="Asignar activo"
+        subtitle={assigningAsset ? `${assigningAsset.codigo} · ${assigningAsset.nombre}` : ''}
+        disabled={submittingAssignment}
+        width="560px"
+      >
+        {assigningAsset ? (
+          <form className="assetsModal__form" onSubmit={handleAssignSubmit}>
               <label className="assetsModal__field">
                 <span className="assetsFilters__label">Tipo de asignación</span>
                 <select
@@ -770,7 +752,7 @@ export default function AssetsPage() {
                 />
               </label>
 
-              <div className="assetsModal__actions">
+              <div className="overlayModal__footer">
                 <button
                   type="button"
                   className="btn btn--ghost"
@@ -788,9 +770,8 @@ export default function AssetsPage() {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      ) : null}
+        ) : null}
+      </OverlayModal>
 
       {viewingAssetId ? (
         <ViewAssetModal
@@ -814,6 +795,14 @@ export default function AssetsPage() {
           }}
         />
       ) : null}
+
+      <CreateAssetPage
+        open={showCreateAssetModal}
+        onClose={() => {
+          setShowCreateAssetModal(false);
+          void loadAssets();
+        }}
+      />
     </section>
   );
 }
