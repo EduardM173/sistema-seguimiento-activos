@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { DataTable, Button, Badge } from '../../components/common';
 import type { CategoriaMaterial, Material } from '../../types/inventario.types';
 import { inventarioService } from '../../services/inventario.service';
@@ -9,6 +9,7 @@ import IngresoStockModal from '../../components/inventario/IngresoStockModal';
 
 export const InventarioPage: React.FC = () => {
   const notify = useNotification();
+
   const [materiales, setMateriales] = useState<Material[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<{ type: 'error'; text: string } | null>(null);
@@ -32,6 +33,8 @@ export const InventarioPage: React.FC = () => {
   const [materialSeleccionado, setMaterialSeleccionado] = useState<Material | null>(null);
   const [historial, setHistorial] = useState<any[]>([]);
   const [loadingHistorial, setLoadingHistorial] = useState(false);
+  const [fechaInicio, setFechaInicio] = useState('');
+  const [fechaFin, setFechaFin] = useState('');
 
   useEffect(() => {
     void cargarMateriales();
@@ -54,6 +57,7 @@ export const InventarioPage: React.FC = () => {
     try {
       setLoading(true);
       setMessage(null);
+
       const resultado = await inventarioService.obtenerTodos({
         q: searchText || undefined,
         categoriaId: categoriaId || undefined,
@@ -62,6 +66,7 @@ export const InventarioPage: React.FC = () => {
         sortBy,
         sortType,
       });
+
       setMateriales(resultado.data);
       setMeta({
         total: resultado.total,
@@ -87,14 +92,18 @@ export const InventarioPage: React.FC = () => {
   };
 
   const handleDelete = async (material: Material) => {
-    if (confirm(`¿Está seguro de eliminar el material "${material.nombre}"?`)) {
-      try {
-        await inventarioService.eliminar(material.id);
-        notify.success('Material eliminado correctamente');
-        setRefreshKey((prev) => prev + 1);
-      } catch (err) {
-        notify.error('Error', 'No se pudo eliminar el material');
-      }
+    const confirmed = window.confirm(
+      `¿Está seguro de eliminar el material "${material.nombre}"?`,
+    );
+
+    if (!confirmed) return;
+
+    try {
+      await inventarioService.eliminar(material.id);
+      notify.success('Material eliminado correctamente');
+      setRefreshKey((prev) => prev + 1);
+    } catch (err) {
+      notify.error('Error', 'No se pudo eliminar el material');
     }
   };
 
@@ -111,14 +120,18 @@ export const InventarioPage: React.FC = () => {
     setCurrentPage(1);
   };
 
-  const abrirHistorial = async (material: Material) => {
-    setMaterialSeleccionado(material);
-    setShowHistorialModal(true);
+  const cargarHistorial = async (
+    material: Material,
+    filtros?: { startDate?: string; endDate?: string },
+  ) => {
     setLoadingHistorial(true);
 
     try {
-      const data = await inventarioService.obtenerHistorialMaterial(material.id);
-      setHistorial(data);
+      const data = await inventarioService.obtenerHistorialMaterial(
+        material.id,
+        filtros,
+      );
+      setHistorial(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Error cargando historial', error);
       setMessage({ type: 'error', text: 'Error al cargar historial' });
@@ -126,6 +139,31 @@ export const InventarioPage: React.FC = () => {
     } finally {
       setLoadingHistorial(false);
     }
+  };
+
+  const abrirHistorial = async (material: Material) => {
+    setMaterialSeleccionado(material);
+    setFechaInicio('');
+    setFechaFin('');
+    setShowHistorialModal(true);
+    await cargarHistorial(material);
+  };
+
+  const aplicarFiltroHistorial = async () => {
+    if (!materialSeleccionado) return;
+
+    await cargarHistorial(materialSeleccionado, {
+      startDate: fechaInicio || undefined,
+      endDate: fechaFin || undefined,
+    });
+  };
+
+  const limpiarFiltroHistorial = async () => {
+    if (!materialSeleccionado) return;
+
+    setFechaInicio('');
+    setFechaFin('');
+    await cargarHistorial(materialSeleccionado);
   };
 
   const handleCreateDemo = async () => {
@@ -145,7 +183,10 @@ export const InventarioPage: React.FC = () => {
       setCurrentPage(1);
       setRefreshKey((prev) => prev + 1);
     } catch (err: any) {
-      notify.error('Error', err?.message || 'No se pudieron generar materiales demo');
+      notify.error(
+        'Error',
+        err?.message || 'No se pudieron generar materiales demo',
+      );
     } finally {
       setCreatingDemo(false);
     }
@@ -168,7 +209,10 @@ export const InventarioPage: React.FC = () => {
       setCurrentPage(1);
       setRefreshKey((prev) => prev + 1);
     } catch (err: any) {
-      notify.error('Error', err?.message || 'No se pudieron eliminar materiales demo');
+      notify.error(
+        'Error',
+        err?.message || 'No se pudieron eliminar materiales demo',
+      );
     } finally {
       setDeletingDemo(false);
     }
@@ -192,7 +236,10 @@ export const InventarioPage: React.FC = () => {
   const columns = [
     { header: 'Código', accessor: 'codigo' as keyof Material, width: '100px' },
     { header: 'Nombre', accessor: 'nombre' as keyof Material },
-    { header: 'Categoría', accessor: (row: Material) => row.categoria?.nombre || 'N/A' },
+    {
+      header: 'Categoría',
+      accessor: (row: Material) => row.categoria?.nombre || 'N/A',
+    },
     {
       header: 'Disponible',
       accessor: (row: Material) => row.stockActual,
@@ -207,7 +254,11 @@ export const InventarioPage: React.FC = () => {
       accessor: 'stockMinimo' as keyof Material,
       render: (value: number) => value.toFixed(2),
     },
-    { header: 'Un. Medida', accessor: 'unidad' as keyof Material, width: '100px' },
+    {
+      header: 'Un. Medida',
+      accessor: 'unidad' as keyof Material,
+      width: '100px',
+    },
     {
       header: 'Estado',
       accessor: (row: Material) => row,
@@ -383,7 +434,11 @@ export const InventarioPage: React.FC = () => {
               setCurrentPage(1);
             }}
             placeholder="Código o nombre..."
-            style={{ padding: '10px 12px', borderRadius: '8px', border: '1px solid #d1d5db' }}
+            style={{
+              padding: '10px 12px',
+              borderRadius: '8px',
+              border: '1px solid #d1d5db',
+            }}
           />
         </div>
 
@@ -412,7 +467,11 @@ export const InventarioPage: React.FC = () => {
               setCategoriaId(e.target.value);
               setCurrentPage(1);
             }}
-            style={{ padding: '10px 12px', borderRadius: '8px', border: '1px solid #d1d5db' }}
+            style={{
+              padding: '10px 12px',
+              borderRadius: '8px',
+              border: '1px solid #d1d5db',
+            }}
           >
             <option value="">Todas</option>
             {categorias.map((categoria) => (
@@ -448,7 +507,11 @@ export const InventarioPage: React.FC = () => {
               setSortBy(e.target.value as typeof sortBy);
               setCurrentPage(1);
             }}
-            style={{ padding: '10px 12px', borderRadius: '8px', border: '1px solid #d1d5db' }}
+            style={{
+              padding: '10px 12px',
+              borderRadius: '8px',
+              border: '1px solid #d1d5db',
+            }}
           >
             <option value="creadoEn">Más recientes</option>
             <option value="codigo">Código</option>
@@ -484,7 +547,11 @@ export const InventarioPage: React.FC = () => {
               setSortType(e.target.value as 'ASC' | 'DESC');
               setCurrentPage(1);
             }}
-            style={{ padding: '10px 12px', borderRadius: '8px', border: '1px solid #d1d5db' }}
+            style={{
+              padding: '10px 12px',
+              borderRadius: '8px',
+              border: '1px solid #d1d5db',
+            }}
           >
             <option value="ASC">Ascendente</option>
             <option value="DESC">Descendente</option>
@@ -557,7 +624,9 @@ export const InventarioPage: React.FC = () => {
           </span>
           <button
             type="button"
-            onClick={() => setCurrentPage((prev) => Math.min(meta.totalPages, prev + 1))}
+            onClick={() =>
+              setCurrentPage((prev) => Math.min(meta.totalPages, prev + 1))
+            }
             disabled={currentPage >= meta.totalPages}
             style={{
               padding: '8px 14px',
@@ -623,8 +692,10 @@ export const InventarioPage: React.FC = () => {
               }}
             >
               <div>
-                <h2 style={{ margin: 0, color: '#111827' }}>Historial de movimientos</h2>
-                <p style={{ margin: '4px 0 0 0', color: '#6b7280' }}>
+                <h2 style={{ margin: 0, color: '#111827' }}>
+                  Historial de movimientos
+                </h2>
+                <p style={{ margin: '4px 0 0 0', color: '#374151' }}>
                   {materialSeleccionado?.nombre} ({materialSeleccionado?.codigo})
                 </p>
               </div>
@@ -641,6 +712,103 @@ export const InventarioPage: React.FC = () => {
                 }}
               >
                 ✖ Cerrar
+              </button>
+            </div>
+
+            <div
+              style={{
+                display: 'flex',
+                gap: '12px',
+                flexWrap: 'wrap',
+                alignItems: 'flex-end',
+                marginBottom: '16px',
+                marginTop: '16px',
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '6px',
+                }}
+              >
+                <label
+                  style={{
+                    fontSize: '0.85rem',
+                    color: '#374151',
+                    fontWeight: 600,
+                  }}
+                >
+                  Fecha inicio
+                </label>
+                <input
+                  type="date"
+                  value={fechaInicio}
+                  onChange={(e) => setFechaInicio(e.target.value)}
+                  style={{
+                    padding: '8px 10px',
+                    borderRadius: '6px',
+                    border: '1px solid #d1d5db',
+                  }}
+                />
+              </div>
+
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '6px',
+                }}
+              >
+                <label
+                  style={{
+                    fontSize: '0.85rem',
+                    color: '#374151',
+                    fontWeight: 600,
+                  }}
+                >
+                  Fecha fin
+                </label>
+                <input
+                  type="date"
+                  value={fechaFin}
+                  onChange={(e) => setFechaFin(e.target.value)}
+                  style={{
+                    padding: '8px 10px',
+                    borderRadius: '6px',
+                    border: '1px solid #d1d5db',
+                  }}
+                />
+              </div>
+
+              <button
+                onClick={() => void aplicarFiltroHistorial()}
+                style={{
+                  cursor: 'pointer',
+                  padding: '8px 14px',
+                  background: '#2563eb',
+                  color: '#fff',
+                  borderRadius: '6px',
+                  border: 'none',
+                  fontWeight: 600,
+                }}
+              >
+                Filtrar
+              </button>
+
+              <button
+                onClick={() => void limpiarFiltroHistorial()}
+                style={{
+                  cursor: 'pointer',
+                  padding: '8px 14px',
+                  background: '#f3f4f6',
+                  color: '#374151',
+                  borderRadius: '6px',
+                  border: 'none',
+                  fontWeight: 600,
+                }}
+              >
+                Limpiar
               </button>
             </div>
 
@@ -710,15 +878,28 @@ export const InventarioPage: React.FC = () => {
                       <td
                         style={{
                           padding: '10px',
-                          borderBottom: '1px solid #f3f4f6', color: '#111827'
+                          borderBottom: '1px solid #f3f4f6',
                         }}
                       >
-                        {item.tipo}
+                        <span
+                          style={{
+                            color:
+                              item.tipo === 'ENTRADA'
+                                ? '#16a34a'
+                                : item.tipo === 'SALIDA'
+                                  ? '#dc2626'
+                                  : '#111827',
+                            fontWeight: 700,
+                          }}
+                        >
+                          {item.tipo}
+                        </span>
                       </td>
                       <td
                         style={{
                           padding: '10px',
-                          borderBottom: '1px solid #f3f4f6', color: '#111827'
+                          borderBottom: '1px solid #f3f4f6',
+                          color: '#111827',
                         }}
                       >
                         {item.cantidad}
@@ -726,7 +907,8 @@ export const InventarioPage: React.FC = () => {
                       <td
                         style={{
                           padding: '10px',
-                          borderBottom: '1px solid #f3f4f6', color: '#111827'
+                          borderBottom: '1px solid #f3f4f6',
+                          color: '#111827',
                         }}
                       >
                         {new Date(item.fecha).toLocaleString()}
@@ -734,7 +916,8 @@ export const InventarioPage: React.FC = () => {
                       <td
                         style={{
                           padding: '10px',
-                          borderBottom: '1px solid #f3f4f6', color: '#111827'
+                          borderBottom: '1px solid #f3f4f6',
+                          color: '#111827',
                         }}
                       >
                         {item.usuario?.nombreCompleto || 'Sin usuario'}
