@@ -315,9 +315,97 @@ export class AssetsController {
       },
     },
   })
+  @ApiOperation({ summary: 'Confirmar recepción de transferencia (HU41)' })
+  @ApiParam({ name: 'asignacionId', description: 'ID de la asignación pendiente' })
+  @ApiOkResponse({ description: 'Recepción confirmada correctamente' })
+  @ApiConflictResponse({
+    description: 'La recepción no está pendiente o el usuario no pertenece al área destino',
+  })
+  @ApiNotFoundResponse({ description: 'No se encontró la asignación solicitada' })
+  @Patch('asignaciones/:asignacionId/confirmar')
+  async confirmarRecepcion(
+    @Param('asignacionId') asignacionId: string,
+    @Req() req: Request,
+  ) {
+    const userId = (req.user as { id: string }).id;
+    const result = await this.assetsService.confirmarRecepcion(asignacionId, userId);
+    return ApiResponse.success(result, result.message);
+  }
+
+  @ApiOperation({ summary: 'Rechazar recepción de transferencia (HU41)' })
+  @ApiParam({ name: 'asignacionId', description: 'ID de la asignación pendiente' })
+  @ApiOkResponse({ description: 'Recepción rechazada correctamente' })
+  @ApiConflictResponse({
+    description: 'La recepción no está pendiente o el usuario no pertenece al área destino',
+  })
+  @ApiNotFoundResponse({ description: 'No se encontró la asignación solicitada' })
+  @Patch('asignaciones/:asignacionId/rechazar')
+  async rechazarRecepcion(
+    @Param('asignacionId') asignacionId: string,
+    @Req() req: Request,
+  ) {
+    const userId = (req.user as { id: string }).id;
+    const result = await this.assetsService.rechazarRecepcion(asignacionId, userId);
+    return ApiResponse.success(result, result.message);
+  }
+
   @ApiNotFoundResponse({
     description: 'No se encontró el activo solicitado',
   })
+  @ApiOperation({
+    summary: 'Transferencias pendientes de recepción de un área',
+    description:
+      'HU41 – Devuelve los activos con recepción pendiente cuyo área de destino es el área indicada.',
+  })
+  @ApiQuery({
+    name: 'areaId',
+    required: true,
+    type: String,
+    description: 'ID del área de destino para filtrar las recepciones pendientes',
+  })
+  @ApiOkResponse({
+    description: 'Listado de transferencias pendientes de recepción para el área',
+  })
+  @ApiBadRequestResponse({ description: 'El areaId enviado no es válido' })
+  @Get('pendientes-recepcion')
+  async pendientesDeRecepcion(@Query('areaId') areaId: string) {
+    const data = await this.assetsService.pendientesDeRecepcion(areaId ?? '');
+    return ApiResponse.success(data, 'Transferencias pendientes obtenidas correctamente');
+  }
+
+  @ApiOperation({
+    summary: 'Solicitudes de transferencia enviadas por usuario (HU41)',
+    description:
+      'Lista transferencias pendientes registradas por el usuario. Puede filtrarse opcionalmente por área origen.',
+  })
+  @ApiQuery({
+    name: 'registradoPorId',
+    required: true,
+    type: String,
+    description: 'ID del usuario que registró la transferencia',
+  })
+  @ApiQuery({
+    name: 'areaOrigenId',
+    required: false,
+    type: String,
+    description: 'ID del área origen que envió la transferencia',
+  })
+  @ApiOkResponse({
+    description: 'Listado de solicitudes enviadas pendientes',
+  })
+  @ApiBadRequestResponse({ description: 'Parámetros de consulta inválidos' })
+  @Get('solicitudes-enviadas')
+  async solicitudesEnviadas(
+    @Query('registradoPorId') registradoPorId: string,
+    @Query('areaOrigenId') areaOrigenId?: string,
+  ) {
+    const data = await this.assetsService.solicitudesEnviadas(
+      registradoPorId ?? '',
+      areaOrigenId,
+    );
+    return ApiResponse.success(data, 'Solicitudes enviadas obtenidas correctamente');
+  }
+
   @Get(':id')
   async findOne(@Param('id') id: string) {
     const activo = await this.assetsService.findOne(id);
