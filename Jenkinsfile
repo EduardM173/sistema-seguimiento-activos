@@ -48,26 +48,25 @@ pipeline {
         }
     }
 
-    post {
+post {
         always {
             sh "rm -f ./.env"
             sh "docker image prune -af"
 
             script {
-                
                 withCredentials([string(credentialsId: 'DISCORD_WEBHOOK', variable: 'DISCORD_URL')]) {
                     sh """#!/bin/sh
-                    # Extraer metadata real de Git
-                    AUTHOR=\$(git log -1 --pretty=format:'%an' || echo 'Sistema')
-                    MSG=\$(git log -1 --pretty=format:'%s' || echo 'Build ejecutado')
+
+                    AUTHOR=\$(git log -1 --pretty=format:'%an' | sed 's/"/\\\\"/g' || echo 'Sistema')
+                    MSG=\$(git log -1 --pretty=format:'%s' | sed 's/"/\\\\"/g' || echo 'Build ejecutado')
                     
                     STATUS="${currentBuild.currentResult ?: 'SUCCESS'}"
                     
                     if [ "\$STATUS" = "SUCCESS" ]; then
-                        COLOR=3066993 # Verde
+                        COLOR=3066993
                         ICON="✅"
                     else
-                        COLOR=15158332 # Rojo
+                        COLOR=15158332
                         ICON="❌"
                     fi
 
@@ -81,11 +80,11 @@ pipeline {
                         "fields": [
                           { "name": "Autor", "value": "\$AUTHOR", "inline": true },
                           { "name": "Duración", "value": "${currentBuild.durationString}", "inline": true },
-                          { "name": "Commit", "value": "`\$MSG`", "inline": false }
+                          { "name": "Commit", "value": "\\`\$MSG\\`", "inline": false }
                         ]
                       }]
                     }
-                    EOF
+EOF
 
                     echo "Enviando payload a Discord..."
                     curl -s -S --max-time 10 -H "Content-Type: application/json" -X POST -d @discord_payload.json "\$DISCORD_URL"
