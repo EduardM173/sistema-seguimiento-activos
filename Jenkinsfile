@@ -71,7 +71,6 @@ pipeline {
                         ICON="❌"
                     fi
 
-                    # Construir el JSON exacto. Aquí puedes meter todos los campos y embeds que quieras.
                     cat <<EOF > discord_payload.json
                     {
                       "username": "Jenkins CI",
@@ -88,7 +87,6 @@ pipeline {
                     }
                     EOF
 
-                    # Ejecutar el POST directo con timeout estricto a nivel de socket
                     echo "Enviando payload a Discord..."
                     curl -s -S --max-time 10 -H "Content-Type: application/json" -X POST -d @discord_payload.json "\$DISCORD_URL"
                     """
