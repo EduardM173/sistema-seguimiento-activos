@@ -1,29 +1,15 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Button } from '../../components/common';
 import { useNotification } from '../../context/NotificationContext';
-import { useAuth } from '../../context/AuthContext';
-import { getAreas, } from '../../services/catalogs.service';
-import {
-  searchAssets,
-  transferAsset,
-  getPendientesRecepcion,
-  confirmarRecepcion,
-  rechazarRecepcion,
-  getSolicitudesEnviadas,
-} from '../../services/assets.service';
+import { getAreas } from '../../services/catalogs.service';
+import { searchAssets, transferAsset } from '../../services/assets.service';
 import { HttpError } from '../../services/http.client';
-import type {
-  Area,
-  AssetListItem,
-  PendienteRecepcion,
-  SolicitudEnviada,
-} from '../../types/assets.types';
+import type { Area, AssetListItem } from '../../types/assets.types';
 import '../../styles/modules.css';
 import '../../styles/transferencias.css';
 
 export const TransferenciasPage: React.FC = () => {
   const notify = useNotification();
-  const { user } = useAuth();
   const PAGE_SIZE = 6;
   const [assets, setAssets] = useState<AssetListItem[]>([]);
   const [areas, setAreas] = useState<Area[]>([]);
@@ -33,20 +19,6 @@ export const TransferenciasPage: React.FC = () => {
   const [areaDestinoId, setAreaDestinoId] = useState('');
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const [searchText, setSearchText] = useState('');
-  const [pendientes, setPendientes] = useState<PendienteRecepcion[]>([]);
-  const [solicitudes, setSolicitudes] = useState<SolicitudEnviada[]>([]);
-  const [loadingPendientes, setLoadingPendientes] = useState(false);
-  const [loadingSolicitudes, setLoadingSolicitudes] = useState(false);
-  const [accionandoId, setAccionandoId] = useState<string | null>(null);
-  const [rechazoModal, setRechazoModal] = useState<{
-    open: boolean;
-    asignacionId: string | null;
-    activoLabel: string;
-  }>({
-    open: false,
-    asignacionId: null,
-    activoLabel: '',
-  });
   const [currentPage, setCurrentPage] = useState(1);
   const [lastTransferResult, setLastTransferResult] = useState<{
     activoCodigo: string;
@@ -59,6 +31,7 @@ export const TransferenciasPage: React.FC = () => {
   async function reloadData() {
     const [assetsResponse, availableAreas] = await Promise.all([
       searchAssets({
+        soloTransferibles: true,
         page: 1,
         pageSize: 100,
         sortBy: 'nombre',
@@ -69,85 +42,6 @@ export const TransferenciasPage: React.FC = () => {
 
     setAssets(assetsResponse.data ?? []);
     setAreas(availableAreas);
-  }
-
-  async function cargarPendientes(areaId: string) {
-    try {
-      setLoadingPendientes(true);
-      const res = await getPendientesRecepcion(areaId);
-      setPendientes(res.data ?? []);
-    } catch (err) {
-      console.error('[HU41] Error cargando pendientes de recepción:', err);
-    } finally {
-      setLoadingPendientes(false);
-    }
-  }
-
-  async function cargarSolicitudes(areaId: string, userId: string) {
-    try {
-      setLoadingSolicitudes(true);
-      const res = await getSolicitudesEnviadas(userId, areaId);
-      setSolicitudes(res.data ?? []);
-    } catch (err) {
-      console.error('[HU41] Error cargando solicitudes enviadas:', err);
-    } finally {
-      setLoadingSolicitudes(false);
-    }
-  }
-
-  async function handleConfirmar(asignacionId: string) {
-    try {
-      setAccionandoId(asignacionId);
-      await confirmarRecepcion(asignacionId);
-      notify.success('Recepción confirmada', 'El activo ha sido recibido correctamente.');
-      if (user?.area?.id && user?.id) {
-        await Promise.all([
-          cargarPendientes(user.area.id),
-          cargarSolicitudes(user.area.id, user.id),
-        ]);
-      }
-    } catch (err) {
-      notify.error('Error', err instanceof HttpError ? err.message : 'No se pudo confirmar la recepción');
-    } finally {
-      setAccionandoId(null);
-    }
-  }
-
-  function handleRechazar(asignacionId: string, activoLabel: string) {
-    setRechazoModal({
-      open: true,
-      asignacionId,
-      activoLabel,
-    });
-  }
-
-  function cerrarModalRechazo() {
-    setRechazoModal({
-      open: false,
-      asignacionId: null,
-      activoLabel: '',
-    });
-  }
-
-  async function confirmarRechazo() {
-    if (!rechazoModal.asignacionId) return;
-
-    try {
-      setAccionandoId(rechazoModal.asignacionId);
-      await rechazarRecepcion(rechazoModal.asignacionId);
-      notify.success('Recepción rechazada', 'La transferencia fue rechazada.');
-      if (user?.area?.id && user?.id) {
-        await Promise.all([
-          cargarPendientes(user.area.id),
-          cargarSolicitudes(user.area.id, user.id),
-        ]);
-      }
-      cerrarModalRechazo();
-    } catch (err) {
-      notify.error('Error', err instanceof HttpError ? err.message : 'No se pudo rechazar la recepción');
-    } finally {
-      setAccionandoId(null);
-    }
   }
 
   useEffect(() => {
@@ -168,16 +62,7 @@ export const TransferenciasPage: React.FC = () => {
     }
 
     void loadData();
-  }, []);
-
-  useEffect(() => {
-    if (user?.area?.id && user?.id) {
-      void Promise.all([
-        cargarPendientes(user.area.id),
-        cargarSolicitudes(user.area.id, user.id),
-      ]);
-    }
-  }, [user?.area?.id, user?.id]);
+  }, [notify]);
 
   const selectedAsset = useMemo(
     () => assets.find((asset) => asset.id === activoId) ?? null,
@@ -209,7 +94,7 @@ export const TransferenciasPage: React.FC = () => {
   const paginatedAssets = useMemo(() => {
     const start = (currentPage - 1) * PAGE_SIZE;
     return filteredAssets.slice(start, start + PAGE_SIZE);
-  }, [filteredAssets, currentPage, PAGE_SIZE]);
+  }, [filteredAssets, currentPage]);
 
   const destinationOptions = useMemo(
     () => areas.filter((area) => area.id !== originAreaId),
@@ -253,17 +138,19 @@ export const TransferenciasPage: React.FC = () => {
         areaDestinoId,
       });
 
+      setLastTransferResult({
+        activoCodigo: selectedAsset.codigo,
+        activoNombre: selectedAsset.nombre,
+        estadoRecepcion: response.data.transferencia.estado,
+        areaOrigen: response.data.transferencia.areaOrigen,
+        areaDestino: response.data.transferencia.areaDestino,
+      });
+
       setActivoId('');
       setAreaDestinoId('');
       setSubmitAttempted(false);
       notify.success('Transferencia registrada', response.data.message);
       await reloadData();
-      if (user?.area?.id && user?.id) {
-        await Promise.all([
-          cargarPendientes(user.area.id),
-          cargarSolicitudes(user.area.id, user.id),
-        ]);
-      }
     } catch (error) {
       const rawMessage =
         error instanceof HttpError
@@ -303,201 +190,42 @@ export const TransferenciasPage: React.FC = () => {
         </div>
       </div>
 
-      {/* HU41 – Panel de pendientes de recepción del área del usuario */}
-      {user?.area && (
-        <section style={{
-          background: '#fffbeb',
-          border: '1px solid #f59e0b',
-          borderRadius: '14px',
-          padding: '14px 16px',
-          marginBottom: '14px',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+      {lastTransferResult ? (
+        <section className="transfer-pending-banner" aria-live="polite">
+          <div className="transfer-pending-banner__top">
             <div>
-              <h2 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#78350f' }}>
-                ⏳ Pendientes de recepción — {user.area.nombre}
-              </h2>
-              <p style={{ margin: '2px 0 0', fontSize: '0.78rem', color: '#92400e' }}>
-                Activos transferidos a tu área que aún no han sido confirmados.
-              </p>
+              <p className="transfer-pending-banner__eyebrow">Recepción generada</p>
+              <h2>La transferencia dejó una recepción pendiente para el área destino</h2>
             </div>
-            {!loadingPendientes && (
-              <span style={{
-                background: pendientes.length > 0 ? '#fef3c7' : '#f0fdf4',
-                color: pendientes.length > 0 ? '#78350f' : '#14532d',
-                border: `1px solid ${pendientes.length > 0 ? '#f59e0b' : '#86efac'}`,
-                borderRadius: '999px',
-                padding: '3px 12px',
-                fontWeight: 700,
-                fontSize: '0.82rem',
-              }}>
-                {pendientes.length} pendiente{pendientes.length !== 1 ? 's' : ''}
-              </span>
-            )}
+            <span className="transfer-pending-badge">
+              Recepción {lastTransferResult.estadoRecepcion}
+            </span>
           </div>
 
-          {loadingPendientes ? (
-            <p style={{ color: '#92400e', fontSize: '0.85rem' }}>Cargando...</p>
-          ) : pendientes.length === 0 ? (
-            <p style={{ color: '#57534e', fontSize: '0.85rem', margin: 0 }}>
-              No hay transferencias pendientes de recepción para tu área.
-            </p>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {pendientes.map((p) => (
-                <div key={p.id} style={{
-                  background: '#fff',
-                  border: '1px solid #fcd34d',
-                  borderRadius: '10px',
-                  padding: '10px 12px',
-                  display: 'grid',
-                  gridTemplateColumns: 'minmax(220px, 2fr) repeat(3, minmax(120px, 1fr)) auto',
-                  columnGap: '10px',
-                  rowGap: '6px',
-                  alignItems: 'center',
-                }}>
-                  <div>
-                    <span style={{ fontSize: '0.66rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase' }}>Activo</span>
-                    <p style={{ margin: 0, fontWeight: 700, fontSize: '0.86rem', color: '#1c1917', lineHeight: 1.25 }}>
-                      {p.activo.codigo} — {p.activo.nombre}
-                    </p>
-                  </div>
-                  <div>
-                    <span style={{ fontSize: '0.66rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase' }}>Área de origen</span>
-                    <p style={{ margin: 0, fontSize: '0.84rem', color: '#292524', lineHeight: 1.2 }}>{p.areaOrigen?.nombre ?? '—'}</p>
-                  </div>
-                  <div>
-                    <span style={{ fontSize: '0.66rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase' }}>Registrado por</span>
-                    <p style={{ margin: 0, fontSize: '0.84rem', color: '#292524', lineHeight: 1.2 }}>{p.registradoPor?.nombreCompleto ?? '—'}</p>
-                  </div>
-                  <div>
-                    <span style={{ fontSize: '0.66rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase' }}>Fecha de envío</span>
-                    <p style={{ margin: 0, fontSize: '0.84rem', color: '#292524', lineHeight: 1.2 }}>
-                      {new Date(p.fechaEnvio).toLocaleDateString('es-BO', { day: '2-digit', month: 'short', year: 'numeric' })}
-                    </p>
-                  </div>
-                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                    <button
-                      type="button"
-                      disabled={accionandoId === p.id}
-                      onClick={() => void handleConfirmar(p.id)}
-                      style={{
-                        padding: '5px 11px',
-                        borderRadius: '7px',
-                        border: 'none',
-                        background: accionandoId === p.id ? '#d1fae5' : '#10b981',
-                        color: '#fff',
-                        fontWeight: 700,
-                        fontSize: '0.78rem',
-                        cursor: accionandoId === p.id ? 'wait' : 'pointer',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      {accionandoId === p.id ? '...' : '✓ Confirmar'}
-                    </button>
-                    <button
-                      type="button"
-                      disabled={accionandoId === p.id}
-                      onClick={() => handleRechazar(p.id, `${p.activo.codigo} — ${p.activo.nombre}`)}
-                      style={{
-                        padding: '5px 11px',
-                        borderRadius: '7px',
-                        border: '1px solid #fca5a5',
-                        background: '#fff',
-                        color: '#dc2626',
-                        fontWeight: 700,
-                        fontSize: '0.78rem',
-                        cursor: accionandoId === p.id ? 'wait' : 'pointer',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      ✕ Rechazar
-                    </button>
-                  </div>
-                </div>
-              ))}
+          <div className="transfer-pending-banner__grid">
+            <div className="transfer-pending-banner__item">
+              <span className="transfer-pending-banner__label">Activo</span>
+              <strong>
+                {lastTransferResult.activoCodigo} - {lastTransferResult.activoNombre}
+              </strong>
             </div>
-          )}
-        </section>
-      )}
-
-      {user?.area && (
-        <section style={{
-          background: '#f0f9ff',
-          border: '1px solid #7dd3fc',
-          borderRadius: '14px',
-          padding: '16px 18px',
-          marginBottom: '18px',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-            <div>
-              <h2 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#0c4a6e' }}>
-                📤 Solicitudes enviadas — {user.area.nombre}
-              </h2>
-              <p style={{ margin: '2px 0 0', fontSize: '0.78rem', color: '#075985' }}>
-                Transferencias que registraste y siguen pendientes de aprobación en el área destino.
-              </p>
+            <div className="transfer-pending-banner__item">
+              <span className="transfer-pending-banner__label">Área de origen</span>
+              <strong>{lastTransferResult.areaOrigen.nombre}</strong>
             </div>
-            {!loadingSolicitudes && (
-              <span style={{
-                background: solicitudes.length > 0 ? '#e0f2fe' : '#f0fdf4',
-                color: solicitudes.length > 0 ? '#0c4a6e' : '#14532d',
-                border: `1px solid ${solicitudes.length > 0 ? '#7dd3fc' : '#86efac'}`,
-                borderRadius: '999px',
-                padding: '3px 12px',
-                fontWeight: 700,
-                fontSize: '0.82rem',
-              }}>
-                {solicitudes.length} solicitud{solicitudes.length !== 1 ? 'es' : ''}
-              </span>
-            )}
+            <div className="transfer-pending-banner__item">
+              <span className="transfer-pending-banner__label">Área de destino</span>
+              <strong>{lastTransferResult.areaDestino.nombre}</strong>
+            </div>
+            <div className="transfer-pending-banner__item">
+              <span className="transfer-pending-banner__label">Estado de recepción</span>
+              <strong className="transfer-pending-banner__state">
+                {lastTransferResult.estadoRecepcion}
+              </strong>
+            </div>
           </div>
-
-          {loadingSolicitudes ? (
-            <p style={{ color: '#075985', fontSize: '0.85rem' }}>Cargando...</p>
-          ) : solicitudes.length === 0 ? (
-            <p style={{ color: '#334155', fontSize: '0.85rem', margin: 0 }}>
-              No tienes solicitudes de transferencia pendientes.
-            </p>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {solicitudes.map((s) => (
-                <div key={s.id} style={{
-                  background: '#fff',
-                  border: '1px solid #bae6fd',
-                  borderRadius: '10px',
-                  padding: '12px 16px',
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
-                  gap: '8px',
-                  alignItems: 'center',
-                }}>
-                  <div>
-                    <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Activo</span>
-                    <p style={{ margin: 0, fontWeight: 700, fontSize: '0.9rem', color: '#0f172a' }}>
-                      {s.activo.codigo} — {s.activo.nombre}
-                    </p>
-                  </div>
-                  <div>
-                    <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Área destino</span>
-                    <p style={{ margin: 0, fontSize: '0.88rem', color: '#0f172a' }}>{s.areaDestino?.nombre ?? '—'}</p>
-                  </div>
-                  <div>
-                    <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Estado</span>
-                    <p style={{ margin: 0, fontSize: '0.88rem', color: '#0369a1', fontWeight: 700 }}>{s.estado}</p>
-                  </div>
-                  <div>
-                    <span style={{ fontSize: '0.7rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Fecha de envío</span>
-                    <p style={{ margin: 0, fontSize: '0.88rem', color: '#0f172a' }}>
-                      {new Date(s.fechaEnvio).toLocaleDateString('es-BO', { day: '2-digit', month: 'short', year: 'numeric' })}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
         </section>
-      )}
+      ) : null}
 
       <form onSubmit={handleSubmit} className="transfer-workspace">
         <div className="transfer-workspace__top">
@@ -558,7 +286,9 @@ export const TransferenciasPage: React.FC = () => {
                     >
                       <div className="transfer-asset-card__top">
                         <span className="transfer-asset-card__code">{asset.codigo}</span>
-                        <span className={`transfer-asset-card__status ${isSelected ? 'transfer-asset-card__status--selected' : ''}`}>
+                        <span
+                          className={`transfer-asset-card__status ${isSelected ? 'transfer-asset-card__status--selected' : ''}`}
+                        >
                           {isSelected
                             ? 'Seleccionado'
                             : isSelectable
@@ -730,81 +460,6 @@ export const TransferenciasPage: React.FC = () => {
           </div>
         </div>
       </form>
-
-      {rechazoModal.open && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(15, 23, 42, 0.5)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '16px',
-            zIndex: 999,
-          }}
-          onClick={cerrarModalRechazo}
-        >
-          <div
-            style={{
-              width: '100%',
-              maxWidth: '460px',
-              background: '#ffffff',
-              borderRadius: '12px',
-              border: '1px solid #fecaca',
-              boxShadow: '0 18px 48px rgba(15, 23, 42, 0.22)',
-              padding: '18px 18px 14px',
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 style={{ margin: 0, color: '#991b1b', fontSize: '1rem' }}>Confirmar rechazo</h3>
-            <p style={{ margin: '8px 0 0', color: '#374151', fontSize: '0.9rem', lineHeight: 1.4 }}>
-              ¿Está seguro de rechazar la recepción del activo:
-            </p>
-            <p style={{ margin: '6px 0 0', color: '#111827', fontWeight: 700, fontSize: '0.9rem' }}>
-              {rechazoModal.activoLabel}
-            </p>
-            <p style={{ margin: '8px 0 0', color: '#b91c1c', fontSize: '0.82rem' }}>
-              Esta acción marcará la solicitud como rechazada.
-            </p>
-
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '16px' }}>
-              <button
-                type="button"
-                onClick={cerrarModalRechazo}
-                disabled={Boolean(accionandoId)}
-                style={{
-                  border: '1px solid #d1d5db',
-                  background: '#fff',
-                  color: '#374151',
-                  borderRadius: '8px',
-                  padding: '7px 12px',
-                  fontWeight: 600,
-                  cursor: Boolean(accionandoId) ? 'not-allowed' : 'pointer',
-                }}
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={() => void confirmarRechazo()}
-                disabled={Boolean(accionandoId)}
-                style={{
-                  border: '1px solid #fca5a5',
-                  background: '#dc2626',
-                  color: '#fff',
-                  borderRadius: '8px',
-                  padding: '7px 12px',
-                  fontWeight: 700,
-                  cursor: Boolean(accionandoId) ? 'wait' : 'pointer',
-                }}
-              >
-                {Boolean(accionandoId) ? 'Procesando...' : 'Sí, rechazar'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
