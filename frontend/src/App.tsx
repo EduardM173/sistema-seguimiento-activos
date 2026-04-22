@@ -16,6 +16,7 @@ import TransferenciasPage from './pages/transferencias/TransferenciasPage';
 import UsuariosPage from './pages/usuarios/UsuariosPage';
 import AuditoriaPage from './pages/auditoria/AuditoriaPage';
 import ReportesPage from './pages/reportes/ReportesPage';
+import NotificacionesPage from './pages/notificaciones/NotificacionesPage';
 import './App.css';
 
 function getToken() {
@@ -51,6 +52,7 @@ export default function App() {
           <Route element={<ProtectedRoute />}>
             <Route element={<PrivateLayout />}>
               <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/notificaciones" element={<NotificacionesPage />} />
               <Route element={<ProtectedRoute requiredPermission="ASSET_VIEW" />}>
                 <Route path="/activos" element={<AssetsPage />} />
                 <Route path="/activos/:id" element={<AssetDetailPage />} />
