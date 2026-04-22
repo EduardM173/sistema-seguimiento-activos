@@ -48,49 +48,47 @@ pipeline {
         }
     }
 
-    post {
+post {
         always {
             sh "rm -f ./.env"
             sh "docker image prune -af"
 
             script {
-                def buildStatus = currentBuild.currentResult ?: 'SUCCESS'
-                def statusIcon = '❓'
-                
-                if (buildStatus == 'SUCCESS') {
-                    statusIcon = '✅'
-                } else if (buildStatus == 'FAILURE') {
-                    statusIcon = '❌'
-                } else if (buildStatus == 'UNSTABLE') {
-                    statusIcon = '⚠️'
-                } else if (buildStatus == 'ABORTED') {
-                    statusIcon = '🛑'
-                }
-
-                def commitAuthor = "Desconocido"
-                def commitMsg = "Sin mensaje"
-                
-                try {
-                    commitAuthor = sh(script: "git log -1 --pretty=format:'%an'", returnStdout: true).trim()
-                    commitMsg = sh(script: "git log -1 --pretty=format:'%s'", returnStdout: true).trim()
-                } catch (Exception e) {
-                    echo "Advertencia: No se pudo extraer la metadata de Git. Asegúrate de que el stage de SCM se haya ejecutado."
-                }
-
                 withCredentials([string(credentialsId: 'DISCORD_WEBHOOK', variable: 'DISCORD_URL')]) {
-                    discordSend(
-                        webhookURL: env.DISCORD_URL,
-                        title: "${statusIcon} Build ${buildStatus}: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                        description: """
-                        **Autor:** ${commitAuthor}
-                        **Commit:** `${commitMsg}`
-                        
-                        [Ver logs detallados en Jenkins](${env.BUILD_URL})
-                        """.stripIndent(),
-                        result: buildStatus,
-                        footer: "Jenkins CI/CD Pipeline",
-                        successful: buildStatus == 'SUCCESS'
-                    )
+                    sh """#!/bin/sh
+
+                    AUTHOR=\$(git log -1 --pretty=format:'%an' | sed 's/"/\\\\"/g' || echo 'Sistema')
+                    MSG=\$(git log -1 --pretty=format:'%s' | sed 's/"/\\\\"/g' || echo 'Build ejecutado')
+                    
+                    STATUS="${currentBuild.currentResult ?: 'SUCCESS'}"
+                    
+                    if [ "\$STATUS" = "SUCCESS" ]; then
+                        COLOR=3066993
+                        ICON="✅"
+                    else
+                        COLOR=15158332
+                        ICON="❌"
+                    fi
+
+                    cat <<EOF > discord_payload.json
+                    {
+                      "username": "Jenkins CI",
+                      "embeds": [{
+                        "title": "\$ICON Build \$STATUS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                        "description": "El pipeline ha finalizado en el sistema de seguimiento de activos.",
+                        "color": \$COLOR,
+                        "fields": [
+                          { "name": "Autor", "value": "\$AUTHOR", "inline": true },
+                          { "name": "Duración", "value": "${currentBuild.durationString}", "inline": true },
+                          { "name": "Commit", "value": "\\`\$MSG\\`", "inline": false }
+                        ]
+                      }]
+                    }
+EOF
+
+                    echo "Enviando payload a Discord..."
+                    curl -s -S --max-time 10 -H "Content-Type: application/json" -X POST -d @discord_payload.json "\$DISCORD_URL"
+                    """
                 }
             }
         }
