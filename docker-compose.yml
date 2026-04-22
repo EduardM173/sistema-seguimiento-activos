@@ -28,6 +28,7 @@ services:
 
     environment:
       POSTGRES_HOST: app_db_local
+      BACKEND_PORT: 3001
     # ports:
     #   - 3000:3000
 
@@ -51,7 +52,7 @@ services:
     environment:
       VITE_API_URL: "http://localhost:8085/api"
       VITE_HOST: "localhost"
-      VITE_BACKEND_URL: "http://backend_local:3000"
+      VITE_BACKEND_URL: "http://backend_local:3001"
 
     ports:
       - 8085:8084
