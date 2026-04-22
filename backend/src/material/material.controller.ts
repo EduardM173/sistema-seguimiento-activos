@@ -37,6 +37,7 @@ import {
   MaterialSortBy,
   MaterialSortType,
   SearchMaterialDTO,
+  SearchMaterialHistoryDTO,
 } from './dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ApiResponse } from '../common/api-response';
@@ -76,7 +77,8 @@ export class MaterialController {
    */
   @ApiOperation({
     summary: 'Listar materiales',
-    description: 'Obtiene el listado de materiales o recursos del inventario, incluyendo su stock actual y stock mínimo.',
+    description:
+      'Obtiene el listado de materiales o recursos del inventario, incluyendo su stock actual y stock mínimo.',
   })
   @ApiQuery({
     name: 'q',
@@ -173,8 +175,68 @@ export class MaterialController {
     description: 'Categorías de materiales obtenidas correctamente',
   })
   @Get('categorias')
-  async obtenerCategorias(): Promise<{ id: string; nombre: string; descripcion?: string | null }[]> {
+  async obtenerCategorias(): Promise<
+    { id: string; nombre: string; descripcion?: string | null }[]
+  > {
     return this.materialService.obtenerCategorias();
+  }
+
+  /**
+   * GET /inventory-items/:id/history
+   * Obtener historial de movimientos de un material
+   */
+  @ApiOperation({
+    summary: 'Obtener historial de movimientos de un material',
+    description:
+      'Obtiene el historial de entradas, salidas y ajustes de un material, filtrable por rango de fechas.',
+  })
+  @ApiParam({ name: 'id', description: 'ID del material' })
+  @ApiQuery({
+    name: 'startDate',
+    required: false,
+    type: String,
+    description: 'Fecha inicial del rango',
+    example: '2026-04-01',
+  })
+  @ApiQuery({
+    name: 'endDate',
+    required: false,
+    type: String,
+    description: 'Fecha final del rango',
+    example: '2026-04-19',
+  })
+  @ApiOkResponse({
+    description: 'Historial del material obtenido correctamente',
+    schema: {
+      example: [
+        {
+          id: 'cmnmov123',
+          tipo: 'ENTRADA',
+          cantidad: 25,
+          fecha: '2026-04-19T10:30:00.000Z',
+          usuario: {
+            id: 'cmnuser123',
+            nombreCompleto: 'Juan Pérez',
+            email: 'juan@empresa.com',
+          },
+          material: {
+            id: 'cmnmaterial123',
+            codigo: 'MAT-001',
+            nombre: 'Papel bond carta',
+          },
+        },
+      ],
+    },
+  })
+  @ApiNotFoundResponse({
+    description: 'No se encontró el material solicitado',
+  })
+  @Get(':id/history')
+  async getHistory(
+    @Param('id') id: string,
+    @Query() query: SearchMaterialHistoryDTO,
+  ) {
+    return this.materialService.getHistory(id, query);
   }
 
   /**

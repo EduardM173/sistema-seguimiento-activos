@@ -209,6 +209,17 @@ export const inventarioService = {
       throw error;
     }
   },
+
+  obtenerHistorialMaterial: async (
+    materialId: string,
+    filtros?: { startDate?: string; endDate?: string }
+  ) => {
+    const response = (await apiClient.get(
+      `/inventory-items/${materialId}/history`,
+      { params: filtros }
+    )) as any;
+    return response.data;
+  },
 };
 
 export default inventarioService;
