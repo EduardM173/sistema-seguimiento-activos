@@ -81,7 +81,7 @@ pipeline {
                         "fields": [
                           { "name": "Autor", "value": "\$AUTHOR", "inline": true },
                           { "name": "Duración", "value": "${currentBuild.durationString}", "inline": true },
-                          { "name": "Commit", "value": "\`\$MSG\`", "inline": false }
+                          { "name": "Commit", "value": "`\$MSG`", "inline": false }
                         ]
                       }]
                     }
