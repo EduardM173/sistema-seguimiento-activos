@@ -483,77 +483,80 @@ async function main() {
   // =========================
   // MOVIMIENTOS DE ACTIVOS
   // =========================
-  await prisma.movimientoActivo.createMany({
-    data: [
-      {
-        activoId: laptopDell.id,
-        tipo: 'REGISTRO',
-        realizadoPorId: usuarioAdmin.id,
-        detalle: 'Registro inicial del activo en el sistema',
-      },
-      {
-        activoId: impresoraHp.id,
-        tipo: 'REGISTRO',
-        realizadoPorId: usuarioAdmin.id,
-        detalle: 'Registro inicial del activo en el sistema',
-      },
-      {
-        activoId: escritorio.id,
-        tipo: 'REGISTRO',
-        realizadoPorId: usuarioAdmin.id,
-        detalle: 'Registro inicial del activo en el sistema',
-      },
-    ],
-  });
+  for (const activo of [laptopDell, impresoraHp, escritorio]) {
+    const movExistente = await prisma.movimientoActivo.findFirst({
+      where: { activoId: activo.id, tipo: 'REGISTRO' },
+    });
+    if (!movExistente) {
+      await prisma.movimientoActivo.create({
+        data: {
+          activoId: activo.id,
+          tipo: 'REGISTRO',
+          realizadoPorId: usuarioAdmin.id,
+          detalle: 'Registro inicial del activo en el sistema',
+        },
+      });
+    }
+  }
 
   // =========================
   // ASIGNACIÓN PENDIENTE
   // =========================
-  const asignacionPendiente = await prisma.asignacionActivo.create({
-    data: {
-      activoId: laptopDell.id,
-      areaAsignadaId: areaAdministracion.id,
-      usuarioAsignadoId: usuarioResponsable.id,
-      asignadoPorId: usuarioOperativo.id,
-      estado: 'PENDIENTE',
-      observaciones: 'Entrega pendiente de confirmación por el responsable',
-    },
+  let asignacionPendiente = await prisma.asignacionActivo.findFirst({
+    where: { activoId: laptopDell.id, estado: 'PENDIENTE' },
   });
+  if (!asignacionPendiente) {
+    asignacionPendiente = await prisma.asignacionActivo.create({
+      data: {
+        activoId: laptopDell.id,
+        areaAsignadaId: areaAdministracion.id,
+        usuarioAsignadoId: usuarioResponsable.id,
+        asignadoPorId: usuarioOperativo.id,
+        estado: 'PENDIENTE',
+        observaciones: 'Entrega pendiente de confirmación por el responsable',
+      },
+    });
 
-  await prisma.movimientoActivo.create({
-    data: {
-      activoId: laptopDell.id,
-      tipo: 'ASIGNACION',
-      areaOrigenId: areaSistemas.id,
-      areaDestinoId: areaAdministracion.id,
-      usuarioOrigenId: usuarioOperativo.id,
-      usuarioDestinoId: usuarioResponsable.id,
-      realizadoPorId: usuarioOperativo.id,
-      asignacionId: asignacionPendiente.id,
-      detalle: 'Asignación inicial pendiente de confirmación',
-    },
-  });
+    await prisma.movimientoActivo.create({
+      data: {
+        activoId: laptopDell.id,
+        tipo: 'ASIGNACION',
+        areaOrigenId: areaSistemas.id,
+        areaDestinoId: areaAdministracion.id,
+        usuarioOrigenId: usuarioOperativo.id,
+        usuarioDestinoId: usuarioResponsable.id,
+        realizadoPorId: usuarioOperativo.id,
+        asignacionId: asignacionPendiente.id,
+        detalle: 'Asignación inicial pendiente de confirmación',
+      },
+    });
+  }
 
   // =========================
   // INCIDENTE
   // =========================
-  const incidente = await prisma.incidenteActivo.create({
-    data: {
-      activoId: impresoraHp.id,
-      reportadoPorId: usuarioResponsable.id,
-      titulo: 'Atasco de papel frecuente',
-      descripcion: 'La impresora presenta fallas recurrentes al imprimir documentos largos.',
-    },
+  let incidente = await prisma.incidenteActivo.findFirst({
+    where: { activoId: impresoraHp.id, titulo: 'Atasco de papel frecuente' },
   });
+  if (!incidente) {
+    incidente = await prisma.incidenteActivo.create({
+      data: {
+        activoId: impresoraHp.id,
+        reportadoPorId: usuarioResponsable.id,
+        titulo: 'Atasco de papel frecuente',
+        descripcion: 'La impresora presenta fallas recurrentes al imprimir documentos largos.',
+      },
+    });
 
-  await prisma.documentoActivo.create({
-    data: {
-      incidenteId: incidente.id,
-      nombreArchivo: 'reporte-impresora.pdf',
-      urlArchivo: '/uploads/reporte-impresora.pdf',
-      tipoMime: 'application/pdf',
-    },
-  });
+    await prisma.documentoActivo.create({
+      data: {
+        incidenteId: incidente.id,
+        nombreArchivo: 'reporte-impresora.pdf',
+        urlArchivo: '/uploads/reporte-impresora.pdf',
+        tipoMime: 'application/pdf',
+      },
+    });
+  }
 
   // =========================
   // CATEGORÍAS DE MATERIALES
@@ -646,53 +649,61 @@ async function main() {
   // =========================
   // MOVIMIENTOS DE INVENTARIO
   // =========================
-  await prisma.movimientoInventario.createMany({
-    data: [
-      {
-        materialId: papelCarta.id,
-        tipo: 'ENTRADA',
-        cantidad: '20.00',
-        stockAnterior: '0.00',
-        stockNuevo: '20.00',
-        motivo: 'Ingreso inicial de stock',
-        realizadoPorId: usuarioOperativo.id,
-      },
-      {
-        materialId: papelCarta.id,
-        tipo: 'SALIDA',
-        cantidad: '5.00',
-        stockAnterior: '20.00',
-        stockNuevo: '15.00',
-        motivo: 'Consumo administrativo',
-        realizadoPorId: usuarioOperativo.id,
-      },
-      {
-        materialId: tonerHp.id,
-        tipo: 'ENTRADA',
-        cantidad: '3.00',
-        stockAnterior: '0.00',
-        stockNuevo: '3.00',
-        motivo: 'Ingreso inicial de stock',
-        realizadoPorId: usuarioOperativo.id,
-      },
-      {
-        materialId: detergente.id,
-        tipo: 'ENTRADA',
-        cantidad: '8.00',
-        stockAnterior: '0.00',
-        stockNuevo: '8.00',
-        motivo: 'Ingreso inicial de stock',
-        realizadoPorId: usuarioOperativo.id,
-      },
-    ],
+  const movInvExistente = await prisma.movimientoInventario.findFirst({
+    where: { materialId: papelCarta.id, motivo: 'Ingreso inicial de stock' },
   });
+  if (!movInvExistente) {
+    await prisma.movimientoInventario.createMany({
+      data: [
+        {
+          materialId: papelCarta.id,
+          tipo: 'ENTRADA',
+          cantidad: '20.00',
+          stockAnterior: '0.00',
+          stockNuevo: '20.00',
+          motivo: 'Ingreso inicial de stock',
+          realizadoPorId: usuarioOperativo.id,
+        },
+        {
+          materialId: papelCarta.id,
+          tipo: 'SALIDA',
+          cantidad: '5.00',
+          stockAnterior: '20.00',
+          stockNuevo: '15.00',
+          motivo: 'Consumo administrativo',
+          realizadoPorId: usuarioOperativo.id,
+        },
+        {
+          materialId: tonerHp.id,
+          tipo: 'ENTRADA',
+          cantidad: '3.00',
+          stockAnterior: '0.00',
+          stockNuevo: '3.00',
+          motivo: 'Ingreso inicial de stock',
+          realizadoPorId: usuarioOperativo.id,
+        },
+        {
+          materialId: detergente.id,
+          tipo: 'ENTRADA',
+          cantidad: '8.00',
+          stockAnterior: '0.00',
+          stockNuevo: '8.00',
+          motivo: 'Ingreso inicial de stock',
+          realizadoPorId: usuarioOperativo.id,
+        },
+      ],
+    });
+  }
 
   // =========================
   // NOTIFICACIONES
   // =========================
-  await prisma.notificacion.createMany({
-    data: [
-      {
+  const notifTonerExistente = await prisma.notificacion.findFirst({
+    where: { usuarioId: usuarioOperativo.id, tipo: 'STOCK_BAJO', materialId: tonerHp.id },
+  });
+  if (!notifTonerExistente) {
+    await prisma.notificacion.create({
+      data: {
         usuarioId: usuarioOperativo.id,
         materialId: tonerHp.id,
         tipo: 'STOCK_BAJO',
@@ -700,7 +711,15 @@ async function main() {
         mensaje: 'El material Tóner HP 85A está por debajo del stock mínimo.',
         estado: 'NO_LEIDA',
       },
-      {
+    });
+  }
+
+  const notifActivoExistente = await prisma.notificacion.findFirst({
+    where: { usuarioId: usuarioResponsable.id, tipo: 'ACTIVO_PENDIENTE_CONFIRMACION', areaId: areaAdministracion.id },
+  });
+  if (!notifActivoExistente) {
+    await prisma.notificacion.create({
+      data: {
         usuarioId: usuarioResponsable.id,
         areaId: areaAdministracion.id,
         tipo: 'ACTIVO_PENDIENTE_CONFIRMACION',
@@ -708,15 +727,18 @@ async function main() {
         mensaje: 'Tienes un activo pendiente de recepción en tu área.',
         estado: 'NO_LEIDA',
       },
-    ],
-  });
+    });
+  }
 
   // =========================
   // AUDITORÍA
   // =========================
-  await prisma.auditoria.createMany({
-    data: [
-      {
+  const audAdminExistente = await prisma.auditoria.findFirst({
+    where: { accion: 'SEED_CREATE_ADMIN' },
+  });
+  if (!audAdminExistente) {
+    await prisma.auditoria.create({
+      data: {
         usuarioId: usuarioAdmin.id,
         tipoEntidad: 'Usuario',
         entidadId: usuarioAdmin.id,
@@ -728,7 +750,15 @@ async function main() {
         direccionIp: '127.0.0.1',
         userAgent: 'seed-script',
       },
-      {
+    });
+  }
+
+  const audAsignExistente = await prisma.auditoria.findFirst({
+    where: { accion: 'SEED_ASSIGNMENT_CREATED' },
+  });
+  if (!audAsignExistente) {
+    await prisma.auditoria.create({
+      data: {
         usuarioId: usuarioOperativo.id,
         tipoEntidad: 'Activo',
         entidadId: laptopDell.id,
@@ -740,25 +770,30 @@ async function main() {
         direccionIp: '127.0.0.1',
         userAgent: 'seed-script',
       },
-    ],
-  });
+    });
+  }
 
   // =========================
   // REPORTE GENERADO
   // =========================
-  await prisma.reporteGenerado.create({
-    data: {
-      generadoPorId: usuarioAdmin.id,
-      nombre: 'Reporte inicial de inventario',
-      tipo: 'INVENTORY_SUMMARY',
-      formato: 'PDF',
-      filtros: {
-        area: 'todas',
-        categoria: 'todas',
-      },
-      urlArchivo: '/reports/reporte-inicial-inventario.pdf',
-    },
+  const reporteExistente = await prisma.reporteGenerado.findFirst({
+    where: { nombre: 'Reporte inicial de inventario' },
   });
+  if (!reporteExistente) {
+    await prisma.reporteGenerado.create({
+      data: {
+        generadoPorId: usuarioAdmin.id,
+        nombre: 'Reporte inicial de inventario',
+        tipo: 'INVENTORY_SUMMARY',
+        formato: 'PDF',
+        filtros: {
+          area: 'todas',
+          categoria: 'todas',
+        },
+        urlArchivo: '/reports/reporte-inicial-inventario.pdf',
+      },
+    });
+  }
 
   console.log('✅ Seed completado correctamente');
   console.log('');

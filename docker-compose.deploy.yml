@@ -34,7 +34,10 @@ services:
       app-db:
         condition: service_started
 
-    command: "npm run start:dev"
+    command: > 
+      npx prisma migrate dev && 
+      npx prisma db seed &&
+      npm run start:dev 
 
   frontend:
     container_name: activos_frontend
