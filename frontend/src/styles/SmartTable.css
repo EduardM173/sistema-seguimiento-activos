@@ -1,0 +1,348 @@
+/* ============================================================
+   SmartTable — Reusable table component
+   Dark navy theme · matches application design tokens
+   ============================================================ */
+
+/* ── Scroll wrapper ──────────────────────────────────────── */
+.st__wrap {
+  overflow-x: auto;
+  /* Let the parent card decide radius / border */
+}
+
+/* ── Table ───────────────────────────────────────────────── */
+.st__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-sm);
+  font-family: var(--font-family);
+  /* table-layout: fixed ensures our colgroup widths are respected */
+  table-layout: fixed;
+}
+
+/* ── Head ────────────────────────────────────────────────── */
+.st__thead {
+  background: var(--color-surface-2);
+  border-bottom: 1px solid var(--color-border);
+  /* Stick the header when the table is inside a scrollable container */
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.st__th {
+  position: relative; /* needed for the resize handle */
+  padding: var(--space-3) var(--space-4);
+  text-align: left;
+  font-size: 11px;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  user-select: none;
+  overflow: hidden;
+}
+
+.st__th--sortable {
+  cursor: pointer;
+  transition: color var(--transition-fast);
+}
+
+.st__th--sortable:hover {
+  color: var(--color-primary-light);
+}
+
+.st__th--sorted {
+  color: var(--color-primary-light);
+}
+
+/*
+  Buttons placed inside <th> via the headerContent prop (e.g. server-side
+  sort in AssetsPage). Strip all browser default button styles so they
+  look like the rest of the header.
+*/
+.st__th > button {
+  all: unset;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  width: 100%;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  line-height: inherit;
+  box-sizing: border-box;
+}
+
+.st__th > button:hover {
+  color: var(--color-primary-light);
+}
+
+.st__th > button[class*='--active'] {
+  color: var(--color-primary-light);
+}
+
+/* Inner flex: label + sort icon */
+.st__thInner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.st__sortIcon {
+  font-size: 10px;
+  opacity: 0.4;
+  transition: opacity var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.st__th--sorted .st__sortIcon,
+.st__th--sortable:hover .st__sortIcon {
+  opacity: 1;
+}
+
+/* ── Column resize handle ────────────────────────────────── */
+.st__resizeHandle {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 5px;
+  cursor: col-resize;
+  background: transparent;
+  z-index: 3;
+  transition: background var(--transition-fast);
+}
+
+.st__resizeHandle:hover {
+  background: var(--color-primary);
+}
+
+/* ── Body ────────────────────────────────────────────────── */
+.st__tr {
+  border-bottom: 1px solid var(--color-border-light);
+  transition: background var(--transition-fast);
+}
+
+.st__tr:hover {
+  background: var(--color-surface-2);
+}
+
+.st__tr:last-child {
+  border-bottom: none;
+}
+
+.st__td {
+  padding: var(--space-3) var(--space-4);
+  color: var(--color-text);
+  vertical-align: middle;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Primary column cell ─────────────────────────────────── */
+/*
+  The primary cell has no overflow clipping so the portal dropdown
+  is never accidentally hidden by the table.
+*/
+.st__td--primary {
+  overflow: visible;
+}
+
+/*
+  Rectangular bordered box that wraps both the name and the arrow.
+  Sized to content (inline-flex), not the full cell width.
+*/
+.st__primaryCell {
+  display: flex;
+  justify-content: space-between;
+  outline: 1px solid;
+  outline-color: var(--glass-border);
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  cursor: default;
+}
+
+.st__primaryCell:hover{
+    outline: 1px solid var(--color-accent);
+}
+
+.st__primaryCell:hover .st__dropdownTrigger{
+    color: var(--color-accent);
+    visibility: visible;
+}
+
+
+
+/* Base style shared by both <button> and <span> variants */
+.st__primaryName {
+  padding: var(--space-1) var(--space-3);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+  line-height: 1.6;
+}
+
+/* Only the <button> variant is interactive */
+.st__primaryName--clickable {
+  background: none;
+  border: none;
+  margin: 0;
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.st__primaryName--clickable:hover {
+  /* background: var(--color-surface-2); */
+  color: var(--color-text-bright);
+  font-weight: var(--font-weight-extrabold);
+  text-decoration: none;
+}
+
+/* ── Dropdown trigger — Jenkins-style arrow ──────────────── */
+/*
+  Right section of the primary cell box, separated by a vertical border.
+  Always visible (it's part of the rectangular box).
+  Lights up with accent colour on hover.
+*/
+.st__dropdownTrigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* align-self: left; */
+  background: none;
+  border: none;
+  padding: 0 var(--space-2);
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition:
+    color var(--transition-fast),
+    border-color var(--transition-fast);
+    visibility: hidden;
+}
+
+.st__dropdownTrigger:hover {
+
+  border: none;
+  padding: var(--space-2);
+  color: var(--color-text-secondary);
+  font-size: 15px;
+}
+
+
+
+/* ── Dropdown menu (rendered into <body> via portal) ─────── */
+.st__dropdown {
+  position: fixed;
+  z-index: var(--z-dropdown, 100);
+  min-width: 180px;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--glass-border-hover);
+  border-radius: var(--radius-base);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+  /* Entrance animation */
+  animation: st-dropdown-in 120ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes st-dropdown-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Divider between items */
+.st__dropdown > * + * {
+  border-top: 1px solid var(--glass-border);
+}
+
+.st__dropdownItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-2) var(--space-4);
+  background: none;
+  border: none;
+  color: var(--color-text);
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.st__dropdownItem:hover:not(:disabled) {
+  background: var(--color-surface-2);
+  color: var(--color-text-bright);
+}
+
+.st__dropdownItem:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.st__dropdownItem--danger {
+  color: var(--color-danger);
+}
+
+.st__dropdownItem--danger:hover:not(:disabled) {
+  background: var(--color-danger-light);
+  color: var(--color-danger);
+}
+
+.st__dropdownIcon {
+  font-size: 14px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+/* ── Empty / loading states ──────────────────────────────── */
+.st__state {
+  padding: var(--space-12) var(--space-6);
+  text-align: center;
+}
+
+.st__stateText {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  font-family: var(--font-family);
+}
+
+/* ── Responsive: horizontal scroll hint on small screens ─── */
+@media (max-width: 640px) {
+  .st__wrap::after {
+    content: '';
+    display: block;
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 32px;
+    pointer-events: none;
+    background: linear-gradient(to right, transparent, var(--color-bg));
+  }
+  .st__wrap {
+    position: relative;
+  }
+}

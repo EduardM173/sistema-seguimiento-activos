@@ -47,7 +47,6 @@ export const DashboardContent: React.FC = () => {
           title="Total de Activos"
           value={stats.totalActivos}
           icon={<IconPackage size={18} />}
-          variant="primary"
           trend={2.5}
           onClick={() => handleNavigate('activos')}
         />
@@ -55,7 +54,6 @@ export const DashboardContent: React.FC = () => {
           title="Stock Bajo"
           value={stats.stockBajo}
           icon={<IconAlertTriangle size={18} />}
-          variant="warning"
           trend={-1.2}
           onClick={() => handleNavigate('inventario')}
         />
@@ -63,7 +61,6 @@ export const DashboardContent: React.FC = () => {
           title="Transferencias en Espera"
           value={stats.transferenciasEspera}
           icon={<IconArrowsLeftRight size={18} />}
-          variant="info"
           trend={5.3}
           onClick={() => handleNavigate('transferencias')}
         />
@@ -71,7 +68,6 @@ export const DashboardContent: React.FC = () => {
           title="Alertas de Seguridad"
           value={stats.alertasSeguridad}
           icon={<IconShield size={18} />}
-          variant="danger"
           trend={0.8}
           onClick={() => handleNavigate('auditoria')}
         />

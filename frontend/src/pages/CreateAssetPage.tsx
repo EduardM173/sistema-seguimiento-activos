@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback, useRef, type FormEvent } from 'react';
-import { useNavigate } from 'react-router-dom';
 
 import { createAsset } from '../services/assets.service';
 import { getCategorias, getUbicaciones, getAreas, getUsuarios } from '../services/catalogs.service';
@@ -30,8 +29,7 @@ const ESTADO_OPTIONS: { value: EstadoActivo; label: string }[] = [
 
 type Priority = 'CRITICO' | 'ALTO' | 'NORMAL';
 
-export default function CreateAssetPage() {
-  const navigate = useNavigate();
+export default function CreateAssetPage({ open, onClose }: { open: boolean; onClose: () => void }) {
   const notify = useNotification();
 
   // ── Catalog data from backend ──
@@ -253,7 +251,7 @@ export default function CreateAssetPage() {
 
       const result = await createAsset(payload);
       notify.success(result.message ?? 'Activo registrado exitosamente');
-      navigate('/activos');
+      onClose();
     } catch (err) {
       if (err instanceof HttpError) {
         notify.error('Error al registrar', err.message);
@@ -271,19 +269,14 @@ export default function CreateAssetPage() {
   }
 
   return (
-    <section className="createAssetPage">
-      {/* Header */}
-      <div className="createAssetPage__header">
-        <div>
-          <span className="createAssetPage__breadcrumb">◎ Módulo de Inventario</span>
-          <h1 className="createAssetPage__title">Registrar Nuevo Activo</h1>
-          <p className="createAssetPage__subtitle">
-            Complete los detalles técnicos y financieros para mantener el registro institucional actualizado.
-          </p>
-        </div>
-        <span className="createAssetPage__badge">Estado: Borrador</span>
-      </div>
-
+    <OverlayModal
+      open={open}
+      onClose={onClose}
+      title="Registrar Nuevo Activo"
+      subtitle="Complete los detalles técnicos y financieros para mantener el registro institucional actualizado."
+      width="960px"
+      disabled={submitting}
+    >
       <form onSubmit={handleSubmit} className="createAssetForm" noValidate>
         {/* ── Section 1: Información General ── */}
         <fieldset className="formSection">
@@ -690,11 +683,11 @@ export default function CreateAssetPage() {
         )}
 
         {/* Footer buttons */}
-        <div className="createAssetForm__footer">
+        <div className="overlayModal__footer">
           <button
             type="button"
             className="btn btn--ghost"
-            onClick={() => navigate('/activos')}
+            onClick={onClose}
             disabled={submitting}
           >
             ✕ Cancelar
@@ -717,6 +710,6 @@ export default function CreateAssetPage() {
           onCancel={() => setShowCreateLocation(false)}
         />
       </OverlayModal>
-    </section>
+    </OverlayModal>
   );
 }

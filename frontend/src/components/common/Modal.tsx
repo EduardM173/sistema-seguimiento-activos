@@ -1,6 +1,13 @@
 import React from 'react';
 import { Button } from './Button';
-import '../../styles/components.css';
+import OverlayModal from './OverlayModal';
+
+const SIZE_WIDTH: Record<string, string> = {
+  sm: '420px',
+  md: '560px',
+  lg: '720px',
+  fullscreen: '95vw',
+};
 
 interface ModalProps {
   isOpen: boolean;
@@ -26,39 +33,32 @@ export const Modal: React.FC<ModalProps> = ({
   cancelText = 'Cancelar',
   size = 'md',
   loading = false,
-}) => {
-  if (!isOpen) return null;
-
-  return (
-    <>
-      <div className="modal-backdrop" onClick={onClose}></div>
-      <div className={`modal modal-${size}`}>
-        <div className="modal-header">
-          <h2 className="modal-title">{title}</h2>
-          <button className="modal-close" onClick={onClose}>
-            ×
-          </button>
-        </div>
-        <div className="modal-body">{children}</div>
-        <div className="modal-footer">
-          <Button
-            label={cancelText}
-            variant="secondary"
-            onClick={onClose}
-            disabled={loading}
-          />
-          {onConfirm && (
-            <Button
-              label={confirmText}
-              variant={confirmVariant}
-              onClick={onConfirm}
-              isLoading={loading}
-            />
-          )}
-        </div>
+}) => (
+  <OverlayModal
+    open={isOpen}
+    title={title}
+    onClose={onClose}
+    width={SIZE_WIDTH[size] ?? '560px'}
+    disabled={loading}
+  >
+    {children}
+    {onConfirm && (
+      <div className="overlayModal__footer">
+        <Button
+          label={cancelText}
+          variant="secondary"
+          onClick={onClose}
+          disabled={loading}
+        />
+        <Button
+          label={confirmText}
+          variant={confirmVariant}
+          onClick={onConfirm}
+          isLoading={loading}
+        />
       </div>
-    </>
-  );
-};
+    )}
+  </OverlayModal>
+);
 
 export default Modal;

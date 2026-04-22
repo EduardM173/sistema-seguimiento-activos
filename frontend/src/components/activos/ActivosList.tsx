@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { DataTable, SearchBar, Button, Badge, LoadingSpinner } from '../common';
+import { SearchBar, Badge } from '../common';
+import { SmartTable } from '../common/SmartTable';
+import type { ColumnDef, ActionDef } from '../common/SmartTable';
 import type { Activo, FiltrosActivos, EstadoActivo } from '../../types/activos.types';
 import { estadoActivoDisplay } from '../../types/activos.types';
 import { activosService } from '../../services/activos.service';
@@ -49,14 +51,14 @@ export const ActivosList: React.FC<ActivosListProps> = ({
   };
 
   // PROSIN-185: Función para obtener color según estado (alineado con backend)
-  const getEstadoColor = (estado: EstadoActivo): any => {
-    const colores: Record<EstadoActivo, any> = {
+  const getEstadoColor = (estado: EstadoActivo): 'success' | 'warning' | 'danger' | 'secondary' => {
+    const colores: Record<EstadoActivo, 'success' | 'warning' | 'danger' | 'secondary'> = {
       'OPERATIVO': 'success',
       'MANTENIMIENTO': 'warning',
       'FUERA_DE_SERVICIO': 'danger',
       'DADO_DE_BAJA': 'secondary',
     };
-    return colores[estado] || 'secondary';
+    return colores[estado] ?? 'secondary';
   };
 
   // Obtener texto amigable del estado
@@ -64,63 +66,44 @@ export const ActivosList: React.FC<ActivosListProps> = ({
     return estadoActivoDisplay[estado] || estado;
   };
 
-  const columns = [
-    { header: 'Código', accessor: 'codigoActivo', width: '100px', sortable: true },
-    { header: 'Nombre', accessor: 'nombre', sortable: true },
-    { header: 'Categoría', accessor: (row: Activo) => row.categoriaActivo?.nombre || 'N/A' },
-    { header: 'Ubicación', accessor: (row: Activo) => row.ubicacion?.nombre || 'N/A' },
+  const columns: ColumnDef<Activo>[] = [
+    { id: 'codigoActivo', header: 'Código',    accessor: 'codigoActivo',  width: 110, sortable: true },
+    { id: 'nombre',       header: 'Nombre',    accessor: 'nombre',         width: 200, sortable: true, primary: true },
+    { id: 'categoria',    header: 'Categoría', accessor: (row) => row.categoriaActivo?.nombre ?? 'N/A', width: 150 },
+    { id: 'ubicacion',    header: 'Ubicación', accessor: (row) => row.ubicacion?.nombre ?? 'N/A',        width: 150 },
     {
+      id: 'estado',
       header: 'Estado',
       accessor: 'estado',
+      width: 140,
       // PROSIN-185: Mostrar estado con badge y texto amigable
-      render: (value: EstadoActivo) => (
-        <Badge 
-          label={getEstadoDisplay(value)} 
-          variant={getEstadoColor(value)} 
-          size="sm" 
+      render: (value) => (
+        <Badge
+          label={getEstadoDisplay(value as EstadoActivo)}
+          variant={getEstadoColor(value as EstadoActivo)}
+          size="sm"
         />
       ),
     },
     {
+      id: 'valor',
       header: 'Valor',
       accessor: 'valorAdquisicion',
-      render: (value: number) => `$${value.toLocaleString()}`,
+      width: 120,
+      render: (value) => `$${(value as number).toLocaleString()}`,
     },
-    {
-      header: 'Acciones',
-      accessor: (row: Activo) => row.id,
-      render: (id: string, row: Activo) => (
-        <div className="actions-group">
-          {onDetails && (
-            <button
-              className="btn-action btn-view"
-              onClick={() => onDetails(row)}
-              title="Ver detalles"
-            >
-              👁️
-            </button>
-          )}
-          {onEdit && (
-            <button
-              className="btn-action btn-edit"
-              onClick={() => onEdit(row)}
-              title="Editar"
-            >
-              ✏️
-            </button>
-          )}
-          {onDelete && (
-            <button
-              className="btn-action btn-delete"
-              onClick={() => onDelete(row)}
-              title="Eliminar"
-            >
-              🗑️
-            </button>
-          )}
-        </div>
-      ),
-    },
+  ];
+
+  const actions: ActionDef<Activo>[] = [
+    ...(onDetails
+      ? [{ label: 'Ver detalles', icon: '👁️', onClick: onDetails }]
+      : []),
+    ...(onEdit
+      ? [{ label: 'Editar', icon: '✏️', onClick: onEdit }]
+      : []),
+    ...(onDelete
+      ? [{ label: 'Eliminar', icon: '🗑️', variant: 'danger' as const, onClick: onDelete }]
+      : []),
   ];
 
   return (
@@ -142,14 +125,17 @@ export const ActivosList: React.FC<ActivosListProps> = ({
         </div>
       )}
 
-      <DataTable<Activo>
-        columns={columns}
-        data={activos}
-        loading={loading}
-        emptyMessage="No hay activos registrados"
-        striped
-        hover
-      />
+      <div className="assetsTable__wrap">
+        <SmartTable<Activo>
+          columns={columns}
+          data={activos}
+          loading={loading}
+          keyExtractor={(a) => a.id}
+          emptyMessage="No hay activos registrados"
+          onRowClick={onDetails}
+          actions={actions}
+        />
+      </div>
     </div>
   );
 };

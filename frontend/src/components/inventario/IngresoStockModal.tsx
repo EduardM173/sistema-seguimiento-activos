@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Button } from '../common';
+import OverlayModal from '../common/OverlayModal';
 import type { Material } from '../../types/inventario.types';
 import { inventarioService } from '../../services/inventario.service';
 import { useNotification } from '../../context/NotificationContext';
@@ -66,60 +67,15 @@ const IngresoStockModal: React.FC<IngresoStockModalProps> = ({
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'rgba(0,0,0,0.45)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 9999,
-        padding: '20px',
-      }}
+    <OverlayModal
+      open={isOpen}
+      onClose={onClose}
+      title="Registrar ingreso de stock"
+      width="700px"
+      disabled={guardando}
     >
-      <div
-        style={{
-          background: '#fff',
-          width: '100%',
-          maxWidth: '700px',
-          borderRadius: '14px',
-          boxShadow: '0 20px 60px rgba(0,0,0,0.25)',
-          overflow: 'hidden',
-        }}
-      >
-        <div
-          style={{
-            padding: '22px 24px',
-            borderBottom: '1px solid #e5e7eb',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-          }}
-        >
-          <h2 style={{ margin: 0, fontSize: '1.8rem', color: '#1f2937' }}>
-            Registrar ingreso de stock
-          </h2>
-
-          <button
-            onClick={onClose}
-            style={{
-              border: 'none',
-              background: 'transparent',
-              fontSize: '26px',
-              cursor: 'pointer',
-              color: '#6b7280',
-            }}
-            title="Cerrar"
-          >
-            ×
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} style={{ padding: '24px' }}>
+      <form onSubmit={handleSubmit}>
           <div
             style={{
               display: 'grid',
@@ -210,15 +166,8 @@ const IngresoStockModal: React.FC<IngresoStockModalProps> = ({
             </div>
           </div>
 
-          <div
-            style={{
-              marginTop: '24px',
-              display: 'flex',
-              justifyContent: 'flex-end',
-              gap: '12px',
-            }}
-          >
-            <Button label="Cancelar" variant="secondary" onClick={onClose} />
+          <div className="overlayModal__footer">
+            <Button label="Cancelar" variant="secondary" onClick={onClose} disabled={guardando} />
             <Button
               label={guardando ? 'Guardando...' : 'Registrar ingreso'}
               variant="primary"
@@ -227,8 +176,7 @@ const IngresoStockModal: React.FC<IngresoStockModalProps> = ({
             />
           </div>
         </form>
-      </div>
-    </div>
+    </OverlayModal>
   );
 };
 

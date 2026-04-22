@@ -239,6 +239,7 @@
 .sidebar__link:hover {
   background: var(--sidebar-hover-bg);
   color: var(--sidebar-text-active);
+  text-decoration: none;
 }
 
 .sidebar__link--active {

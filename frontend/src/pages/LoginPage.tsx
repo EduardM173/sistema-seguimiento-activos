@@ -16,13 +16,6 @@ export default function LoginPage() {
             <span>Portal Institucional</span>
           </div>
         </div>
-        <h2 className="login-panel-left__tagline">
-          Gestiona tus activos con <em>precisión</em> y eficiencia.
-        </h2>
-        <p className="login-panel-left__sub">
-          Sistema centralizado de control, seguimiento y auditoría
-          de activos institucionales.
-        </p>
       </div>
 
       {/* Right form panel */}
@@ -41,10 +34,6 @@ export default function LoginPage() {
           <LoginForm />
 
           <footer className="login-footer">
-            <div className="login-footer__links">
-              <span>Soporte TI</span>
-              <span>Políticas</span>
-            </div>
             <p>
               © 2026 DIRECCIÓN GENERAL DE TECNOLOGÍAS DE LA INFORMACIÓN
               <br />
