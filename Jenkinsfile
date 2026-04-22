@@ -43,7 +43,7 @@ pipeline {
             }
             steps {
                 sh "docker compose -f docker-compose.deploy.yml down"
-                sh "docker compose -f docker-compose.deploy.yml up -d"
+                sh "docker compose -f docker-compose.deploy.yml up -d --force-recreate --remove-orphans"
             }
         }
     }
@@ -52,6 +52,47 @@ pipeline {
         always {
             sh "rm -f ./.env"
             sh "docker image prune -af"
+
+            script {
+                def buildStatus = currentBuild.currentResult ?: 'SUCCESS'
+                def statusIcon = '❓'
+                
+                if (buildStatus == 'SUCCESS') {
+                    statusIcon = '✅'
+                } else if (buildStatus == 'FAILURE') {
+                    statusIcon = '❌'
+                } else if (buildStatus == 'UNSTABLE') {
+                    statusIcon = '⚠️'
+                } else if (buildStatus == 'ABORTED') {
+                    statusIcon = '🛑'
+                }
+
+                def commitAuthor = "Desconocido"
+                def commitMsg = "Sin mensaje"
+                
+                try {
+                    commitAuthor = sh(script: "git log -1 --pretty=format:'%an'", returnStdout: true).trim()
+                    commitMsg = sh(script: "git log -1 --pretty=format:'%s'", returnStdout: true).trim()
+                } catch (Exception e) {
+                    echo "Advertencia: No se pudo extraer la metadata de Git. Asegúrate de que el stage de SCM se haya ejecutado."
+                }
+
+                withCredentials([string(credentialsId: 'DISCORD_WEBHOOK', variable: 'DISCORD_URL')]) {
+                    discordSend(
+                        webhookURL: env.DISCORD_URL,
+                        title: "${statusIcon} Build ${buildStatus}: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                        description: """
+                        **Autor:** ${commitAuthor}
+                        **Commit:** `${commitMsg}`
+                        
+                        [Ver logs detallados en Jenkins](${env.BUILD_URL})
+                        """.stripIndent(),
+                        result: buildStatus,
+                        footer: "Jenkins CI/CD Pipeline",
+                        successful: buildStatus == 'SUCCESS'
+                    )
+                }
+            }
         }
     }
 }
