@@ -90,3 +90,12 @@
   flex-direction: column;
   gap: 16px;
 }
+
+.overlayModal__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid #e5e7eb;
+  margin-top: 4px;
+}

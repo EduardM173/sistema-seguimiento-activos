@@ -1,7 +1,9 @@
+
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import CreateMaterialForm from '../components/inventory/CreateMaterialForm';
 import MaterialsList from '../components/inventory/MaterialsList';
+import '../styles/assets.css';
 import '../styles/inventory.css';
 
 export default function InventarioPage() {
@@ -35,15 +37,16 @@ export default function InventarioPage() {
   }
 
   return (
-    <div className="inventarioPage">
-      <header className="page-header">
-        <div className="header-content">
-          <div>
-            <h1>Gestión de Inventario</h1>
-            <p>Administra los materiales del sistema</p>
-          </div>
+    <section className="assetsPage">
+      <header className="assetsPage__header">
+        <div>
+          <h1 className="assetsPage__title">Gestión de Inventario</h1>
+          <p className="assetsPage__subtitle">Administra los materiales del sistema</p>
+        </div>
+        <div className="assetsPage__actions">
           <button
-            className="btn btn-primary btn-register"
+            type="button"
+            className="btn btn--primary"
             onClick={() => setShowForm(!showForm)}
           >
             {showForm ? 'Ocultar Formulario' : '+ Registrar Material'}
@@ -51,22 +54,18 @@ export default function InventarioPage() {
         </div>
       </header>
 
-      <div className="page-content">
-        {showForm && (
-          <div className="form-section">
-            <CreateMaterialForm
-              onSuccess={() => {
-                setShowForm(false);
-                setRefreshKey((prev) => prev + 1);
-              }}
-            />
-          </div>
-        )}
-
-        <div className="list-section">
-          <MaterialsList key={refreshKey} />
+      {showForm && (
+        <div className="assetsFilters">
+          <CreateMaterialForm
+            onSuccess={() => {
+              setShowForm(false);
+              setRefreshKey((prev) => prev + 1);
+            }}
+          />
         </div>
-      </div>
-    </div>
+      )}
+
+      <MaterialsList key={refreshKey} />
+    </section>
   );
 }

@@ -61,8 +61,7 @@ export default function LoginForm() {
   return (
     <div className="login-card">
       <div className="login-card__header">
-        <h2>Acceso al Sistema</h2>
-        <p>Ingrese sus credenciales para continuar.</p>
+        <h2>Iniciar Sesión</h2>
       </div>
 
       <form onSubmit={handleSubmit} className="login-form">
@@ -129,10 +128,7 @@ export default function LoginForm() {
         </button>
       </form>
 
-      <div className="login-card__footer">
-        <IconShield size={14} color="var(--color-primary)" />
-        <span>Conexión cifrada de alta seguridad</span>
-      </div>
+
     </div>
   );
 }

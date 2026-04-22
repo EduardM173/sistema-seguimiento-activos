@@ -12,6 +12,10 @@ import type { PaginationMeta } from '../types/assets.types';
 
 import OverlayModal from '../components/common/OverlayModal';
 import CreateLocationForm from '../components/common/CreateLocationForm';
+import { SmartTable } from '../components/common/SmartTable';
+import type { ColumnDef, ActionDef } from '../components/common/SmartTable';
+import { FilterRow } from '../components/common/FilterRow';
+import type { FilterQuery } from '../components/common/FilterRow';
 
 import '../styles/assets.css';
 import '../styles/locations.css';
@@ -75,6 +79,12 @@ export default function LocationsPage() {
     setCurrentPage(1);
   }
 
+  function handleFilterChange(query: FilterQuery) {
+    setSearchText(query.search ?? '');
+    setFilterEdificio(query.edificio ?? '');
+    setCurrentPage(1);
+  }
+
   async function handleDelete(id: string, nombre: string) {
     if (!window.confirm(`¿Está seguro de eliminar la ubicación "${nombre}"?`)) return;
     try {
@@ -105,6 +115,33 @@ export default function LocationsPage() {
     return pages;
   }
 
+  const locationColumns: ColumnDef<LocationItem>[] = [
+    { id: 'nombre',      header: 'Nombre',      accessor: 'nombre',      primary: true, width: 200 },
+    { id: 'edificio',    header: 'Edificio',    accessor: 'edificio',    width: 140 },
+    { id: 'piso',        header: 'Piso',        accessor: 'piso',        width: 80 },
+    { id: 'ambiente',    header: 'Ambiente',    accessor: 'ambiente',    width: 100 },
+    {
+      id: 'descripcion',
+      header: 'Descripción',
+      accessor: 'descripcion',
+      width: 280,
+      render: (v) => (
+        <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.88rem' }}>
+          {(v as string | null | undefined) ?? '—'}
+        </span>
+      ),
+    },
+  ];
+
+  const locationActions: ActionDef<LocationItem>[] = [
+    {
+      label: 'Eliminar',
+      icon: '🗑',
+      variant: 'danger',
+      onClick: (loc) => handleDelete(loc.id, loc.nombre),
+    },
+  ];
+
   return (
     <section className="assetsPage">
       <header className="assetsPage__header">
@@ -122,134 +159,84 @@ export default function LocationsPage() {
       </header>
 
       {/* Filter Bar */}
-      <div className="assetsFilters">
-        <div className="assetsFilters__group">
-          <label className="assetsFilters__label">BUSCAR</label>
-          <div className="assetsFilters__inputWrap">
-            <span className="assetsFilters__searchIcon">🔍</span>
-            <input
-              type="text"
-              className="assetsFilters__input"
-              placeholder="Buscar por nombre de ubicación..."
-              value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
-            />
-          </div>
-        </div>
-
-        <div className="assetsFilters__group">
-          <label className="assetsFilters__label">EDIFICIO</label>
-          <input
-            type="text"
-            className="assetsFilters__input"
-            placeholder="Filtrar por edificio..."
-            value={filterEdificio}
-            onChange={(e) => setFilterEdificio(e.target.value)}
-          />
-        </div>
-
-        <button type="button" className="assetsFilters__clearBtn" onClick={clearFilters}>
-          <span>⊘</span> Limpiar Filtros
-        </button>
-      </div>
+      <FilterRow
+        onChange={handleFilterChange}
+        elements={[
+          {
+            type: 'search',
+            key: 'search',
+            label: 'BUSCAR',
+            placeholder: 'Buscar por nombre de ubicación...',
+            flex: 2,
+          },
+          {
+            type: 'text',
+            key: 'edificio',
+            label: 'EDIFICIO',
+            placeholder: 'Filtrar por edificio...',
+          },
+        ]}
+      />
 
       {/* Table Card */}
-      <div className="assetsCard">
-        {loading ? (
-          <div className="assetsState">
-            <p className="assetsState__text">Cargando ubicaciones...</p>
-          </div>
-        ) : locations.length === 0 ? (
-          <div className="assetsState">
-            <p className="assetsState__text">No se encontraron ubicaciones con los filtros seleccionados.</p>
-          </div>
-        ) : (
-          <>
-            <div className="assetsTableWrapper">
-              <table className="assetsTable">
-                <thead>
-                  <tr>
-                    <th>Nombre</th>
-                    <th>Edificio</th>
-                    <th>Piso</th>
-                    <th>Ambiente</th>
-                    <th>Descripción</th>
-                    <th>Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {locations.map((loc) => (
-                    <tr key={loc.id}>
-                      <td className="assetsTable__name">{loc.nombre}</td>
-                      <td>{loc.edificio ?? '—'}</td>
-                      <td>{loc.piso ?? '—'}</td>
-                      <td>{loc.ambiente ?? '—'}</td>
-                      <td className="locationsTable__desc">{loc.descripcion ?? '—'}</td>
-                      <td>
-                        <div className="assetsTable__actions">
-                          <button
-                            type="button"
-                            className="actionBtn actionBtn--danger"
-                            title="Eliminar"
-                            onClick={() => handleDelete(loc.id, loc.nombre)}
-                          >
-                            🗑
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+      <div className="assetsTable__wrap">
+        <SmartTable<LocationItem>
+          keyExtractor={(loc) => loc.id}
+          loading={loading}
+          data={locations}
+          emptyMessage="No se encontraron ubicaciones con los filtros seleccionados."
+          sortable={false}
+          columns={locationColumns}
+          actions={locationActions}
+        />
+
+        {/* Server-side pagination */}
+        {!loading && locations.length > 0 && (
+          <div className="assetsPagination">
+            <span className="assetsPagination__info">
+              Mostrando{' '}
+              <strong>
+                {(currentPage - 1) * PAGE_SIZE + 1}–
+                {Math.min(currentPage * PAGE_SIZE, meta?.total ?? 0)}
+              </strong>{' '}
+              de <strong>{meta?.total ?? 0}</strong> ubicaciones
+            </span>
+
+            <div className="assetsPagination__controls">
+              <button
+                type="button"
+                className="pageBtn"
+                disabled={currentPage <= 1}
+                onClick={() => setCurrentPage((p) => p - 1)}
+              >
+                &lt; Anterior
+              </button>
+
+              {buildPageNumbers().map((page, i) =>
+                page === '...' ? (
+                  <span key={`dots-${i}`} className="pageDots">…</span>
+                ) : (
+                  <button
+                    key={page}
+                    type="button"
+                    className={`pageBtn pageBtn--num ${page === currentPage ? 'pageBtn--active' : ''}`}
+                    onClick={() => setCurrentPage(page)}
+                  >
+                    {page}
+                  </button>
+                ),
+              )}
+
+              <button
+                type="button"
+                className="pageBtn"
+                disabled={currentPage >= totalPages}
+                onClick={() => setCurrentPage((p) => p + 1)}
+              >
+                Siguiente &gt;
+              </button>
             </div>
-
-            {/* Pagination */}
-            <div className="assetsPagination">
-              <span className="assetsPagination__info">
-                Mostrando{' '}
-                <strong>
-                  {(currentPage - 1) * PAGE_SIZE + 1}-
-                  {Math.min(currentPage * PAGE_SIZE, meta?.total ?? 0)}
-                </strong>{' '}
-                de <strong>{meta?.total ?? 0}</strong> ubicaciones
-              </span>
-
-              <div className="assetsPagination__controls">
-                <button
-                  type="button"
-                  className="pageBtn"
-                  disabled={currentPage <= 1}
-                  onClick={() => setCurrentPage((p) => p - 1)}
-                >
-                  &lt; Anterior
-                </button>
-
-                {buildPageNumbers().map((page, i) =>
-                  page === '...' ? (
-                    <span key={`dots-${i}`} className="pageDots">…</span>
-                  ) : (
-                    <button
-                      key={page}
-                      type="button"
-                      className={`pageBtn pageBtn--num ${page === currentPage ? 'pageBtn--active' : ''}`}
-                      onClick={() => setCurrentPage(page)}
-                    >
-                      {page}
-                    </button>
-                  ),
-                )}
-
-                <button
-                  type="button"
-                  className="pageBtn"
-                  disabled={currentPage >= totalPages}
-                  onClick={() => setCurrentPage((p) => p + 1)}
-                >
-                  Siguiente &gt;
-                </button>
-              </div>
-            </div>
-          </>
+          </div>
         )}
       </div>
 

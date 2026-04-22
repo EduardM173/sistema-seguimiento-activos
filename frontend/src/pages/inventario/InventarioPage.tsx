@@ -1,11 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { DataTable, Button, Badge } from '../../components/common';
+import { Button, Badge, SmartTable } from '../../components/common';
+import type { ColumnDef, ActionDef } from '../../components/common';
 import type { CategoriaMaterial, Material } from '../../types/inventario.types';
 import { inventarioService } from '../../services/inventario.service';
 import MaterialForm from '../../components/inventario/MaterialForm';
 import { useNotification } from '../../context/NotificationContext';
 import '../../styles/modules.css';
+import '../../styles/assets.css';
 import IngresoStockModal from '../../components/inventario/IngresoStockModal';
+import { FilterRow } from '../../components/common/FilterRow';
+import type { FilterQuery } from '../../components/common/FilterRow';
+import { IconEdit, IconX } from '@/components/common/Icon';
 
 export const InventarioPage: React.FC = () => {
   const notify = useNotification();
@@ -112,6 +117,15 @@ export const InventarioPage: React.FC = () => {
   const handleCloseModal = () => {
     setIsMaterialModalOpen(false);
     setMaterialToEdit(null);
+  };
+
+  const handleFilterChange = (query: FilterQuery) => {
+    setSearchText(query.search ?? '');
+    setCategoriaId(query.categoria ?? '');
+    setEstado((query.estado ?? '') as 'CRITICO' | 'NORMAL' | '');
+    setSortBy((query.sortBy || 'creadoEn') as typeof sortBy);
+    setSortType((query.sortType || 'DESC') as 'ASC' | 'DESC');
+    setCurrentPage(1);
   };
 
   const clearFilters = () => {
@@ -228,101 +242,67 @@ export const InventarioPage: React.FC = () => {
   };
 
   const getStockStatus = (
-    stockActual: number,
-    stockMinimo: number,
-  ): { label: string; variant: 'danger' | 'warning' | 'success' } => {
-    if (stockActual <= 0) return { label: 'SIN STOCK', variant: 'danger' };
-    if (stockActual < stockMinimo) return { label: 'CRÍTICO', variant: 'danger' };
-    return { label: 'NORMAL', variant: 'success' };
-  };
+      stockActual: number,
+      stockMinimo: number,
+    ): { label: string; variant: 'danger' | 'warning' | 'success' } => {
+      if (stockActual <= 0) return { label: 'SIN STOCK', variant: 'danger' };
+      if (stockActual < stockMinimo) return { label: 'CRÍTICO', variant: 'danger' };
+      return { label: 'NORMAL', variant: 'success' };
+    };
 
-  const columns = [
-    { header: 'Código', accessor: 'codigo' as keyof Material, width: '100px' },
-    { header: 'Nombre', accessor: 'nombre' as keyof Material },
+  const materialActions: ActionDef<Material>[] = [
     {
-      header: 'Categoría',
-      accessor: (row: Material) => row.categoria?.nombre || 'N/A',
+      label: 'Editar',
+      icon: <IconEdit />,
+      onClick: (material: Material) => handleEdit(material),
     },
     {
+      label: 'Eliminar',
+      icon: <IconX />,
+      variant: 'danger' as const,
+      onClick: (material: Material) => void handleDelete(material),
+    },
+    {
+      label: 'Historial',
+      onClick: (material: Material) => void abrirHistorial(material),
+    },
+  ];
+
+  const columns: ColumnDef<Material>[] = [
+  { id: 'codigo', header: 'Código', accessor: 'codigo', width: 100 },
+  { id: 'nombre', header: 'Nombre', primary: true, accessor: 'nombre' },
+  {
+    id: 'categoria',
+    header: 'Categoría',
+    accessor: (row: Material) => row.categoria?.nombre || 'N/A',
+  },
+    {
+      id: 'stockActual',
       header: 'Disponible',
       accessor: (row: Material) => row.stockActual,
-      render: (value: number, row: Material) => (
+      render: (value: unknown, row: Material) => (
         <strong style={{ color: getStockColor(row.stockActual, row.stockMinimo) }}>
-          {value.toFixed(2)}
+          {(value as number).toFixed(2)}
         </strong>
       ),
     },
     {
+      id: 'stockMinimo',
       header: 'Mínimo',
-      accessor: 'stockMinimo' as keyof Material,
-      render: (value: number) => value.toFixed(2),
+      accessor: 'stockMinimo',
+      render: (value: unknown) => (value as number).toFixed(2),
     },
+
+    { id: 'unidad', header: 'Un. Medida', accessor: 'unidad', width: 100 },
+
     {
-      header: 'Un. Medida',
-      accessor: 'unidad' as keyof Material,
-      width: '100px',
-    },
-    {
+      id: 'estado',
       header: 'Estado',
-      accessor: (row: Material) => row,
-      render: (row: Material) => {
+      accessor: (row: Material) => row.stockActual,
+      render: (_value: unknown, row: Material) => {
         const status = getStockStatus(row.stockActual, row.stockMinimo);
         return <Badge label={status.label} variant={status.variant} size="sm" />;
       },
-    },
-    {
-      header: 'Acciones',
-      accessor: (row: Material) => row.id,
-      render: (_id: string, row: Material) => (
-        <div className="actions-group" style={{ display: 'flex', gap: '8px' }}>
-          <button
-            className="btn-action btn-edit"
-            onClick={() => handleEdit(row)}
-            title="Editar"
-            style={{
-              cursor: 'pointer',
-              padding: '4px 8px',
-              background: '#e0e7ff',
-              borderRadius: '4px',
-              border: 'none',
-            }}
-          >
-            ✏️ Editar
-          </button>
-
-          <button
-            className="btn-action btn-delete"
-            onClick={() => handleDelete(row)}
-            title="Eliminar"
-            style={{
-              cursor: 'pointer',
-              padding: '4px 8px',
-              background: '#fee2e2',
-              borderRadius: '4px',
-              border: 'none',
-              color: '#dc2626',
-            }}
-          >
-            🗑️ Eliminar
-          </button>
-
-          <button
-            className="btn-action btn-history"
-            onClick={() => void abrirHistorial(row)}
-            title="Historial"
-            style={{
-              cursor: 'pointer',
-              padding: '4px 8px',
-              background: '#dbeafe',
-              borderRadius: '4px',
-              border: 'none',
-              color: '#2563eb',
-            }}
-          >
-            📊 Historial
-          </button>
-        </div>
-      ),
     },
   ];
 
@@ -397,231 +377,69 @@ export const InventarioPage: React.FC = () => {
         </div>
       )}
 
-      <div
-        style={{
-          display: 'flex',
-          gap: '12px',
-          alignItems: 'flex-end',
-          flexWrap: 'wrap',
-          background: '#ffffff',
-          border: '1px solid #e5e7eb',
-          borderRadius: '14px',
-          padding: '16px',
-          marginBottom: '14px',
-        }}
-      >
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '6px',
-            minWidth: '220px',
-            flex: 2,
-          }}
-        >
-          <label
-            style={{
-              fontSize: '0.72rem',
-              fontWeight: 700,
-              color: '#6b7280',
-              textTransform: 'uppercase',
-            }}
-          >
-            Buscar
-          </label>
-          <input
-            type="text"
-            value={searchText}
-            onChange={(e) => {
-              setSearchText(e.target.value);
-              setCurrentPage(1);
-            }}
-            placeholder="Código o nombre..."
-            style={{
-              padding: '10px 12px',
-              borderRadius: '8px',
-              border: '1px solid #d1d5db',
-            }}
-          />
-        </div>
-
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '6px',
-            minWidth: '180px',
-            flex: 1,
-          }}
-        >
-          <label
-            style={{
-              fontSize: '0.72rem',
-              fontWeight: 700,
-              color: '#6b7280',
-              textTransform: 'uppercase',
-            }}
-          >
-            Categoría
-          </label>
-          <select
-            value={categoriaId}
-            onChange={(e) => {
-              setCategoriaId(e.target.value);
-              setCurrentPage(1);
-            }}
-            style={{
-              padding: '10px 12px',
-              borderRadius: '8px',
-              border: '1px solid #d1d5db',
-            }}
-          >
-            <option value="">Todas</option>
-            {categorias.map((categoria) => (
-              <option key={categoria.id} value={categoria.id}>
-                {categoria.nombre}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '6px',
-            minWidth: '160px',
-            flex: 1,
-          }}
-        >
-          <label
-            style={{
-              fontSize: '0.72rem',
-              fontWeight: 700,
-              color: '#6b7280',
-              textTransform: 'uppercase',
-            }}
-          >
-            Ordenar por
-          </label>
-          <select
-            value={sortBy}
-            onChange={(e) => {
-              setSortBy(e.target.value as typeof sortBy);
-              setCurrentPage(1);
-            }}
-            style={{
-              padding: '10px 12px',
-              borderRadius: '8px',
-              border: '1px solid #d1d5db',
-            }}
-          >
-            <option value="creadoEn">Más recientes</option>
-            <option value="codigo">Código</option>
-            <option value="nombre">Nombre</option>
-            <option value="categoria">Categoría</option>
-            <option value="stockActual">Stock actual</option>
-            <option value="stockMinimo">Stock mínimo</option>
-            <option value="unidad">Unidad</option>
-          </select>
-        </div>
-
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '6px',
-            minWidth: '160px',
-            flex: 1,
-          }}
-        >
-          <label
-            style={{
-              fontSize: '0.72rem',
-              fontWeight: 700,
-              color: '#6b7280',
-              textTransform: 'uppercase',
-            }}
-          >
-            Estado
-          </label>
-          <select
-            value={estado}
-            onChange={(e) => {
-              setEstado(e.target.value as 'CRITICO' | 'NORMAL' | '');
-              setCurrentPage(1);
-            }}
-            style={{
-              padding: '10px 12px',
-              borderRadius: '8px',
-              border: '1px solid #d1d5db',
-            }}
-          >
-            <option value="">Todos</option>
-            <option value="CRITICO">Crítico</option>
-            <option value="NORMAL">Normal</option>
-          </select>
-        </div>
-
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '6px',
-            minWidth: '130px',
-          }}
-        >
-          <label
-            style={{
-              fontSize: '0.72rem',
-              fontWeight: 700,
-              color: '#6b7280',
-              textTransform: 'uppercase',
-            }}
-          >
-            Dirección
-          </label>
-          <select
-            value={sortType}
-            onChange={(e) => {
-              setSortType(e.target.value as 'ASC' | 'DESC');
-              setCurrentPage(1);
-            }}
-            style={{
-              padding: '10px 12px',
-              borderRadius: '8px',
-              border: '1px solid #d1d5db',
-            }}
-          >
-            <option value="ASC">Ascendente</option>
-            <option value="DESC">Descendente</option>
-          </select>
-        </div>
-
-        <button
-          type="button"
-          onClick={clearFilters}
-          style={{
-            border: 'none',
-            background: 'transparent',
-            color: '#6b7280',
-            padding: '10px 8px',
-            cursor: 'pointer',
-            fontWeight: 600,
-          }}
-        >
-          Limpiar
-        </button>
-      </div>
-
+<FilterRow
+  onChange={handleFilterChange}
+  elements={[
+    {
+      type: 'search',
+      key: 'search',
+      label: 'BUSCAR',
+      placeholder: 'Código o nombre...',
+      flex: 2,
+    },
+    {
+      type: 'select',
+      key: 'categoria',
+      label: 'CATEGORÍA',
+      placeholder: 'Todas',
+      options: categorias.map((c) => ({ value: c.id, label: c.nombre })),
+    },
+    {
+      type: 'select',
+      key: 'estado',
+      label: 'ESTADO',
+      placeholder: 'Todos',
+      options: [
+        { value: 'NORMAL', label: 'Normal' },
+        { value: 'CRITICO', label: 'Crítico' },
+      ],
+    },
+    {
+      type: 'select',
+      key: 'sortBy',
+      label: 'ORDENAR POR',
+      placeholder: 'Más recientes',
+      options: [
+        { value: 'creadoEn', label: 'Más recientes' },
+        { value: 'codigo', label: 'Código' },
+        { value: 'nombre', label: 'Nombre' },
+        { value: 'categoria', label: 'Categoría' },
+        { value: 'stockActual', label: 'Stock actual' },
+        { value: 'stockMinimo', label: 'Stock mínimo' },
+        { value: 'unidad', label: 'Unidad' },
+      ],
+    },
+    {
+      type: 'select',
+      key: 'sortType',
+      label: 'DIRECCIÓN',
+      placeholder: 'Descendente',
+      options: [
+        { value: 'ASC', label: 'Ascendente' },
+        { value: 'DESC', label: 'Descendente' },
+      ],
+    },
+  ]}
+/>
       <div className="module-list">
-        <DataTable<Material>
+        <SmartTable<Material>
           columns={columns}
           data={materiales}
           loading={loading}
           emptyMessage="📦 No hay materiales registrados en el inventario"
-          striped
-          hover
+          keyExtractor={(m) => m.id}
+          actions={materialActions}
+          onRowClick={(m) => handleEdit(m)}
         />
       </div>
 

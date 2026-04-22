@@ -61,7 +61,7 @@
   /* ── Text ──────────────────────────────────────────────── */
   --color-text:            #B8C4D4;
   --color-text-secondary:  rgba(184, 196, 212, 0.55);
-  --color-text-muted:      rgba(184, 196, 212, 0.35);
+  --color-text-muted:      rgba(224, 231, 240, 0.684);
   --color-text-inverse:    #060C18;
   --color-text-bright:     #D8E2F0;
   --color-text-on-primary: #FFFFFF;
@@ -97,7 +97,7 @@
   --font-weight-medium:    100;
   --font-weight-semibold:  200;
   --font-weight-bold:      200;
-  --font-weight-extrabold: 200;
+  --font-weight-extrabold: 300;
 
   --line-height-tight:     1.2;
   --line-height-base:      1.6;

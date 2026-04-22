@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 
 import EditAssetModal from '../components/activos/EditAssetModal';
 import ViewAssetModal from '../components/activos/ViewAssetModal';
+import OverlayModal from '../components/common/OverlayModal';
+import CreateAssetPage from './CreateAssetPage';
 import AssetDetailPanel from '../components/assets/AssetDetailPanel';
 import { useNotification } from '../context/NotificationContext';
 import { getAreas, getCategorias, getUbicaciones, getUsuarios } from '../services/catalogs.service';
@@ -28,8 +29,13 @@ import type {
   Ubicacion,
   UsuarioResumen,
 } from '../types/assets.types';
+import { SmartTable } from '../components/common/SmartTable';
+import type { ColumnDef, ActionDef } from '../components/common/SmartTable';
+import { FilterRow } from '../components/common/FilterRow';
+import type { FilterQuery } from '../components/common/FilterRow';
 
 import '../styles/assets.css';
+import { IconInfo, IconEdit, IconGrid } from '@/components/common/Icon';
 
 const ESTADO_OPTIONS: { value: EstadoActivo; label: string }[] = [
   { value: 'OPERATIVO', label: 'Operativo' },
@@ -48,7 +54,6 @@ const ESTADO_CLASS: Record<string, string> = {
 const PAGE_SIZE = 10;
 
 export default function AssetsPage() {
-  const navigate = useNavigate();
   const notify = useNotification();
   const { error: notifyError, success: notifySuccess } = notify;
 
@@ -61,14 +66,13 @@ export default function AssetsPage() {
   const [areas, setAreas] = useState<Area[]>([]);
   const [usuarios, setUsuarios] = useState<UsuarioResumen[]>([]);
 
-  const [searchText, setSearchText] = useState('');
+  const [filterSearch, setFilterSearch] = useState('');
   const [filterEstado, setFilterEstado] = useState<EstadoActivo | ''>('');
   const [filterCategoria, setFilterCategoria] = useState('');
   const [filterUbicacion, setFilterUbicacion] = useState('');
   const [sortBy, setSortBy] = useState<AssetSortBy>('creadoEn');
   const [sortType, setSortType] = useState<SortType>('DESC');
   const [currentPage, setCurrentPage] = useState(1);
-  const [debouncedSearch, setDebouncedSearch] = useState('');
 
   const [selectedAssetId, setSelectedAssetId] = useState<string | null>(null);
   const [selectedAssetDetail, setSelectedAssetDetail] = useState<AssetDetail | null>(null);
@@ -83,6 +87,7 @@ export default function AssetsPage() {
   const [creatingFakeAssets, setCreatingFakeAssets] = useState(false);
   const [deletingFakeAssets, setDeletingFakeAssets] = useState(false);
 
+  const [showCreateAssetModal, setShowCreateAssetModal] = useState(false);
   const [editingAssetId, setEditingAssetId] = useState<string | null>(null);
   const [viewingAssetId, setViewingAssetId] = useState<string | null>(null);
 
@@ -107,11 +112,6 @@ export default function AssetsPage() {
     void loadCatalogs();
   }, []);
 
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(searchText), 350);
-    return () => clearTimeout(timer);
-  }, [searchText]);
-
   const loadAssets = useCallback(async () => {
     try {
       setLoading(true);
@@ -120,7 +120,7 @@ export default function AssetsPage() {
         pageSize: PAGE_SIZE,
       };
 
-      if (debouncedSearch) params.q = debouncedSearch;
+      if (filterSearch) params.q = filterSearch;
       if (filterEstado) params.estado = filterEstado;
       if (filterCategoria) params.categoriaId = filterCategoria;
       if (filterUbicacion) params.ubicacionId = filterUbicacion;
@@ -139,7 +139,7 @@ export default function AssetsPage() {
     }
   }, [
     currentPage,
-    debouncedSearch,
+    filterSearch,
     filterEstado,
     filterCategoria,
     filterUbicacion,
@@ -183,17 +183,11 @@ export default function AssetsPage() {
     void refreshAssetDetail(selectedAssetId);
   }, [selectedAssetId, refreshAssetDetail]);
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [debouncedSearch, filterEstado, filterCategoria, filterUbicacion, sortBy, sortType]);
-
-  function clearFilters() {
-    setSearchText('');
-    setFilterEstado('');
-    setFilterCategoria('');
-    setFilterUbicacion('');
-    setSortBy('creadoEn');
-    setSortType('DESC');
+  function handleFilterChange(query: FilterQuery) {
+    setFilterSearch(query.search ?? '');
+    setFilterEstado((query.estado ?? '') as EstadoActivo | '');
+    setFilterCategoria(query.categoria ?? '');
+    setFilterUbicacion(query.ubicacion ?? '');
     setCurrentPage(1);
   }
 
@@ -477,300 +471,228 @@ export default function AssetsPage() {
           <button
             type="button"
             className="btn btn--primary"
-            onClick={() => navigate('/activos/nuevo')}
+            onClick={() => setShowCreateAssetModal(true)}
           >
             <span>+</span> Nuevo Activo
           </button>
         </div>
       </header>
 
-      <div className="assetsFilters">
-        <div className="assetsFilters__group">
-          <label className="assetsFilters__label">BUSCAR</label>
-          <div className="assetsFilters__inputWrap">
-            <span className="assetsFilters__searchIcon">🔍</span>
-            <input
-              type="text"
-              className="assetsFilters__input"
-              placeholder="Código, nombre, responsable, categoría o ubicación..."
-              value={searchText}
-              onChange={(event) => setSearchText(event.target.value)}
-            />
-          </div>
-        </div>
-
-        <div className="assetsFilters__group">
-          <label className="assetsFilters__label">CATEGORÍA</label>
-          <select
-            className="assetsFilters__select"
-            value={filterCategoria}
-            onChange={(event) => setFilterCategoria(event.target.value)}
-          >
-            <option value="">Todas</option>
-            {categorias.map((cat) => (
-              <option key={cat.id} value={cat.id}>
-                {cat.nombre}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="assetsFilters__group">
-          <label className="assetsFilters__label">UBICACIÓN</label>
-          <select
-            className="assetsFilters__select"
-            value={filterUbicacion}
-            onChange={(event) => setFilterUbicacion(event.target.value)}
-          >
-            <option value="">Cualquiera</option>
-            {ubicaciones.map((ubi) => (
-              <option key={ubi.id} value={ubi.id}>
-                {[ubi.nombre, ubi.edificio].filter(Boolean).join(' — ')}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="assetsFilters__group">
-          <label className="assetsFilters__label">ESTADO</label>
-          <select
-            className="assetsFilters__select"
-            value={filterEstado}
-            onChange={(event) => setFilterEstado(event.target.value as EstadoActivo | '')}
-          >
-            <option value="">Todos</option>
-            {ESTADO_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <button type="button" className="assetsFilters__clearBtn" onClick={clearFilters}>
-          <span>⊘</span> Limpiar Filtros
-        </button>
-      </div>
+      <FilterRow
+        onChange={handleFilterChange}
+        elements={[
+          {
+            type: 'search',
+            key: 'search',
+            label: 'BUSCAR',
+            placeholder: 'Código, nombre, responsable, categoría o ubicación...',
+            flex: 2,
+          },
+          {
+            type: 'select',
+            key: 'categoria',
+            label: 'CATEGORÍA',
+            placeholder: 'Todas',
+            options: categorias.map((c) => ({ value: c.id, label: c.nombre })),
+          },
+          {
+            type: 'select',
+            key: 'ubicacion',
+            label: 'UBICACIÓN',
+            placeholder: 'Cualquiera',
+            options: ubicaciones.map((u) => ({
+              value: u.id,
+              label: [u.nombre, u.edificio].filter(Boolean).join(' — '),
+            })),
+          },
+          {
+            type: 'select',
+            key: 'estado',
+            label: 'ESTADO',
+            placeholder: 'Todos',
+            options: ESTADO_OPTIONS.map((o) => ({ value: o.value, label: o.label })),
+          },
+        ]}
+      />
 
       <div className={`assetsWorkspace ${selectedAssetId ? 'assetsWorkspace--detailOpen' : ''}`}>
         <aside
           className={`assetsWorkspace__panel ${selectedAssetId ? 'assetsWorkspace__panel--open' : ''}`}
         >
-          <AssetDetailPanel
-            asset={selectedAssetDetail}
-            loading={detailLoading}
-            errorMessage={detailError}
-            onClose={closeDetailPanel}
-            compact
-          />
+
         </aside>
 
         <div className="assetsWorkspace__content">
-          <div className="assetsCard">
-            {loading ? (
-              <div className="assetsState">
-                <p className="assetsState__text">Cargando activos registrados...</p>
-              </div>
-            ) : assets.length === 0 ? (
-              <div className="assetsState">
-                <p className="assetsState__text">
-                  No se encontraron activos con los filtros seleccionados.
-                </p>
-              </div>
-            ) : (
-              <>
-                <div className="assetsTableWrapper">
-                  <table className="assetsTable">
-                    <thead>
-                      <tr>
-                        <th>{renderSortLabel('Código', 'codigo')}</th>
-                        <th>{renderSortLabel('Activo', 'nombre')}</th>
-                        <th>{renderSortLabel('Categoría', 'categoria')}</th>
-                        <th>{renderSortLabel('Ubicación', 'ubicacion')}</th>
-                        <th>{renderSortLabel('Responsable', 'responsable')}</th>
-                        <th>{renderSortLabel('Estado', 'estado')}</th>
-                        <th>Acciones</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {assets.map((asset) => (
-                        <tr
-                          key={asset.id}
-                          className={
-                            selectedAssetId === asset.id ? 'assetsTable__row--selected' : ''
-                          }
-                          onClick={() => openDetailPanel(asset.id)}
-                          style={{ cursor: 'pointer' }}
-                        >
-                          <td className="assetsTable__code">{asset.codigo}</td>
-                          <td className="assetsTable__name">{asset.nombre}</td>
-                          <td>
-                            {asset.categoria ? (
-                              <span className="assetsTable__category">
-                                <span className="assetsTable__catIcon">◫</span>
-                                {asset.categoria.nombre}
-                              </span>
-                            ) : (
-                              '—'
-                            )}
-                          </td>
-                          <td>{asset.ubicacion?.nombre ?? '—'}</td>
-                          <td>
-                            <div className="assetsResponsible">
-                              <span>{asset.responsable?.nombreCompleto ?? '—'}</span>
-                              {asset.area?.nombre ? (
-                                <span className="assetsResponsible__meta">
-                                  Área: {asset.area.nombre}
-                                </span>
-                              ) : null}
-                            </div>
-                          </td>
-                          <td>
-                            <span className={`statusBadge ${ESTADO_CLASS[asset.estado] ?? ''}`}>
-                              {asset.estadoLabel}
-                            </span>
-                          </td>
-                          <td>
-                            <div className="assetsTable__actions">
-                              <button
-                                type="button"
-                                className="actionBtn"
-                                title="Ver detalle completo"
-                                onClick={(event) => {
-                                  event.stopPropagation();
-                                  setViewingAssetId(asset.id);
-                                }}
-                              >
-                                👁
-                              </button>
-
-                              <button
-                                type="button"
-                                className="actionBtn"
-                                title="Editar"
-                                onClick={(event) => {
-                                  event.stopPropagation();
-                                  setEditingAssetId(asset.id);
-                                }}
-                              >
-                                ✏️
-                              </button>
-
-                              <button
-                                type="button"
-                                className="actionBtn"
-                                title="Asignar"
-                                onClick={(event) => {
-                                  event.stopPropagation();
-                                  openAssignModal(asset);
-                                }}
-                              >
-                                👤
-                              </button>
-
-                              <button
-                                type="button"
-                                className="actionBtn actionBtn--danger"
-                                title="Dar de baja"
-                                onClick={(event) => {
-                                  event.stopPropagation();
-                                  void handleDelete(asset.id, asset.nombre);
-                                }}
-                              >
-                                ⋯
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-
-                <div className="assetsPagination">
-                  <span className="assetsPagination__info">
-                    Mostrando{' '}
-                    <strong>
-                      {(currentPage - 1) * PAGE_SIZE + 1}-
-                      {Math.min(currentPage * PAGE_SIZE, meta?.total ?? 0)}
-                    </strong>{' '}
-                    de <strong>{meta?.total ?? 0}</strong> activos registrados
-                  </span>
-
-                  <div className="assetsPagination__controls">
-                    <button
-                      type="button"
-                      className="pageBtn"
-                      disabled={currentPage <= 1}
-                      onClick={() => setCurrentPage((page) => page - 1)}
-                    >
-                      &lt; Anterior
-                    </button>
-
-                    {buildPageNumbers().map((page, index) =>
-                      page === '...' ? (
-                        <span key={`dots-${index}`} className="pageDots">
-                          …
-                        </span>
-                      ) : (
-                        <button
-                          key={page}
-                          type="button"
-                          className={`pageBtn pageBtn--num ${
-                            page === currentPage ? 'pageBtn--active' : ''
-                          }`}
-                          onClick={() => setCurrentPage(page)}
-                        >
-                          {page}
-                        </button>
-                      ),
-                    )}
-
-                    <button
-                      type="button"
-                      className="pageBtn"
-                      disabled={currentPage >= totalPages}
-                      onClick={() => setCurrentPage((page) => page + 1)}
-                    >
-                      Siguiente &gt;
-                    </button>
+          {/* ── Column definitions ────────────────────────────── */}
+          {(() => {
+            const assetColumns: ColumnDef<AssetListItem>[] = [
+              {
+                id: 'codigo',
+                header: 'Código',
+                accessor: 'codigo',
+                width: 110,
+                headerContent: renderSortLabel('Código', 'codigo'),
+              },
+              {
+                id: 'nombre',
+                header: 'Nombre',
+                accessor: 'nombre',
+                primary: true,
+                width: 200,
+                headerContent: renderSortLabel('Activo', 'nombre'),
+              },
+              {
+                id: 'categoria',
+                header: 'Categoría',
+                accessor: (row) => row.categoria?.nombre ?? null,
+                width: 150,
+                headerContent: renderSortLabel('Categoría', 'categoria'),
+                render: (value, row) =>
+                  row.categoria ? (
+                    <span className="assetsTable__category">
+                      {row.categoria.nombre}
+                    </span>
+                  ) : (
+                    '—'
+                  ),
+              },
+              {
+                id: 'ubicacion',
+                header: 'Ubicación',
+                accessor: (row) => row.ubicacion?.nombre ?? '—',
+                width: 150,
+                headerContent: renderSortLabel('Ubicación', 'ubicacion'),
+              },
+              {
+                id: 'responsable',
+                header: 'Responsable',
+                accessor: (row) => row.responsable?.nombreCompleto ?? '—',
+                width: 180,
+                headerContent: renderSortLabel('Responsable', 'responsable'),
+                render: (_value, row) => (
+                  <div className="assetsResponsible">
+                    <span>{row.responsable?.nombreCompleto ?? '—'}</span>
+                    {row.area?.nombre ? (
+                      <span className="assetsResponsible__meta">Área: {row.area.nombre}</span>
+                    ) : null}
                   </div>
-                </div>
-              </>
-            )}
-          </div>
+                ),
+              },
+              {
+                id: 'estado',
+                header: 'Estado',
+                accessor: 'estado',
+                width: 150,
+                headerContent: renderSortLabel('Estado', 'estado'),
+                render: (value, row) => (
+                  <span className={`statusBadge ${ESTADO_CLASS[value as string] ?? ''}`}>
+                    {row.estadoLabel}
+                  </span>
+                ),
+              },
+            ];
+
+            const assetActions: ActionDef<AssetListItem>[] = [
+              {
+                label: 'Ver detalle',
+                icon: <IconInfo/>,
+                onClick: (asset) => setViewingAssetId(asset.id),
+              },
+              {
+                label: 'Editar',
+                icon: <IconEdit/>,
+                onClick: (asset) => setEditingAssetId(asset.id),
+              },
+              {
+                label: 'Asignar',
+                icon: <IconGrid/>,
+                onClick: (asset) => openAssignModal(asset),
+              },
+              {
+                label: 'Dar de baja',
+                icon: '⋯',
+                variant: 'danger',
+                onClick: (asset) => void handleDelete(asset.id, asset.nombre),
+              },
+            ];
+
+            return (
+              <div className="assetsTable__wrap">
+                <SmartTable<AssetListItem>
+                  columns={assetColumns}
+                  data={assets}
+                  loading={loading}
+                  keyExtractor={(a) => a.id}
+                  emptyMessage="No se encontraron activos con los filtros seleccionados."
+                  sortable={false}
+                  onRowClick={(asset) => openDetailPanel(asset.id)}
+                  actions={assetActions}
+                />
+
+                {/* Server-side pagination */}
+                {!loading && assets.length > 0 && (
+                  <div className="assetsPagination">
+                    <span className="assetsPagination__info">
+                      Mostrando{' '}
+                      <strong>
+                        {(currentPage - 1) * PAGE_SIZE + 1}–
+                        {Math.min(currentPage * PAGE_SIZE, meta?.total ?? 0)}
+                      </strong>{' '}
+                      de <strong>{meta?.total ?? 0}</strong> activos registrados
+                    </span>
+
+                    <div className="assetsPagination__controls">
+                      <button
+                        type="button"
+                        className="pageBtn"
+                        disabled={currentPage <= 1}
+                        onClick={() => setCurrentPage((page) => page - 1)}
+                      >
+                        &lt; Anterior
+                      </button>
+
+                      {buildPageNumbers().map((page, index) =>
+                        page === '...' ? (
+                          <span key={`dots-${index}`} className="pageDots">…</span>
+                        ) : (
+                          <button
+                            key={page}
+                            type="button"
+                            className={`pageBtn pageBtn--num ${page === currentPage ? 'pageBtn--active' : ''}`}
+                            onClick={() => setCurrentPage(page)}
+                          >
+                            {page}
+                          </button>
+                        ),
+                      )}
+
+                      <button
+                        type="button"
+                        className="pageBtn"
+                        disabled={currentPage >= totalPages}
+                        onClick={() => setCurrentPage((page) => page + 1)}
+                      >
+                        Siguiente &gt;
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </div>
       </div>
 
-      {assigningAsset ? (
-        <div className="assetsModalBackdrop" role="presentation" onClick={closeAssignModal}>
-          <div
-            className="assetsModal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="assign-asset-title"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="assetsModal__header">
-              <div>
-                <h2 id="assign-asset-title" className="assetsModal__title">
-                  Asignar activo
-                </h2>
-                <p className="assetsModal__subtitle">
-                  {assigningAsset.codigo} · {assigningAsset.nombre}
-                </p>
-              </div>
-              <button
-                type="button"
-                className="actionBtn"
-                onClick={closeAssignModal}
-                disabled={submittingAssignment}
-              >
-                ✕
-              </button>
-            </div>
-
-            <form className="assetsModal__form" onSubmit={handleAssignSubmit}>
+      <OverlayModal
+        open={Boolean(assigningAsset)}
+        onClose={closeAssignModal}
+        title="Asignar activo"
+        subtitle={assigningAsset ? `${assigningAsset.codigo} · ${assigningAsset.nombre}` : ''}
+        disabled={submittingAssignment}
+        width="560px"
+      >
+        {assigningAsset ? (
+          <form className="assetsModal__form" onSubmit={handleAssignSubmit}>
               <label className="assetsModal__field">
                 <span className="assetsFilters__label">Tipo de asignación</span>
                 <select
@@ -830,7 +752,7 @@ export default function AssetsPage() {
                 />
               </label>
 
-              <div className="assetsModal__actions">
+              <div className="overlayModal__footer">
                 <button
                   type="button"
                   className="btn btn--ghost"
@@ -848,9 +770,8 @@ export default function AssetsPage() {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      ) : null}
+        ) : null}
+      </OverlayModal>
 
       {viewingAssetId ? (
         <ViewAssetModal
@@ -874,6 +795,14 @@ export default function AssetsPage() {
           }}
         />
       ) : null}
+
+      <CreateAssetPage
+        open={showCreateAssetModal}
+        onClose={() => {
+          setShowCreateAssetModal(false);
+          void loadAssets();
+        }}
+      />
     </section>
   );
 }

@@ -7,10 +7,8 @@ import ToastContainer from './components/notifications/ToastContainer';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import UserList from './pages/users/UserList';
-import CreateUser from './components/users/CreateUser';
 import AssetsPage from './pages/AssetsPage';
 import AssetDetailPage from './pages/AssetDetailPage';
-import CreateAssetPage from './pages/CreateAssetPage';
 import LocationsPage from './pages/LocationsPage';
 import ActivosPage from './pages/activos/ActivosPage';
 import InventarioPage from './pages/inventario/InventarioPage';
@@ -59,9 +57,6 @@ export default function App() {
                 <Route path="/assets" element={<AssetsPage />} />
                 <Route path="/transferencias" element={<TransferenciasPage />} />
               </Route>
-              <Route element={<ProtectedRoute requiredPermission="ASSET_CREATE" />}>
-                <Route path="/activos/nuevo" element={<CreateAssetPage />} />
-              </Route>
               <Route element={<ProtectedRoute requiredPermission="ASSET_VIEW" />}>
                 <Route path="/locations" element={<LocationsPage />} />
               </Route>
@@ -70,8 +65,6 @@ export default function App() {
               </Route>
               <Route element={<ProtectedRoute requiredPermission="USER_MANAGE" />}>
                 <Route path="/users" element={<UserList />} />
-                <Route path="/users/create" element={<CreateUser />} />
-                <Route path="/users/:id/edit" element={<CreateUser />} />
               </Route>
             </Route>
           </Route>

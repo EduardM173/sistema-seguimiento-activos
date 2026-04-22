@@ -63,15 +63,6 @@ export default function Navbar() {
           </span>
         </div>
 
-        {/* CTA */}
-        <button
-          type="button"
-          className="sidebar__primaryButton"
-          onClick={() => navigate('/activos/nuevo')}
-        >
-          <IconPlus size={14} color="#1D1D1D" />
-          <span>Nuevo Activo</span>
-        </button>
 
         {/* Navigation */}
         <nav className="sidebar__nav">
