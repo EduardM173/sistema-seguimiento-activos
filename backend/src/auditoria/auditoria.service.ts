@@ -92,6 +92,12 @@ export class AuditoriaService {
                 recursoId: notification.materialId,
               }
             : undefined,
+        accion: assetReference
+          ? {
+              label: 'Ver activo',
+              url: `/activos/${assetReference}`,
+            }
+          : undefined,
         leida: notification.estado === EstadoNotificacion.LEIDA,
         fechaCreacion: notification.creadoEn,
         fechaLectura: notification.leidoEn ?? undefined,

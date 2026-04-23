@@ -73,6 +73,10 @@ describe('AuditoriaService notification inbox for HU32', () => {
           recursoTipo: 'activo',
           recursoId: 'asset-1',
         },
+        accion: {
+          label: 'Ver activo',
+          url: '/activos/asset-1',
+        },
       }),
     );
   });
