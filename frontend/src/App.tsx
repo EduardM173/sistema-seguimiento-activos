@@ -52,7 +52,11 @@ export default function App() {
           <Route element={<ProtectedRoute />}>
             <Route element={<PrivateLayout />}>
               <Route path="/dashboard" element={<DashboardPage />} />
-              <Route path="/notificaciones" element={<NotificacionesPage />} />
+              <Route
+                element={<ProtectedRoute allowedRoleNames={['RESPONSABLE_DE_AREA']} />}
+              >
+                <Route path="/notificaciones" element={<NotificacionesPage />} />
+              </Route>
               <Route element={<ProtectedRoute requiredPermission="ASSET_VIEW" />}>
                 <Route path="/activos" element={<AssetsPage />} />
                 <Route path="/activos/:id" element={<AssetDetailPage />} />

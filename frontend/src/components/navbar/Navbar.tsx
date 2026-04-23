@@ -1,5 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { isResponsibleAreaRoleName } from '../../utils/roles';
 import {
   IconGrid,
   IconPackage,
@@ -31,7 +32,7 @@ type BottomItem = {
 };
 
 export default function Navbar() {
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const navigate = useNavigate();
 
   const mainItems: MainItem[] = [
@@ -39,12 +40,19 @@ export default function Navbar() {
     { label: 'Activos',        icon: <IconPackage size={16} />,          to: '/activos' },
     { label: 'Inventario',     icon: <IconClipboard size={16} />,        to: '/inventario' },
     { label: 'Transferencias', icon: <IconArrowsLeftRight size={16} />,  to: '/transferencias' },
-    { label: 'Notificaciones', icon: <IconBell size={16} />,              to: '/notificaciones' },
     { label: 'Reportes',       icon: <IconBarChart size={16} /> },
     { label: 'Usuarios',       icon: <IconUsers size={16} />,            to: '/users' },
     { label: 'Auditoría',      icon: <IconShield size={16} /> },
     { label: 'Ubicaciones',    icon: <IconMapPin size={16} />,           to: '/locations' },
   ];
+
+  if (isResponsibleAreaRoleName(user?.rol?.nombre)) {
+    mainItems.splice(4, 0, {
+      label: 'Notificaciones',
+      icon: <IconBell size={16} />,
+      to: '/notificaciones',
+    });
+  }
 
   const bottomItems: BottomItem[] = [
     { label: 'Configuración', icon: <IconSettings size={16} /> },

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import {
   EstadoNotificacion,
   Prisma,
@@ -12,6 +12,8 @@ export class AuditoriaService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getNotifications(userId: string, query: SearchNotificationsDto) {
+    await this.assertResponsibleAreaAccess(userId);
+
     const { page = 1, pageSize = 20, leidas } = query;
     const skip = (page - 1) * pageSize;
 
@@ -94,6 +96,8 @@ export class AuditoriaService {
   }
 
   async markAsRead(userId: string, notificationId: string) {
+    await this.assertResponsibleAreaAccess(userId);
+
     const usuario = await this.prisma.usuario.findUnique({
       where: { id: userId },
       select: { areaId: true },
@@ -123,6 +127,8 @@ export class AuditoriaService {
   }
 
   async markAllAsRead(userId: string) {
+    await this.assertResponsibleAreaAccess(userId);
+
     const usuario = await this.prisma.usuario.findUnique({
       where: { id: userId },
       select: { areaId: true },
@@ -146,6 +152,8 @@ export class AuditoriaService {
   }
 
   async deleteNotification(userId: string, notificationId: string) {
+    await this.assertResponsibleAreaAccess(userId);
+
     const usuario = await this.prisma.usuario.findUnique({
       where: { id: userId },
       select: { areaId: true },
@@ -172,6 +180,8 @@ export class AuditoriaService {
   }
 
   async getUnreadCount(userId: string) {
+    await this.assertResponsibleAreaAccess(userId);
+
     const usuario = await this.prisma.usuario.findUnique({
       where: { id: userId },
       select: { areaId: true },
@@ -205,5 +215,40 @@ export class AuditoriaService {
       default:
         return 'sistema';
     }
+  }
+
+  private async assertResponsibleAreaAccess(userId: string) {
+    const usuario = await this.prisma.usuario.findUnique({
+      where: { id: userId },
+      select: {
+        rol: {
+          select: {
+            nombre: true,
+          },
+        },
+      },
+    });
+
+    if (!this.isResponsibleAreaRole(usuario?.rol?.nombre)) {
+      throw new ForbiddenException(
+        'Solo el Responsable de Área puede acceder a la bandeja de notificaciones',
+      );
+    }
+  }
+
+  private isResponsibleAreaRole(roleName: string | null | undefined) {
+    const normalizedRole = (roleName ?? '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[_\s]+/g, ' ')
+      .trim()
+      .toUpperCase();
+
+    return new Set([
+      'RESPONSABLEAREA',
+      'RESPONSABLE DE AREA',
+      'RESPONSABLE_AREA',
+      'RESPONSABLEDEAREA',
+    ]).has(normalizedRole);
   }
 }
