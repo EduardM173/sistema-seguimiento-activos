@@ -552,7 +552,6 @@ export class AssetsService {
 
     const [
       currentArea,
-      pendingTransferReception,
       previousUbicacion,
       nextUbicacion,
       previousResponsable,
@@ -566,20 +565,6 @@ export class AssetsService {
               nombre: true,
               encargadoId: true,
             },
-          })
-        : Promise.resolve(null),
-      shouldNotifyAssignedArea
-        ? this.prisma.asignacionActivo.findFirst({
-            where: {
-              activoId: id,
-              estado: EstadoAsignacion.PENDIENTE,
-              movimientos: {
-                some: {
-                  tipo: TipoMovimientoActivo.TRANSFERENCIA,
-                },
-              },
-            },
-            select: { id: true },
           })
         : Promise.resolve(null),
       locationChanged && existing.ubicacionId
@@ -694,7 +679,7 @@ export class AssetsService {
         });
       }
 
-      if (currentArea && !pendingTransferReception && shouldNotifyAssignedArea) {
+      if (currentArea && shouldNotifyAssignedArea) {
         const notificationParts: string[] = [];
 
         if (stateChanged) {
@@ -952,6 +937,7 @@ export class AssetsService {
         select: {
           id: true,
           nombre: true,
+          encargadoId: true,
         },
       }),
       this.prisma.asignacionActivo.findFirst({
@@ -1020,6 +1006,17 @@ export class AssetsService {
           areaActualId: areaDestino.id,
           responsableActualId: null,
           actualizadoPorId: userId,
+        },
+      });
+
+      await tx.notificacion.create({
+        data: {
+          usuarioId: areaDestino.encargadoId ?? null,
+          areaId: areaDestino.id,
+          tipo: TipoNotificacion.ACTIVO_PENDIENTE_CONFIRMACION,
+          titulo: `Recepción pendiente del activo ${existing.codigo}`,
+          mensaje: `${this.buildAssetNotificationReference(id)} El activo ${existing.nombre} fue transferido desde ${areaOrigen.nombre} hacia ${areaDestino.nombre}. La recepción quedó pendiente para el área de destino.`,
+          estado: EstadoNotificacion.NO_LEIDA,
         },
       });
 
