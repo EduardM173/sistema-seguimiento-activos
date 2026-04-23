@@ -4,6 +4,15 @@
   gap: var(--space-5);
 }
 
+.notifications-page .module-header {
+  align-items: flex-end;
+}
+
+.notifications-page .module-header p {
+  max-width: 680px;
+  line-height: 1.5;
+}
+
 .notifications-summary {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -12,16 +21,16 @@
 
 .notifications-summary__card {
   padding: var(--space-4);
-  background: #ffffff;
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-base);
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  border: 1px solid #dbe6f3;
+  border-radius: 18px;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
 }
 
 .notifications-summary__label {
   display: block;
   margin-bottom: var(--space-2);
-  color: var(--color-text-secondary);
+  color: #64748b;
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-bold);
   letter-spacing: 0.05em;
@@ -29,8 +38,26 @@
 }
 
 .notifications-summary__card strong {
-  color: var(--color-text);
+  color: #0f172a;
   font-size: var(--font-size-xl);
+}
+
+.notifications-page .alert {
+  margin-bottom: 0;
+}
+
+.notifications-page .module-list {
+  background: #ffffff;
+  border: 1px solid #dbe6f3;
+  border-radius: 18px;
+  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.08);
+  overflow: hidden;
+}
+
+.notifications-page .list-header {
+  padding: var(--space-4);
+  background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
+  border-bottom: 1px solid #e2e8f0;
 }
 
 .notifications-toolbar {
@@ -46,10 +73,102 @@
   min-width: min(100%, 320px);
 }
 
+.notifications-page .search-bar {
+  background: #ffffff;
+  border: 1px solid #d1d9e6;
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.03);
+}
+
+.notifications-page .search-bar:focus-within {
+  background: #ffffff;
+  border-color: #0f62fe;
+  box-shadow: 0 0 0 4px rgba(15, 98, 254, 0.12);
+}
+
+.notifications-page .search-bar input {
+  color: #0f172a;
+}
+
+.notifications-page .search-bar input::placeholder {
+  color: #94a3b8;
+}
+
 .notifications-toolbar__actions {
   display: flex;
   gap: var(--space-2);
   flex-wrap: wrap;
+}
+
+.notifications-page .table-container {
+  background: #ffffff;
+}
+
+.notifications-page .data-table thead {
+  background: #f8fafc;
+}
+
+.notifications-page .data-table th {
+  color: #64748b;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.notifications-page .data-table td {
+  color: #0f172a;
+  border-bottom: 1px solid #eef2f7;
+  vertical-align: top;
+}
+
+.notifications-page .data-table tbody tr {
+  background: #ffffff;
+}
+
+.notifications-page .data-table tbody tr:hover {
+  background: #f8fbff;
+}
+
+.notifications-page .table-empty,
+.notifications-page .table-loading,
+.notifications-page .table-error {
+  padding: 32px 24px;
+  color: #64748b;
+  background: #ffffff;
+}
+
+.notifications-page .pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border-top: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.notifications-page .pagination button {
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #0f172a;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.notifications-page .pagination button:hover:not(:disabled) {
+  background: #f8fbff;
+  border-color: #93c5fd;
+}
+
+.notifications-page .pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.notifications-page .pagination-info {
+  color: #475569;
+  font-size: 0.88rem;
+  font-weight: 600;
 }
 
 .notifications-table__subject {
@@ -59,13 +178,23 @@
 }
 
 .notifications-table__subject strong {
-  color: var(--color-text);
+  color: #0f172a;
+  line-height: 1.35;
 }
 
 .notifications-table__subject span {
-  color: var(--color-text-secondary);
+  color: #64748b;
   font-size: var(--font-size-sm);
   line-height: 1.4;
+}
+
+.notifications-table__action {
+  min-width: 110px;
+}
+
+.notifications-table__muted {
+  color: #94a3b8;
+  font-size: 0.83rem;
 }
 
 @media (max-width: 768px) {
@@ -79,5 +208,10 @@
 
   .notifications-toolbar__actions .btn {
     flex: 1;
+  }
+
+  .notifications-page .pagination {
+    flex-direction: column;
+    align-items: stretch;
   }
 }

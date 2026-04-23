@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Alert, Badge, Button, DataTable, SearchBar } from '../../components/common';
 import { useAuth } from '../../context/AuthContext';
 import auditoriaService from '../../services/auditoria.service';
@@ -7,6 +8,7 @@ import '../../styles/modules.css';
 import '../../styles/notifications.css';
 
 export const NotificacionesPage: React.FC = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [notifications, setNotifications] = useState<Notificacion[]>([]);
   const [loading, setLoading] = useState(true);
@@ -93,6 +95,30 @@ export const NotificacionesPage: React.FC = () => {
     }
   }
 
+  function getNotificationDetailUrl(notification: Notificacion) {
+    if (notification.accion?.url) {
+      return notification.accion.url;
+    }
+
+    const resourceType = notification.referencias?.recursoTipo?.toLowerCase();
+    const resourceId = notification.referencias?.recursoId;
+
+    if (!resourceId) {
+      return null;
+    }
+
+    if (
+      resourceType === 'activo' ||
+      resourceType === 'activos' ||
+      resourceType === 'asset' ||
+      resourceType === 'assets'
+    ) {
+      return `/activos/${resourceId}`;
+    }
+
+    return null;
+  }
+
   const columns = [
     {
       header: 'Tipo',
@@ -134,6 +160,27 @@ export const NotificacionesPage: React.FC = () => {
           dateStyle: 'short',
           timeStyle: 'short',
         }),
+    },
+    {
+      header: 'Detalle',
+      accessor: 'id' as const,
+      render: (_value: string, row: Notificacion) => {
+        const detailUrl = getNotificationDetailUrl(row);
+
+        if (!detailUrl) {
+          return <span className="notifications-table__muted">Sin acceso directo</span>;
+        }
+
+        return (
+          <Button
+            label="Ver activo"
+            size="sm"
+            variant="secondary"
+            className="notifications-table__action"
+            onClick={() => navigate(detailUrl)}
+          />
+        );
+      },
     },
   ];
 
