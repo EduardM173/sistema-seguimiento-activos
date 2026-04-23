@@ -1,4 +1,4 @@
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
   IconGrid,
@@ -9,9 +9,9 @@ import {
   IconUsers,
   IconShield,
   IconMapPin,
+  IconBell,
   IconSettings,
   IconLogOut,
-  IconPlus,
 } from '../common/Icon';
 import '../../styles/navbar.css';
 
@@ -30,19 +30,33 @@ type BottomItem = {
 };
 
 export default function Navbar() {
-  const { logout } = useAuth();
-  const navigate = useNavigate();
+  const { logout, hasPermission } = useAuth();
 
   const mainItems: MainItem[] = [
     { label: 'Dashboard',      icon: <IconGrid size={16} />,             to: '/dashboard' },
     { label: 'Activos',        icon: <IconPackage size={16} />,          to: '/activos' },
     { label: 'Inventario',     icon: <IconClipboard size={16} />,        to: '/inventario' },
-    { label: 'Transferencias', icon: <IconArrowsLeftRight size={16} />,  to: '/transferencias' },
     { label: 'Reportes',       icon: <IconBarChart size={16} /> },
     { label: 'Usuarios',       icon: <IconUsers size={16} />,            to: '/users' },
     { label: 'Auditoría',      icon: <IconShield size={16} /> },
     { label: 'Ubicaciones',    icon: <IconMapPin size={16} />,           to: '/locations' },
   ];
+
+  if (hasPermission('TRANSFER_MANAGE')) {
+    mainItems.splice(3, 0, {
+      label: 'Transferencias',
+      icon: <IconArrowsLeftRight size={16} />,
+      to: '/transferencias',
+    });
+  }
+
+  if (hasPermission('NOTIFICATION_VIEW')) {
+    mainItems.splice(4, 0, {
+      label: 'Notificaciones',
+      icon: <IconBell size={16} />,
+      to: '/notificaciones',
+    });
+  }
 
   const bottomItems: BottomItem[] = [
     { label: 'Configuración', icon: <IconSettings size={16} /> },

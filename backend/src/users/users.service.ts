@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { ensureCoreAccessPermissions } from '../common/access-permissions';
 import { PrismaService } from '../common/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -150,6 +151,8 @@ export class UsersService {
   }
 
   async findRoles() {
+    await ensureCoreAccessPermissions(this.prisma);
+
     const roles = await this.prisma.rol.findMany({
       select: {
         id: true,
@@ -177,6 +180,8 @@ export class UsersService {
   }
 
   async findPermissions() {
+    await ensureCoreAccessPermissions(this.prisma);
+
     return this.prisma.permiso.findMany({
       select: {
         id: true,

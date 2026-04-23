@@ -2,6 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 
+import { ensureCoreAccessPermissions } from '../common/access-permissions';
 import { PrismaService } from '../common/prisma.service';
 import { LoginDto } from './dto/login.dto';
 import { EstadoUsuario } from '../generated/prisma/client';
@@ -15,6 +16,8 @@ export class AuthService {
 
   async login(loginDto: LoginDto) {
     const { identifier, password } = loginDto;
+
+    await ensureCoreAccessPermissions(this.prisma);
 
     const usuario = await this.prisma.usuario.findFirst({
       where: {

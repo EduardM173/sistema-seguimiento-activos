@@ -7,6 +7,7 @@ import { MaterialsModule } from './materials/materials.module';
 import { MaterialModule } from './material/material.module';
 import { CatalogsModule } from './catalogs/catalogs.module';
 import { LocationsModule } from './locations/locations.module';
+import { AuditoriaModule } from './auditoria/auditoria.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { LocationsModule } from './locations/locations.module';
     MaterialModule,
     CatalogsModule,
     LocationsModule,
+    AuditoriaModule,
   ],
   controllers: [],
   providers: [],

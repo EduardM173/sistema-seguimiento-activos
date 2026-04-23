@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -19,7 +20,9 @@ import { TransferAssetDto } from './dto/transfer-asset.dto';
 import {
   EstadoAsignacion,
   EstadoActivo,
+  EstadoNotificacion,
   Prisma,
+  TipoNotificacion,
   TipoMovimientoActivo,
 } from '../generated/prisma/client';
 
@@ -535,6 +538,76 @@ export class AssetsService {
     const finalUbicacionId =
       nextUbicacionId !== undefined ? nextUbicacionId : existing.ubicacionId;
 
+    const stateChanged =
+      dto.estado !== undefined && dto.estado !== existing.estado;
+    const locationChanged =
+      nextUbicacionId !== undefined && nextUbicacionId !== existing.ubicacionId;
+    const responsibleChanged =
+      nextResponsableActualId !== undefined &&
+      nextResponsableActualId !== existing.responsableActualId;
+
+    const shouldNotifyAssignedArea =
+      Boolean(existing.areaActualId) &&
+      (stateChanged || locationChanged || responsibleChanged);
+
+    const [
+      currentArea,
+      pendingTransferReception,
+      previousUbicacion,
+      nextUbicacion,
+      previousResponsable,
+      nextResponsable,
+    ] = await Promise.all([
+      shouldNotifyAssignedArea && existing.areaActualId
+        ? this.prisma.area.findUnique({
+            where: { id: existing.areaActualId },
+            select: {
+              id: true,
+              nombre: true,
+              encargadoId: true,
+            },
+          })
+        : Promise.resolve(null),
+      shouldNotifyAssignedArea
+        ? this.prisma.asignacionActivo.findFirst({
+            where: {
+              activoId: id,
+              estado: EstadoAsignacion.PENDIENTE,
+              movimientos: {
+                some: {
+                  tipo: TipoMovimientoActivo.TRANSFERENCIA,
+                },
+              },
+            },
+            select: { id: true },
+          })
+        : Promise.resolve(null),
+      locationChanged && existing.ubicacionId
+        ? this.prisma.ubicacion.findUnique({
+            where: { id: existing.ubicacionId },
+            select: { nombre: true },
+          })
+        : Promise.resolve(null),
+      locationChanged && finalUbicacionId
+        ? this.prisma.ubicacion.findUnique({
+            where: { id: finalUbicacionId },
+            select: { nombre: true },
+          })
+        : Promise.resolve(null),
+      responsibleChanged && existing.responsableActualId
+        ? this.prisma.usuario.findUnique({
+            where: { id: existing.responsableActualId },
+            select: { nombres: true, apellidos: true },
+          })
+        : Promise.resolve(null),
+      responsibleChanged && finalResponsableActualId
+        ? this.prisma.usuario.findUnique({
+            where: { id: finalResponsableActualId },
+            select: { nombres: true, apellidos: true },
+          })
+        : Promise.resolve(null),
+    ]);
+
     const describeChange = (
       label: string,
       previousValue: string | null,
@@ -617,6 +690,39 @@ export class AssetsService {
             usuarioDestinoId: finalResponsableActualId,
             realizadoPorId: userId,
             detalle: detailParts.join(' | '),
+          },
+        });
+      }
+
+      if (currentArea && !pendingTransferReception && shouldNotifyAssignedArea) {
+        const notificationParts: string[] = [];
+
+        if (stateChanged) {
+          notificationParts.push(
+            `Estado: ${this.formatEstado(existing.estado)} -> ${this.formatEstado(dto.estado!)}`,
+          );
+        }
+
+        if (locationChanged) {
+          notificationParts.push(
+            `Ubicación: ${previousUbicacion?.nombre ?? 'Sin ubicación'} -> ${nextUbicacion?.nombre ?? 'Sin ubicación'}`,
+          );
+        }
+
+        if (responsibleChanged) {
+          notificationParts.push(
+            `Responsable: ${previousResponsable ? this.buildFullName(previousResponsable.nombres, previousResponsable.apellidos) : 'Sin responsable'} -> ${nextResponsable ? this.buildFullName(nextResponsable.nombres, nextResponsable.apellidos) : 'Sin responsable'}`,
+          );
+        }
+
+        await tx.notificacion.create({
+          data: {
+            usuarioId: currentArea.encargadoId ?? null,
+            areaId: currentArea.id,
+            tipo: TipoNotificacion.ALERTA_SISTEMA,
+            titulo: `Cambios en el activo ${existing.codigo}`,
+            mensaje: `${this.buildAssetNotificationReference(id)} El activo ${existing.nombre} asignado al área ${currentArea.nombre} fue actualizado. ${notificationParts.join(' | ')}`,
+            estado: EstadoNotificacion.NO_LEIDA,
           },
         });
       }
@@ -793,6 +899,8 @@ export class AssetsService {
   }
 
   async transfer(id: string, dto: TransferAssetDto, userId: string) {
+    await this.assertUserHasPermission(userId, 'TRANSFER_MANAGE');
+
     const areaDestinoId = dto.areaDestinoId.trim();
     const observaciones = dto.observaciones?.trim() || undefined;
 
@@ -933,6 +1041,43 @@ export class AssetsService {
       },
       asset,
     };
+  }
+
+  private async assertUserHasPermission(userId: string, permissionCode: string) {
+    const usuario = await this.prisma.usuario.findUnique({
+      where: { id: userId },
+      select: {
+        rol: {
+          select: {
+            permisos: {
+              select: {
+                permiso: {
+                  select: {
+                    codigo: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const hasPermission = Boolean(
+      usuario?.rol?.permisos?.some(
+        (item) => item.permiso.codigo === permissionCode,
+      ),
+    );
+
+    if (!hasPermission) {
+      throw new ForbiddenException(
+        'No tienes permisos para registrar transferencias',
+      );
+    }
+  }
+
+  private buildAssetNotificationReference(assetId: string) {
+    return `[ASSET_ID:${assetId}]`;
   }
 
   /**
