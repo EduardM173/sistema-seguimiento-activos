@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -898,6 +899,8 @@ export class AssetsService {
   }
 
   async transfer(id: string, dto: TransferAssetDto, userId: string) {
+    await this.assertUserHasPermission(userId, 'TRANSFER_MANAGE');
+
     const areaDestinoId = dto.areaDestinoId.trim();
     const observaciones = dto.observaciones?.trim() || undefined;
 
@@ -1038,6 +1041,39 @@ export class AssetsService {
       },
       asset,
     };
+  }
+
+  private async assertUserHasPermission(userId: string, permissionCode: string) {
+    const usuario = await this.prisma.usuario.findUnique({
+      where: { id: userId },
+      select: {
+        rol: {
+          select: {
+            permisos: {
+              select: {
+                permiso: {
+                  select: {
+                    codigo: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const hasPermission = Boolean(
+      usuario?.rol?.permisos?.some(
+        (item) => item.permiso.codigo === permissionCode,
+      ),
+    );
+
+    if (!hasPermission) {
+      throw new ForbiddenException(
+        'No tienes permisos para registrar transferencias',
+      );
+    }
   }
 
   /**

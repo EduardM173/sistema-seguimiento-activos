@@ -223,32 +223,30 @@ export class AuditoriaService {
       select: {
         rol: {
           select: {
-            nombre: true,
+            permisos: {
+              select: {
+                permiso: {
+                  select: {
+                    codigo: true,
+                  },
+                },
+              },
+            },
           },
         },
       },
     });
 
-    if (!this.isResponsibleAreaRole(usuario?.rol?.nombre)) {
+    const hasNotificationPermission = Boolean(
+      usuario?.rol?.permisos?.some(
+        (item) => item.permiso.codigo === 'NOTIFICATION_VIEW',
+      ),
+    );
+
+    if (!hasNotificationPermission) {
       throw new ForbiddenException(
-        'Solo el Responsable de Área puede acceder a la bandeja de notificaciones',
+        'No tienes permisos para acceder a la bandeja de notificaciones',
       );
     }
-  }
-
-  private isResponsibleAreaRole(roleName: string | null | undefined) {
-    const normalizedRole = (roleName ?? '')
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/[_\s]+/g, ' ')
-      .trim()
-      .toUpperCase();
-
-    return new Set([
-      'RESPONSABLEAREA',
-      'RESPONSABLE DE AREA',
-      'RESPONSABLE_AREA',
-      'RESPONSABLEDEAREA',
-    ]).has(normalizedRole);
   }
 }
