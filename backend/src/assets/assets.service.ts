@@ -721,7 +721,7 @@ export class AssetsService {
             areaId: currentArea.id,
             tipo: TipoNotificacion.ALERTA_SISTEMA,
             titulo: `Cambios en el activo ${existing.codigo}`,
-            mensaje: `El activo ${existing.nombre} asignado al área ${currentArea.nombre} fue actualizado. ${notificationParts.join(' | ')}`,
+            mensaje: `${this.buildAssetNotificationReference(id)} El activo ${existing.nombre} asignado al área ${currentArea.nombre} fue actualizado. ${notificationParts.join(' | ')}`,
             estado: EstadoNotificacion.NO_LEIDA,
           },
         });
@@ -1074,6 +1074,10 @@ export class AssetsService {
         'No tienes permisos para registrar transferencias',
       );
     }
+  }
+
+  private buildAssetNotificationReference(assetId: string) {
+    return `[ASSET_ID:${assetId}]`;
   }
 
   /**

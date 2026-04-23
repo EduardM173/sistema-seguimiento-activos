@@ -64,7 +64,10 @@ export class AuditoriaService {
     ]);
 
     return {
-      data: notifications.map((notification) => ({
+      data: notifications.map((notification) => {
+        const assetReference = this.extractAssetReference(notification.mensaje);
+
+        return {
         id: notification.id,
         usuarioId: notification.usuarioId ?? userId,
         usuarioParaQuien: notification.usuario
@@ -77,17 +80,23 @@ export class AuditoriaService {
           : undefined,
         tipo: this.mapNotificationType(notification.tipo),
         asunto: notification.titulo,
-        contenido: notification.mensaje,
-        referencias: notification.materialId
+        contenido: this.cleanNotificationMessage(notification.mensaje),
+        referencias: assetReference
           ? {
-              recursoTipo: 'material',
-              recursoId: notification.materialId,
+              recursoTipo: 'activo',
+              recursoId: assetReference,
             }
-          : undefined,
+          : notification.materialId
+            ? {
+                recursoTipo: 'material',
+                recursoId: notification.materialId,
+              }
+            : undefined,
         leida: notification.estado === EstadoNotificacion.LEIDA,
         fechaCreacion: notification.creadoEn,
         fechaLectura: notification.leidoEn ?? undefined,
-      })),
+      };
+      }),
       total,
       pagina: page,
       totalPages: Math.max(1, Math.ceil(total / pageSize)),
@@ -215,6 +224,15 @@ export class AuditoriaService {
       default:
         return 'sistema';
     }
+  }
+
+  private extractAssetReference(message: string) {
+    const match = message.match(/\[ASSET_ID:([^\]]+)\]/);
+    return match?.[1] ?? null;
+  }
+
+  private cleanNotificationMessage(message: string) {
+    return message.replace(/\[ASSET_ID:[^\]]+\]\s*/g, '').trim();
   }
 
   private async assertResponsibleAreaAccess(userId: string) {
