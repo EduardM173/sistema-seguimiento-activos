@@ -19,6 +19,7 @@ export const NotificacionesPage: React.FC = () => {
     type: 'info' | 'error';
     text: string;
   } | null>(null);
+  const [processingNotificationId, setProcessingNotificationId] = useState<string | null>(null);
 
   async function loadNotifications() {
     try {
@@ -124,6 +125,47 @@ export const NotificacionesPage: React.FC = () => {
     return null;
   }
 
+  async function handleOpenNotification(notification: Notificacion) {
+    const detailUrl = getNotificationDetailUrl(notification);
+
+    if (!detailUrl) {
+      return;
+    }
+
+    try {
+      setProcessingNotificationId(notification.id);
+
+      if (!notification.leida) {
+        await auditoriaService.marcarLeida(notification.id);
+
+        setNotifications((prev) =>
+          prev.map((item) =>
+            item.id === notification.id
+              ? {
+                  ...item,
+                  leida: true,
+                  fechaLectura: new Date(),
+                }
+              : item,
+          ),
+        );
+      }
+
+      navigate(detailUrl);
+    } catch (error) {
+      console.error(error);
+      setMessage({
+        type: 'error',
+        text:
+          error instanceof HttpError
+            ? error.message
+            : 'No se pudo abrir la notificación en este momento.',
+      });
+    } finally {
+      setProcessingNotificationId(null);
+    }
+  }
+
   const columns = [
     {
       header: 'Tipo',
@@ -178,11 +220,15 @@ export const NotificacionesPage: React.FC = () => {
 
         return (
           <Button
-            label="Ver activo"
+            label={
+              processingNotificationId === row.id
+                ? 'Abriendo...'
+                : 'Ver activo'
+            }
             size="sm"
             variant="secondary"
             className="notifications-table__action"
-            onClick={() => navigate(detailUrl)}
+            onClick={() => void handleOpenNotification(row)}
           />
         );
       },

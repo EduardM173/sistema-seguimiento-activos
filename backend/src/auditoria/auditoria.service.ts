@@ -12,20 +12,15 @@ export class AuditoriaService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getNotifications(userId: string, query: SearchNotificationsDto) {
-    await this.assertResponsibleAreaAccess(userId);
+    const scope = await this.resolveNotificationScope(userId);
 
     const { page = 1, pageSize = 20, leidas } = query;
     const skip = (page - 1) * pageSize;
 
-    const usuario = await this.prisma.usuario.findUnique({
-      where: { id: userId },
-      select: { areaId: true },
-    });
-
     const where: Prisma.NotificacionWhereInput = {
       OR: [
         { usuarioId: userId },
-        ...(usuario?.areaId ? [{ areaId: usuario.areaId }] : []),
+        ...scope.areaIds.map((areaId) => ({ areaId })),
       ],
     };
 
@@ -111,19 +106,14 @@ export class AuditoriaService {
   }
 
   async markAsRead(userId: string, notificationId: string) {
-    await this.assertResponsibleAreaAccess(userId);
-
-    const usuario = await this.prisma.usuario.findUnique({
-      where: { id: userId },
-      select: { areaId: true },
-    });
+    const scope = await this.resolveNotificationScope(userId);
 
     const notification = await this.prisma.notificacion.findFirst({
       where: {
         id: notificationId,
         OR: [
           { usuarioId: userId },
-          ...(usuario?.areaId ? [{ areaId: usuario.areaId }] : []),
+          ...scope.areaIds.map((areaId) => ({ areaId })),
         ],
       },
     });
@@ -142,19 +132,14 @@ export class AuditoriaService {
   }
 
   async markAllAsRead(userId: string) {
-    await this.assertResponsibleAreaAccess(userId);
-
-    const usuario = await this.prisma.usuario.findUnique({
-      where: { id: userId },
-      select: { areaId: true },
-    });
+    const scope = await this.resolveNotificationScope(userId);
 
     const result = await this.prisma.notificacion.updateMany({
       where: {
         estado: EstadoNotificacion.NO_LEIDA,
         OR: [
           { usuarioId: userId },
-          ...(usuario?.areaId ? [{ areaId: usuario.areaId }] : []),
+          ...scope.areaIds.map((areaId) => ({ areaId })),
         ],
       },
       data: {
@@ -167,19 +152,14 @@ export class AuditoriaService {
   }
 
   async deleteNotification(userId: string, notificationId: string) {
-    await this.assertResponsibleAreaAccess(userId);
-
-    const usuario = await this.prisma.usuario.findUnique({
-      where: { id: userId },
-      select: { areaId: true },
-    });
+    const scope = await this.resolveNotificationScope(userId);
 
     const notification = await this.prisma.notificacion.findFirst({
       where: {
         id: notificationId,
         OR: [
           { usuarioId: userId },
-          ...(usuario?.areaId ? [{ areaId: usuario.areaId }] : []),
+          ...scope.areaIds.map((areaId) => ({ areaId })),
         ],
       },
       select: { id: true },
@@ -195,19 +175,14 @@ export class AuditoriaService {
   }
 
   async getUnreadCount(userId: string) {
-    await this.assertResponsibleAreaAccess(userId);
-
-    const usuario = await this.prisma.usuario.findUnique({
-      where: { id: userId },
-      select: { areaId: true },
-    });
+    const scope = await this.resolveNotificationScope(userId);
 
     const total = await this.prisma.notificacion.count({
       where: {
         estado: EstadoNotificacion.NO_LEIDA,
         OR: [
           { usuarioId: userId },
-          ...(usuario?.areaId ? [{ areaId: usuario.areaId }] : []),
+          ...scope.areaIds.map((areaId) => ({ areaId })),
         ],
       },
     });
@@ -241,10 +216,11 @@ export class AuditoriaService {
     return message.replace(/\[ASSET_ID:[^\]]+\]\s*/g, '').trim();
   }
 
-  private async assertResponsibleAreaAccess(userId: string) {
+  private async resolveNotificationScope(userId: string) {
     const usuario = await this.prisma.usuario.findUnique({
       where: { id: userId },
       select: {
+        areaId: true,
         rol: {
           select: {
             permisos: {
@@ -272,5 +248,23 @@ export class AuditoriaService {
         'No tienes permisos para acceder a la bandeja de notificaciones',
       );
     }
+
+    const managedAreas = await this.prisma.area.findMany({
+      where: {
+        encargadoId: userId,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    const areaIds = Array.from(
+      new Set([
+        ...(usuario?.areaId ? [usuario.areaId] : []),
+        ...managedAreas.map((area) => area.id),
+      ]),
+    );
+
+    return { areaIds };
   }
 }
