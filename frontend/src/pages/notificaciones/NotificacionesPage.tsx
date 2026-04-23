@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Alert, Badge, Button, DataTable, SearchBar } from '../../components/common';
 import { useAuth } from '../../context/AuthContext';
 import auditoriaService from '../../services/auditoria.service';
+import { HttpError } from '../../services/http.client';
 import type { Notificacion } from '../../types/auditoria.types';
 import '../../styles/modules.css';
 import '../../styles/notifications.css';
@@ -23,17 +24,21 @@ export const NotificacionesPage: React.FC = () => {
     try {
       setLoading(true);
       setMessage(null);
-      const response = await auditoriaService.obtenerNotificaciones(
-        onlyUnread ? false : undefined,
-      );
+      const response = await auditoriaService.obtenerMisNotificaciones({
+        leidas: onlyUnread ? false : undefined,
+        page: 1,
+        pageSize: 100,
+      });
       setNotifications(response.data ?? []);
     } catch (error) {
       console.error(error);
       setNotifications([]);
       setMessage({
-        type: 'info',
+        type: 'error',
         text:
-          'La bandeja ya está disponible, pero el backend de notificaciones aún no devuelve datos para esta cuenta.',
+          error instanceof HttpError
+            ? error.message
+            : 'No se pudieron cargar las notificaciones en este momento.',
       });
     } finally {
       setLoading(false);

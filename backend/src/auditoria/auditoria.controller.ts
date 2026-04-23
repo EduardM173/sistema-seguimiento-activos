@@ -63,6 +63,41 @@ export class AuditoriaController {
   }
 
   @ApiOperation({
+    summary: 'Obtener mis notificaciones',
+    description:
+      'Devuelve la bandeja de notificaciones correspondiente al usuario autenticado y a su área.',
+  })
+  @ApiQuery({
+    name: 'leidas',
+    required: false,
+    type: Boolean,
+    description: 'Filtra las notificaciones leídas o no leídas',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Número de página',
+  })
+  @ApiQuery({
+    name: 'pageSize',
+    required: false,
+    type: Number,
+    description: 'Cantidad de registros por página',
+  })
+  @ApiOkResponse({
+    description: 'Notificaciones del usuario autenticado obtenidas correctamente',
+  })
+  @Get('notificaciones/mias')
+  async getMyNotifications(
+    @Query() query: SearchNotificationsDto,
+    @Req() req: Request,
+  ) {
+    const userId = (req.user as { id: string }).id;
+    return this.auditoriaService.getNotifications(userId, query);
+  }
+
+  @ApiOperation({
     summary: 'Marcar notificación como leída',
   })
   @ApiParam({ name: 'id', description: 'Identificador de la notificación' })

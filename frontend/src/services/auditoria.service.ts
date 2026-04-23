@@ -127,6 +127,29 @@ export const auditoriaService = {
     }
   },
 
+  // Obtener notificaciones del usuario autenticado
+  obtenerMisNotificaciones: async (params?: {
+    leidas?: boolean;
+    page?: number;
+    pageSize?: number;
+  }) => {
+    try {
+      const response = await apiClient.get<PaginatedResponse<Notificacion>>(
+        '/auditoria/notificaciones/mias',
+        {
+          params: {
+            ...(params?.leidas !== undefined ? { leidas: params.leidas } : {}),
+            ...(params?.page !== undefined ? { page: params.page } : {}),
+            ...(params?.pageSize !== undefined ? { pageSize: params.pageSize } : {}),
+          },
+        }
+      );
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
   // Marcar notificación como leída
   marcarLeida: async (notificacionId: string) => {
     try {
