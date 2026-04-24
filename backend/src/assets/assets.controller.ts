@@ -144,8 +144,12 @@ export class AssetsController {
     description: 'Los filtros o parámetros de paginación enviados no son válidos',
   })
   @Get()
-  async findAll(@Query() query: SearchAssetsDto) {
-    const result = await this.assetsService.findAll(query);
+  async findAll(
+    @Query() query: SearchAssetsDto,
+    @Req() req: any,
+  ) {
+    const result = await this.assetsService.findAll(query, req.user);
+
     return ApiResponse.paginated(
       result.data,
       result.total,
