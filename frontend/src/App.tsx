@@ -69,6 +69,12 @@ export default function App() {
               <Route element={<ProtectedRoute requiredPermission="INVENTORY_MANAGE" />}>
                 <Route path="/inventario" element={<InventarioPage />} />
               </Route>
+              <Route element={<ProtectedRoute requiredPermission="REPORT_VIEW" />}>
+                <Route path="/reportes" element={<ReportesPage />} />
+              </Route>
+              <Route element={<ProtectedRoute requiredPermission="AUDIT_VIEW" />}>
+                <Route path="/auditoria" element={<AuditoriaPage />} />
+              </Route>
               <Route element={<ProtectedRoute requiredPermission="USER_MANAGE" />}>
                 <Route path="/users" element={<UserList />} />
               </Route>

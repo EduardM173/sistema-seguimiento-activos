@@ -34,16 +34,25 @@ export default function Navbar() {
 
   const mainItems: MainItem[] = [
     { label: 'Dashboard',      icon: <IconGrid size={16} />,             to: '/dashboard' },
-    { label: 'Activos',        icon: <IconPackage size={16} />,          to: '/activos' },
-    { label: 'Inventario',     icon: <IconClipboard size={16} />,        to: '/inventario' },
-    { label: 'Reportes',       icon: <IconBarChart size={16} /> },
-    { label: 'Usuarios',       icon: <IconUsers size={16} />,            to: '/users' },
-    { label: 'Auditoría',      icon: <IconShield size={16} /> },
-    { label: 'Ubicaciones',    icon: <IconMapPin size={16} />,           to: '/locations' },
   ];
 
+  if (hasPermission('ASSET_VIEW')) {
+    mainItems.push(
+      { label: 'Activos', icon: <IconPackage size={16} />, to: '/activos' },
+      { label: 'Ubicaciones', icon: <IconMapPin size={16} />, to: '/locations' },
+    );
+  }
+
+  if (hasPermission('INVENTORY_MANAGE')) {
+    mainItems.push({
+      label: 'Inventario',
+      icon: <IconClipboard size={16} />,
+      to: '/inventario',
+    });
+  }
+
   if (hasPermission('TRANSFER_MANAGE')) {
-    mainItems.splice(3, 0, {
+    mainItems.push({
       label: 'Transferencias',
       icon: <IconArrowsLeftRight size={16} />,
       to: '/transferencias',
@@ -51,10 +60,34 @@ export default function Navbar() {
   }
 
   if (hasPermission('NOTIFICATION_VIEW')) {
-    mainItems.splice(4, 0, {
+    mainItems.push({
       label: 'Notificaciones',
       icon: <IconBell size={16} />,
       to: '/notificaciones',
+    });
+  }
+
+  if (hasPermission('REPORT_VIEW')) {
+    mainItems.push({
+      label: 'Reportes',
+      icon: <IconBarChart size={16} />,
+      to: '/reportes',
+    });
+  }
+
+  if (hasPermission('AUDIT_VIEW')) {
+    mainItems.push({
+      label: 'Auditoría',
+      icon: <IconShield size={16} />,
+      to: '/auditoria',
+    });
+  }
+
+  if (hasPermission('USER_MANAGE')) {
+    mainItems.push({
+      label: 'Usuarios',
+      icon: <IconUsers size={16} />,
+      to: '/users',
     });
   }
 
