@@ -57,9 +57,12 @@ post {
                 withCredentials([string(credentialsId: 'DISCORD_WEBHOOK', variable: 'DISCORD_URL')]) {
                     sh """#!/bin/sh
 
-                    AUTHOR=\$(git log -1 --pretty=format:'%an' | sed 's/"/\\\\"/g' || echo 'Sistema')
-                    MSG=\$(git log -1 --pretty=format:'%s' | sed 's/"/\\\\"/g' || echo 'Build ejecutado')
+                    RAW_AUTHOR=\$(git log -1 --pretty=format:'%an' 2>/dev/null || echo 'Sistema')
+                    RAW_MSG=\$(git log -1 --pretty=format:'%s' 2>/dev/null || echo 'Error/Sin checkout')
                     
+                    AUTHOR=\$(echo "\$RAW_AUTHOR" | sed 's/"/\\\\"/g')
+                    MSG=\$(echo "\$RAW_MSG" | sed 's/"/\\\\"/g')
+
                     STATUS="${currentBuild.currentResult ?: 'SUCCESS'}"
                     
                     if [ "\$STATUS" = "SUCCESS" ]; then

@@ -14,7 +14,6 @@ async function bootstrap() {
       'http://localhost:8084',
       'http://127.0.0.1:5173',
       'http://127.0.0.1:5174',
-      'http://127.0.0.1:8084',
     ],
     credentials: true,
   });
@@ -35,7 +34,7 @@ async function bootstrap() {
   const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('docs', app, swaggerDocument);
 
-  const port = process.env.PORT || 3000;
+  const port = process.env.BACKEND_PORT || 3000;
   await app.listen(port);
   console.log(`Backend corriendo en http://localhost:${port}/api`);
   console.log(`Swagger disponible en http://localhost:${port}/docs`);

@@ -393,92 +393,110 @@ async function main() {
   // =========================
   // ACTIVOS
   // =========================
-  const laptopDell = await prisma.activo.upsert({
-    where: { codigo: 'ACT-001' },
-    update: {
-      nombre: 'Laptop Dell Latitude 5420',
-      categoriaId: categoriaLaptop.id,
-      ubicacionId: ubicacionSistemas.id,
-      areaActualId: areaSistemas.id,
-      responsableActualId: usuarioOperativo.id,
-      actualizadoPorId: usuarioAdmin.id,
-    },
-    create: {
-      codigo: 'ACT-001',
-      nombre: 'Laptop Dell Latitude 5420',
-      descripcion: 'Laptop institucional para trabajo operativo',
-      marca: 'Dell',
-      modelo: 'Latitude 5420',
-      numeroSerie: 'DL-5420-0001',
-      fechaAdquisicion: new Date('2025-01-15'),
-      costoAdquisicion: '6800.00',
-      vencimientoGarantia: new Date('2027-01-15'),
-      estado: 'OPERATIVO',
-      categoriaId: categoriaLaptop.id,
-      ubicacionId: ubicacionSistemas.id,
-      areaActualId: areaSistemas.id,
-      responsableActualId: usuarioOperativo.id,
-      creadoPorId: usuarioAdmin.id,
-      actualizadoPorId: usuarioAdmin.id,
-    },
+  const _laptopExistente = await prisma.activo.findFirst({
+    where: { OR: [{ codigo: 'ACT-001' }, { numeroSerie: 'DL-5420-0001' }] },
   });
+  const laptopDell = _laptopExistente
+    ? await prisma.activo.update({
+        where: { id: _laptopExistente.id },
+        data: {
+          nombre: 'Laptop Dell Latitude 5420',
+          categoriaId: categoriaLaptop.id,
+          ubicacionId: ubicacionSistemas.id,
+          areaActualId: areaSistemas.id,
+          responsableActualId: usuarioOperativo.id,
+          actualizadoPorId: usuarioAdmin.id,
+        },
+      })
+    : await prisma.activo.create({
+        data: {
+          codigo: 'ACT-001',
+          nombre: 'Laptop Dell Latitude 5420',
+          descripcion: 'Laptop institucional para trabajo operativo',
+          marca: 'Dell',
+          modelo: 'Latitude 5420',
+          numeroSerie: 'DL-5420-0001',
+          fechaAdquisicion: new Date('2025-01-15'),
+          costoAdquisicion: '6800.00',
+          vencimientoGarantia: new Date('2027-01-15'),
+          estado: 'OPERATIVO',
+          categoriaId: categoriaLaptop.id,
+          ubicacionId: ubicacionSistemas.id,
+          areaActualId: areaSistemas.id,
+          responsableActualId: usuarioOperativo.id,
+          creadoPorId: usuarioAdmin.id,
+          actualizadoPorId: usuarioAdmin.id,
+        },
+      });
 
-  const impresoraHp = await prisma.activo.upsert({
-    where: { codigo: 'ACT-002' },
-    update: {
-      nombre: 'Impresora HP LaserJet Pro',
-      categoriaId: categoriaImpresora.id,
-      ubicacionId: ubicacionAlmacen.id,
-      areaActualId: areaAdministracion.id,
-      responsableActualId: usuarioResponsable.id,
-      actualizadoPorId: usuarioAdmin.id,
-    },
-    create: {
-      codigo: 'ACT-002',
-      nombre: 'Impresora HP LaserJet Pro',
-      descripcion: 'Impresora del área administrativa',
-      marca: 'HP',
-      modelo: 'LaserJet Pro',
-      numeroSerie: 'HP-LJ-0002',
-      fechaAdquisicion: new Date('2024-11-10'),
-      costoAdquisicion: '3200.00',
-      vencimientoGarantia: new Date('2026-11-10'),
-      estado: 'OPERATIVO',
-      categoriaId: categoriaImpresora.id,
-      ubicacionId: ubicacionAlmacen.id,
-      areaActualId: areaAdministracion.id,
-      responsableActualId: usuarioResponsable.id,
-      creadoPorId: usuarioAdmin.id,
-      actualizadoPorId: usuarioAdmin.id,
-    },
+  const _impresoraExistente = await prisma.activo.findFirst({
+    where: { OR: [{ codigo: 'ACT-002' }, { numeroSerie: 'HP-LJ-0002' }] },
   });
+  const impresoraHp = _impresoraExistente
+    ? await prisma.activo.update({
+        where: { id: _impresoraExistente.id },
+        data: {
+          nombre: 'Impresora HP LaserJet Pro',
+          categoriaId: categoriaImpresora.id,
+          ubicacionId: ubicacionAlmacen.id,
+          areaActualId: areaAdministracion.id,
+          responsableActualId: usuarioResponsable.id,
+          actualizadoPorId: usuarioAdmin.id,
+        },
+      })
+    : await prisma.activo.create({
+        data: {
+          codigo: 'ACT-002',
+          nombre: 'Impresora HP LaserJet Pro',
+          descripcion: 'Impresora del área administrativa',
+          marca: 'HP',
+          modelo: 'LaserJet Pro',
+          numeroSerie: 'HP-LJ-0002',
+          fechaAdquisicion: new Date('2024-11-10'),
+          costoAdquisicion: '3200.00',
+          vencimientoGarantia: new Date('2026-11-10'),
+          estado: 'OPERATIVO',
+          categoriaId: categoriaImpresora.id,
+          ubicacionId: ubicacionAlmacen.id,
+          areaActualId: areaAdministracion.id,
+          responsableActualId: usuarioResponsable.id,
+          creadoPorId: usuarioAdmin.id,
+          actualizadoPorId: usuarioAdmin.id,
+        },
+      });
 
-  const escritorio = await prisma.activo.upsert({
-    where: { codigo: 'ACT-003' },
-    update: {
-      nombre: 'Escritorio Ejecutivo',
-      categoriaId: categoriaMobiliario.id,
-      ubicacionId: ubicacionAlmacen.id,
-      areaActualId: areaAdministracion.id,
-      actualizadoPorId: usuarioAdmin.id,
-    },
-    create: {
-      codigo: 'ACT-003',
-      nombre: 'Escritorio Ejecutivo',
-      descripcion: 'Mobiliario para oficina administrativa',
-      marca: 'Genérico',
-      modelo: 'Oficina 120',
-      numeroSerie: 'MOB-0003',
-      fechaAdquisicion: new Date('2024-06-20'),
-      costoAdquisicion: '950.00',
-      estado: 'OPERATIVO',
-      categoriaId: categoriaMobiliario.id,
-      ubicacionId: ubicacionAlmacen.id,
-      areaActualId: areaAdministracion.id,
-      creadoPorId: usuarioAdmin.id,
-      actualizadoPorId: usuarioAdmin.id,
-    },
+  const _escritorioExistente = await prisma.activo.findFirst({
+    where: { OR: [{ codigo: 'ACT-003' }, { numeroSerie: 'MOB-0003' }] },
   });
+  const escritorio = _escritorioExistente
+    ? await prisma.activo.update({
+        where: { id: _escritorioExistente.id },
+        data: {
+          nombre: 'Escritorio Ejecutivo',
+          categoriaId: categoriaMobiliario.id,
+          ubicacionId: ubicacionAlmacen.id,
+          areaActualId: areaAdministracion.id,
+          actualizadoPorId: usuarioAdmin.id,
+        },
+      })
+    : await prisma.activo.create({
+        data: {
+          codigo: 'ACT-003',
+          nombre: 'Escritorio Ejecutivo',
+          descripcion: 'Mobiliario para oficina administrativa',
+          marca: 'Genérico',
+          modelo: 'Oficina 120',
+          numeroSerie: 'MOB-0003',
+          fechaAdquisicion: new Date('2024-06-20'),
+          costoAdquisicion: '950.00',
+          estado: 'OPERATIVO',
+          categoriaId: categoriaMobiliario.id,
+          ubicacionId: ubicacionAlmacen.id,
+          areaActualId: areaAdministracion.id,
+          creadoPorId: usuarioAdmin.id,
+          actualizadoPorId: usuarioAdmin.id,
+        },
+      });
 
   // =========================
   // MOVIMIENTOS DE ACTIVOS
@@ -503,7 +521,12 @@ async function main() {
   // ASIGNACIÓN PENDIENTE
   // =========================
   let asignacionPendiente = await prisma.asignacionActivo.findFirst({
-    where: { activoId: laptopDell.id, estado: 'PENDIENTE' },
+    where: {
+      activoId: laptopDell.id,
+      areaAsignadaId: areaAdministracion.id,
+      usuarioAsignadoId: usuarioResponsable.id,
+      asignadoPorId: usuarioOperativo.id,
+    },
   });
   if (!asignacionPendiente) {
     asignacionPendiente = await prisma.asignacionActivo.create({

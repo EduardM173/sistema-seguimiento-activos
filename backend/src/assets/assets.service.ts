@@ -33,14 +33,15 @@ export class AssetsService {
   /**
    * Paginated list of all assets with optional filters.
    */
-  async findAll(query: SearchAssetsDto) {
-    const {
+  async findAll(query: SearchAssetsDto, user?: any) {
+    
+    const { 
       page,
       pageSize,
       q,
       estado,
       categoriaId,
-      ubicacionId,
+      ubicacionId ,
       soloTransferibles,
       sortBy = AssetSortBy.CREADO_EN,
       sortType = SortType.DESC,
@@ -48,6 +49,46 @@ export class AssetsService {
     const skip = (page - 1) * pageSize;
 
     const where: Prisma.ActivoWhereInput = {};
+
+    const usuarioDB = await this.prisma.usuario.findUnique({
+      where: { id: user.id },
+      select: { areaId: true },
+    });
+
+    if (usuarioDB?.areaId) {
+      where.areaActualId = usuarioDB.areaId;
+      where.asignaciones = {
+        none: {
+          estado: 'PENDIENTE',
+        },
+      };
+    }
+
+    if (query.q) {
+      where.OR = [
+        { codigo: { contains: query.q, mode: 'insensitive' } },
+        { nombre: { contains: query.q, mode: 'insensitive' } },
+        { categoria: { nombre: { contains: query.q, mode: 'insensitive' } } },
+        { ubicacion: { nombre: { contains: query.q, mode: 'insensitive' } } },
+        {
+          responsableActual: {
+            OR: [
+              { nombres: { contains: query.q, mode: 'insensitive' } },
+              { apellidos: { contains: query.q, mode: 'insensitive' } },
+            ],
+          },
+        },
+      ];
+    }
+
+    if (user?.areaId) {
+      where.areaActualId = user.areaId;
+      where.asignaciones = {
+        none: {
+          estado: 'PENDIENTE',
+        },
+      };
+    }
 
     // Search by asset data, category, location or responsible person
     if (q) {
