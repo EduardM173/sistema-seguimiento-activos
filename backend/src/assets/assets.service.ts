@@ -50,18 +50,31 @@ export class AssetsService {
 
     const where: Prisma.ActivoWhereInput = {};
 
-    const usuarioDB = await this.prisma.usuario.findUnique({
-      where: { id: user.id },
-      select: { areaId: true },
-    });
+    const isAreaManager = this.isAreaManagerRole(user?.rol);
 
-    if (usuarioDB?.areaId) {
-      where.areaActualId = usuarioDB.areaId;
-      where.asignaciones = {
-        none: {
-          estado: 'PENDIENTE',
+    if (isAreaManager && user?.id) {
+      const userScope = await this.prisma.usuario.findUnique({
+        where: { id: user.id },
+        select: {
+          areaId: true,
+          areasGestionadas: {
+            select: { id: true },
+          },
         },
-      };
+      });
+
+      const scopedAreaIds = [
+        userScope?.areaId ?? null,
+        ...(userScope?.areasGestionadas.map((area) => area.id) ?? []),
+      ].filter((value, index, values): value is string => Boolean(value) && values.indexOf(value) === index);
+
+      if (scopedAreaIds.length === 1) {
+        where.areaActualId = scopedAreaIds[0];
+      } else if (scopedAreaIds.length > 1) {
+        where.areaActualId = { in: scopedAreaIds };
+      } else {
+        where.areaActualId = '__AREA_SIN_ACCESO__';
+      }
     }
 
     if (query.q) {
@@ -79,15 +92,6 @@ export class AssetsService {
           },
         },
       ];
-    }
-
-    if (user?.areaId) {
-      where.areaActualId = user.areaId;
-      where.asignaciones = {
-        none: {
-          estado: 'PENDIENTE',
-        },
-      };
     }
 
     // Search by asset data, category, location or responsible person
@@ -1582,5 +1586,23 @@ export class AssetsService {
 
   private buildFullName(nombres: string, apellidos?: string | null): string {
     return [nombres, apellidos].filter(Boolean).join(' ').trim();
+  }
+
+  private isAreaManagerRole(roleName?: string | null): boolean {
+    if (!roleName) {
+      return false;
+    }
+
+    const normalized = roleName
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[_\s]+/g, ' ')
+      .trim()
+      .toUpperCase();
+
+    return (
+      normalized === 'RESPONSABLE DE AREA' ||
+      normalized === 'RESPONSABLE AREA'
+    );
   }
 }

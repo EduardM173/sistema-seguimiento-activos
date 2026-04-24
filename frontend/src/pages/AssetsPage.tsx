@@ -6,6 +6,7 @@ import OverlayModal from '../components/common/OverlayModal';
 import CreateAssetPage from './CreateAssetPage';
 import AssetDetailPanel from '../components/assets/AssetDetailPanel';
 import { useNotification } from '../context/NotificationContext';
+import { useAuth } from '../context/AuthContext';
 import { getAreas, getCategorias, getUbicaciones, getUsuarios } from '../services/catalogs.service';
 import {
   assignAsset,
@@ -54,6 +55,7 @@ const ESTADO_CLASS: Record<string, string> = {
 const PAGE_SIZE = 10;
 
 export default function AssetsPage() {
+  const { hasPermission } = useAuth();
   const notify = useNotification();
   const { error: notifyError, success: notifySuccess } = notify;
 
@@ -409,6 +411,9 @@ export default function AssetsPage() {
         }));
 
   const totalPages = meta?.totalPages ?? 1;
+  const canCreateAssets = hasPermission('ASSET_CREATE');
+  const canUpdateAssets = hasPermission('ASSET_UPDATE');
+  const canAssignAssets = hasPermission('ASSET_ASSIGN');
 
   function buildPageNumbers(): (number | '...')[] {
     const pages: (number | '...')[] = [];
@@ -472,6 +477,8 @@ export default function AssetsPage() {
             type="button"
             className="btn btn--primary"
             onClick={() => setShowCreateAssetModal(true)}
+            disabled={!canCreateAssets}
+            title={!canCreateAssets ? 'No tienes permiso para registrar activos' : undefined}
           >
             <span>+</span> Nuevo Activo
           </button>
@@ -598,23 +605,32 @@ export default function AssetsPage() {
                 icon: <IconInfo/>,
                 onClick: (asset) => setViewingAssetId(asset.id),
               },
-              {
+            ];
+
+            if (canUpdateAssets) {
+              assetActions.push({
                 label: 'Editar',
                 icon: <IconEdit/>,
                 onClick: (asset) => setEditingAssetId(asset.id),
-              },
-              {
+              });
+            }
+
+            if (canAssignAssets) {
+              assetActions.push({
                 label: 'Asignar',
                 icon: <IconGrid/>,
                 onClick: (asset) => openAssignModal(asset),
-              },
-              {
+              });
+            }
+
+            if (canUpdateAssets) {
+              assetActions.push({
                 label: 'Dar de baja',
                 icon: '⋯',
                 variant: 'danger',
                 onClick: (asset) => void handleDelete(asset.id, asset.nombre),
-              },
-            ];
+              });
+            }
 
             return (
               <div className="assetsTable__wrap">

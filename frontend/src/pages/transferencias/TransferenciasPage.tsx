@@ -1,14 +1,16 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Button } from '../../components/common';
+import { useAuth } from '../../context/AuthContext';
 import { useNotification } from '../../context/NotificationContext';
 import { getAreas } from '../../services/catalogs.service';
-import { searchAssets, transferAsset } from '../../services/assets.service';
+import { getSolicitudesEnviadas, searchAssets, transferAsset } from '../../services/assets.service';
 import { HttpError } from '../../services/http.client';
-import type { Area, AssetListItem } from '../../types/assets.types';
+import type { Area, AssetListItem, SolicitudEnviada } from '../../types/assets.types';
 import '../../styles/modules.css';
 import '../../styles/transferencias.css';
 
 export const TransferenciasPage: React.FC = () => {
+  const { user } = useAuth();
   const notify = useNotification();
   const PAGE_SIZE = 6;
   const [assets, setAssets] = useState<AssetListItem[]>([]);
@@ -28,8 +30,24 @@ export const TransferenciasPage: React.FC = () => {
     areaDestino: { id: string; nombre: string };
   } | null>(null);
 
+  function mapSolicitudToLastTransferResult(
+    solicitud: SolicitudEnviada | null | undefined,
+  ) {
+    if (!solicitud || !solicitud.areaOrigen || !solicitud.areaDestino) {
+      return null;
+    }
+
+    return {
+      activoCodigo: solicitud.activo.codigo,
+      activoNombre: solicitud.activo.nombre,
+      estadoRecepcion: solicitud.estado,
+      areaOrigen: solicitud.areaOrigen,
+      areaDestino: solicitud.areaDestino,
+    };
+  }
+
   async function reloadData() {
-    const [assetsResponse, availableAreas] = await Promise.all([
+    const [assetsResponse, availableAreas, sentRequestsResponse] = await Promise.all([
       searchAssets({
         soloTransferibles: true,
         page: 1,
@@ -38,10 +56,16 @@ export const TransferenciasPage: React.FC = () => {
         sortType: 'ASC',
       }),
       getAreas(),
+      user?.id ? getSolicitudesEnviadas(user.id, user.area?.id) : Promise.resolve(null),
     ]);
 
     setAssets(assetsResponse.data ?? []);
     setAreas(availableAreas);
+
+    const latestPendingRequest =
+      sentRequestsResponse?.data?.[0] ?? null;
+
+    setLastTransferResult(mapSolicitudToLastTransferResult(latestPendingRequest));
   }
 
   useEffect(() => {
@@ -62,7 +86,7 @@ export const TransferenciasPage: React.FC = () => {
     }
 
     void loadData();
-  }, [notify]);
+  }, [notify, user?.id, user?.area?.id]);
 
   const selectedAsset = useMemo(
     () => assets.find((asset) => asset.id === activoId) ?? null,
