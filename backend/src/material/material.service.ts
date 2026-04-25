@@ -120,6 +120,7 @@ export class MaterialService {
         filters?.skip !== undefined ? filters.skip : (page - 1) * pageSize;
 
       const where: Prisma.MaterialWhereInput = {};
+      const estadoFilter = filters?.estado ?? null;
 
       if (filters?.q) {
         where.OR = [
@@ -130,19 +131,6 @@ export class MaterialService {
 
       if (filters?.categoriaId) {
         where.categoriaId = filters.categoriaId;
-      }
-
-      if (filters?.estado === MaterialEstadoFilter.CRITICO) {
-        where.AND = [
-          { stockActual: { gt: 0 } },
-          { stockActual: { lt: this.prisma.material.fields.stockMinimo } },
-        ];
-      }
-
-      if (filters?.estado === MaterialEstadoFilter.NORMAL) {
-        where.AND = [
-          { stockActual: { gte: this.prisma.material.fields.stockMinimo } },
-        ];
       }
 
       const orderDirection: Prisma.SortOrder =
@@ -163,11 +151,16 @@ export class MaterialService {
                     ? { unidad: orderDirection }
                     : { creadoEn: orderDirection };
 
-      const [materiales, total] = await Promise.all([
+      // Prisma no permite comparar columnas (stockActual vs stockMinimo) directamente en `where`.
+      // Para mantener el filtro CRITICO/NORMAL sin tocar BD, filtramos en backend y luego paginamos.
+      const shouldFilterByEstado =
+        estadoFilter === MaterialEstadoFilter.CRITICO ||
+        estadoFilter === MaterialEstadoFilter.NORMAL;
+
+      const [materialesRaw, totalRaw] = await Promise.all([
         this.prisma.material.findMany({
           where,
-          skip,
-          take: pageSize,
+          ...(shouldFilterByEstado ? {} : { skip, take: pageSize }),
           orderBy,
           include: {
             categoria: true,
@@ -176,8 +169,24 @@ export class MaterialService {
         this.prisma.material.count({ where }),
       ]);
 
+      const materialesFiltrados = shouldFilterByEstado
+        ? materialesRaw.filter((m) => {
+            const actual = Number(m.stockActual);
+            const minimo = Number(m.stockMinimo);
+            if (estadoFilter === MaterialEstadoFilter.CRITICO) {
+              return actual > 0 && actual < minimo;
+            }
+            return actual >= minimo;
+          })
+        : materialesRaw;
+
+      const total = shouldFilterByEstado ? materialesFiltrados.length : totalRaw;
+      const paged = shouldFilterByEstado
+        ? materialesFiltrados.slice(skip, skip + pageSize)
+        : materialesFiltrados;
+
       return {
-        data: materiales.map((m) => this.mapMaterialToDTO(m)),
+        data: paged.map((m) => this.mapMaterialToDTO(m)),
         total,
         page,
         pageSize,
@@ -430,6 +439,92 @@ export class MaterialService {
 
     return {
       message: `Se registró el ingreso de ${cantidad} unidades de ${result.materialActualizado.nombre}`,
+      material: this.mapMaterialToDTO(result.materialActualizado),
+      movimiento: {
+        id: result.movimiento.id,
+        tipo: result.movimiento.tipo,
+        cantidad: Number(result.movimiento.cantidad),
+        stockAnterior: Number(result.movimiento.stockAnterior),
+        stockNuevo: Number(result.movimiento.stockNuevo),
+        motivo: result.movimiento.motivo ?? null,
+        creadoEn: result.movimiento.creadoEn,
+      },
+    };
+  }
+
+  async ajustarStock(
+    id: string,
+    cantidadRegistrada: number,
+    cantidadFisica: number,
+    motivo: string,
+    userId: string,
+  ) {
+    if (!Number.isFinite(cantidadRegistrada) || cantidadRegistrada < 0) {
+      throw new BadRequestException(
+        'La cantidad registrada debe ser un número válido mayor o igual a 0',
+      );
+    }
+
+    if (!Number.isFinite(cantidadFisica) || cantidadFisica < 0) {
+      throw new BadRequestException(
+        'La cantidad física debe ser un número válido mayor o igual a 0',
+      );
+    }
+
+    const motivoNormalizado = motivo?.trim();
+
+    if (!motivoNormalizado) {
+      throw new BadRequestException(
+        'Debe ingresar un motivo para registrar el ajuste',
+      );
+    }
+
+    const materialExistente = await this.prisma.material.findUnique({
+      where: { id },
+      include: { categoria: true },
+    });
+
+    if (!materialExistente) {
+      throw new NotFoundException(`Material con ID ${id} no encontrado`);
+    }
+
+    const stockAnterior = Number(materialExistente.stockActual);
+
+    if (stockAnterior !== Number(cantidadRegistrada)) {
+      throw new BadRequestException(
+        `La cantidad registrada no coincide con el stock actual del sistema (${stockAnterior})`,
+      );
+    }
+
+    const stockNuevo = Number(cantidadFisica);
+    const diferencia = stockNuevo - stockAnterior;
+
+    const result = await this.prisma.$transaction(async (tx) => {
+      const materialActualizado = await tx.material.update({
+        where: { id },
+        data: {
+          stockActual: stockNuevo,
+        },
+        include: { categoria: true },
+      });
+
+      const movimiento = await tx.movimientoInventario.create({
+        data: {
+          materialId: id,
+          tipo: TipoMovimientoInventario.AJUSTE,
+          cantidad: diferencia,
+          stockAnterior,
+          stockNuevo,
+          motivo: motivoNormalizado,
+          realizadoPorId: userId,
+        },
+      });
+
+      return { materialActualizado, movimiento };
+    });
+
+    return {
+      message: `Ajuste registrado correctamente para ${result.materialActualizado.nombre}`,
       material: this.mapMaterialToDTO(result.materialActualizado),
       movimiento: {
         id: result.movimiento.id,
