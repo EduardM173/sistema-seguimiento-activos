@@ -571,19 +571,18 @@ export default function AssetsPage() {
                 headerContent: renderSortLabel('Ubicación', 'ubicacion'),
               },
               {
+                id: 'area',
+                header: 'Área',
+                accessor: (row) => row.area?.nombre ?? '—',
+                width: 160,
+              },
+              {
                 id: 'responsable',
                 header: 'Responsable',
                 accessor: (row) => row.responsable?.nombreCompleto ?? '—',
                 width: 180,
                 headerContent: renderSortLabel('Responsable', 'responsable'),
-                render: (_value, row) => (
-                  <div className="assetsResponsible">
-                    <span>{row.responsable?.nombreCompleto ?? '—'}</span>
-                    {row.area?.nombre ? (
-                      <span className="assetsResponsible__meta">Área: {row.area.nombre}</span>
-                    ) : null}
-                  </div>
-                ),
+                render: (_value, row) => row.responsable?.nombreCompleto ?? '—',
               },
               {
                 id: 'estado',
