@@ -90,6 +90,36 @@ export const inventarioService = {
     }
   },
 
+  ajustarStock: async (
+    id: string,
+    payload: {
+      cantidadRegistrada: number;
+      cantidadFisica: number;
+      motivo: string;
+    },
+  ) => {
+    try {
+      const response = await apiClient.patch<
+        ApiResponse<{
+          message: string;
+          material: Material;
+          movimiento: {
+            id: string;
+            tipo: string;
+            cantidad: number;
+            stockAnterior: number;
+            stockNuevo: number;
+            motivo: string | null;
+            creadoEn: string;
+          };
+        }>
+      >(`/inventory-items/${id}/ajustar-stock`, payload);
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
   crearDemo: async (count = 100) => {
     try {
       const response = await apiClient.post<ApiResponse<{ inserted: number }>>(
@@ -218,7 +248,10 @@ export const inventarioService = {
       `/inventory-items/${materialId}/history`,
       { params: filtros }
     )) as any;
-    return response.data;
+    if (Array.isArray(response)) {
+      return response;
+    }
+    return response?.data ?? [];
   },
 };
 
