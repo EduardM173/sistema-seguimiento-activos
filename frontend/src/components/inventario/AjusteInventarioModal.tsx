@@ -98,7 +98,8 @@ const AjusteInventarioModal: React.FC<AjusteInventarioModalProps> = ({
         motivo: motivo.trim(),
       });
       notify.success(
-        response.message || response.data?.message || 'Ajuste registrado correctamente',
+        'Ajuste registrado',
+        `${materialSeleccionado?.nombre ?? 'El material'} ahora tiene ${fisica} unidades disponibles.`,
       );
       await onSuccess();
       onClose();

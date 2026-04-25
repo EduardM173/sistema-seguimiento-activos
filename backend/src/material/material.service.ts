@@ -600,12 +600,16 @@ async getHistory(
       tipo: movimiento.tipo,
       cantidad: Number(movimiento.cantidad),
       fecha: movimiento.creadoEn,
+      responsable: movimiento.realizadoPor
+        ? `${movimiento.realizadoPor.nombres} ${movimiento.realizadoPor.apellidos}`.trim()
+        : null,
       usuario: movimiento.realizadoPor
         ? {
             id: movimiento.realizadoPor.id,
             nombreCompleto: `${movimiento.realizadoPor.nombres} ${movimiento.realizadoPor.apellidos}`,
           }
         : null,
+      observacion: movimiento.motivo ?? null,
       material: {
         id: material.id,
         codigo: material.codigo,

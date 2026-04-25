@@ -248,7 +248,10 @@ export const inventarioService = {
       `/inventory-items/${materialId}/history`,
       { params: filtros }
     )) as any;
-    return response.data;
+    if (Array.isArray(response)) {
+      return response;
+    }
+    return response?.data ?? [];
   },
 };
 

@@ -721,8 +721,12 @@ export const InventarioPage: React.FC = () => {
                         </td>
                         <td style={{ padding: '10px' }}>{item.tipo ?? '—'}</td>
                         <td style={{ padding: '10px' }}>{item.cantidad ?? '—'}</td>
-                        <td style={{ padding: '10px' }}>{item.responsable ?? '—'}</td>
-                        <td style={{ padding: '10px' }}>{item.observacion ?? '—'}</td>
+                        <td style={{ padding: '10px' }}>
+                          {item.responsable ?? item.usuario?.nombreCompleto ?? '—'}
+                        </td>
+                        <td style={{ padding: '10px' }}>
+                          {item.observacion ?? item.motivo ?? '—'}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
