@@ -1,5 +1,7 @@
 import { NavLink } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import auditoriaService from '../../services/auditoria.service';
 import {
   IconGrid,
   IconPackage,
@@ -31,6 +33,39 @@ type BottomItem = {
 
 export default function Navbar() {
   const { logout, hasPermission } = useAuth();
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
+
+  useEffect(() => {
+    if (!hasPermission('NOTIFICATION_VIEW')) {
+      setUnreadNotifications(0);
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadUnreadCount() {
+      try {
+        const total = await auditoriaService.obtenerContador();
+        if (!cancelled) {
+          setUnreadNotifications(total);
+        }
+      } catch {
+        if (!cancelled) {
+          setUnreadNotifications(0);
+        }
+      }
+    }
+
+    void loadUnreadCount();
+    const intervalId = window.setInterval(() => {
+      void loadUnreadCount();
+    }, 30000);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, [hasPermission]);
 
   const mainItems: MainItem[] = [
     { label: 'Dashboard',      icon: <IconGrid size={16} />,             to: '/dashboard' },
@@ -125,6 +160,11 @@ export default function Navbar() {
                   >
                     <span className="sidebar__icon">{item.icon}</span>
                     <span className="sidebar__text">{item.label}</span>
+                    {item.label === 'Notificaciones' && unreadNotifications > 0 ? (
+                      <span className="sidebar__badge" aria-label={`${unreadNotifications} notificaciones sin leer`}>
+                        {unreadNotifications > 99 ? '99+' : unreadNotifications}
+                      </span>
+                    ) : null}
                   </NavLink>
                 ) : (
                   <button type="button" className="sidebar__link">
