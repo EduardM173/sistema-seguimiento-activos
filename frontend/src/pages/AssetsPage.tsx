@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import EditAssetModal from '../components/activos/EditAssetModal';
 import ViewAssetModal from '../components/activos/ViewAssetModal';
@@ -55,6 +56,7 @@ const ESTADO_CLASS: Record<string, string> = {
 const PAGE_SIZE = 10;
 
 export default function AssetsPage() {
+  const navigate = useNavigate();
   const { hasPermission } = useAuth();
   const notify = useNotification();
   const { error: notifyError, success: notifySuccess } = notify;
@@ -603,6 +605,11 @@ export default function AssetsPage() {
                 label: 'Ver detalle',
                 icon: <IconInfo/>,
                 onClick: (asset) => setViewingAssetId(asset.id),
+              },
+              {
+                label: 'Historial',
+                icon: '🕘',
+                onClick: (asset) => navigate(`/activos/${asset.id}/historial`),
               },
             ];
 

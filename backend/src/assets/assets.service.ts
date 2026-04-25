@@ -291,6 +291,57 @@ export class AssetsService {
       throw new NotFoundException(`No se encontró el activo con ID: ${id}`);
     }
 
+    const transferMovements = await this.prisma.movimientoActivo.findMany({
+      where: {
+        activoId: id,
+        tipo: TipoMovimientoActivo.TRANSFERENCIA,
+      },
+      select: {
+        id: true,
+        areaOrigenId: true,
+        areaDestinoId: true,
+        creadoEn: true,
+        detalle: true,
+        realizadoPor: {
+          select: {
+            id: true,
+            nombres: true,
+            apellidos: true,
+          },
+        },
+      },
+      orderBy: {
+        creadoEn: 'desc',
+      },
+    });
+
+    const transferAreaIds = [
+      ...new Set(
+        transferMovements
+          .flatMap((movement) => [movement.areaOrigenId, movement.areaDestinoId])
+          .filter((areaId): areaId is string => Boolean(areaId)),
+      ),
+    ];
+
+    const transferAreas =
+      transferAreaIds.length > 0
+        ? await this.prisma.area.findMany({
+            where: {
+              id: {
+                in: transferAreaIds,
+              },
+            },
+            select: {
+              id: true,
+              nombre: true,
+            },
+          })
+        : [];
+
+    const transferAreaMap = Object.fromEntries(
+      transferAreas.map((area) => [area.id, area]),
+    );
+
     return {
       ...activo,
       estadoLabel: this.formatEstado(activo.estado),
@@ -336,6 +387,26 @@ export class AssetsService {
             ),
           }
         : null,
+      historialTransferencias: transferMovements.map((movement) => ({
+        id: movement.id,
+        fecha: movement.creadoEn,
+        detalle: movement.detalle,
+        areaOrigen: movement.areaOrigenId
+          ? (transferAreaMap[movement.areaOrigenId] ?? null)
+          : null,
+        areaDestino: movement.areaDestinoId
+          ? (transferAreaMap[movement.areaDestinoId] ?? null)
+          : null,
+        realizadoPor: movement.realizadoPor
+          ? {
+              id: movement.realizadoPor.id,
+              nombreCompleto: this.buildFullName(
+                movement.realizadoPor.nombres,
+                movement.realizadoPor.apellidos,
+              ),
+            }
+          : null,
+      })),
     };
   }
 

@@ -9,6 +9,7 @@ import DashboardPage from './pages/DashboardPage';
 import UserList from './pages/users/UserList';
 import AssetsPage from './pages/AssetsPage';
 import AssetDetailPage from './pages/AssetDetailPage';
+import AssetTransferHistoryPage from './pages/AssetTransferHistoryPage';
 import LocationsPage from './pages/LocationsPage';
 import ActivosPage from './pages/activos/ActivosPage';
 import InventarioPage from './pages/inventario/InventarioPage';
@@ -58,6 +59,7 @@ export default function App() {
               <Route element={<ProtectedRoute requiredPermission="ASSET_VIEW" />}>
                 <Route path="/activos" element={<AssetsPage />} />
                 <Route path="/activos/:id" element={<AssetDetailPage />} />
+                <Route path="/activos/:id/historial" element={<AssetTransferHistoryPage />} />
                 <Route path="/assets" element={<AssetsPage />} />
               </Route>
               <Route element={<ProtectedRoute requiredPermission="TRANSFER_MANAGE" />}>
