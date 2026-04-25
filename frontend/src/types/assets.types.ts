@@ -54,6 +54,23 @@ export type AssetDetail = AssetListItem & {
     id: string;
     nombreCompleto: string;
   } | null;
+  historialTransferencias: {
+    id: string;
+    fecha: string;
+    detalle: string | null;
+    areaOrigen: {
+      id: string;
+      nombre: string;
+    } | null;
+    areaDestino: {
+      id: string;
+      nombre: string;
+    } | null;
+    realizadoPor: {
+      id: string;
+      nombreCompleto: string;
+    } | null;
+  }[];
 };
 
 export type CreateAssetPayload = {

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import EditAssetModal from '../components/activos/EditAssetModal';
 import ViewAssetModal from '../components/activos/ViewAssetModal';
@@ -55,6 +56,7 @@ const ESTADO_CLASS: Record<string, string> = {
 const PAGE_SIZE = 10;
 
 export default function AssetsPage() {
+  const navigate = useNavigate();
   const { hasPermission } = useAuth();
   const notify = useNotification();
   const { error: notifyError, success: notifySuccess } = notify;
@@ -571,19 +573,18 @@ export default function AssetsPage() {
                 headerContent: renderSortLabel('Ubicación', 'ubicacion'),
               },
               {
+                id: 'area',
+                header: 'Área',
+                accessor: (row) => row.area?.nombre ?? '—',
+                width: 160,
+              },
+              {
                 id: 'responsable',
                 header: 'Responsable',
                 accessor: (row) => row.responsable?.nombreCompleto ?? '—',
                 width: 180,
                 headerContent: renderSortLabel('Responsable', 'responsable'),
-                render: (_value, row) => (
-                  <div className="assetsResponsible">
-                    <span>{row.responsable?.nombreCompleto ?? '—'}</span>
-                    {row.area?.nombre ? (
-                      <span className="assetsResponsible__meta">Área: {row.area.nombre}</span>
-                    ) : null}
-                  </div>
-                ),
+                render: (_value, row) => row.responsable?.nombreCompleto ?? '—',
               },
               {
                 id: 'estado',
@@ -604,6 +605,11 @@ export default function AssetsPage() {
                 label: 'Ver detalle',
                 icon: <IconInfo/>,
                 onClick: (asset) => setViewingAssetId(asset.id),
+              },
+              {
+                label: 'Historial',
+                icon: '🕘',
+                onClick: (asset) => navigate(`/activos/${asset.id}/historial`),
               },
             ];
 
