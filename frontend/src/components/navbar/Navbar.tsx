@@ -24,6 +24,7 @@ export default function Navbar() {
     { label: 'Activos', icon: '≣', to: '/activos' },
     { label: 'Inventario', icon: '◫', to: '/inventario' },
     { label: 'Transferencias', icon: '⇄', to: '/transferencias' },
+    { label: 'Recepción de Activos', icon: '📦', to: '/asignaciones/pendientes' },  // NUEVO
     { label: 'Reportes', icon: '▥' },
     { label: 'Usuarios', icon: '◌', to: '/users' },
     { label: 'Auditoría', icon: '🛡' },
