@@ -51,6 +51,18 @@ const AjusteInventarioModal: React.FC<AjusteInventarioModalProps> = ({
     cantidadFisica !== '' && cantidadRegistrada !== ''
       ? Number(cantidadFisica) - Number(cantidadRegistrada)
       : 0;
+  const stockResultante =
+    cantidadFisica !== '' && Number.isFinite(Number(cantidadFisica))
+      ? Number(cantidadFisica)
+      : null;
+  const resumenDiferencia =
+    cantidadFisica === ''
+      ? 'Ingrese la cantidad fisica para calcular la diferencia'
+      : diferencia > 0
+        ? `Se incrementara el disponible en ${diferencia} unidades`
+        : diferencia < 0
+          ? `Se reducira el disponible en ${Math.abs(diferencia)} unidades`
+          : 'No hay diferencia entre el registro y el conteo fisico';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -214,6 +226,35 @@ const AjusteInventarioModal: React.FC<AjusteInventarioModalProps> = ({
                 borderRadius: '8px',
                 background: diferencia === 0 ? '#f9fafb' : '#fff7ed',
                 color: diferencia === 0 ? '#374151' : '#9a3412',
+                fontWeight: 700,
+              }}
+            />
+            <p
+              style={{
+                margin: '8px 0 0',
+                fontSize: '13px',
+                color: cantidadFisica === '' ? '#6b7280' : diferencia === 0 ? '#4b5563' : '#9a3412',
+              }}
+            >
+              {resumenDiferencia}
+            </p>
+          </div>
+
+          <div style={{ gridColumn: '1 / -1' }}>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>
+              Cantidad disponible luego del ajuste
+            </label>
+            <input
+              type="text"
+              value={stockResultante === null ? 'Pendiente de calcular' : String(stockResultante)}
+              readOnly
+              style={{
+                width: '100%',
+                padding: '12px 14px',
+                border: '1px solid #d1d5db',
+                borderRadius: '8px',
+                background: '#eff6ff',
+                color: '#1d4ed8',
                 fontWeight: 700,
               }}
             />
