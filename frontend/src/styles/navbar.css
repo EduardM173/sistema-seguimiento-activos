@@ -278,6 +278,23 @@
   font-weight: var(--font-weight-medium);
 }
 
+.sidebar__badge {
+  margin-left: auto;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #dc2626;
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  box-shadow: 0 0 0 2px rgba(10, 16, 28, 0.45);
+}
+
 /* ── Bottom section ────────────────────────────────────── */
 .sidebar__bottom {
   padding: var(--space-4) var(--space-2) 0;

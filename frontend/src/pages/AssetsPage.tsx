@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 
 import EditAssetModal from '../components/activos/EditAssetModal';
 import ViewAssetModal from '../components/activos/ViewAssetModal';
 import OverlayModal from '../components/common/OverlayModal';
 import CreateAssetPage from './CreateAssetPage';
 import AssetDetailPanel from '../components/assets/AssetDetailPanel';
+import AssetTransferHistoryModal from '../components/assets/AssetTransferHistoryModal';
 import { useNotification } from '../context/NotificationContext';
 import { useAuth } from '../context/AuthContext';
 import { getAreas, getCategorias, getUbicaciones, getUsuarios } from '../services/catalogs.service';
@@ -56,7 +56,6 @@ const ESTADO_CLASS: Record<string, string> = {
 const PAGE_SIZE = 10;
 
 export default function AssetsPage() {
-  const navigate = useNavigate();
   const { hasPermission } = useAuth();
   const notify = useNotification();
   const { error: notifyError, success: notifySuccess } = notify;
@@ -94,6 +93,7 @@ export default function AssetsPage() {
   const [showCreateAssetModal, setShowCreateAssetModal] = useState(false);
   const [editingAssetId, setEditingAssetId] = useState<string | null>(null);
   const [viewingAssetId, setViewingAssetId] = useState<string | null>(null);
+  const [historyAssetId, setHistoryAssetId] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadCatalogs() {
@@ -609,7 +609,7 @@ export default function AssetsPage() {
               {
                 label: 'Historial',
                 icon: '🕘',
-                onClick: (asset) => navigate(`/activos/${asset.id}/historial`),
+                onClick: (asset) => setHistoryAssetId(asset.id),
               },
             ];
 
@@ -800,6 +800,14 @@ export default function AssetsPage() {
           assetId={viewingAssetId}
           open={Boolean(viewingAssetId)}
           onClose={() => setViewingAssetId(null)}
+        />
+      ) : null}
+
+      {historyAssetId ? (
+        <AssetTransferHistoryModal
+          assetId={historyAssetId}
+          open={Boolean(historyAssetId)}
+          onClose={() => setHistoryAssetId(null)}
         />
       ) : null}
 
