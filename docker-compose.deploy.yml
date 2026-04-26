@@ -56,7 +56,7 @@ services:
       - ./.env
 
     ports:
-      - 80:8084
+      - 8084:8084
 
     depends_on:
       backend:
