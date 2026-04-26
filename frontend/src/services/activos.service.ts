@@ -1,5 +1,5 @@
 import { http as apiClient } from './http.client';
-import type { Activo, CreateActivoDTO, UpdateActivoDTO, FiltrosActivos, MovimientoActivo } from '../types/activos.types';
+import type { Activo, CreateActivoDTO, UpdateActivoDTO, FiltrosActivos, MovimientoActivo, DarDeBajaDTO } from '../types/activos.types';
 import type { PaginatedResponse, ApiResponse } from '../types';
 
 export const activosService = {
@@ -121,6 +121,18 @@ export const activosService = {
       throw error;
     }
   },
+
+  // ========== NUEVO MÉTODO PARA HU23 ==========
+  // Dar de baja un activo (PROSIN-307, PROSIN-308)
+  darDeBaja: async (id: string, motivo: string) => {
+    try {
+      const response = await apiClient.post<ApiResponse<Activo>>(`/assets/${id}/baja`, { motivo });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+  // ==========================================
 };
 
 export default activosService;

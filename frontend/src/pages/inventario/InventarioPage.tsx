@@ -3,8 +3,7 @@ import { Button, Badge, SmartTable } from '../../components/common';
 import type { ColumnDef, ActionDef } from '../../components/common';
 import type { CategoriaMaterial, Material } from '../../types/inventario.types';
 import { inventarioService } from '../../services/inventario.service';
-import MaterialForm from '../../components/inventario/MaterialForm';
-import { useNotification } from '../../context/NotificationContext';
+import { useAuth } from '../../context/AuthContext';
 import '../../styles/modules.css';
 import '../../styles/assets.css';
 import IngresoStockModal from '../../components/inventario/IngresoStockModal';
@@ -77,14 +76,9 @@ export const InventarioPage: React.FC = () => {
       });
 
       setMateriales(resultado.data);
-      setMeta({
-        total: resultado.total,
-        pageSize: resultado.pageSize,
-        totalPages: resultado.totalPages,
-      });
     } catch (err) {
-      setMessage({ type: 'error', text: 'Error al cargar inventario' });
-      console.error(err);
+      console.error('Error al cargar materiales del área:', err);
+      setMateriales([]);
     } finally {
       setLoading(false);
     }
@@ -740,4 +734,4 @@ export const InventarioPage: React.FC = () => {
   );
 };
 
-export default InventarioPage;
+export default InventarioAreaPage;
