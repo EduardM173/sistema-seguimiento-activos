@@ -64,7 +64,7 @@ export const inventarioService = {
     }
   },
 
-  // Aumntar stock
+  // Aumentar stock
   aumentarStock: async (id: string, cantidad: number) => {
     try {
       const response = await apiClient.patch<

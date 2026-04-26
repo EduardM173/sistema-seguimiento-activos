@@ -99,11 +99,11 @@ export async function confirmarRecepcion(asignacionId: string) {
     `/assets/asignaciones/${encodeURIComponent(asignacionId)}/confirmar`,
   );
 }
-
-// HU41 – Rechazar recepción de una transferencia pendiente
-export async function rechazarRecepcion(asignacionId: string) {
+// HU42 – Rechazar recepción indicando motivo obligatorio
+export async function rechazarRecepcion(asignacionId: string, motivoRechazo: string) {
   return http.patch<ApiResponse<{ message: string }>>(
     `/assets/asignaciones/${encodeURIComponent(asignacionId)}/rechazar`,
+    { motivoRechazo },
   );
 }
 
