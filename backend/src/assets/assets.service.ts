@@ -1413,15 +1413,32 @@ export class AssetsService {
     return { message: 'Recepción confirmada correctamente' };
   }
 
-  /**
-   * HU41 – Rechazar recepción de una transferencia pendiente.
-   * Cambia el estado de la asignación a RECHAZADO.
+/**
+   * HU42 – Rechazar recepción de una transferencia pendiente indicando motivo.
+   * PA1: Solo el Responsable del área destino puede rechazar.
+   * PA2: El motivo es obligatorio (validado en DTO).
+   * PA3: El activo vuelve al área de origen.
+   * PA4: El motivo queda registrado en motivoRechazo y se crea un movimiento en el historial.
    */
-  async rechazarRecepcion(asignacionId: string, userId: string) {
+  async rechazarRecepcion(asignacionId: string, userId: string, motivoRechazo: string) {
     const [asignacion, usuario] = await Promise.all([
       this.prisma.asignacionActivo.findUnique({
         where: { id: asignacionId },
-        select: { id: true, estado: true, areaAsignadaId: true },
+        select: {
+          id: true,
+          estado: true,
+          activoId: true,
+          areaAsignadaId: true,
+          movimientos: {
+            where: { tipo: TipoMovimientoActivo.TRANSFERENCIA },
+            select: {
+              areaOrigenId: true,
+              usuarioOrigenId: true,
+            },
+            take: 1,
+            orderBy: { creadoEn: 'desc' },
+          },
+        },
       }),
       this.prisma.usuario.findUnique({
         where: { id: userId },
@@ -1429,34 +1446,93 @@ export class AssetsService {
       }),
     ]);
 
+    if (!asignacion) {
+      throw new NotFoundException(`No se encontró la asignación con ID: ${asignacionId}`);
+    }
+
     if (!usuario || !usuario.areaId) {
       throw new ConflictException('El usuario no tiene un área asignada para rechazar recepciones');
     }
 
-    if (asignacion?.areaAsignadaId !== usuario.areaId) {
+    if (asignacion.areaAsignadaId !== usuario.areaId) {
       throw new ConflictException('Solo el área destino puede rechazar esta recepción');
-    }
-
-    if (!asignacion) {
-      throw new NotFoundException(`No se encontró la asignación con ID: ${asignacionId}`);
     }
 
     if (asignacion.estado !== EstadoAsignacion.PENDIENTE) {
       throw new ConflictException('Solo se puede rechazar una recepción en estado PENDIENTE');
     }
 
-    await this.prisma.asignacionActivo.update({
-      where: { id: asignacionId },
-      data: {
-        estado: EstadoAsignacion.RECHAZADO,
-        recibidoPorId: userId,
-        recibidoEn: new Date(),
-      },
+    // PA3: Área de origen del movimiento de transferencia
+    const movimientoOriginal = asignacion.movimientos[0];
+    const areaOrigenId = movimientoOriginal?.areaOrigenId ?? null;
+    const usuarioOrigenId = movimientoOriginal?.usuarioOrigenId ?? null;
+
+    await this.prisma.$transaction(async (tx) => {
+      // Marcar la asignación como RECHAZADO con el motivo
+      await tx.asignacionActivo.update({
+        where: { id: asignacionId },
+        data: {
+          estado: EstadoAsignacion.RECHAZADO,
+          recibidoPorId: userId,
+          recibidoEn: new Date(),
+          motivoRechazo,
+        },
+      });
+
+      // PA3: Devolver el activo al área de origen
+      await tx.activo.update({
+        where: { id: asignacion.activoId },
+        data: {
+          areaActualId: areaOrigenId,
+          responsableActualId: usuarioOrigenId,
+          actualizadoPorId: userId,
+        },
+      });
+
+      // PA4: Registrar el rechazo en el historial de movimientos
+      await tx.movimientoActivo.create({
+        data: {
+          activoId: asignacion.activoId,
+          tipo: TipoMovimientoActivo.TRANSFERENCIA,
+          areaOrigenId: asignacion.areaAsignadaId,
+          areaDestinoId: areaOrigenId,
+          usuarioOrigenId: null,
+          usuarioDestinoId: usuarioOrigenId,
+          realizadoPorId: userId,
+          asignacionId: asignacionId,
+          detalle: `Recepción rechazada. Motivo: ${motivoRechazo}`,
+        },
+      });
+
+      // Notificar al área de origen del rechazo
+      if (areaOrigenId) {
+        const areaOrigen = await tx.area.findUnique({
+          where: { id: areaOrigenId },
+          select: { encargadoId: true, nombre: true },
+        });
+
+        const activo = await tx.activo.findUnique({
+          where: { id: asignacion.activoId },
+          select: { codigo: true, nombre: true },
+        });
+
+        if (areaOrigen && activo) {
+          await tx.notificacion.create({
+            data: {
+              usuarioId: areaOrigen.encargadoId ?? null,
+              areaId: areaOrigenId,
+              tipo: TipoNotificacion.ALERTA_SISTEMA,
+              titulo: `Recepción rechazada del activo ${activo.codigo}`,
+              mensaje: `${this.buildAssetNotificationReference(asignacion.activoId)} El área destino rechazó la recepción del activo ${activo.nombre}. Motivo: ${motivoRechazo}. El activo volvió al área ${areaOrigen.nombre}.`,
+              estado: EstadoNotificacion.NO_LEIDA,
+            },
+          });
+        }
+      }
     });
 
-    return { message: 'Recepción rechazada correctamente' };
+    return { message: 'Recepción rechazada correctamente. El activo fue devuelto al área de origen.' };
   }
-
   /**
    * Soft-delete an asset (dar de baja).
    * Sets status to DADO_DE_BAJA and records the timestamp.
