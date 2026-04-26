@@ -17,7 +17,7 @@ export default defineConfig(() => {
     throw new Error("Falta VITE_BACKEND_URL en el entorno")
   }
 
-  const port = parseInt(process.env.PORT || '5173', 10)
+  const port = parseInt(process.env.FRONTEND_PORT || '5173', 10)
 
   return {
     plugins: [react()],
