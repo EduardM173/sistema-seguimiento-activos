@@ -55,6 +55,10 @@ services:
     env_file:
       - ./.env
 
+
+    environment:
+      FRONTEND_PORT: 8084
+
     ports:
       - 8084:8084
 
