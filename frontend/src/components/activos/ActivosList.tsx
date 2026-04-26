@@ -5,18 +5,21 @@ import type { ColumnDef, ActionDef } from '../common/SmartTable';
 import type { Activo, FiltrosActivos, EstadoActivo } from '../../types/activos.types';
 import { estadoActivoDisplay } from '../../types/activos.types';
 import { activosService } from '../../services/activos.service';
+import BajaActivoModal from './BajaActivoModal';
 import '../../styles/modules.css';
 
 interface ActivosListProps {
   onDetails?: (activo: Activo) => void;
   onEdit?: (activo: Activo) => void;
   onDelete?: (activo: Activo) => void;
+  onBaja?: (activo: Activo) => void;
 }
 
 export const ActivosList: React.FC<ActivosListProps> = ({
   onDetails,
   onEdit,
   onDelete,
+  onBaja,
 }) => {
   const [activos, setActivos] = useState<Activo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -26,10 +29,13 @@ export const ActivosList: React.FC<ActivosListProps> = ({
     pagina: 1,
     limite: 10,
   });
+  const [bajaModalOpen, setBajaModalOpen] = useState(false);
+  const [selectedActivo, setSelectedActivo] = useState<Activo | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     cargarActivos();
-  }, [filtros]);
+  }, [filtros, refreshKey]);
 
   const cargarActivos = async () => {
     try {

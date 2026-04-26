@@ -26,6 +26,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 
+import { RejectReceptionDto } from './dto/reject-reception.dto';
 import { AssetsService } from './assets.service';
 import { CreateAssetDto } from './dto/create-asset.dto';
 import { UpdateAssetDto } from './dto/update-asset.dto';
@@ -343,16 +344,17 @@ export class AssetsController {
     description: 'La recepción no está pendiente o el usuario no pertenece al área destino',
   })
   @ApiNotFoundResponse({ description: 'No se encontró la asignación solicitada' })
-  @Patch('asignaciones/:asignacionId/rechazar')
+
+@Patch('asignaciones/:asignacionId/rechazar')
   async rechazarRecepcion(
     @Param('asignacionId') asignacionId: string,
+    @Body() dto: RejectReceptionDto,
     @Req() req: Request,
   ) {
     const userId = (req.user as { id: string }).id;
-    const result = await this.assetsService.rechazarRecepcion(asignacionId, userId);
+    const result = await this.assetsService.rechazarRecepcion(asignacionId, userId, dto.motivoRechazo);
     return ApiResponse.success(result, result.message);
   }
-
   @ApiNotFoundResponse({
     description: 'No se encontró el activo solicitado',
   })
