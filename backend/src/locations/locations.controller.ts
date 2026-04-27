@@ -30,6 +30,7 @@ import { CreateLocationDto } from './dto/create-location.dto';
 import { UpdateLocationDto } from './dto/update-location.dto';
 import { SearchLocationsDto } from './dto/search-location.dto';
 import { CreateAreaDto } from './dto/create-area.dto';
+import { ReassignAreaManagerDto } from './dto/reassign-area-manager.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ApiResponse } from '../common/api-response';
 
@@ -108,6 +109,31 @@ export class LocationsController {
     const userId = (req.user as { id: string }).id;
     const area = await this.locationsService.createArea(dto, userId);
     return ApiResponse.success(area, 'Área registrada exitosamente');
+  }
+
+  @ApiOperation({
+    summary: 'Reasignar responsable de un área',
+    description:
+      'Actualiza el Responsable de Área asignado como encargado del área indicada.',
+  })
+  @ApiParam({ name: 'areaId', description: 'ID del área' })
+  @ApiBody({ type: ReassignAreaManagerDto })
+  @ApiOkResponse({ description: 'Responsable reasignado exitosamente' })
+  @ApiBadRequestResponse({ description: 'El usuario seleccionado no puede ser responsable del área' })
+  @ApiNotFoundResponse({ description: 'No se encontró el área o usuario solicitado' })
+  @Patch('areas/:areaId/responsable')
+  async reassignAreaManager(
+    @Param('areaId') areaId: string,
+    @Body() dto: ReassignAreaManagerDto,
+    @Req() req: Request,
+  ) {
+    const userId = (req.user as { id: string }).id;
+    const area = await this.locationsService.reassignAreaManager(
+      areaId,
+      dto,
+      userId,
+    );
+    return ApiResponse.success(area, 'Responsable reasignado exitosamente');
   }
 
   /**
