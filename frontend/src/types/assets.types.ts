@@ -175,12 +175,24 @@ export type TransferAssetPayload = {
   observaciones?: string;
 };
 
-// HU41 – Registro de transferencia pendiente de recepción
+// HU21/HU42 – Registro de transferencia pendiente de recepción
+// Incluye recibidoPor y recibidoEn para cumplir PA3 de HU21
 export type PendienteRecepcion = {
   id: string;
   fechaEnvio: string;
   observaciones: string | null;
-  activo: { id: string; codigo: string; nombre: string };
+  motivoRechazo: string | null;
+  // PA3 HU21: quién y cuándo confirmó (null si aún está pendiente)
+  recibidoEn: string | null;
+  recibidoPor: { id: string; nombreCompleto: string } | null;
+  activo: {
+    id: string;
+    codigo: string;
+    nombre: string;
+    marca: string | null;
+    modelo: string | null;
+    categoria: { id: string; nombre: string } | null;
+  };
   areaDestino: { id: string; nombre: string } | null;
   areaOrigen: { id: string; nombre: string } | null;
   registradoPor: { id: string; nombreCompleto: string } | null;
@@ -209,4 +221,11 @@ export type TransferAssetResponse = {
     registradoPorId: string;
   };
   asset: AssetDetail;
+};
+
+// HU21 – Respuesta de confirmar recepción (PA3: fecha y persona)
+export type ConfirmarRecepcionResponse = {
+  message: string;
+  recibidoEn: string;
+  recibidoPor: { id: string; nombreCompleto: string };
 };

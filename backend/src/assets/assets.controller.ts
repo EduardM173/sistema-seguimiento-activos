@@ -337,24 +337,40 @@ export class AssetsController {
     return ApiResponse.success(result, result.message);
   }
 
-  @ApiOperation({ summary: 'Rechazar recepción de transferencia (HU41)' })
+  /**
+   * HU42 – Rechazar recepción indicando motivo obligatorio.
+   * PA1: Solo el Responsable de Área destino puede rechazar.
+   * PA2: El motivo es obligatorio.
+   * PA3: El activo vuelve al área de origen.
+   * PA4: El motivo queda visible en el historial del activo.
+   */
+  @ApiOperation({
+    summary: 'Rechazar recepción de transferencia con motivo obligatorio (HU42)',
+    description: 'Solo el Responsable de Área destino puede rechazar. El motivo es obligatorio. El activo vuelve al área de origen y queda registrado en el historial.',
+  })
   @ApiParam({ name: 'asignacionId', description: 'ID de la asignación pendiente' })
-  @ApiOkResponse({ description: 'Recepción rechazada correctamente' })
+  @ApiBody({ type: RejectReceptionDto })
+  @ApiOkResponse({ description: 'Recepción rechazada y activo devuelto al área de origen' })
+  @ApiBadRequestResponse({ description: 'El motivo del rechazo es obligatorio' })
   @ApiConflictResponse({
     description: 'La recepción no está pendiente o el usuario no pertenece al área destino',
   })
   @ApiNotFoundResponse({ description: 'No se encontró la asignación solicitada' })
-
-@Patch('asignaciones/:asignacionId/rechazar')
+  @Patch('asignaciones/:asignacionId/rechazar')
   async rechazarRecepcion(
     @Param('asignacionId') asignacionId: string,
     @Body() dto: RejectReceptionDto,
     @Req() req: Request,
   ) {
     const userId = (req.user as { id: string }).id;
-    const result = await this.assetsService.rechazarRecepcion(asignacionId, userId, dto.motivoRechazo);
+    const result = await this.assetsService.rechazarRecepcion(
+      asignacionId,
+      userId,
+      dto.motivoRechazo,
+    );
     return ApiResponse.success(result, result.message);
   }
+  
   @ApiNotFoundResponse({
     description: 'No se encontró el activo solicitado',
   })

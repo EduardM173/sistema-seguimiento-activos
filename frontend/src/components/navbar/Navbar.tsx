@@ -14,7 +14,6 @@ import {
   IconBell,
   IconSettings,
   IconLogOut,
-  IconChevronDown,
 } from '../common/Icon';
 import '../../styles/navbar.css';
 
@@ -24,10 +23,7 @@ type MainItem = {
   label: string;
   icon: NavIcon;
   to?: string;
-  children?: {
-    label: string;
-    to: string;
-  }[];
+  children?: { label: string; to: string }[];
 };
 
 type BottomItem = {
@@ -37,11 +33,18 @@ type BottomItem = {
 };
 
 export default function Navbar() {
-  const { logout, hasPermission, user } = useAuth();
+  const { logout, hasPermission } = useAuth();
   const location = useLocation();
   const [unreadNotifications, setUnreadNotifications] = useState(0);
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
-  const isAreaManager = isAreaManagerRole(user?.rol?.nombre);
+  // Controla si el submenú de Transferencias está expandido
+  const [transferOpen, setTransferOpen] = useState(false);
+
+  // Auto-expandir si la ruta actual es una sub-ruta de transferencias
+  useEffect(() => {
+    if (location.pathname.startsWith('/transferencias')) {
+      setTransferOpen(true);
+    }
+  }, [location.pathname]);
 
   useEffect(() => {
     if (!hasPermission('NOTIFICATION_VIEW')) {
@@ -75,27 +78,14 @@ export default function Navbar() {
     };
   }, [hasPermission]);
 
-  useEffect(() => {
-    setOpenGroups((current) => {
-      if (current.Transferencias !== undefined) return current;
-      if (
-        location.pathname === '/transferencias' ||
-        location.pathname === '/recepciones-transferencias'
-      ) {
-        return { ...current, Transferencias: true };
-      }
-      return current;
-    });
-  }, [location.pathname]);
-
   const mainItems: MainItem[] = [
-    { label: 'Dashboard',      icon: <IconGrid size={16} />,             to: '/dashboard' },
+    { label: 'Dashboard', icon: <IconGrid size={16} />, to: '/dashboard' },
   ];
 
   if (hasPermission('ASSET_VIEW')) {
     mainItems.push(
-      { label: 'Activos', icon: <IconPackage size={16} />, to: '/activos' },
-      { label: 'Ubicaciones', icon: <IconMapPin size={16} />, to: '/locations' },
+      { label: 'Activos',     icon: <IconPackage size={16} />, to: '/activos' },
+      { label: 'Ubicaciones', icon: <IconMapPin size={16} />,  to: '/locations' },
     );
   }
 
@@ -107,28 +97,38 @@ export default function Navbar() {
     });
   }
 
-  const transferChildren: MainItem['children'] = [];
+  // Bloque Transferencias: puede tener submenú dependiendo de permisos
+  const tieneTransferManage = hasPermission('TRANSFER_MANAGE');
+  const tieneAssetView = hasPermission('ASSET_VIEW');
 
-  if (hasPermission('TRANSFER_MANAGE') && !isAreaManager) {
-    transferChildren.push({
-      label: 'Transferir',
-      to: '/transferencias',
-    });
-  }
+  if (tieneTransferManage || tieneAssetView) {
+    const children: { label: string; to: string }[] = [];
 
-  if (isAreaManager) {
-    transferChildren.push({
-      label: 'Recepciones',
-      to: '/recepciones-transferencias',
-    });
-  }
+    // Solo los que pueden gestionar transferencias ven "Transferencias"
+    if (tieneTransferManage) {
+      children.push({ label: 'Transferencias', to: '/transferencias' });
+    }
 
-  if (transferChildren.length > 0) {
-    mainItems.push({
-      label: 'Transferencias',
-      icon: <IconArrowsLeftRight size={16} />,
-      children: transferChildren,
-    });
+    // Cualquiera con ASSET_VIEW ve "Recepciones" (HU21)
+    if (tieneAssetView) {
+      children.push({ label: 'Recepciones', to: '/transferencias/recepciones' });
+    }
+
+    if (children.length === 1 && children[0].to === '/transferencias') {
+      // Solo transferencias — sin submenu
+      mainItems.push({
+        label: 'Transferencias',
+        icon: <IconArrowsLeftRight size={16} />,
+        to: '/transferencias',
+      });
+    } else {
+      // Múltiples hijos — con submenu expandible
+      mainItems.push({
+        label: 'Transferencias',
+        icon: <IconArrowsLeftRight size={16} />,
+        children,
+      });
+    }
   }
 
   if (hasPermission('NOTIFICATION_VIEW')) {
@@ -165,7 +165,7 @@ export default function Navbar() {
 
   const bottomItems: BottomItem[] = [
     { label: 'Configuración', icon: <IconSettings size={16} /> },
-    { label: 'Cerrar Sesión', icon: <IconLogOut size={16} />,  action: logout },
+    { label: 'Cerrar Sesión', icon: <IconLogOut size={16} />, action: logout },
   ];
 
   return (
@@ -182,38 +182,38 @@ export default function Navbar() {
           </span>
         </div>
 
-
         {/* Navigation */}
         <nav className="sidebar__nav">
           <ul className="sidebar__menu">
             {mainItems.map((item) => (
               <li key={item.label} className="sidebar__item">
-                {item.children?.length ? (
-                  <div className="sidebar__group">
+                {item.children ? (
+                  /* Item con submenú expandible */
+                  <>
                     <button
                       type="button"
-                      className="sidebar__link sidebar__link--group"
-                      onClick={() =>
-                        setOpenGroups((current) => ({
-                          ...current,
-                          [item.label]: !current[item.label],
-                        }))
-                      }
-                      aria-expanded={Boolean(openGroups[item.label])}
+                      className={`sidebar__link sidebar__link--parent ${
+                        item.children.some((c) => location.pathname.startsWith(c.to))
+                          ? 'sidebar__link--active'
+                          : ''
+                      }`}
+                      onClick={() => setTransferOpen((v) => !v)}
+                      aria-expanded={transferOpen}
                     >
                       <span className="sidebar__icon">{item.icon}</span>
                       <span className="sidebar__text">{item.label}</span>
-                      <IconChevronDown
-                        size={14}
-                        className={openGroups[item.label] ? 'sidebar__groupChevron--open' : ''}
-                      />
+                      <span className={`sidebar__chevron ${transferOpen ? 'sidebar__chevron--open' : ''}`}>
+                        ›
+                      </span>
                     </button>
-                    {openGroups[item.label] ? (
+
+                    {transferOpen && (
                       <ul className="sidebar__submenu">
                         {item.children.map((child) => (
                           <li key={child.to} className="sidebar__subitem">
                             <NavLink
                               to={child.to}
+                              end
                               className={({ isActive }) =>
                                 `sidebar__sublink${isActive ? ' sidebar__sublink--active' : ''}`
                               }
@@ -223,9 +223,10 @@ export default function Navbar() {
                           </li>
                         ))}
                       </ul>
-                    ) : null}
-                  </div>
+                    )}
+                  </>
                 ) : item.to ? (
+                  /* Item con ruta directa */
                   <NavLink
                     to={item.to}
                     className={({ isActive }) =>
@@ -235,7 +236,10 @@ export default function Navbar() {
                     <span className="sidebar__icon">{item.icon}</span>
                     <span className="sidebar__text">{item.label}</span>
                     {item.label === 'Notificaciones' && unreadNotifications > 0 ? (
-                      <span className="sidebar__badge" aria-label={`${unreadNotifications} notificaciones sin leer`}>
+                      <span
+                        className="sidebar__badge"
+                        aria-label={`${unreadNotifications} notificaciones sin leer`}
+                      >
                         {unreadNotifications > 99 ? '99+' : unreadNotifications}
                       </span>
                     ) : null}
@@ -271,15 +275,4 @@ export default function Navbar() {
       </div>
     </aside>
   );
-}
-
-function isAreaManagerRole(roleName?: string | null) {
-  const normalized = (roleName ?? '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/_/g, ' ')
-    .trim()
-    .toUpperCase();
-
-  return normalized === 'RESPONSABLE DE AREA' || normalized === 'RESPONSABLE AREA';
 }

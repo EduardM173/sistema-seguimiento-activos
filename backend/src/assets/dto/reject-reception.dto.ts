@@ -3,14 +3,12 @@ import { IsNotEmpty, IsString, MaxLength } from 'class-validator';
 
 export class RejectReceptionDto {
   @ApiProperty({
-    description: 'Motivo del rechazo de la recepción',
+    description: 'Motivo del rechazo. Campo obligatorio — PA2 de HU42.',
     example: 'El activo llegó con daños visibles en la pantalla',
     maxLength: 500,
   })
   @IsString()
   @IsNotEmpty({ message: 'El motivo del rechazo es obligatorio' })
-  @MaxLength(500, {
-    message: 'El motivo no puede exceder 500 caracteres',
-  })
+  @MaxLength(500, { message: 'El motivo no puede exceder 500 caracteres' })
   motivoRechazo!: string;
 }

@@ -14,6 +14,7 @@ import LocationsPage from './pages/LocationsPage';
 import ActivosPage from './pages/activos/ActivosPage';
 import InventarioPage from './pages/inventario/InventarioPage';
 import TransferenciasPage from './pages/transferencias/TransferenciasPage';
+import RecepcionesPage from './pages/recepciones/RecepcionesPage';
 import UsuariosPage from './pages/usuarios/UsuariosPage';
 import AuditoriaPage from './pages/auditoria/AuditoriaPage';
 import ReportesPage from './pages/reportes/ReportesPage';
@@ -63,30 +64,15 @@ export default function App() {
                 <Route path="/assets" element={<AssetsPage />} />
               </Route>
               <Route element={<ProtectedRoute requiredPermission="TRANSFER_MANAGE" />}>
-                <Route
-                  element={
-                    <ProtectedRoute
-                      allowedRoleNames={[
-                        'ADMIN_GENERAL',
-                        'ADMIN',
-                        'ADMINISTRADOR',
-                        'ADMINISTRADOR_GENERAL',
-                        'USUARIO_OPERATIVO',
-                      ]}
-                    />
-                  }
-                >
-                  <Route path="/transferencias" element={<TransferenciasPage mode="registrar" />} />
-                </Route>
+                <Route path="/transferencias" element={<TransferenciasPage />} />
               </Route>
-              <Route
-                element={
-                  <ProtectedRoute
-                    allowedRoleNames={['RESPONSABLE_DE_AREA', 'RESPONSABLE_AREA']}
-                  />
-                }
-              >
-                <Route path="/recepciones-transferencias" element={<TransferenciasPage mode="recepciones" />} />
+              {/*
+                HU21 — Recepciones: accesible para cualquier usuario autenticado
+                con ASSET_VIEW (incluye el Responsable de Área que solo tiene ese permiso).
+                PA4: el backend ya valida que solo el responsable del área destino pueda confirmar.
+              */}
+              <Route element={<ProtectedRoute requiredPermission="ASSET_VIEW" />}>
+                <Route path="/transferencias/recepciones" element={<RecepcionesPage />} />
               </Route>
               <Route element={<ProtectedRoute requiredPermission="ASSET_VIEW" />}>
                 <Route path="/locations" element={<LocationsPage />} />
