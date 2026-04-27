@@ -13,12 +13,50 @@ export type LocationItem = {
   _count?: { activos: number; areas: number };
 };
 
+export type AreaManagerItem = {
+  id: string;
+  nombres: string;
+  apellidos: string;
+  nombreCompleto: string;
+  correo: string;
+  rol: { nombre: string };
+  area: { id: string; nombre: string } | null;
+};
+
+export type AreaItem = {
+  id: string;
+  nombre: string;
+  descripcion: string | null;
+  ubicacion: {
+    id: string;
+    nombre: string;
+    edificio: string | null;
+    piso: string | null;
+    ambiente: string | null;
+  } | null;
+  encargado: {
+    id: string;
+    nombres: string;
+    apellidos: string;
+    correo: string;
+    rol: { nombre: string };
+  } | null;
+  _count?: { usuarios: number; activos: number };
+};
+
 export type CreateLocationPayload = {
   nombre: string;
   edificio?: string;
   piso?: string;
   ambiente?: string;
   descripcion?: string;
+};
+
+export type CreateAreaPayload = {
+  nombre: string;
+  descripcion?: string;
+  ubicacionId?: string;
+  encargadoId?: string;
 };
 
 export type UpdateLocationPayload = Partial<CreateLocationPayload>;
@@ -59,6 +97,18 @@ export async function updateLocation(id: string, payload: UpdateLocationPayload)
 
 export async function deleteLocation(id: string) {
   return http.delete<ApiResponse<null>>(`/locations/${encodeURIComponent(id)}`);
+}
+
+export async function getAreasForLocations() {
+  return http.get<ApiResponse<AreaItem[]>>('/locations/areas');
+}
+
+export async function getAreaResponsibles() {
+  return http.get<ApiResponse<AreaManagerItem[]>>('/locations/areas/responsables');
+}
+
+export async function createArea(payload: CreateAreaPayload) {
+  return http.post<ApiResponse<AreaItem>>('/locations/areas', payload);
 }
 
 export async function generateAssetCode() {

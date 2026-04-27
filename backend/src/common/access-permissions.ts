@@ -14,6 +14,12 @@ export const CORE_ACCESS_PERMISSIONS = [
     defaultRoleNames: ['ADMIN_GENERAL', 'ADMIN'],
   },
   {
+    codigo: 'AREA_MANAGE',
+    nombre: 'Gestionar áreas',
+    descripcion: 'Permite crear áreas y asignarles un responsable.',
+    defaultRoleNames: ['ADMIN_GENERAL', 'ADMIN'],
+  },
+  {
     codigo: 'ASSET_CREATE',
     nombre: 'Registrar activos',
     descripcion: 'Permite crear nuevos activos en el sistema.',

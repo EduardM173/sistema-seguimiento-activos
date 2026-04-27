@@ -1,5 +1,7 @@
 import {
+  BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -8,11 +10,57 @@ import { PrismaService } from '../common/prisma.service';
 import { SearchLocationsDto } from './dto/search-location.dto';
 import { CreateLocationDto } from './dto/create-location.dto';
 import { UpdateLocationDto } from './dto/update-location.dto';
+import { CreateAreaDto } from './dto/create-area.dto';
 import { Prisma } from '../generated/prisma/client';
 
 @Injectable()
 export class LocationsService {
   constructor(private readonly prisma: PrismaService) {}
+
+  private normalizeRoleName(roleName: string) {
+    return roleName
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[_\s]+/g, ' ')
+      .trim()
+      .toUpperCase();
+  }
+
+  private isAreaManagerRole(roleName?: string | null) {
+    if (!roleName) return false;
+
+    const normalized = this.normalizeRoleName(roleName);
+    return normalized === 'RESPONSABLE DE AREA';
+  }
+
+  private async assertUserHasPermission(userId: string, permissionCode: string) {
+    const usuario = await this.prisma.usuario.findUnique({
+      where: { id: userId },
+      select: {
+        rol: {
+          select: {
+            permisos: {
+              select: {
+                permiso: {
+                  select: { codigo: true },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const hasPermission = Boolean(
+      usuario?.rol?.permisos?.some(
+        (item) => item.permiso.codigo === permissionCode,
+      ),
+    );
+
+    if (!hasPermission) {
+      throw new ForbiddenException('No tienes permisos para gestionar áreas');
+    }
+  }
 
   /**
    * Paginated list with optional string-similarity search on nombre.
@@ -69,6 +117,173 @@ export class LocationsService {
     }
 
     return ubicacion;
+  }
+
+  async findAllAreas(userId: string) {
+    await this.assertUserHasPermission(userId, 'AREA_MANAGE');
+
+    return this.prisma.area.findMany({
+      select: {
+        id: true,
+        nombre: true,
+        descripcion: true,
+        ubicacion: {
+          select: {
+            id: true,
+            nombre: true,
+            edificio: true,
+            piso: true,
+            ambiente: true,
+          },
+        },
+        encargado: {
+          select: {
+            id: true,
+            nombres: true,
+            apellidos: true,
+            correo: true,
+            rol: { select: { nombre: true } },
+          },
+        },
+        _count: {
+          select: { usuarios: true, activos: true },
+        },
+      },
+      orderBy: { nombre: 'asc' },
+    });
+  }
+
+  async findAreaResponsibles(userId: string) {
+    await this.assertUserHasPermission(userId, 'AREA_MANAGE');
+
+    const usuarios = await this.prisma.usuario.findMany({
+      where: { estado: 'ACTIVO' },
+      select: {
+        id: true,
+        nombres: true,
+        apellidos: true,
+        correo: true,
+        rol: { select: { nombre: true } },
+        area: { select: { id: true, nombre: true } },
+      },
+      orderBy: [{ apellidos: 'asc' }, { nombres: 'asc' }],
+    });
+
+    return usuarios
+      .filter((usuario) => this.isAreaManagerRole(usuario.rol.nombre))
+      .map((usuario) => ({
+        id: usuario.id,
+        nombres: usuario.nombres,
+        apellidos: usuario.apellidos,
+        nombreCompleto: `${usuario.nombres} ${usuario.apellidos}`.trim(),
+        correo: usuario.correo,
+        rol: usuario.rol,
+        area: usuario.area,
+      }));
+  }
+
+  async createArea(dto: CreateAreaDto, userId: string) {
+    await this.assertUserHasPermission(userId, 'AREA_MANAGE');
+
+    const nombre = dto.nombre.trim();
+    const descripcion = dto.descripcion?.trim() || null;
+    const ubicacionId = dto.ubicacionId?.trim() || null;
+    const encargadoId = dto.encargadoId?.trim() || null;
+
+    if (!nombre) {
+      throw new BadRequestException('El nombre del área es obligatorio');
+    }
+
+    const existing = await this.prisma.area.findUnique({
+      where: { nombre },
+      select: { id: true },
+    });
+
+    if (existing) {
+      throw new ConflictException('Ya existe un área con ese nombre');
+    }
+
+    if (ubicacionId) {
+      const ubicacion = await this.prisma.ubicacion.findUnique({
+        where: { id: ubicacionId },
+        select: { id: true },
+      });
+
+      if (!ubicacion) {
+        throw new NotFoundException(
+          `No se encontró la ubicación con ID: ${ubicacionId}`,
+        );
+      }
+    }
+
+    if (encargadoId) {
+      const encargado = await this.prisma.usuario.findUnique({
+        where: { id: encargadoId },
+        select: {
+          id: true,
+          estado: true,
+          rol: { select: { nombre: true } },
+        },
+      });
+
+      if (!encargado) {
+        throw new NotFoundException(
+          `No se encontró el usuario con ID: ${encargadoId}`,
+        );
+      }
+
+      if (encargado.estado !== 'ACTIVO' || !this.isAreaManagerRole(encargado.rol.nombre)) {
+        throw new BadRequestException(
+          'Solo se puede asignar como responsable a un usuario con rol Responsable de Área',
+        );
+      }
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      const area = await tx.area.create({
+        data: {
+          nombre,
+          descripcion,
+          ubicacionId,
+          encargadoId,
+        },
+        select: {
+          id: true,
+          nombre: true,
+          descripcion: true,
+          ubicacion: {
+            select: {
+              id: true,
+              nombre: true,
+              edificio: true,
+              piso: true,
+              ambiente: true,
+            },
+          },
+          encargado: {
+            select: {
+              id: true,
+              nombres: true,
+              apellidos: true,
+              correo: true,
+              rol: { select: { nombre: true } },
+            },
+          },
+          _count: {
+            select: { usuarios: true, activos: true },
+          },
+        },
+      });
+
+      if (encargadoId) {
+        await tx.usuario.update({
+          where: { id: encargadoId },
+          data: { areaId: area.id },
+        });
+      }
+
+      return area;
+    });
   }
 
   /**
