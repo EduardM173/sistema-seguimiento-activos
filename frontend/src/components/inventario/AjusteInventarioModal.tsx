@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Button } from '../common';
 import OverlayModal from '../common/OverlayModal';
 import type { Material } from '../../types/inventario.types';
@@ -24,12 +24,6 @@ const AjusteInventarioModal: React.FC<AjusteInventarioModalProps> = ({
   const [cantidadFisica, setCantidadFisica] = useState('');
   const [motivo, setMotivo] = useState('');
   const [guardando, setGuardando] = useState(false);
-  const [confirmacion, setConfirmacion] = useState<{
-    materialNombre: string;
-    stockDisponible: number;
-    diferencia: number;
-  } | null>(null);
-  const closeTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -37,17 +31,8 @@ const AjusteInventarioModal: React.FC<AjusteInventarioModalProps> = ({
       setCantidadRegistrada('');
       setCantidadFisica('');
       setMotivo('');
-      setConfirmacion(null);
     }
   }, [isOpen]);
-
-  useEffect(() => {
-    return () => {
-      if (closeTimerRef.current) {
-        window.clearTimeout(closeTimerRef.current);
-      }
-    };
-  }, []);
 
   const materialSeleccionado = useMemo(
     () => materiales.find((m) => String(m.id) === materialId) || null,
@@ -107,21 +92,17 @@ const AjusteInventarioModal: React.FC<AjusteInventarioModalProps> = ({
 
     try {
       setGuardando(true);
-      await inventarioService.ajustarStock(materialId, {
+      const response = await inventarioService.ajustarStock(materialId, {
         cantidadRegistrada: registrada,
         cantidadFisica: fisica,
         motivo: motivo.trim(),
       });
+      notify.success(
+        'Ajuste registrado',
+        `${materialSeleccionado?.nombre ?? 'El material'} ahora tiene ${fisica} unidades disponibles.`,
+      );
       await onSuccess();
-      setConfirmacion({
-        materialNombre: materialSeleccionado?.nombre ?? 'Material',
-        stockDisponible: fisica,
-        diferencia: fisica - registrada,
-      });
-      closeTimerRef.current = window.setTimeout(() => {
-        setConfirmacion(null);
-        onClose();
-      }, 1800);
+      onClose();
     } catch (err: any) {
       notify.error('Error', err?.message || 'No se pudo registrar el ajuste');
     } finally {
@@ -137,58 +118,6 @@ const AjusteInventarioModal: React.FC<AjusteInventarioModalProps> = ({
       width="760px"
       disabled={guardando}
     >
-      {confirmacion ? (
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            minHeight: '240px',
-            padding: '12px 0',
-          }}
-        >
-          <div
-            style={{
-              width: '100%',
-              maxWidth: '420px',
-              borderRadius: '18px',
-              border: '1px solid #bfdbfe',
-              background: 'linear-gradient(180deg, #eff6ff 0%, #ffffff 100%)',
-              boxShadow: '0 20px 45px rgba(37, 99, 235, 0.12)',
-              padding: '28px 24px',
-              textAlign: 'center',
-            }}
-          >
-            <div
-              style={{
-                width: '56px',
-                height: '56px',
-                margin: '0 auto 16px',
-                borderRadius: '999px',
-                background: '#dbeafe',
-                color: '#1d4ed8',
-                display: 'grid',
-                placeItems: 'center',
-                fontSize: '28px',
-                fontWeight: 700,
-              }}
-            >
-              ✓
-            </div>
-            <h3 style={{ margin: '0 0 8px', color: '#0f172a', fontSize: '22px' }}>
-              Ajuste registrado
-            </h3>
-            <p style={{ margin: '0 0 16px', color: '#475569', lineHeight: 1.5 }}>
-              {confirmacion.materialNombre} ahora tiene{' '}
-              <strong>{confirmacion.stockDisponible}</strong> unidades disponibles.
-            </p>
-            <p style={{ margin: 0, color: '#1d4ed8', fontWeight: 600 }}>
-              Diferencia aplicada: {confirmacion.diferencia > 0 ? '+' : ''}
-              {confirmacion.diferencia}
-            </p>
-          </div>
-        </div>
-      ) : (
       <form onSubmit={handleSubmit}>
         <div
           style={{
@@ -348,7 +277,6 @@ const AjusteInventarioModal: React.FC<AjusteInventarioModalProps> = ({
           />
         </div>
       </form>
-      )}
     </OverlayModal>
   );
 };

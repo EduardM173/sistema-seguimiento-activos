@@ -53,6 +53,7 @@ services:
       VITE_API_URL: "http://localhost:8085/api"
       VITE_HOST: "localhost"
       VITE_BACKEND_URL: "http://backend_local:3001"
+      FRONTEND_PORT: "8084"
 
     ports:
       - 8085:8084
