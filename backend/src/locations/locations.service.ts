@@ -11,6 +11,7 @@ import { SearchLocationsDto } from './dto/search-location.dto';
 import { CreateLocationDto } from './dto/create-location.dto';
 import { UpdateLocationDto } from './dto/update-location.dto';
 import { CreateAreaDto } from './dto/create-area.dto';
+import { ReassignAreaManagerDto } from './dto/reassign-area-manager.dto';
 import { Prisma } from '../generated/prisma/client';
 
 @Injectable()
@@ -30,7 +31,10 @@ export class LocationsService {
     if (!roleName) return false;
 
     const normalized = this.normalizeRoleName(roleName);
-    return normalized === 'RESPONSABLE DE AREA';
+    return (
+      normalized === 'RESPONSABLE DE AREA' ||
+      normalized === 'RESPONSABLE AREA'
+    );
   }
 
   private async assertUserHasPermission(userId: string, permissionCode: string) {
@@ -276,6 +280,14 @@ export class LocationsService {
       });
 
       if (encargadoId) {
+        await tx.area.updateMany({
+          where: {
+            encargadoId,
+            id: { not: area.id },
+          },
+          data: { encargadoId: null },
+        });
+
         await tx.usuario.update({
           where: { id: encargadoId },
           data: { areaId: area.id },
@@ -283,6 +295,114 @@ export class LocationsService {
       }
 
       return area;
+    });
+  }
+
+  async reassignAreaManager(
+    areaId: string,
+    dto: ReassignAreaManagerDto,
+    userId: string,
+  ) {
+    await this.assertUserHasPermission(userId, 'AREA_MANAGE');
+
+    const encargadoId = dto.encargadoId?.trim() || null;
+
+    const existingArea = await this.prisma.area.findUnique({
+      where: { id: areaId },
+      select: {
+        id: true,
+        encargadoId: true,
+      },
+    });
+
+    if (!existingArea) {
+      throw new NotFoundException(`No se encontró el área con ID: ${areaId}`);
+    }
+
+    if (encargadoId) {
+      const encargado = await this.prisma.usuario.findUnique({
+        where: { id: encargadoId },
+        select: {
+          id: true,
+          estado: true,
+          rol: { select: { nombre: true } },
+        },
+      });
+
+      if (!encargado) {
+        throw new NotFoundException(
+          `No se encontró el usuario con ID: ${encargadoId}`,
+        );
+      }
+
+      if (
+        encargado.estado !== 'ACTIVO' ||
+        !this.isAreaManagerRole(encargado.rol.nombre)
+      ) {
+        throw new BadRequestException(
+          'Solo se puede asignar como responsable a un usuario con rol Responsable de Área',
+        );
+      }
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      const updatedArea = await tx.area.update({
+        where: { id: areaId },
+        data: { encargadoId },
+        select: {
+          id: true,
+          nombre: true,
+          descripcion: true,
+          ubicacion: {
+            select: {
+              id: true,
+              nombre: true,
+              edificio: true,
+              piso: true,
+              ambiente: true,
+            },
+          },
+          encargado: {
+            select: {
+              id: true,
+              nombres: true,
+              apellidos: true,
+              correo: true,
+              rol: { select: { nombre: true } },
+            },
+          },
+          _count: {
+            select: { usuarios: true, activos: true },
+          },
+        },
+      });
+
+      if (existingArea.encargadoId && existingArea.encargadoId !== encargadoId) {
+        await tx.usuario.updateMany({
+          where: {
+            id: existingArea.encargadoId,
+            areaId,
+          },
+          data: { areaId: null },
+        });
+      }
+
+      if (encargadoId) {
+        await tx.area.updateMany({
+          where: {
+            encargadoId,
+            id: { not: areaId },
+          },
+          data: { encargadoId: null },
+        });
+
+        await tx.usuario.update({
+          where: { id: encargadoId },
+          data: { areaId },
+        });
+      }
+
+      return updatedArea;
     });
   }
 

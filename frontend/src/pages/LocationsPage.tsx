@@ -6,6 +6,7 @@ import {
   deleteLocation,
   getAreaResponsibles,
   getAreasForLocations,
+  reassignAreaManager,
   type AreaItem,
   type AreaManagerItem,
   type LocationItem,
@@ -54,6 +55,8 @@ export default function LocationsPage() {
   const [areaDescripcion, setAreaDescripcion] = useState('');
   const [areaUbicacionId, setAreaUbicacionId] = useState('');
   const [areaEncargadoId, setAreaEncargadoId] = useState('');
+  const [areaManagerDrafts, setAreaManagerDrafts] = useState<Record<string, string>>({});
+  const [reassigningAreaId, setReassigningAreaId] = useState<string | null>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(searchText), 350);
@@ -96,6 +99,14 @@ export default function LocationsPage() {
       ]);
       setAreas(areasResponse.data ?? []);
       setAreaManagers(managersResponse.data ?? []);
+      setAreaManagerDrafts(
+        Object.fromEntries(
+          (areasResponse.data ?? []).map((area) => [
+            area.id,
+            area.encargado?.id ?? '',
+          ]),
+        ),
+      );
     } catch (err) {
       const message =
         err instanceof HttpError
@@ -167,6 +178,33 @@ export default function LocationsPage() {
       notifyError('Error al crear área', message);
     } finally {
       setCreatingArea(false);
+    }
+  }
+
+  async function handleReassignAreaManager(area: AreaItem) {
+    const nextManagerId = areaManagerDrafts[area.id] ?? '';
+    const currentManagerId = area.encargado?.id ?? '';
+
+    if (nextManagerId === currentManagerId) {
+      notify.info('Sin cambios', 'Seleccione otro responsable para reasignar el área.');
+      return;
+    }
+
+    try {
+      setReassigningAreaId(area.id);
+      await reassignAreaManager(area.id, {
+        encargadoId: nextManagerId || undefined,
+      });
+      notifySuccess('Responsable reasignado', `Se actualizó el responsable de "${area.nombre}".`);
+      await loadAreas();
+    } catch (err) {
+      const message =
+        err instanceof HttpError
+          ? err.message
+          : 'No se pudo reasignar el responsable del área';
+      notifyError('Error al reasignar responsable', message);
+    } finally {
+      setReassigningAreaId(null);
     }
   }
 
@@ -420,9 +458,41 @@ export default function LocationsPage() {
                             : 'Sin responsable'}
                         </span>
                       </div>
-                      <span className="locationsAreas__count">
-                        {area._count?.activos ?? 0} activos
-                      </span>
+                      <div className="locationsAreas__itemActions">
+                        <span className="locationsAreas__count">
+                          {area._count?.activos ?? 0} activos
+                        </span>
+                        <div className="locationsAreas__reassign">
+                          <select
+                            value={areaManagerDrafts[area.id] ?? ''}
+                            onChange={(event) =>
+                              setAreaManagerDrafts((prev) => ({
+                                ...prev,
+                                [area.id]: event.target.value,
+                              }))
+                            }
+                            disabled={reassigningAreaId === area.id}
+                          >
+                            <option value="">Sin responsable</option>
+                            {areaManagers.map((manager) => (
+                              <option key={manager.id} value={manager.id}>
+                                {manager.nombreCompleto}
+                              </option>
+                            ))}
+                          </select>
+                          <button
+                            type="button"
+                            className="btn btn--outline locationsAreas__reassignBtn"
+                            disabled={
+                              reassigningAreaId === area.id ||
+                              (areaManagerDrafts[area.id] ?? '') === (area.encargado?.id ?? '')
+                            }
+                            onClick={() => void handleReassignAreaManager(area)}
+                          >
+                            {reassigningAreaId === area.id ? 'Guardando...' : 'Reasignar'}
+                          </button>
+                        </div>
+                      </div>
                     </article>
                   ))}
                 </div>

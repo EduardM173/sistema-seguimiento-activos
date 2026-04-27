@@ -59,6 +59,10 @@ export type CreateAreaPayload = {
   encargadoId?: string;
 };
 
+export type ReassignAreaManagerPayload = {
+  encargadoId?: string;
+};
+
 export type UpdateLocationPayload = Partial<CreateLocationPayload>;
 
 export type SearchLocationsParams = {
@@ -109,6 +113,13 @@ export async function getAreaResponsibles() {
 
 export async function createArea(payload: CreateAreaPayload) {
   return http.post<ApiResponse<AreaItem>>('/locations/areas', payload);
+}
+
+export async function reassignAreaManager(areaId: string, payload: ReassignAreaManagerPayload) {
+  return http.patch<ApiResponse<AreaItem>>(
+    `/locations/areas/${encodeURIComponent(areaId)}/responsable`,
+    payload,
+  );
 }
 
 export async function generateAssetCode() {
