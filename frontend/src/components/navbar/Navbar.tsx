@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import auditoriaService from '../../services/auditoria.service';
@@ -14,6 +14,7 @@ import {
   IconBell,
   IconSettings,
   IconLogOut,
+  IconChevronDown,
 } from '../common/Icon';
 import '../../styles/navbar.css';
 
@@ -23,6 +24,10 @@ type MainItem = {
   label: string;
   icon: NavIcon;
   to?: string;
+  children?: {
+    label: string;
+    to: string;
+  }[];
 };
 
 type BottomItem = {
@@ -32,8 +37,11 @@ type BottomItem = {
 };
 
 export default function Navbar() {
-  const { logout, hasPermission } = useAuth();
+  const { logout, hasPermission, user } = useAuth();
+  const location = useLocation();
   const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
+  const isAreaManager = isAreaManagerRole(user?.rol?.nombre);
 
   useEffect(() => {
     if (!hasPermission('NOTIFICATION_VIEW')) {
@@ -67,6 +75,19 @@ export default function Navbar() {
     };
   }, [hasPermission]);
 
+  useEffect(() => {
+    setOpenGroups((current) => {
+      if (current.Transferencias !== undefined) return current;
+      if (
+        location.pathname === '/transferencias' ||
+        location.pathname === '/recepciones-transferencias'
+      ) {
+        return { ...current, Transferencias: true };
+      }
+      return current;
+    });
+  }, [location.pathname]);
+
   const mainItems: MainItem[] = [
     { label: 'Dashboard',      icon: <IconGrid size={16} />,             to: '/dashboard' },
   ];
@@ -86,11 +107,27 @@ export default function Navbar() {
     });
   }
 
-  if (hasPermission('TRANSFER_MANAGE')) {
+  const transferChildren: MainItem['children'] = [];
+
+  if (hasPermission('TRANSFER_MANAGE') && !isAreaManager) {
+    transferChildren.push({
+      label: 'Transferir',
+      to: '/transferencias',
+    });
+  }
+
+  if (isAreaManager) {
+    transferChildren.push({
+      label: 'Recepciones',
+      to: '/recepciones-transferencias',
+    });
+  }
+
+  if (transferChildren.length > 0) {
     mainItems.push({
       label: 'Transferencias',
       icon: <IconArrowsLeftRight size={16} />,
-      to: '/transferencias',
+      children: transferChildren,
     });
   }
 
@@ -151,7 +188,44 @@ export default function Navbar() {
           <ul className="sidebar__menu">
             {mainItems.map((item) => (
               <li key={item.label} className="sidebar__item">
-                {item.to ? (
+                {item.children?.length ? (
+                  <div className="sidebar__group">
+                    <button
+                      type="button"
+                      className="sidebar__link sidebar__link--group"
+                      onClick={() =>
+                        setOpenGroups((current) => ({
+                          ...current,
+                          [item.label]: !current[item.label],
+                        }))
+                      }
+                      aria-expanded={Boolean(openGroups[item.label])}
+                    >
+                      <span className="sidebar__icon">{item.icon}</span>
+                      <span className="sidebar__text">{item.label}</span>
+                      <IconChevronDown
+                        size={14}
+                        className={openGroups[item.label] ? 'sidebar__groupChevron--open' : ''}
+                      />
+                    </button>
+                    {openGroups[item.label] ? (
+                      <ul className="sidebar__submenu">
+                        {item.children.map((child) => (
+                          <li key={child.to} className="sidebar__subitem">
+                            <NavLink
+                              to={child.to}
+                              className={({ isActive }) =>
+                                `sidebar__sublink${isActive ? ' sidebar__sublink--active' : ''}`
+                              }
+                            >
+                              {child.label}
+                            </NavLink>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : null}
+                  </div>
+                ) : item.to ? (
                   <NavLink
                     to={item.to}
                     className={({ isActive }) =>
@@ -197,4 +271,15 @@ export default function Navbar() {
       </div>
     </aside>
   );
+}
+
+function isAreaManagerRole(roleName?: string | null) {
+  const normalized = (roleName ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/_/g, ' ')
+    .trim()
+    .toUpperCase();
+
+  return normalized === 'RESPONSABLE DE AREA' || normalized === 'RESPONSABLE AREA';
 }
