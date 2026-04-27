@@ -7,8 +7,10 @@ import {
   Patch,
   Post,
   Query,
+  Req,
   UseGuards,
 } from '@nestjs/common';
+import { Request } from 'express';
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
@@ -27,6 +29,7 @@ import { LocationsService } from './locations.service';
 import { CreateLocationDto } from './dto/create-location.dto';
 import { UpdateLocationDto } from './dto/update-location.dto';
 import { SearchLocationsDto } from './dto/search-location.dto';
+import { CreateAreaDto } from './dto/create-area.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ApiResponse } from '../common/api-response';
 
@@ -63,6 +66,48 @@ export class LocationsController {
       result.page,
       result.pageSize,
     );
+  }
+
+  @ApiOperation({
+    summary: 'Listar áreas',
+    description:
+      'Obtiene las áreas registradas para administración desde la sección de ubicaciones.',
+  })
+  @ApiOkResponse({ description: 'Áreas obtenidas correctamente' })
+  @Get('areas')
+  async findAreas(@Req() req: Request) {
+    const userId = (req.user as { id: string }).id;
+    const data = await this.locationsService.findAllAreas(userId);
+    return ApiResponse.success(data);
+  }
+
+  @ApiOperation({
+    summary: 'Listar responsables disponibles para áreas',
+    description:
+      'Obtiene usuarios activos con rol Responsable de Área para asignarlos como encargados.',
+  })
+  @ApiOkResponse({ description: 'Responsables obtenidos correctamente' })
+  @Get('areas/responsables')
+  async findAreaResponsibles(@Req() req: Request) {
+    const userId = (req.user as { id: string }).id;
+    const data = await this.locationsService.findAreaResponsibles(userId);
+    return ApiResponse.success(data);
+  }
+
+  @ApiOperation({
+    summary: 'Registrar área',
+    description:
+      'Crea un área y permite asignarle una ubicación y un Responsable de Área.',
+  })
+  @ApiBody({ type: CreateAreaDto })
+  @ApiCreatedResponse({ description: 'Área registrada exitosamente' })
+  @ApiBadRequestResponse({ description: 'Datos inválidos para registrar el área' })
+  @ApiConflictResponse({ description: 'Ya existe un área con el mismo nombre' })
+  @Post('areas')
+  async createArea(@Body() dto: CreateAreaDto, @Req() req: Request) {
+    const userId = (req.user as { id: string }).id;
+    const area = await this.locationsService.createArea(dto, userId);
+    return ApiResponse.success(area, 'Área registrada exitosamente');
   }
 
   /**
