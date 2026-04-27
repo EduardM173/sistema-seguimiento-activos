@@ -2,6 +2,14 @@ import { http as apiClient } from './http.client';
 import type { Auditoria, FiltrosAuditoria, ResumenAuditoria, Notificacion, ConfiguracionAuditoria } from '../types/auditoria.types';
 import type { PaginatedResponse, ApiResponse } from '../types';
 
+export const NOTIFICATIONS_REFRESH_EVENT = 'notificaciones:refresh';
+
+export function emitNotificationsRefresh() {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(NOTIFICATIONS_REFRESH_EVENT));
+  }
+}
+
 export const auditoriaService = {
   // Obtener registros de auditoría
   obtenerRegistros: async (filtros?: FiltrosAuditoria) => {

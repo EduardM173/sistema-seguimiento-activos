@@ -1,7 +1,7 @@
 import { NavLink, useLocation } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import auditoriaService from '../../services/auditoria.service';
+import auditoriaService, { NOTIFICATIONS_REFRESH_EVENT } from '../../services/auditoria.service';
 import {
   IconGrid,
   IconPackage,
@@ -68,13 +68,31 @@ export default function Navbar() {
     }
 
     void loadUnreadCount();
+
+    const handleRefresh = () => {
+      void loadUnreadCount();
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        void loadUnreadCount();
+      }
+    };
+
     const intervalId = window.setInterval(() => {
       void loadUnreadCount();
-    }, 30000);
+    }, 5000);
+
+    window.addEventListener('focus', handleRefresh);
+    window.addEventListener(NOTIFICATIONS_REFRESH_EVENT, handleRefresh);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
       cancelled = true;
       window.clearInterval(intervalId);
+      window.removeEventListener('focus', handleRefresh);
+      window.removeEventListener(NOTIFICATIONS_REFRESH_EVENT, handleRefresh);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [hasPermission]);
 
