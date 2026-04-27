@@ -94,6 +94,12 @@ export default function AssetsPage() {
   const [editingAssetId, setEditingAssetId] = useState<string | null>(null);
   const [viewingAssetId, setViewingAssetId] = useState<string | null>(null);
   const [historyAssetId, setHistoryAssetId] = useState<string | null>(null);
+  const canCreateAssets = hasPermission('ASSET_CREATE');
+  const canUpdateAssets = hasPermission('ASSET_UPDATE');
+  const canAssignAssets = hasPermission('ASSET_ASSIGN');
+  const canAssignUsers = canAssignAssets || hasPermission('ASSET_ASSIGN_USER');
+  const canAssignAreas = canAssignAssets || hasPermission('ASSET_ASSIGN_AREA');
+  const canOpenAssignModal = canAssignUsers || canAssignAreas;
 
   useEffect(() => {
     async function loadCatalogs() {
@@ -272,17 +278,43 @@ export default function AssetsPage() {
     }
   }
 
+  function openEditModal(assetId: string) {
+    if (!canUpdateAssets) {
+      notify.warning(
+        'Permiso requerido',
+        'No tienes permiso para editar activos.',
+      );
+      return;
+    }
+
+    setEditingAssetId(assetId);
+  }
+
+  useEffect(() => {
+    if (!canUpdateAssets && editingAssetId) {
+      setEditingAssetId(null);
+    }
+  }, [canUpdateAssets, editingAssetId]);
+
   function openAssignModal(asset: AssetListItem) {
+    if (!canOpenAssignModal) {
+      notify.warning(
+        'Permiso requerido',
+        'No tienes permiso para asignar activos.',
+      );
+      return;
+    }
+
     setAssigningAsset(asset);
 
-    if (asset.responsable?.id) {
+    if (canAssignUsers && asset.responsable?.id) {
       setAssignmentType('usuario');
       setAssignmentTargetId(asset.responsable.id);
-    } else if (asset.area?.id) {
+    } else if (canAssignAreas && asset.area?.id) {
       setAssignmentType('area');
       setAssignmentTargetId(asset.area.id);
     } else {
-      setAssignmentType('usuario');
+      setAssignmentType(canAssignUsers ? 'usuario' : 'area');
       setAssignmentTargetId('');
     }
 
@@ -302,6 +334,16 @@ export default function AssetsPage() {
 
     if (!assigningAsset || !assignmentTargetId) {
       notifyError('Asignación incompleta', 'Seleccione un usuario o un área para continuar.');
+      return;
+    }
+
+    if (assignmentType === 'usuario' && !canAssignUsers) {
+      notifyError('Permiso requerido', 'No tienes permiso para asignar activos a usuarios.');
+      return;
+    }
+
+    if (assignmentType === 'area' && !canAssignAreas) {
+      notifyError('Permiso requerido', 'No tienes permiso para asignar activos a áreas.');
       return;
     }
 
@@ -413,9 +455,6 @@ export default function AssetsPage() {
         }));
 
   const totalPages = meta?.totalPages ?? 1;
-  const canCreateAssets = hasPermission('ASSET_CREATE');
-  const canUpdateAssets = hasPermission('ASSET_UPDATE');
-  const canAssignAssets = hasPermission('ASSET_ASSIGN');
 
   function buildPageNumbers(): (number | '...')[] {
     const pages: (number | '...')[] = [];
@@ -617,11 +656,11 @@ export default function AssetsPage() {
               assetActions.push({
                 label: 'Editar',
                 icon: <IconEdit/>,
-                onClick: (asset) => setEditingAssetId(asset.id),
+                onClick: (asset) => openEditModal(asset.id),
               });
             }
 
-            if (canAssignAssets) {
+            if (canOpenAssignModal) {
               assetActions.push({
                 label: 'Asignar',
                 icon: <IconGrid/>,
@@ -726,8 +765,8 @@ export default function AssetsPage() {
                   }}
                   disabled={submittingAssignment}
                 >
-                  <option value="usuario">Usuario</option>
-                  <option value="area">Área</option>
+                  {canAssignUsers ? <option value="usuario">Usuario</option> : null}
+                  {canAssignAreas ? <option value="area">Área</option> : null}
                 </select>
               </label>
 
@@ -811,7 +850,7 @@ export default function AssetsPage() {
         />
       ) : null}
 
-      {editingAssetId ? (
+      {editingAssetId && canUpdateAssets ? (
         <EditAssetModal
           assetId={editingAssetId}
           open={Boolean(editingAssetId)}

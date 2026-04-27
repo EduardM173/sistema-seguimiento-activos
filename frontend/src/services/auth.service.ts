@@ -33,6 +33,14 @@ export function saveAuthSession(data: LoginResponse): void {
   localStorage.setItem(AUTH_USER_KEY, JSON.stringify(data.usuario));
 }
 
+export function saveAuthUser(user: AuthUser): void {
+  if (localStorage.getItem(ACCESS_TOKEN_KEY) || !sessionStorage.getItem(ACCESS_TOKEN_KEY)) {
+    localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
+  } else {
+    sessionStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
+  }
+}
+
 export function getAccessToken(): string | null {
   const localToken = localStorage.getItem(ACCESS_TOKEN_KEY);
   const sessionToken = sessionStorage.getItem(ACCESS_TOKEN_KEY);
@@ -66,4 +74,24 @@ export function clearAuthSession(): void {
 
 export function isAuthenticated(): boolean {
   return Boolean(getAccessToken());
+}
+
+export async function getCurrentSession(): Promise<{ usuario: AuthUser }> {
+  const token = getAccessToken();
+
+  const response = await fetch(`${API_URL}/auth/me`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+
+  const result = await response.json();
+
+  if (!response.ok) {
+    throw new Error(result.message || "No se pudo refrescar la sesión");
+  }
+
+  return result as { usuario: AuthUser };
 }

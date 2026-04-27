@@ -512,6 +512,12 @@ export class AssetsService {
    * Validates code uniqueness if the code is changing.
    */
   async update(id: string, dto: UpdateAssetDto, userId: string) {
+    await this.assertUserHasPermission(
+      userId,
+      'ASSET_UPDATE',
+      'No tienes permisos para actualizar activos',
+    );
+
     // Verify asset exists
     const existing = await this.prisma.activo.findUnique({
       where: { id },
@@ -844,6 +850,22 @@ export class AssetsService {
       );
     }
 
+    if (assignToUser) {
+      await this.assertUserHasAnyPermission(
+        userId,
+        ['ASSET_ASSIGN_USER', 'ASSET_ASSIGN'],
+        'No tienes permisos para asignar activos a usuarios',
+      );
+    }
+
+    if (assignToArea) {
+      await this.assertUserHasAnyPermission(
+        userId,
+        ['ASSET_ASSIGN_AREA', 'ASSET_ASSIGN'],
+        'No tienes permisos para asignar activos a áreas',
+      );
+    }
+
     const existing = await this.prisma.activo.findUnique({
       where: { id },
       select: {
@@ -1156,7 +1178,19 @@ export class AssetsService {
     };
   }
 
-  private async assertUserHasPermission(userId: string, permissionCode: string) {
+  private async assertUserHasPermission(
+    userId: string,
+    permissionCode: string,
+    message = 'No tienes permisos para registrar transferencias',
+  ) {
+    return this.assertUserHasAnyPermission(userId, [permissionCode], message);
+  }
+
+  private async assertUserHasAnyPermission(
+    userId: string,
+    permissionCodes: string[],
+    message = 'No tienes permisos para realizar esta acción',
+  ) {
     const usuario = await this.prisma.usuario.findUnique({
       where: { id: userId },
       select: {
@@ -1178,14 +1212,12 @@ export class AssetsService {
 
     const hasPermission = Boolean(
       usuario?.rol?.permisos?.some(
-        (item) => item.permiso.codigo === permissionCode,
+        (item) => permissionCodes.includes(item.permiso.codigo),
       ),
     );
 
     if (!hasPermission) {
-      throw new ForbiddenException(
-        'No tienes permisos para registrar transferencias',
-      );
+      throw new ForbiddenException(message);
     }
   }
 
@@ -1538,6 +1570,12 @@ export class AssetsService {
    * Sets status to DADO_DE_BAJA and records the timestamp.
    */
   async remove(id: string, userId: string) {
+    await this.assertUserHasPermission(
+      userId,
+      'ASSET_UPDATE',
+      'No tienes permisos para actualizar activos',
+    );
+
     const existing = await this.prisma.activo.findUnique({
       where: { id },
     });
