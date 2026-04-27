@@ -417,14 +417,12 @@ export class AssetsController {
   })
   @ApiBadRequestResponse({ description: 'Parámetros de consulta inválidos' })
   @Get('solicitudes-enviadas')
+  
   async solicitudesEnviadas(
     @Query('registradoPorId') registradoPorId: string,
     @Query('areaOrigenId') areaOrigenId?: string,
   ) {
-    const data = await this.assetsService.solicitudesEnviadas(
-      registradoPorId ?? '',
-      areaOrigenId,
-    );
+    const data = await this.assetsService.solicitudesEnviadas(registradoPorId);
     return ApiResponse.success(data, 'Solicitudes enviadas obtenidas correctamente');
   }
 
