@@ -295,6 +295,62 @@
   box-shadow: 0 0 0 2px rgba(10, 16, 28, 0.45);
 }
 
+.sidebar__group {
+  width: 100%;
+}
+
+.sidebar__link--group {
+  cursor: pointer;
+}
+
+.sidebar__link--group svg:last-child {
+  margin-left: auto;
+  color: var(--color-text-muted);
+  transition: transform var(--transition-fast);
+}
+
+.sidebar__groupChevron--open {
+  transform: rotate(180deg);
+}
+
+.sidebar__submenu {
+  list-style: none;
+  margin: 2px 0 4px 0;
+  padding: 0 0 0 34px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sidebar__subitem {
+  width: 100%;
+}
+
+.sidebar__sublink {
+  display: block;
+  padding: 7px 10px;
+  border-radius: var(--radius-sm);
+  color: var(--sidebar-text);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  text-decoration: none;
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.sidebar__sublink:hover {
+  background: var(--sidebar-hover-bg);
+  color: var(--sidebar-text-active);
+  text-decoration: none;
+}
+
+.sidebar__sublink--active {
+  background: var(--sidebar-active-bg);
+  color: var(--sidebar-text-active);
+  font-weight: var(--font-weight-semibold);
+}
+
 /* ── Bottom section ────────────────────────────────────── */
 .sidebar__bottom {
   padding: var(--space-4) var(--space-2) 0;

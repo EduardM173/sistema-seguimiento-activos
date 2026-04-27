@@ -116,13 +116,20 @@ function ModalRechazo({ pendiente, onConfirmar, onCancelar, submitting }: ModalR
   );
 }
 
+type TransferenciasPageProps = {
+  mode?: 'registrar' | 'recepciones';
+};
+
 // ─────────────────────────────────────────────
 // Página principal
 // ─────────────────────────────────────────────
-export const TransferenciasPage: React.FC = () => {
+export const TransferenciasPage: React.FC<TransferenciasPageProps> = ({
+  mode = 'registrar',
+}) => {
   const { user } = useAuth();
   const notify = useNotification();
   const PAGE_SIZE = 6;
+  const isRecepcionesMode = mode === 'recepciones';
 
   // ── Estado: registrar transferencia ──
   const [assets, setAssets] = useState<AssetListItem[]>([]);
@@ -201,21 +208,30 @@ export const TransferenciasPage: React.FC = () => {
     async function loadData() {
       try {
         setLoading(true);
-        await Promise.all([reloadData(), reloadPendientes()]);
+        if (isRecepcionesMode) {
+          await reloadPendientes();
+        } else {
+          await reloadData();
+        }
       } catch (error) {
         const errorMessage =
           error instanceof HttpError
             ? error.message
-            : 'No se pudo cargar la información inicial de transferencias';
+            : isRecepcionesMode
+              ? 'No se pudo cargar la información inicial de recepciones'
+              : 'No se pudo cargar la información inicial de transferencias';
 
-        notify.error('No se pudo cargar Transferencias', errorMessage);
+        notify.error(
+          isRecepcionesMode ? 'No se pudo cargar Recepciones' : 'No se pudo cargar Transferencias',
+          errorMessage,
+        );
       } finally {
         setLoading(false);
       }
     }
 
     void loadData();
-  }, [notify, user?.id, user?.area?.id]);
+  }, [notify, user?.id, user?.area?.id, isRecepcionesMode]);
 
   // ── Confirmar recepción ──
   async function handleConfirmar(asignacionId: string) {
@@ -379,15 +395,17 @@ export const TransferenciasPage: React.FC = () => {
 
       <div className="module-header transfer-page__header">
         <div>
-          <h1>Transferencias</h1>
+          <h1>{isRecepcionesMode ? 'Recepciones de transferencias' : 'Transferencias'}</h1>
           <p className="transfer-page__subtitle">
-            Seleccione el activo, revise su área actual y registre el traslado hacia el área de destino.
+            {isRecepcionesMode
+              ? 'Revise las transferencias enviadas a su área y confirme o rechace la recepción.'
+              : 'Seleccione el activo, revise su área actual y registre el traslado hacia el área de destino.'}
           </p>
         </div>
       </div>
 
       {/* ── Banner última transferencia ── */}
-      {lastTransferResult ? (
+      {!isRecepcionesMode && lastTransferResult ? (
         <section className="transfer-pending-banner" aria-live="polite">
           <div className="transfer-pending-banner__top">
             <div>
@@ -425,7 +443,7 @@ export const TransferenciasPage: React.FC = () => {
       ) : null}
 
       {/* ── Sección HU42: Pendientes de recepción ── */}
-      {user?.area?.id && (
+      {isRecepcionesMode && user?.area?.id && (
         <section className="transfer-panel recepcion-panel">
           <div className="transfer-panel__header">
             <div>
@@ -499,7 +517,16 @@ export const TransferenciasPage: React.FC = () => {
         </section>
       )}
 
+      {isRecepcionesMode && !user?.area?.id ? (
+        <section className="transfer-panel recepcion-panel">
+          <div className="recepcion-empty">
+            Su usuario no tiene un área asignada para consultar recepciones pendientes.
+          </div>
+        </section>
+      ) : null}
+
       {/* ── Formulario: Registrar transferencia ── */}
+      {!isRecepcionesMode ? (
       <form onSubmit={handleSubmit} className="transfer-workspace">
         <div className="transfer-workspace__top">
           <section className="transfer-panel transfer-panel--assets">
@@ -733,6 +760,7 @@ export const TransferenciasPage: React.FC = () => {
           </div>
         </div>
       </form>
+      ) : null}
     </div>
   );
 };
