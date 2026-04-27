@@ -1226,9 +1226,8 @@ export class AssetsService {
   }
 
   /**
-   * HU41 – Transferencias pendientes de recepción para un área destino.
-   * Devuelve las asignaciones en estado PENDIENTE que incluyen un movimiento
-   * de tipo TRANSFERENCIA donde el área asignada coincide con areaId.
+   * HU21/HU42 – Transferencias pendientes de recepción para un área destino.
+   * Incluye recibidoPor y recibidoEn para cumplir PA3 de HU21.
    */
   async pendientesDeRecepcion(areaId: string) {
     if (!areaId) return [];
@@ -1247,13 +1246,25 @@ export class AssetsService {
         id: true,
         asignadoEn: true,
         observaciones: true,
+        recibidoEn: true,
+        motivoRechazo: true,
         activo: {
-          select: { id: true, codigo: true, nombre: true },
+          select: {
+            id: true,
+            codigo: true,
+            nombre: true,
+            marca: true,
+            modelo: true,
+            categoria: { select: { id: true, nombre: true } },
+          },
         },
         areaAsignada: {
           select: { id: true, nombre: true },
         },
         asignadoPor: {
+          select: { id: true, nombres: true, apellidos: true },
+        },
+        recibidoPor: {
           select: { id: true, nombres: true, apellidos: true },
         },
         movimientos: {
@@ -1269,7 +1280,6 @@ export class AssetsService {
       orderBy: { asignadoEn: 'desc' },
     });
 
-    // Resolver nombres de áreas de origen (areaOrigenId es escalar, no relación)
     const areaOrigenIds = [
       ...new Set(
         asignaciones
@@ -1290,7 +1300,19 @@ export class AssetsService {
       id: a.id,
       fechaEnvio: a.movimientos[0]?.creadoEn ?? a.asignadoEn,
       observaciones: a.observaciones,
-      activo: a.activo,
+      motivoRechazo: a.motivoRechazo,
+      // PA3: fecha y persona que confirmó (null si aún pendiente)
+      recibidoEn: a.recibidoEn,
+      recibidoPor: a.recibidoPor
+        ? {
+            id: a.recibidoPor.id,
+            nombreCompleto: `${a.recibidoPor.nombres} ${a.recibidoPor.apellidos}`,
+          }
+        : null,
+      activo: {
+        ...a.activo,
+        categoria: a.activo.categoria,
+      },
       areaDestino: a.areaAsignada,
       areaOrigen: a.movimientos[0]?.areaOrigenId
         ? (areaMap[a.movimientos[0].areaOrigenId] ?? null)
@@ -1305,93 +1327,11 @@ export class AssetsService {
   }
 
   /**
-   * HU41 – Solicitudes de transferencia enviadas por el área del usuario.
-   * Lista las transferencias pendientes registradas por el usuario.
-   * Puede filtrar opcionalmente por área origen.
-   */
-  async solicitudesEnviadas(registradoPorId: string, areaOrigenId?: string) {
-    if (!registradoPorId) return [];
-
-    const where = {
-      estado: EstadoAsignacion.PENDIENTE,
-      asignadoPorId: registradoPorId,
-      movimientos: {
-        some: {
-          tipo: TipoMovimientoActivo.TRANSFERENCIA,
-          ...(areaOrigenId ? { areaOrigenId } : {}),
-        },
-      },
-    };
-
-    const asignaciones = await this.prisma.asignacionActivo.findMany({
-      where,
-      select: {
-        id: true,
-        asignadoEn: true,
-        observaciones: true,
-        activo: {
-          select: { id: true, codigo: true, nombre: true },
-        },
-        areaAsignada: {
-          select: { id: true, nombre: true },
-        },
-        asignadoPor: {
-          select: { id: true, nombres: true, apellidos: true },
-        },
-        movimientos: {
-          where: {
-            tipo: TipoMovimientoActivo.TRANSFERENCIA,
-            ...(areaOrigenId ? { areaOrigenId } : {}),
-          },
-          select: {
-            areaOrigenId: true,
-            creadoEn: true,
-          },
-          take: 1,
-          orderBy: { creadoEn: 'desc' },
-        },
-      },
-      orderBy: { asignadoEn: 'desc' },
-    });
-
-    const areaOrigenIds = [
-      ...new Set(
-        asignaciones
-          .map((a) => a.movimientos[0]?.areaOrigenId)
-          .filter((id): id is string => Boolean(id)),
-      ),
-    ];
-    const areasOrigen =
-      areaOrigenIds.length > 0
-        ? await this.prisma.area.findMany({
-            where: { id: { in: areaOrigenIds } },
-            select: { id: true, nombre: true },
-          })
-        : [];
-    const areaMap = Object.fromEntries(areasOrigen.map((a) => [a.id, a]));
-
-    return asignaciones.map((a) => ({
-      id: a.id,
-      estado: 'PENDIENTE',
-      fechaEnvio: a.movimientos[0]?.creadoEn ?? a.asignadoEn,
-      observaciones: a.observaciones,
-      activo: a.activo,
-      areaOrigen: a.movimientos[0]?.areaOrigenId
-        ? (areaMap[a.movimientos[0].areaOrigenId] ?? null)
-        : null,
-      areaDestino: a.areaAsignada,
-      registradoPor: a.asignadoPor
-        ? {
-            id: a.asignadoPor.id,
-            nombreCompleto: `${a.asignadoPor.nombres} ${a.asignadoPor.apellidos}`,
-          }
-        : null,
-    }));
-  }
-
-  /**
-   * HU41 – Confirmar recepción de una transferencia pendiente.
-   * Cambia el estado de la asignación a RECIBIDO y actualiza el área del activo.
+   * HU21 – Confirmar recepción de una transferencia pendiente.
+   * PA1: El activo estaba como pendiente hasta que el Responsable confirma.
+   * PA2: Después de confirmar, el activo pasa a formar parte del área destino.
+   * PA3: La fecha y persona que confirmó quedan registradas.
+   * PA4: Solo el Responsable de Área destino puede confirmar.
    */
   async confirmarRecepcion(asignacionId: string, userId: string) {
     const [asignacion, usuario] = await Promise.all([
@@ -1402,55 +1342,124 @@ export class AssetsService {
           estado: true,
           activoId: true,
           areaAsignadaId: true,
+          movimientos: {
+            where: { tipo: TipoMovimientoActivo.TRANSFERENCIA },
+            select: {
+              usuarioOrigenId: true,
+              areaOrigenId: true,
+            },
+            take: 1,
+            orderBy: { creadoEn: 'desc' },
+          },
         },
       }),
       this.prisma.usuario.findUnique({
         where: { id: userId },
-        select: { id: true, areaId: true },
+        select: { id: true, areaId: true, nombres: true, apellidos: true },
       }),
     ]);
 
+    if (!asignacion) {
+      throw new NotFoundException(`No se encontró la asignación con ID: ${asignacionId}`);
+    }
+
+    // PA4: Solo el Responsable del área destino puede confirmar
     if (!usuario || !usuario.areaId) {
       throw new ConflictException('El usuario no tiene un área asignada para confirmar recepciones');
     }
 
-    if (asignacion?.areaAsignadaId !== usuario.areaId) {
-      throw new ConflictException('Solo el área destino puede confirmar esta recepción');
-    }
-
-    if (!asignacion) {
-      throw new NotFoundException(`No se encontró la asignación con ID: ${asignacionId}`);
+    if (asignacion.areaAsignadaId !== usuario.areaId) {
+      throw new ConflictException('Solo el Responsable de Área destino puede confirmar esta recepción');
     }
 
     if (asignacion.estado !== EstadoAsignacion.PENDIENTE) {
       throw new ConflictException('Solo se puede confirmar una recepción en estado PENDIENTE');
     }
 
+    const movimientoOriginal = asignacion.movimientos[0];
+    const areaOrigenId = movimientoOriginal?.areaOrigenId ?? null;
+    const ahora = new Date();
+
     await this.prisma.$transaction(async (tx) => {
+      // PA3: Guardar quién y cuándo confirmó
       await tx.asignacionActivo.update({
         where: { id: asignacionId },
         data: {
           estado: EstadoAsignacion.RECIBIDO,
           recibidoPorId: userId,
-          recibidoEn: new Date(),
+          recibidoEn: ahora,
         },
       });
 
+      // PA2: El activo pasa a pertenecer al área destino (responsableActual = quien confirma)
       await tx.activo.update({
         where: { id: asignacion.activoId },
-        data: { areaActualId: asignacion.areaAsignadaId },
+        data: {
+          areaActualId: asignacion.areaAsignadaId,
+          responsableActualId: userId,
+          actualizadoPorId: userId,
+        },
       });
+
+      // Registrar movimiento de confirmación en historial
+      await tx.movimientoActivo.create({
+        data: {
+          activoId: asignacion.activoId,
+          tipo: TipoMovimientoActivo.TRANSFERENCIA,
+          areaOrigenId: areaOrigenId,
+          areaDestinoId: asignacion.areaAsignadaId,
+          usuarioDestinoId: userId,
+          realizadoPorId: userId,
+          asignacionId: asignacionId,
+          detalle: `Recepción confirmada por ${usuario.nombres} ${usuario.apellidos} el ${ahora.toLocaleDateString('es-BO')}`,
+        },
+      });
+
+      // Notificar al área de origen que la recepción fue confirmada
+      if (areaOrigenId) {
+        const [areaOrigen, activo] = await Promise.all([
+          tx.area.findUnique({
+            where: { id: areaOrigenId },
+            select: { encargadoId: true, nombre: true },
+          }),
+          tx.activo.findUnique({
+            where: { id: asignacion.activoId },
+            select: { codigo: true, nombre: true },
+          }),
+        ]);
+
+        if (areaOrigen && activo) {
+          await tx.notificacion.create({
+            data: {
+              usuarioId: areaOrigen.encargadoId ?? null,
+              areaId: areaOrigenId,
+              tipo: TipoNotificacion.ALERTA_SISTEMA,
+              titulo: `Recepción confirmada del activo ${activo.codigo}`,
+              mensaje: `${this.buildAssetNotificationReference(asignacion.activoId)} El área destino confirmó la recepción del activo ${activo.nombre}. Confirmado por: ${usuario.nombres} ${usuario.apellidos}.`,
+              estado: EstadoNotificacion.NO_LEIDA,
+            },
+          });
+        }
+      }
     });
 
-    return { message: 'Recepción confirmada correctamente' };
+    return {
+      message: 'Recepción confirmada correctamente',
+      recibidoEn: ahora,
+      recibidoPor: {
+        id: userId,
+        nombreCompleto: `${usuario.nombres} ${usuario.apellidos}`,
+      },
+    };
   }
 
-/**
-   * HU42 – Rechazar recepción de una transferencia pendiente indicando motivo.
+
+  /**
+   * HU42 – Rechazar recepción indicando motivo obligatorio.
    * PA1: Solo el Responsable del área destino puede rechazar.
-   * PA2: El motivo es obligatorio (validado en DTO).
+   * PA2: El motivo es obligatorio (validado en DTO antes de llegar aquí).
    * PA3: El activo vuelve al área de origen.
-   * PA4: El motivo queda registrado en motivoRechazo y se crea un movimiento en el historial.
+   * PA4: El motivo queda visible en el historial del activo.
    */
   async rechazarRecepcion(asignacionId: string, userId: string, motivoRechazo: string) {
     const [asignacion, usuario] = await Promise.all([
@@ -1482,25 +1491,26 @@ export class AssetsService {
       throw new NotFoundException(`No se encontró la asignación con ID: ${asignacionId}`);
     }
 
+    // PA1: Solo el área destino puede rechazar
     if (!usuario || !usuario.areaId) {
       throw new ConflictException('El usuario no tiene un área asignada para rechazar recepciones');
     }
 
     if (asignacion.areaAsignadaId !== usuario.areaId) {
-      throw new ConflictException('Solo el área destino puede rechazar esta recepción');
+      throw new ConflictException('Solo el Responsable de Área destino puede rechazar esta recepción');
     }
 
     if (asignacion.estado !== EstadoAsignacion.PENDIENTE) {
       throw new ConflictException('Solo se puede rechazar una recepción en estado PENDIENTE');
     }
 
-    // PA3: Área de origen del movimiento de transferencia
+    // PA3: área y responsable de origen para devolver el activo
     const movimientoOriginal = asignacion.movimientos[0];
     const areaOrigenId = movimientoOriginal?.areaOrigenId ?? null;
     const usuarioOrigenId = movimientoOriginal?.usuarioOrigenId ?? null;
 
     await this.prisma.$transaction(async (tx) => {
-      // Marcar la asignación como RECHAZADO con el motivo
+      // PA2 + PA4: guardar el motivo en la asignación
       await tx.asignacionActivo.update({
         where: { id: asignacionId },
         data: {
@@ -1511,7 +1521,7 @@ export class AssetsService {
         },
       });
 
-      // PA3: Devolver el activo al área de origen
+      // PA3: devolver el activo al área de origen
       await tx.activo.update({
         where: { id: asignacion.activoId },
         data: {
@@ -1521,7 +1531,7 @@ export class AssetsService {
         },
       });
 
-      // PA4: Registrar el rechazo en el historial de movimientos
+      // PA4: registrar el rechazo en el historial de movimientos
       await tx.movimientoActivo.create({
         data: {
           activoId: asignacion.activoId,
@@ -1538,15 +1548,16 @@ export class AssetsService {
 
       // Notificar al área de origen del rechazo
       if (areaOrigenId) {
-        const areaOrigen = await tx.area.findUnique({
-          where: { id: areaOrigenId },
-          select: { encargadoId: true, nombre: true },
-        });
-
-        const activo = await tx.activo.findUnique({
-          where: { id: asignacion.activoId },
-          select: { codigo: true, nombre: true },
-        });
+        const [areaOrigen, activo] = await Promise.all([
+          tx.area.findUnique({
+            where: { id: areaOrigenId },
+            select: { encargadoId: true, nombre: true },
+          }),
+          tx.activo.findUnique({
+            where: { id: asignacion.activoId },
+            select: { codigo: true, nombre: true },
+          }),
+        ]);
 
         if (areaOrigen && activo) {
           await tx.notificacion.create({
@@ -1563,8 +1574,11 @@ export class AssetsService {
       }
     });
 
-    return { message: 'Recepción rechazada correctamente. El activo fue devuelto al área de origen.' };
+    return {
+      message: 'Recepción rechazada correctamente. El activo fue devuelto al área de origen.',
+    };
   }
+
   /**
    * Soft-delete an asset (dar de baja).
    * Sets status to DADO_DE_BAJA and records the timestamp.
