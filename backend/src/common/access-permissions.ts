@@ -40,7 +40,19 @@ export const CORE_ACCESS_PERMISSIONS = [
   {
     codigo: 'ASSET_ASSIGN',
     nombre: 'Asignar activos',
-    descripcion: 'Permite asignar activos a usuarios o áreas.',
+    descripcion: 'Permite acceder al flujo de asignación de activos.',
+    defaultRoleNames: ['ADMIN_GENERAL', 'ADMIN', 'USUARIO_OPERATIVO'],
+  },
+  {
+    codigo: 'ASSET_ASSIGN_USER',
+    nombre: 'Asignar activos a usuarios',
+    descripcion: 'Permite asignar activos a usuarios responsables.',
+    defaultRoleNames: ['ADMIN_GENERAL', 'ADMIN', 'USUARIO_OPERATIVO'],
+  },
+  {
+    codigo: 'ASSET_ASSIGN_AREA',
+    nombre: 'Asignar activos a áreas',
+    descripcion: 'Permite asignar activos a áreas responsables.',
     defaultRoleNames: ['ADMIN_GENERAL', 'ADMIN', 'USUARIO_OPERATIVO'],
   },
   {
@@ -111,6 +123,9 @@ export async function ensureCoreAccessPermissions(prisma: PrismaService) {
   const missingPermissions = CORE_ACCESS_PERMISSIONS.filter(
     (permission) => !existingCodes.has(permission.codigo),
   );
+  const missingPermissionCodes = new Set(
+    missingPermissions.map((permission) => permission.codigo),
+  );
 
   if (missingPermissions.length > 0) {
     await prisma.permiso.createMany({
@@ -152,6 +167,10 @@ export async function ensureCoreAccessPermissions(prisma: PrismaService) {
   });
 
   for (const permission of CORE_ACCESS_PERMISSIONS) {
+    if (!missingPermissionCodes.has(permission.codigo)) {
+      continue;
+    }
+
     const persistedPermission = permissionByCode.get(permission.codigo);
 
     if (!persistedPermission) {
