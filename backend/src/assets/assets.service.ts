@@ -28,6 +28,7 @@ import {
 
 @Injectable()
 export class AssetsService {
+  
   constructor(private readonly prisma: PrismaService) {}
 
   /**
@@ -49,6 +50,13 @@ export class AssetsService {
     const skip = (page - 1) * pageSize;
 
     const where: Prisma.ActivoWhereInput = {};
+
+    // PA4: ocultar activos con asignaciones pendientes
+      where.asignaciones = {
+        none: {
+          estado: EstadoAsignacion.PENDIENTE,
+        },
+      };
 
     const isAreaManager = this.isAreaManagerRole(user?.rol);
 
@@ -1804,4 +1812,12 @@ export class AssetsService {
       normalized === 'RESPONSABLE AREA'
     );
   }
+
+  async solicitudesEnviadas(registradoPorId: string, areaOrigenId?: string) {
+  return this.prisma.activo.findMany({
+    where: {
+      creadoPorId: registradoPorId,
+    },
+  });
+}
 }
