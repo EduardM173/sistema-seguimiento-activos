@@ -1896,7 +1896,8 @@ export const ActivoScalarFieldEnum = {
   actualizadoPorId: 'actualizadoPorId',
   creadoEn: 'creadoEn',
   actualizadoEn: 'actualizadoEn',
-  dadoDeBajaEn: 'dadoDeBajaEn'
+  dadoDeBajaEn: 'dadoDeBajaEn',
+  motivoBaja: 'motivoBaja'
 } as const
 
 export type ActivoScalarFieldEnum = (typeof ActivoScalarFieldEnum)[keyof typeof ActivoScalarFieldEnum]

@@ -353,6 +353,8 @@ export class AssetsService {
     return {
       ...activo,
       estadoLabel: this.formatEstado(activo.estado),
+      fechaBaja: activo.dadoDeBajaEn,      // ← AGREGAR ESTA LÍNEA
+      motivoBaja: activo.motivoBaja,        // ← AGREGAR ESTA LÍNEA
       area: activo.areaActual
         ? {
             id: activo.areaActual.id,
@@ -1621,7 +1623,83 @@ export class AssetsService {
 
     return activo;
   }
+/**
+ * HU23 - Dar de baja un activo con motivo obligatorio
+ * PA1: Guarda motivo y fecha de baja
+ * PA2: Cambia estado a DADO_DE_BAJA
+ * PA3: El activo queda excluido de asignaciones/transferencias (se filtra en findAll)
+ * PA4: Fecha y motivo visibles en detalle
+ */
+async disable(id: string, motivo: string, userId: string) {
+  // Verificar permisos
+  await this.assertUserHasPermission(
+    userId,
+    'ASSET_UPDATE',
+    'No tienes permisos para dar de baja activos',
+  );
 
+  // Verificar que el activo existe
+  const existing = await this.prisma.activo.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      estado: true,
+      codigo: true,
+      nombre: true,
+    },
+  });
+
+  if (!existing) {
+    throw new NotFoundException(`No se encontró el activo con ID: ${id}`);
+  }
+
+  // Verificar que no esté ya dado de baja
+  if (existing.estado === EstadoActivo.DADO_DE_BAJA) {
+    throw new ConflictException('Este activo ya fue dado de baja');
+  }
+
+  const ahora = new Date();
+
+  // Actualizar el activo con estado DADO_DE_BAJA, fecha y motivo
+  const activo = await this.prisma.activo.update({
+    where: { id },
+    data: {
+      estado: EstadoActivo.DADO_DE_BAJA,
+      dadoDeBajaEn: ahora,
+      motivoBaja: motivo,
+      actualizadoPorId: userId,
+    },
+    include: {
+      categoria: true,
+      ubicacion: true,
+      areaActual: true,
+      responsableActual: {
+        select: {
+          id: true,
+          nombres: true,
+          apellidos: true,
+        },
+      },
+    },
+  });
+
+  // Registrar el movimiento en el historial (PROSIN-308)
+  await this.prisma.movimientoActivo.create({
+    data: {
+      activoId: id,
+      tipo: TipoMovimientoActivo.BAJA,
+      realizadoPorId: userId,
+      detalle: `Activo dado de baja. Motivo: ${motivo}`,
+    },
+  });
+
+  return {
+    ...activo,
+    estadoLabel: this.formatEstado(activo.estado),
+    motivoBaja: activo.motivoBaja,
+    fechaBaja: activo.dadoDeBajaEn,
+  };
+}
   /**
    * Generate a unique asset code that does not exist in the database.
    * Format: ACT-XXXXXXXX (8-char hex from UUID).

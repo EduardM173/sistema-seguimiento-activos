@@ -5,7 +5,7 @@ import type { ColumnDef, ActionDef } from '../common/SmartTable';
 import type { Activo, FiltrosActivos, EstadoActivo } from '../../types/activos.types';
 import { estadoActivoDisplay } from '../../types/activos.types';
 import { activosService } from '../../services/activos.service';
-import BajaActivoModal from './BajaActivoModal';
+import { BajaActivoModal } from './BajaActivoModal';
 import '../../styles/modules.css';
 
 interface ActivosListProps {
@@ -72,6 +72,20 @@ export const ActivosList: React.FC<ActivosListProps> = ({
     return estadoActivoDisplay[estado] || estado;
   };
 
+  // ========== NUEVO: Manejar baja de activo ==========
+  const handleBajaClick = (activo: Activo) => {
+    setSelectedActivo(activo);
+    setBajaModalOpen(true);
+  };
+
+  const handleBajaSuccess = () => {
+    setBajaModalOpen(false);
+    setSelectedActivo(null);
+    setRefreshKey(prev => prev + 1);
+    if (onBaja) onBaja(selectedActivo!);
+  };
+  // ==================================================
+
   const columns: ColumnDef<Activo>[] = [
     { id: 'codigoActivo', header: 'Código',    accessor: 'codigoActivo',  width: 110, sortable: true },
     { id: 'nombre',       header: 'Nombre',    accessor: 'nombre',         width: 200, sortable: true, primary: true },
@@ -82,7 +96,6 @@ export const ActivosList: React.FC<ActivosListProps> = ({
       header: 'Estado',
       accessor: 'estado',
       width: 140,
-      // PROSIN-185: Mostrar estado con badge y texto amigable
       render: (value) => (
         <Badge
           label={getEstadoDisplay(value as EstadoActivo)}
@@ -100,17 +113,33 @@ export const ActivosList: React.FC<ActivosListProps> = ({
     },
   ];
 
-  const actions: ActionDef<Activo>[] = [
-    ...(onDetails
-      ? [{ label: 'Ver detalles', icon: '👁️', onClick: onDetails }]
-      : []),
-    ...(onEdit
-      ? [{ label: 'Editar', icon: '✏️', onClick: onEdit }]
-      : []),
-    ...(onDelete
-      ? [{ label: 'Eliminar', icon: '🗑️', variant: 'danger' as const, onClick: onDelete }]
-      : []),
-  ];
+  // ========== NUEVO: Acciones con botón Dar de baja ==========
+  // Filtrar acciones según estado del activo (no mostrar "Dar de baja" si ya está DADO_DE_BAJA)
+  const getActionsForActivo = (activo: Activo): ActionDef<Activo>[] => {
+    const actions: ActionDef<Activo>[] = [];
+    
+    if (onDetails) {
+      actions.push({ label: 'Ver detalles', icon: '👁️', onClick: onDetails });
+    }
+    if (onEdit) {
+      actions.push({ label: 'Editar', icon: '✏️', onClick: onEdit });
+    }
+    // Solo mostrar "Dar de baja" si el activo NO está dado de baja
+    if (activo.estado !== 'DADO_DE_BAJA') {
+      actions.push({ 
+        label: 'Dar de baja', 
+        icon: '🗑️', 
+        variant: 'danger' as const, 
+        onClick: (a) => handleBajaClick(a) 
+      });
+    }
+    if (onDelete && activo.estado === 'DADO_DE_BAJA') {
+      actions.push({ label: 'Eliminar', icon: '❌', variant: 'danger' as const, onClick: onDelete });
+    }
+    
+    return actions;
+  };
+  // =======================================================
 
   return (
     <div className="module-list">
@@ -139,9 +168,22 @@ export const ActivosList: React.FC<ActivosListProps> = ({
           keyExtractor={(a) => a.id}
           emptyMessage="No hay activos registrados"
           onRowClick={onDetails}
-          actions={actions}
+          actions={(row) => getActionsForActivo(row)}
         />
       </div>
+
+      {/* Modal de baja - ya existe */}
+      {selectedActivo && (
+        <BajaActivoModal
+          isOpen={bajaModalOpen}
+          activo={selectedActivo}
+          onClose={() => {
+            setBajaModalOpen(false);
+            setSelectedActivo(null);
+          }}
+          onSuccess={handleBajaSuccess}
+        />
+      )}
     </div>
   );
 };
