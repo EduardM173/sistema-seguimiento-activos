@@ -452,6 +452,81 @@ export class MaterialService {
     };
   }
 
+  async reducirStock(id: string, cantidad: number, motivo: string, userId: string) {
+    if (!Number.isFinite(cantidad) || cantidad <= 0) {
+      throw new BadRequestException(
+        'La cantidad de salida debe ser mayor a 0',
+      );
+    }
+
+    const motivoNormalizado = motivo?.trim();
+
+    if (!motivoNormalizado) {
+      throw new BadRequestException(
+        'Debe ingresar el motivo de la salida',
+      );
+    }
+
+    const materialExistente = await this.prisma.material.findUnique({
+      where: { id },
+      include: { categoria: true },
+    });
+
+    if (!materialExistente) {
+      throw new NotFoundException(`Material con ID ${id} no encontrado`);
+    }
+
+    const stockAnterior = Number(materialExistente.stockActual);
+
+    if (cantidad > stockAnterior) {
+      throw new BadRequestException(
+        `La cantidad solicitada (${cantidad}) supera el stock disponible (${stockAnterior})`,
+      );
+    }
+
+    const stockNuevo = stockAnterior - Number(cantidad);
+
+    const result = await this.prisma.$transaction(async (tx) => {
+      const materialActualizado = await tx.material.update({
+        where: { id },
+        data: {
+          stockActual: {
+            decrement: cantidad,
+          },
+        },
+        include: { categoria: true },
+      });
+
+      const movimiento = await tx.movimientoInventario.create({
+        data: {
+          materialId: id,
+          tipo: TipoMovimientoInventario.SALIDA,
+          cantidad,
+          stockAnterior,
+          stockNuevo,
+          motivo: motivoNormalizado,
+          realizadoPorId: userId,
+        },
+      });
+
+      return { materialActualizado, movimiento };
+    });
+
+    return {
+      message: `Se registró la salida de ${cantidad} unidades de ${result.materialActualizado.nombre}`,
+      material: this.mapMaterialToDTO(result.materialActualizado),
+      movimiento: {
+        id: result.movimiento.id,
+        tipo: result.movimiento.tipo,
+        cantidad: Number(result.movimiento.cantidad),
+        stockAnterior: Number(result.movimiento.stockAnterior),
+        stockNuevo: Number(result.movimiento.stockNuevo),
+        motivo: result.movimiento.motivo ?? null,
+        creadoEn: result.movimiento.creadoEn,
+      },
+    };
+  }
+
   async ajustarStock(
     id: string,
     cantidadRegistrada: number,

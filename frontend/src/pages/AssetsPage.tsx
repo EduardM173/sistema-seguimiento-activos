@@ -94,6 +94,14 @@ export default function AssetsPage() {
   const [editingAssetId, setEditingAssetId] = useState<string | null>(null);
   const [viewingAssetId, setViewingAssetId] = useState<string | null>(null);
   const [historyAssetId, setHistoryAssetId] = useState<string | null>(null);
+  
+  // ========== MODAL DE BAJA ==========
+  const [bajaModalOpen, setBajaModalOpen] = useState(false);
+  const [bajaAsset, setBajaAsset] = useState<{ id: string; nombre: string } | null>(null);
+  const [bajaMotivo, setBajaMotivo] = useState('');
+  const [bajaLoading, setBajaLoading] = useState(false);
+  // ===================================
+
   const canCreateAssets = hasPermission('ASSET_CREATE');
   const canUpdateAssets = hasPermission('ASSET_UPDATE');
   const canAssignAssets = hasPermission('ASSET_ASSIGN');
@@ -260,23 +268,67 @@ export default function AssetsPage() {
     setDetailLoading(false);
   }
 
-  async function handleDelete(id: string, nombre: string) {
-    if (!window.confirm(`¿Está seguro de dar de baja el activo "${nombre}"?`)) return;
-
-    try {
-      await deleteAsset(id);
-      notifySuccess('Activo dado de baja', `"${nombre}" fue dado de baja exitosamente.`);
-
-      if (selectedAssetId === id) {
-        closeDetailPanel();
-      }
-
-      await loadAssets();
-    } catch (err) {
-      const message = err instanceof HttpError ? err.message : 'No se pudo dar de baja el activo';
-      notifyError('Error', message);
-    }
+  // ========== ABRIR MODAL DE BAJA ==========
+  function openBajaModal(id: string, nombre: string) {
+    setBajaAsset({ id, nombre });
+    setBajaMotivo('');
+    setBajaModalOpen(true);
   }
+
+  // ========== EJECUTAR BAJA CON MOTIVO ==========
+  async function executeBaja() {
+  if (!bajaAsset) return;
+  
+  if (!bajaMotivo.trim()) {
+    alert('⚠️ El motivo de baja es obligatorio');
+    return;
+  }
+
+  setBajaLoading(true);
+
+  try {
+    const token = localStorage.getItem('access_token');
+    
+    // ✅ Enviar explícitamente como objeto con propiedad "motivo"
+    const requestBody = {
+      motivo: bajaMotivo.trim()
+    };
+    
+    console.log('Enviando baja:', requestBody); // Debug
+    
+    const response = await fetch(`/api/assets/${bajaAsset.id}/disable`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(requestBody)
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Error al dar de baja');
+    }
+    
+    notifySuccess('Activo dado de baja', `"${bajaAsset.nombre}" fue dado de baja exitosamente.`);
+
+    if (selectedAssetId === bajaAsset.id) {
+      closeDetailPanel();
+    }
+
+    await loadAssets();
+    setBajaModalOpen(false);
+    setBajaAsset(null);
+    setBajaMotivo('');
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'No se pudo dar de baja el activo';
+    notifyError('Error', message);
+    console.error('Error en baja:', err);
+  } finally {
+    setBajaLoading(false);
+  }
+}
+  // ===========================================
 
   function openEditModal(assetId: string) {
     if (!canUpdateAssets) {
@@ -571,7 +623,6 @@ export default function AssetsPage() {
         </aside>
 
         <div className="assetsWorkspace__content">
-          {/* ── Column definitions ────────────────────────────── */}
           {(() => {
             const assetColumns: ColumnDef<AssetListItem>[] = [
               {
@@ -673,7 +724,7 @@ export default function AssetsPage() {
                 label: 'Dar de baja',
                 icon: '⋯',
                 variant: 'danger',
-                onClick: (asset) => void handleDelete(asset.id, asset.nombre),
+                onClick: (asset) => openBajaModal(asset.id, asset.nombre),
               });
             }
 
@@ -690,7 +741,6 @@ export default function AssetsPage() {
                   actions={assetActions}
                 />
 
-                {/* Server-side pagination */}
                 {!loading && assets.length > 0 && (
                   <div className="assetsPagination">
                     <span className="assetsPagination__info">
@@ -872,6 +922,87 @@ export default function AssetsPage() {
           void loadAssets();
         }}
       />
+
+      {/* ========== MODAL DE BAJA ========== */}
+      {bajaModalOpen && bajaAsset && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 10000
+        }} onClick={() => !bajaLoading && setBajaModalOpen(false)}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '8px',
+            padding: '24px',
+            width: '450px',
+            maxWidth: '90%',
+            boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+          }} onClick={e => e.stopPropagation()}>
+            <h3 style={{ margin: '0 0 8px 0' }}>Dar de baja: {bajaAsset.nombre}</h3>
+            <p style={{ color: '#666', marginBottom: '20px', fontSize: '14px' }}>
+              Esta acción cambiará el estado del activo a "Dado de baja"
+            </p>
+
+            <div>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+                Motivo del retiro <span style={{ color: 'red' }}>*</span>
+              </label>
+              <textarea
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  border: '1px solid #ccc',
+                  borderRadius: '4px',
+                  minHeight: '100px',
+                  fontFamily: 'inherit'
+                }}
+                placeholder="Ej: Equipo obsoleto, dañado, robado, pérdida, baja por antigüedad..."
+                value={bajaMotivo}
+                onChange={(e) => setBajaMotivo(e.target.value)}
+                disabled={bajaLoading}
+              />
+            </div>
+
+            <div style={{ marginTop: '24px', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+              <button
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: '#e5e7eb',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: bajaLoading ? 'not-allowed' : 'pointer'
+                }}
+                onClick={() => setBajaModalOpen(false)}
+                disabled={bajaLoading}
+              >
+                Cancelar
+              </button>
+              <button
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: '#dc2626',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: (bajaLoading || !bajaMotivo.trim()) ? 'not-allowed' : 'pointer',
+                  opacity: (bajaLoading || !bajaMotivo.trim()) ? 0.6 : 1
+                }}
+                onClick={executeBaja}
+                disabled={bajaLoading || !bajaMotivo.trim()}
+              >
+                {bajaLoading ? 'Procesando...' : 'Confirmar baja'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

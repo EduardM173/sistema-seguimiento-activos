@@ -41,6 +41,14 @@ export const ActivosPage: React.FC = () => {
     }
   };
 
+  // ========== NUEVO: Manejar éxito de baja ==========
+  const handleBajaSuccess = () => {
+    setMessage({ type: 'success', text: 'Activo dado de baja exitosamente' });
+    setRefreshKey((prev) => prev + 1);
+    setDetailIsOpen(false); // Cerrar detalle si estaba abierto
+  };
+  // =================================================
+
   const handleFormSubmit = () => {
     setMessage({
       type: 'success',
@@ -71,6 +79,7 @@ export const ActivosPage: React.FC = () => {
         onDetails={handleDetailsActivo}
         onEdit={handleEditActivo}
         onDelete={handleDeleteActivo}
+        onBaja={handleBajaSuccess}
       />
 
       <ActivoForm
@@ -88,6 +97,7 @@ export const ActivosPage: React.FC = () => {
             setDetailIsOpen(false);
             setFormIsOpen(true);
           }}
+          onBajaSuccess={handleBajaSuccess}
         />
       )}
     </div>

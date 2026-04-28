@@ -34,6 +34,7 @@ import {
   MaterialResponseDTO,
   MaterialEstadoFilter,
   AumentarStockDTO,
+  ReducirStockDTO,
   AjustarStockDTO,
   MaterialSortBy,
   MaterialSortType,
@@ -378,6 +379,50 @@ export class MaterialController {
     const userId = (req.user as { id: string }).id;
     const result = await this.materialService.aumentarStock(id, dto.cantidad, userId);
     return ApiResponse.success(result, 'Ingreso de stock registrado correctamente');
+  }
+
+  @ApiOperation({
+    summary: 'Registrar salida de stock',
+    description:
+      'Registra una salida de inventario para un material existente y descuenta su stock disponible.',
+  })
+  @ApiParam({ name: 'id', description: 'ID del material' })
+  @ApiBody({
+    type: ReducirStockDTO,
+    examples: {
+      salidaStock: {
+        summary: 'Salida de stock',
+        value: {
+          cantidad: 3,
+          motivo: 'Entrega de material para laboratorio',
+        },
+      },
+    },
+  })
+  @ApiOkResponse({
+    description: 'Salida registrada correctamente y stock actualizado',
+  })
+  @ApiBadRequestResponse({
+    description:
+      'La cantidad de salida es inválida, supera el stock disponible o falta el motivo',
+  })
+  @ApiNotFoundResponse({
+    description: 'No se encontró el material solicitado',
+  })
+  @Patch(':id/reducir-stock')
+  async reducirStock(
+    @Param('id') id: string,
+    @Body() dto: ReducirStockDTO,
+    @Req() req: Request,
+  ) {
+    const userId = (req.user as { id: string }).id;
+    const result = await this.materialService.reducirStock(
+      id,
+      dto.cantidad,
+      dto.motivo,
+      userId,
+    );
+    return ApiResponse.success(result, 'Salida de inventario registrada correctamente');
   }
 
   @ApiOperation({

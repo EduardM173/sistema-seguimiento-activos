@@ -35,6 +35,7 @@ import { AssignAssetDto } from './dto/assign-asset.dto';
 import { TransferAssetDto } from './dto/transfer-asset.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ApiResponse } from '../common/api-response';
+import { DisableAssetDto } from './dto/disable-asset.dto';
 
 @ApiTags('assets')
 @ApiBearerAuth()
@@ -417,14 +418,12 @@ export class AssetsController {
   })
   @ApiBadRequestResponse({ description: 'Parámetros de consulta inválidos' })
   @Get('solicitudes-enviadas')
+  
   async solicitudesEnviadas(
     @Query('registradoPorId') registradoPorId: string,
     @Query('areaOrigenId') areaOrigenId?: string,
   ) {
-    const data = await this.assetsService.solicitudesEnviadas(
-      registradoPorId ?? '',
-      areaOrigenId,
-    );
+    const data = await this.assetsService.solicitudesEnviadas(registradoPorId);
     return ApiResponse.success(data, 'Solicitudes enviadas obtenidas correctamente');
   }
 
@@ -635,4 +634,50 @@ export class AssetsController {
     const activo = await this.assetsService.remove(id, userId);
     return ApiResponse.success(activo, 'Activo dado de baja exitosamente');
   }
+  /**
+ * POST /api/assets/:id/disable
+ * HU23 - Dar de baja un activo con motivo obligatorio
+ */
+@ApiOperation({
+  summary: 'Dar de baja un activo con motivo (HU23)',
+  description: 'Registra la baja de un activo, guarda motivo y fecha. El activo cambia su estado a DADO_DE_BAJA y queda excluido de futuras asignaciones/transferencias.',
+})
+@ApiParam({ name: 'id', description: 'ID del activo a dar de baja' })
+@ApiBody({ type: DisableAssetDto })
+@ApiOkResponse({
+  description: 'Activo dado de baja exitosamente',
+  schema: {
+    example: {
+      success: true,
+      message: 'Activo dado de baja exitosamente',
+      data: {
+        id: 'cm1activo123',
+        codigo: 'ACT-001',
+        nombre: 'Laptop Dell',
+        estado: 'DADO_DE_BAJA',
+        estadoLabel: 'Dado de baja',
+        dadoDeBajaEn: '2026-04-28T10:30:00.000Z',
+        motivoBaja: 'Equipo obsoleto',
+      },
+    },
+  },
+})
+@ApiBadRequestResponse({ description: 'El motivo de baja es obligatorio' })
+@ApiNotFoundResponse({ description: 'No se encontró el activo solicitado' })
+@ApiConflictResponse({ description: 'El activo ya fue dado de baja' })
+@Post(':id/disable')
+async disable(
+  @Param('id') id: string,
+  @Body() dto: DisableAssetDto,
+  @Req() req: Request,
+) {
+  console.log('=== DISABLE ENDPOINT ===');
+  console.log('ID:', id);
+  console.log('DTO recibido:', dto);
+  console.log('Motivo:', dto?.motivo);
+  
+  const userId = (req.user as { id: string }).id;
+  const activo = await this.assetsService.disable(id, dto.motivo, userId);
+  return ApiResponse.success(activo, 'Activo dado de baja exitosamente');
+}
 }
