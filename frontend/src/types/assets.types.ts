@@ -56,6 +56,7 @@ export type AssetDetail = AssetListItem & {
   } | null;
   historialTransferencias: {
     id: string;
+    tipo: 'TRANSFERENCIA' | 'ASIGNACION' | 'BAJA';
     fecha: string;
     detalle: string | null;
     areaOrigen: {
@@ -71,6 +72,8 @@ export type AssetDetail = AssetListItem & {
       nombreCompleto: string;
     } | null;
   }[];
+  dadoDeBajaEn?: string | null;
+  motivoBaja?: string | null;
 };
 
 export type CreateAssetPayload = {

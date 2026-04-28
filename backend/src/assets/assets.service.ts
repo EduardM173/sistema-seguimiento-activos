@@ -299,13 +299,16 @@ export class AssetsService {
       throw new NotFoundException(`No se encontró el activo con ID: ${id}`);
     }
 
-    const transferMovements = await this.prisma.movimientoActivo.findMany({
+    const assetMovements = await this.prisma.movimientoActivo.findMany({
       where: {
         activoId: id,
-        tipo: TipoMovimientoActivo.TRANSFERENCIA,
+        tipo: {
+          in: [TipoMovimientoActivo.TRANSFERENCIA, TipoMovimientoActivo.BAJA],
+        },
       },
       select: {
         id: true,
+        tipo: true,
         areaOrigenId: true,
         areaDestinoId: true,
         creadoEn: true,
@@ -325,7 +328,7 @@ export class AssetsService {
 
     const transferAreaIds = [
       ...new Set(
-        transferMovements
+        assetMovements
           .flatMap((movement) => [movement.areaOrigenId, movement.areaDestinoId])
           .filter((areaId): areaId is string => Boolean(areaId)),
       ),
@@ -397,8 +400,9 @@ export class AssetsService {
             ),
           }
         : null,
-      historialTransferencias: transferMovements.map((movement) => ({
+      historialTransferencias: assetMovements.map((movement) => ({
         id: movement.id,
+        tipo: movement.tipo,
         fecha: movement.creadoEn,
         detalle: movement.detalle,
         areaOrigen: movement.areaOrigenId
