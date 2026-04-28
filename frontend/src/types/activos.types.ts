@@ -85,6 +85,10 @@ export interface Activo {
   vencimiento_garantia?: Date;
   createdAt: Date;
   updatedAt: Date;
+  
+  // NUEVOS CAMPOS PARA BAJA DE ACTIVO (HU23)
+  fechaBaja?: string | Date;  // ← Cambiado a string | Date para flexibilidad
+  motivoBaja?: string;
 }
 
 // Movimiento de activo (historial)
@@ -157,4 +161,9 @@ export interface FiltrosActivos {
   busqueda?: string;
   pagina?: number;
   limite?: number;
+}
+
+// NUEVO DTO para dar de baja un activo (HU23)
+export interface DarDeBajaDTO {
+  motivo: string;
 }

@@ -14,6 +14,7 @@ import type {
   Ubicacion,
   PendienteRecepcion,
   SolicitudEnviada,
+  ConfirmarRecepcionResponse,
 } from '../types/assets.types';
 
 export type { AssetListItem } from '../types/assets.types';
@@ -86,28 +87,29 @@ export async function deleteFakeAssets() {
   return http.delete<ApiResponse<{ deleted: number }>>('/assets/dev/fake-bulk');
 }
 
-// HU41 – Transferencias pendientes de recepción para un área
+// HU21 – Transferencias pendientes de recepción para un área
 export async function getPendientesRecepcion(areaId: string) {
   return http.get<ApiResponse<PendienteRecepcion[]>>(
     `/assets/pendientes-recepcion?areaId=${encodeURIComponent(areaId)}`,
   );
 }
 
-// HU41 – Confirmar recepción de una transferencia pendiente
+// HU21 – Confirmar recepción. Devuelve recibidoPor y recibidoEn (PA3)
 export async function confirmarRecepcion(asignacionId: string) {
-  return http.patch<ApiResponse<{ message: string }>>(
+  return http.patch<ApiResponse<ConfirmarRecepcionResponse>>(
     `/assets/asignaciones/${encodeURIComponent(asignacionId)}/confirmar`,
   );
 }
 
-// HU41 – Rechazar recepción de una transferencia pendiente
-export async function rechazarRecepcion(asignacionId: string) {
+// HU42 – Rechazar recepción con motivo obligatorio (PA2)
+export async function rechazarRecepcion(asignacionId: string, motivoRechazo: string) {
   return http.patch<ApiResponse<{ message: string }>>(
     `/assets/asignaciones/${encodeURIComponent(asignacionId)}/rechazar`,
+    { motivoRechazo },
   );
 }
 
-// HU41 – Solicitudes enviadas por área/usuario
+// HU41/HU21 – Solicitudes enviadas por área/usuario
 export async function getSolicitudesEnviadas(
   registradoPorId: string,
   areaOrigenId?: string,

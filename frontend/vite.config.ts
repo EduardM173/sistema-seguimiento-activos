@@ -1,54 +1,46 @@
-import { defineConfig} from 'vite'
+import { defineConfig } from 'vite'
 import dotenv from "dotenv"
 import react from '@vitejs/plugin-react'
 import path from 'path'
 
-// https://vite.dev/config/
 dotenv.config()
 
-export default defineConfig((mode) => {
+export default defineConfig(() => {
 
-  const VITE_API_URL = process.env.VITE_API_URL
-  if (!VITE_API_URL) {
-    throw new Error("Falta VITE_API_URL en el entorno")
-  }
-  
   const VITE_HOST = process.env.VITE_HOST
-  if(!VITE_HOST){
+  if (!VITE_HOST) {
     throw new Error("Falta VITE_HOST en el entorno")
   }
 
-  const VITE_BACKEND_URL = process.env.VITE_BACKEND_URL 
-  if(!VITE_BACKEND_URL) {
+  const VITE_BACKEND_URL = process.env.VITE_BACKEND_URL
+  if (!VITE_BACKEND_URL) {
     throw new Error("Falta VITE_BACKEND_URL en el entorno")
   }
+
+  const port = parseInt(process.env.FRONTEND_PORT || '5173', 10)
 
   return {
     plugins: [react()],
     server: {
       host: '0.0.0.0',
 
-      port: 8084,
+      port: port,
 
       allowedHosts: [VITE_HOST],
 
       proxy: {
-        "^\/api.*$": {
+        "^\\/api.*$": {
           target: VITE_BACKEND_URL,
           changeOrigin: true
         }
       },
 
       cors: {
-        origin: [VITE_HOST],
+        origin: [`http://${VITE_HOST}`],
         methods: ['GET', 'OPTIONS', 'POST', 'PATCH', 'DELETE', 'PUT'],
-        credentials: true, 
+        credentials: true,
       }
     },
-    
-    // define: {
-    //   'import.meta.env.VITE_API_URL': JSON.stringify((dev_flag? env.VITE_LOCAL_API_URL: env.VITE_API_URL) || DEFAULT_API_URL),
-    // },
 
     resolve: {
       alias: {

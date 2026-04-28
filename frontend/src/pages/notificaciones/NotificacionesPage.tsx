@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Alert, Badge, Button, DataTable, SearchBar } from '../../components/common';
+import OverlayModal from '../../components/common/OverlayModal';
+import ViewAssetModal from '../../components/activos/ViewAssetModal';
 import { useAuth } from '../../context/AuthContext';
 import auditoriaService from '../../services/auditoria.service';
 import { HttpError } from '../../services/http.client';
@@ -9,7 +10,6 @@ import '../../styles/modules.css';
 import '../../styles/notifications.css';
 
 export const NotificacionesPage: React.FC = () => {
-  const navigate = useNavigate();
   const { user } = useAuth();
   const [notifications, setNotifications] = useState<Notificacion[]>([]);
   const [loading, setLoading] = useState(true);
@@ -20,6 +20,8 @@ export const NotificacionesPage: React.FC = () => {
     text: string;
   } | null>(null);
   const [processingNotificationId, setProcessingNotificationId] = useState<string | null>(null);
+  const [selectedNotification, setSelectedNotification] = useState<Notificacion | null>(null);
+  const [detailAssetId, setDetailAssetId] = useState<string | null>(null);
 
   async function loadNotifications() {
     try {
@@ -126,12 +128,6 @@ export const NotificacionesPage: React.FC = () => {
   }
 
   async function handleOpenNotification(notification: Notificacion) {
-    const detailUrl = getNotificationDetailUrl(notification);
-
-    if (!detailUrl) {
-      return;
-    }
-
     try {
       setProcessingNotificationId(notification.id);
 
@@ -149,9 +145,15 @@ export const NotificacionesPage: React.FC = () => {
               : item,
           ),
         );
+
+        notification = {
+          ...notification,
+          leida: true,
+          fechaLectura: new Date(),
+        };
       }
 
-      navigate(detailUrl);
+      setSelectedNotification(notification);
     } catch (error) {
       console.error(error);
       setMessage({
@@ -211,78 +213,109 @@ export const NotificacionesPage: React.FC = () => {
     {
       header: 'Detalle',
       accessor: 'id' as const,
-      render: (_value: string, row: Notificacion) => {
-        const detailUrl = getNotificationDetailUrl(row);
-
-        if (!detailUrl) {
-          return <span className="notifications-table__muted">Sin acceso directo</span>;
-        }
-
-        return (
-          <Button
-            label={
-              processingNotificationId === row.id
-                ? 'Abriendo...'
-                : 'Ver activo'
-            }
-            size="sm"
-            variant="secondary"
-            className="notifications-table__action"
-            onClick={() => void handleOpenNotification(row)}
-          />
-        );
-      },
+      render: (_value: string, row: Notificacion) => (
+        <Button
+          label={
+            processingNotificationId === row.id
+              ? 'Abriendo...'
+              : 'Abrir'
+          }
+          size="sm"
+          variant="secondary"
+          className="notifications-table__action"
+          onClick={() => void handleOpenNotification(row)}
+        />
+      ),
     },
   ];
 
+  const selectedNotificationAssetId =
+    selectedNotification?.referencias?.recursoId &&
+    ['activo', 'activos', 'asset', 'assets'].includes(
+      selectedNotification.referencias?.recursoTipo?.toLowerCase?.() ?? '',
+    )
+      ? selectedNotification.referencias.recursoId
+      : null;
+
   return (
     <div className="module-page notifications-page">
-      <div className="module-header">
-        <div>
-          <h1>Bandeja de Notificaciones</h1>
-          <p>
-            Revise los cambios y movimientos relevantes de los activos asignados a su área.
-          </p>
+      <section className="notifications-hero">
+        <div className="notifications-hero__content">
+          <span className="notifications-hero__eyebrow">Centro de avisos</span>
+          <div className="module-header notifications-page__header">
+            <div>
+              <h1>Bandeja de Notificaciones</h1>
+              <p>
+                Revise los cambios y movimientos relevantes de los activos asignados a su área.
+              </p>
+            </div>
+            <Button
+              label="Actualizar"
+              variant="secondary"
+              onClick={() => void loadNotifications()}
+            />
+          </div>
         </div>
-        <Button
-          label="Actualizar"
-          variant="secondary"
-          onClick={() => void loadNotifications()}
-        />
-      </div>
+      </section>
 
-      <div className="notifications-summary">
-        <div className="notifications-summary__card">
-          <span className="notifications-summary__label">Área responsable</span>
-          <strong>{areaName}</strong>
+      <section className="notifications-overview">
+        <div className="notifications-overview__header">
+          <div>
+            <h2 className="notifications-overview__title">Resumen de bandeja</h2>
+            <p className="notifications-overview__subtitle">
+              Estado general de las notificaciones vinculadas a su área.
+            </p>
+          </div>
+          <div className="notifications-overview__marker" aria-hidden="true" />
         </div>
-        <div className="notifications-summary__card">
-          <span className="notifications-summary__label">No leídas</span>
-          <strong>{unreadCount}</strong>
+
+        <div className="notifications-summary">
+          <div className="notifications-summary__card">
+            <span className="notifications-summary__label">Área responsable</span>
+            <strong>{areaName}</strong>
+            <span className="notifications-summary__caption">Área contextual activa</span>
+          </div>
+          <div className="notifications-summary__card">
+            <span className="notifications-summary__label">No leídas</span>
+            <strong>{unreadCount}</strong>
+            <span className="notifications-summary__caption">Requieren revisión</span>
+          </div>
+          <div className="notifications-summary__card">
+            <span className="notifications-summary__label">Total en bandeja</span>
+            <strong>{notifications.length}</strong>
+            <span className="notifications-summary__caption">Histórico visible</span>
+          </div>
         </div>
-        <div className="notifications-summary__card">
-          <span className="notifications-summary__label">Total en bandeja</span>
-          <strong>{notifications.length}</strong>
+      </section>
+
+      <section className="notifications-notes">
+        {!user?.area ? (
+          <Alert
+            type="info"
+            message="Tu usuario aún no tiene un área asignada. La bandeja quedará disponible, pero no podrá contextualizar notificaciones por área."
+          />
+        ) : null}
+
+        {message ? (
+          <Alert
+            type={message.type}
+            message={message.text}
+            dismissible
+            onClose={() => setMessage(null)}
+          />
+        ) : null}
+      </section>
+
+      <section className="module-list notifications-panel">
+        <div className="notifications-panel__heading">
+          <div>
+            <h2 className="notifications-panel__title">Mensajes recientes</h2>
+            <p className="notifications-panel__subtitle">
+              Abra una notificación para revisar el contexto y marcarla como leída.
+            </p>
+          </div>
         </div>
-      </div>
 
-      {!user?.area ? (
-        <Alert
-          type="info"
-          message="Tu usuario aún no tiene un área asignada. La bandeja quedará disponible, pero no podrá contextualizar notificaciones por área."
-        />
-      ) : null}
-
-      {message ? (
-        <Alert
-          type={message.type}
-          message={message.text}
-          dismissible
-          onClose={() => setMessage(null)}
-        />
-      ) : null}
-
-      <div className="module-list">
         <div className="list-header notifications-toolbar">
           <SearchBar
             onSearch={setSearch}
@@ -304,6 +337,8 @@ export const NotificacionesPage: React.FC = () => {
           </div>
         </div>
 
+        <div className="notifications-panel__divider" aria-hidden="true" />
+
         <DataTable<Notificacion>
           columns={columns}
           data={filteredNotifications}
@@ -314,7 +349,88 @@ export const NotificacionesPage: React.FC = () => {
           striped
           hover
         />
-      </div>
+      </section>
+
+      <OverlayModal
+        open={Boolean(selectedNotification)}
+        onClose={() => setSelectedNotification(null)}
+        title={selectedNotification?.asunto ?? 'Notificación'}
+        subtitle={
+          selectedNotification
+            ? new Date(selectedNotification.fechaCreacion).toLocaleString('es-BO', {
+                dateStyle: 'short',
+                timeStyle: 'short',
+              })
+            : undefined
+        }
+        width="720px"
+      >
+        {selectedNotification ? (
+          <div className="notificationPreview">
+            <div className="notificationPreview__meta">
+              <Badge
+                label={getTypeLabel(selectedNotification.tipo)}
+                variant={getTypeVariant(selectedNotification.tipo)}
+                size="sm"
+              />
+              <Badge
+                label={selectedNotification.leida ? 'Leída' : 'No leída'}
+                variant={selectedNotification.leida ? 'secondary' : 'primary'}
+                size="sm"
+              />
+            </div>
+
+            <div className="notificationPreview__body">
+              <p>{selectedNotification.contenido}</p>
+            </div>
+
+            <div className="notificationPreview__context">
+              <div className="notificationPreview__contextItem">
+                <span className="notificationPreview__label">Tipo</span>
+                <strong>{getTypeLabel(selectedNotification.tipo)}</strong>
+              </div>
+              <div className="notificationPreview__contextItem">
+                <span className="notificationPreview__label">Fecha</span>
+                <strong>
+                  {new Date(selectedNotification.fechaCreacion).toLocaleString('es-BO', {
+                    dateStyle: 'short',
+                    timeStyle: 'short',
+                  })}
+                </strong>
+              </div>
+              <div className="notificationPreview__contextItem">
+                <span className="notificationPreview__label">Recurso</span>
+                <strong>
+                  {selectedNotification.referencias?.recursoTipo ?? 'No identificado'}
+                </strong>
+              </div>
+            </div>
+
+            <div className="notificationPreview__actions">
+              {selectedNotificationAssetId ? (
+                <Button
+                  label="Ver detalle del activo"
+                  size="sm"
+                  variant="primary"
+                  onClick={() => setDetailAssetId(selectedNotificationAssetId)}
+                />
+              ) : (
+                <span className="notifications-table__muted">
+                  Esta notificación no tiene un activo asociado para abrir.
+                </span>
+              )}
+            </div>
+          </div>
+        ) : null}
+      </OverlayModal>
+
+      {detailAssetId ? (
+        <ViewAssetModal
+          assetId={detailAssetId}
+          open={Boolean(detailAssetId)}
+          onClose={() => setDetailAssetId(null)}
+        />
+      ) : null}
     </div>
   );
 };

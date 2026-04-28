@@ -1,16 +1,137 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Button } from '../../components/common';
+import { useAuth } from '../../context/AuthContext';
 import { useNotification } from '../../context/NotificationContext';
 import { getAreas } from '../../services/catalogs.service';
-import { searchAssets, transferAsset } from '../../services/assets.service';
+import {
+  getSolicitudesEnviadas,
+  searchAssets,
+  transferAsset,
+  getPendientesRecepcion,
+  confirmarRecepcion,
+  rechazarRecepcion,
+} from '../../services/assets.service';
 import { HttpError } from '../../services/http.client';
-import type { Area, AssetListItem } from '../../types/assets.types';
+import type { Area, AssetListItem, SolicitudEnviada, PendienteRecepcion } from '../../types/assets.types';
 import '../../styles/modules.css';
 import '../../styles/transferencias.css';
 
-export const TransferenciasPage: React.FC = () => {
+// ─────────────────────────────────────────────
+// Modal de rechazo HU42
+// ─────────────────────────────────────────────
+interface ModalRechazoProps {
+  pendiente: PendienteRecepcion;
+  onConfirmar: (motivo: string) => void;
+  onCancelar: () => void;
+  submitting: boolean;
+}
+
+function ModalRechazo({ pendiente, onConfirmar, onCancelar, submitting }: ModalRechazoProps) {
+  const [motivo, setMotivo] = useState('');
+  const [intentoEnvio, setIntentoEnvio] = useState(false);
+
+  const motivoError = intentoEnvio && !motivo.trim()
+    ? 'El motivo del rechazo es obligatorio'
+    : '';
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setIntentoEnvio(true);
+    if (!motivo.trim()) return;
+    onConfirmar(motivo.trim());
+  }
+
+  return (
+    <div className="rechazo-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="rechazo-modal-title">
+      <div className="rechazo-modal">
+        <div className="rechazo-modal__header">
+          <h2 id="rechazo-modal-title">Rechazar recepción</h2>
+          <button
+            type="button"
+            className="rechazo-modal__close"
+            onClick={onCancelar}
+            disabled={submitting}
+            aria-label="Cerrar"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="rechazo-modal__activo">
+          <span className="rechazo-modal__activo-codigo">{pendiente.activo.codigo}</span>
+          <strong className="rechazo-modal__activo-nombre">{pendiente.activo.nombre}</strong>
+        </div>
+
+        <div className="rechazo-modal__info">
+          <p>
+            Al rechazar, el activo <strong>volverá al área de origen</strong> y el motivo
+            quedará visible en el historial del activo.
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="rechazo-modal__form">
+          <div className="rechazo-modal__field">
+            <label htmlFor="rechazo-motivo">
+              Motivo del rechazo <span className="rechazo-required">*</span>
+            </label>
+            <textarea
+              id="rechazo-motivo"
+              rows={4}
+              maxLength={500}
+              placeholder="Ej: El activo llegó con daños visibles. La pantalla presenta una fisura en la esquina inferior derecha."
+              value={motivo}
+              onChange={(e) => {
+                setMotivo(e.target.value);
+                if (intentoEnvio) setIntentoEnvio(false);
+              }}
+              disabled={submitting}
+              className={motivoError ? 'rechazo-textarea--error' : ''}
+            />
+            <div className="rechazo-modal__field-footer">
+              {motivoError
+                ? <span className="rechazo-field-error">{motivoError}</span>
+                : <span className="rechazo-char-count">{motivo.length}/500</span>
+              }
+            </div>
+          </div>
+
+          <div className="rechazo-modal__actions">
+            <Button
+              label="Cancelar"
+              type="button"
+              variant="secondary"
+              onClick={onCancelar}
+              disabled={submitting}
+            />
+            <Button
+              label={submitting ? 'Rechazando...' : 'Confirmar rechazo'}
+              type="submit"
+              variant="danger"
+              disabled={submitting}
+            />
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+type TransferenciasPageProps = {
+  mode?: 'registrar' | 'recepciones';
+};
+
+// ─────────────────────────────────────────────
+// Página principal
+// ─────────────────────────────────────────────
+export const TransferenciasPage: React.FC<TransferenciasPageProps> = ({
+  mode = 'registrar',
+}) => {
+  const { user } = useAuth();
   const notify = useNotification();
   const PAGE_SIZE = 6;
+  const isRecepcionesMode = mode === 'recepciones';
+
+  // ── Estado: registrar transferencia ──
   const [assets, setAssets] = useState<AssetListItem[]>([]);
   const [areas, setAreas] = useState<Area[]>([]);
   const [loading, setLoading] = useState(true);
@@ -28,8 +149,30 @@ export const TransferenciasPage: React.FC = () => {
     areaDestino: { id: string; nombre: string };
   } | null>(null);
 
+  // ── Estado: pendientes de recepción (HU42) ──
+  const [pendientes, setPendientes] = useState<PendienteRecepcion[]>([]);
+  const [loadingPendientes, setLoadingPendientes] = useState(false);
+  const [submittingPendienteId, setSubmittingPendienteId] = useState<string | null>(null);
+  const [pendienteParaRechazar, setPendienteParaRechazar] = useState<PendienteRecepcion | null>(null);
+
+  function mapSolicitudToLastTransferResult(
+    solicitud: SolicitudEnviada | null | undefined,
+  ) {
+    if (!solicitud || !solicitud.areaOrigen || !solicitud.areaDestino) {
+      return null;
+    }
+
+    return {
+      activoCodigo: solicitud.activo.codigo,
+      activoNombre: solicitud.activo.nombre,
+      estadoRecepcion: solicitud.estado,
+      areaOrigen: solicitud.areaOrigen,
+      areaDestino: solicitud.areaDestino,
+    };
+  }
+
   async function reloadData() {
-    const [assetsResponse, availableAreas] = await Promise.all([
+    const [assetsResponse, availableAreas, sentRequestsResponse] = await Promise.all([
       searchAssets({
         soloTransferibles: true,
         page: 1,
@@ -38,32 +181,91 @@ export const TransferenciasPage: React.FC = () => {
         sortType: 'ASC',
       }),
       getAreas(),
+      user?.id ? getSolicitudesEnviadas(user.id, user.area?.id) : Promise.resolve(null),
     ]);
 
     setAssets(assetsResponse.data ?? []);
     setAreas(availableAreas);
+
+    const latestPendingRequest = sentRequestsResponse?.data?.[0] ?? null;
+    setLastTransferResult(mapSolicitudToLastTransferResult(latestPendingRequest));
+  }
+
+  async function reloadPendientes() {
+    if (!user?.area?.id) return;
+    setLoadingPendientes(true);
+    try {
+      const response = await getPendientesRecepcion(user.area.id);
+      setPendientes(response.data ?? []);
+    } catch {
+      // silencioso — el panel mostrará vacío
+    } finally {
+      setLoadingPendientes(false);
+    }
   }
 
   useEffect(() => {
     async function loadData() {
       try {
         setLoading(true);
-        await reloadData();
+        if (isRecepcionesMode) {
+          await reloadPendientes();
+        } else {
+          await reloadData();
+        }
       } catch (error) {
         const errorMessage =
           error instanceof HttpError
             ? error.message
-            : 'No se pudo cargar la información inicial de transferencias';
+            : isRecepcionesMode
+              ? 'No se pudo cargar la información inicial de recepciones'
+              : 'No se pudo cargar la información inicial de transferencias';
 
-        notify.error('No se pudo cargar Transferencias', errorMessage);
+        notify.error(
+          isRecepcionesMode ? 'No se pudo cargar Recepciones' : 'No se pudo cargar Transferencias',
+          errorMessage,
+        );
       } finally {
         setLoading(false);
       }
     }
 
     void loadData();
-  }, [notify]);
+  }, [notify, user?.id, user?.area?.id, isRecepcionesMode]);
 
+  // ── Confirmar recepción ──
+  async function handleConfirmar(asignacionId: string) {
+    setSubmittingPendienteId(asignacionId);
+    try {
+      const response = await confirmarRecepcion(asignacionId);
+      notify.success('Recepción confirmada', response.data.message);
+      await reloadPendientes();
+    } catch (error) {
+      const msg = error instanceof HttpError ? error.message : 'No se pudo confirmar la recepción';
+      notify.error('Error al confirmar', msg);
+    } finally {
+      setSubmittingPendienteId(null);
+    }
+  }
+
+  // ── Rechazar recepción (HU42) ──
+  async function handleRechazar(motivo: string) {
+    if (!pendienteParaRechazar) return;
+    setSubmittingPendienteId(pendienteParaRechazar.id);
+    try {
+      const response = await rechazarRecepcion(pendienteParaRechazar.id, motivo);
+      notify.success('Recepción rechazada', response.data.message);
+      setPendienteParaRechazar(null);
+      await reloadPendientes();
+    } catch (error) {
+      const msg = error instanceof HttpError ? error.message : 'No se pudo rechazar la recepción';
+      notify.error('Error al rechazar', msg);
+    } finally {
+      setSubmittingPendienteId(null);
+    }
+  }
+
+  // ── Cálculos de tabla de transferencia ──
   const selectedAsset = useMemo(
     () => assets.find((asset) => asset.id === activoId) ?? null,
     [activoId, assets],
@@ -75,11 +277,7 @@ export const TransferenciasPage: React.FC = () => {
 
   const filteredAssets = useMemo(() => {
     const normalized = searchText.trim().toLowerCase();
-
-    if (!normalized) {
-      return assets;
-    }
-
+    if (!normalized) return assets;
     return assets.filter((asset) =>
       `${asset.codigo} ${asset.nombre}`.toLowerCase().includes(normalized),
     );
@@ -112,6 +310,7 @@ export const TransferenciasPage: React.FC = () => {
 
   const hasErrors = Boolean(activoError || areaDestinoError || sameAreaError);
 
+  // ── Registrar transferencia ──
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmitAttempted(true);
@@ -179,18 +378,34 @@ export const TransferenciasPage: React.FC = () => {
     }
   }
 
+  // ─────────────────────────────────────────────
+  // Render
+  // ─────────────────────────────────────────────
   return (
     <div className="module-page">
+      {/* Modal de rechazo HU42 */}
+      {pendienteParaRechazar && (
+        <ModalRechazo
+          pendiente={pendienteParaRechazar}
+          onConfirmar={handleRechazar}
+          onCancelar={() => setPendienteParaRechazar(null)}
+          submitting={submittingPendienteId === pendienteParaRechazar.id}
+        />
+      )}
+
       <div className="module-header transfer-page__header">
         <div>
-          <h1>Transferencias</h1>
+          <h1>{isRecepcionesMode ? 'Recepciones de transferencias' : 'Transferencias'}</h1>
           <p className="transfer-page__subtitle">
-            Seleccione el activo, revise su área actual y registre el traslado hacia el área de destino.
+            {isRecepcionesMode
+              ? 'Revise las transferencias enviadas a su área y confirme o rechace la recepción.'
+              : 'Seleccione el activo, revise su área actual y registre el traslado hacia el área de destino.'}
           </p>
         </div>
       </div>
 
-      {lastTransferResult ? (
+      {/* ── Banner última transferencia ── */}
+      {!isRecepcionesMode && lastTransferResult ? (
         <section className="transfer-pending-banner" aria-live="polite">
           <div className="transfer-pending-banner__top">
             <div>
@@ -227,6 +442,91 @@ export const TransferenciasPage: React.FC = () => {
         </section>
       ) : null}
 
+      {/* ── Sección HU42: Pendientes de recepción ── */}
+      {isRecepcionesMode && user?.area?.id && (
+        <section className="transfer-panel recepcion-panel">
+          <div className="transfer-panel__header">
+            <div>
+              <h2>Pendientes de recepción</h2>
+              <p>Activos transferidos a su área que requieren confirmación o rechazo.</p>
+            </div>
+            <span className="transfer-panel__counter">
+              {loadingPendientes ? '...' : `${pendientes.length} pendiente${pendientes.length !== 1 ? 's' : ''}`}
+            </span>
+          </div>
+
+          {loadingPendientes ? (
+            <div className="recepcion-empty">Cargando recepciones pendientes...</div>
+          ) : pendientes.length === 0 ? (
+            <div className="recepcion-empty">No hay recepciones pendientes para su área.</div>
+          ) : (
+            <div className="recepcion-list">
+              {pendientes.map((p) => {
+                const isActivo = submittingPendienteId === p.id;
+                return (
+                  <div key={p.id} className="recepcion-card">
+                    <div className="recepcion-card__info">
+                      <div className="recepcion-card__top">
+                        <span className="recepcion-card__codigo">{p.activo.codigo}</span>
+                        <span className="recepcion-card__badge">Pendiente</span>
+                      </div>
+                      <strong className="recepcion-card__nombre">{p.activo.nombre}</strong>
+                      <div className="recepcion-card__meta">
+                        {p.areaOrigen && (
+                          <span>Desde: <strong>{p.areaOrigen.nombre}</strong></span>
+                        )}
+                        <span>
+                          Fecha:{' '}
+                          <strong>
+                            {new Date(p.fechaEnvio).toLocaleDateString('es-BO', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric',
+                            })}
+                          </strong>
+                        </span>
+                        {p.observaciones && (
+                          <span>Obs: <em>{p.observaciones}</em></span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="recepcion-card__actions">
+                      {/* PA1: botón confirmar */}
+                      <Button
+                        label={isActivo && !pendienteParaRechazar ? 'Confirmando...' : 'Confirmar'}
+                        variant="success"
+                        size="sm"
+                        onClick={() => handleConfirmar(p.id)}
+                        disabled={isActivo || Boolean(submittingPendienteId)}
+                      />
+                      {/* PA1: botón rechazar — abre el modal con campo de motivo (PA2) */}
+                      <Button
+                        label="Rechazar"
+                        variant="danger"
+                        size="sm"
+                        onClick={() => setPendienteParaRechazar(p)}
+                        disabled={isActivo || Boolean(submittingPendienteId)}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
+      )}
+
+      {isRecepcionesMode && !user?.area?.id ? (
+        <section className="transfer-panel recepcion-panel">
+          <div className="recepcion-empty">
+            Su usuario no tiene un área asignada para consultar recepciones pendientes.
+          </div>
+        </section>
+      ) : null}
+
+      {/* ── Formulario: Registrar transferencia ── */}
+      {!isRecepcionesMode ? (
       <form onSubmit={handleSubmit} className="transfer-workspace">
         <div className="transfer-workspace__top">
           <section className="transfer-panel transfer-panel--assets">
@@ -460,6 +760,7 @@ export const TransferenciasPage: React.FC = () => {
           </div>
         </div>
       </form>
+      ) : null}
     </div>
   );
 };

@@ -55,6 +55,7 @@ export type ActivoMinAggregateOutputType = {
   creadoEn: Date | null
   actualizadoEn: Date | null
   dadoDeBajaEn: Date | null
+  motivoBaja: string | null
 }
 
 export type ActivoMaxAggregateOutputType = {
@@ -78,6 +79,7 @@ export type ActivoMaxAggregateOutputType = {
   creadoEn: Date | null
   actualizadoEn: Date | null
   dadoDeBajaEn: Date | null
+  motivoBaja: string | null
 }
 
 export type ActivoCountAggregateOutputType = {
@@ -101,6 +103,7 @@ export type ActivoCountAggregateOutputType = {
   creadoEn: number
   actualizadoEn: number
   dadoDeBajaEn: number
+  motivoBaja: number
   _all: number
 }
 
@@ -134,6 +137,7 @@ export type ActivoMinAggregateInputType = {
   creadoEn?: true
   actualizadoEn?: true
   dadoDeBajaEn?: true
+  motivoBaja?: true
 }
 
 export type ActivoMaxAggregateInputType = {
@@ -157,6 +161,7 @@ export type ActivoMaxAggregateInputType = {
   creadoEn?: true
   actualizadoEn?: true
   dadoDeBajaEn?: true
+  motivoBaja?: true
 }
 
 export type ActivoCountAggregateInputType = {
@@ -180,6 +185,7 @@ export type ActivoCountAggregateInputType = {
   creadoEn?: true
   actualizadoEn?: true
   dadoDeBajaEn?: true
+  motivoBaja?: true
   _all?: true
 }
 
@@ -290,6 +296,7 @@ export type ActivoGroupByOutputType = {
   creadoEn: Date
   actualizadoEn: Date
   dadoDeBajaEn: Date | null
+  motivoBaja: string | null
   _count: ActivoCountAggregateOutputType | null
   _avg: ActivoAvgAggregateOutputType | null
   _sum: ActivoSumAggregateOutputType | null
@@ -336,6 +343,7 @@ export type ActivoWhereInput = {
   creadoEn?: Prisma.DateTimeFilter<"Activo"> | Date | string
   actualizadoEn?: Prisma.DateTimeFilter<"Activo"> | Date | string
   dadoDeBajaEn?: Prisma.DateTimeNullableFilter<"Activo"> | Date | string | null
+  motivoBaja?: Prisma.StringNullableFilter<"Activo"> | string | null
   categoria?: Prisma.XOR<Prisma.CategoriaActivoScalarRelationFilter, Prisma.CategoriaActivoWhereInput>
   ubicacion?: Prisma.XOR<Prisma.UbicacionNullableScalarRelationFilter, Prisma.UbicacionWhereInput> | null
   areaActual?: Prisma.XOR<Prisma.AreaNullableScalarRelationFilter, Prisma.AreaWhereInput> | null
@@ -369,6 +377,7 @@ export type ActivoOrderByWithRelationInput = {
   creadoEn?: Prisma.SortOrder
   actualizadoEn?: Prisma.SortOrder
   dadoDeBajaEn?: Prisma.SortOrderInput | Prisma.SortOrder
+  motivoBaja?: Prisma.SortOrderInput | Prisma.SortOrder
   categoria?: Prisma.CategoriaActivoOrderByWithRelationInput
   ubicacion?: Prisma.UbicacionOrderByWithRelationInput
   areaActual?: Prisma.AreaOrderByWithRelationInput
@@ -405,6 +414,7 @@ export type ActivoWhereUniqueInput = Prisma.AtLeast<{
   creadoEn?: Prisma.DateTimeFilter<"Activo"> | Date | string
   actualizadoEn?: Prisma.DateTimeFilter<"Activo"> | Date | string
   dadoDeBajaEn?: Prisma.DateTimeNullableFilter<"Activo"> | Date | string | null
+  motivoBaja?: Prisma.StringNullableFilter<"Activo"> | string | null
   categoria?: Prisma.XOR<Prisma.CategoriaActivoScalarRelationFilter, Prisma.CategoriaActivoWhereInput>
   ubicacion?: Prisma.XOR<Prisma.UbicacionNullableScalarRelationFilter, Prisma.UbicacionWhereInput> | null
   areaActual?: Prisma.XOR<Prisma.AreaNullableScalarRelationFilter, Prisma.AreaWhereInput> | null
@@ -438,6 +448,7 @@ export type ActivoOrderByWithAggregationInput = {
   creadoEn?: Prisma.SortOrder
   actualizadoEn?: Prisma.SortOrder
   dadoDeBajaEn?: Prisma.SortOrderInput | Prisma.SortOrder
+  motivoBaja?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.ActivoCountOrderByAggregateInput
   _avg?: Prisma.ActivoAvgOrderByAggregateInput
   _max?: Prisma.ActivoMaxOrderByAggregateInput
@@ -469,6 +480,7 @@ export type ActivoScalarWhereWithAggregatesInput = {
   creadoEn?: Prisma.DateTimeWithAggregatesFilter<"Activo"> | Date | string
   actualizadoEn?: Prisma.DateTimeWithAggregatesFilter<"Activo"> | Date | string
   dadoDeBajaEn?: Prisma.DateTimeNullableWithAggregatesFilter<"Activo"> | Date | string | null
+  motivoBaja?: Prisma.StringNullableWithAggregatesFilter<"Activo"> | string | null
 }
 
 export type ActivoCreateInput = {
@@ -486,6 +498,7 @@ export type ActivoCreateInput = {
   creadoEn?: Date | string
   actualizadoEn?: Date | string
   dadoDeBajaEn?: Date | string | null
+  motivoBaja?: string | null
   categoria: Prisma.CategoriaActivoCreateNestedOneWithoutActivosInput
   ubicacion?: Prisma.UbicacionCreateNestedOneWithoutActivosInput
   areaActual?: Prisma.AreaCreateNestedOneWithoutActivosInput
@@ -519,6 +532,7 @@ export type ActivoUncheckedCreateInput = {
   creadoEn?: Date | string
   actualizadoEn?: Date | string
   dadoDeBajaEn?: Date | string | null
+  motivoBaja?: string | null
   asignaciones?: Prisma.AsignacionActivoUncheckedCreateNestedManyWithoutActivoInput
   movimientos?: Prisma.MovimientoActivoUncheckedCreateNestedManyWithoutActivoInput
   incidentes?: Prisma.IncidenteActivoUncheckedCreateNestedManyWithoutActivoInput
@@ -540,6 +554,7 @@ export type ActivoUpdateInput = {
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   dadoDeBajaEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  motivoBaja?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   categoria?: Prisma.CategoriaActivoUpdateOneRequiredWithoutActivosNestedInput
   ubicacion?: Prisma.UbicacionUpdateOneWithoutActivosNestedInput
   areaActual?: Prisma.AreaUpdateOneWithoutActivosNestedInput
@@ -573,6 +588,7 @@ export type ActivoUncheckedUpdateInput = {
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   dadoDeBajaEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  motivoBaja?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   asignaciones?: Prisma.AsignacionActivoUncheckedUpdateManyWithoutActivoNestedInput
   movimientos?: Prisma.MovimientoActivoUncheckedUpdateManyWithoutActivoNestedInput
   incidentes?: Prisma.IncidenteActivoUncheckedUpdateManyWithoutActivoNestedInput
@@ -600,6 +616,7 @@ export type ActivoCreateManyInput = {
   creadoEn?: Date | string
   actualizadoEn?: Date | string
   dadoDeBajaEn?: Date | string | null
+  motivoBaja?: string | null
 }
 
 export type ActivoUpdateManyMutationInput = {
@@ -617,6 +634,7 @@ export type ActivoUpdateManyMutationInput = {
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   dadoDeBajaEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  motivoBaja?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type ActivoUncheckedUpdateManyInput = {
@@ -640,6 +658,7 @@ export type ActivoUncheckedUpdateManyInput = {
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   dadoDeBajaEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  motivoBaja?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type ActivoListRelationFilter = {
@@ -673,6 +692,7 @@ export type ActivoCountOrderByAggregateInput = {
   creadoEn?: Prisma.SortOrder
   actualizadoEn?: Prisma.SortOrder
   dadoDeBajaEn?: Prisma.SortOrder
+  motivoBaja?: Prisma.SortOrder
 }
 
 export type ActivoAvgOrderByAggregateInput = {
@@ -700,6 +720,7 @@ export type ActivoMaxOrderByAggregateInput = {
   creadoEn?: Prisma.SortOrder
   actualizadoEn?: Prisma.SortOrder
   dadoDeBajaEn?: Prisma.SortOrder
+  motivoBaja?: Prisma.SortOrder
 }
 
 export type ActivoMinOrderByAggregateInput = {
@@ -723,6 +744,7 @@ export type ActivoMinOrderByAggregateInput = {
   creadoEn?: Prisma.SortOrder
   actualizadoEn?: Prisma.SortOrder
   dadoDeBajaEn?: Prisma.SortOrder
+  motivoBaja?: Prisma.SortOrder
 }
 
 export type ActivoSumOrderByAggregateInput = {
@@ -1080,6 +1102,7 @@ export type ActivoCreateWithoutResponsableActualInput = {
   creadoEn?: Date | string
   actualizadoEn?: Date | string
   dadoDeBajaEn?: Date | string | null
+  motivoBaja?: string | null
   categoria: Prisma.CategoriaActivoCreateNestedOneWithoutActivosInput
   ubicacion?: Prisma.UbicacionCreateNestedOneWithoutActivosInput
   areaActual?: Prisma.AreaCreateNestedOneWithoutActivosInput
@@ -1111,6 +1134,7 @@ export type ActivoUncheckedCreateWithoutResponsableActualInput = {
   creadoEn?: Date | string
   actualizadoEn?: Date | string
   dadoDeBajaEn?: Date | string | null
+  motivoBaja?: string | null
   asignaciones?: Prisma.AsignacionActivoUncheckedCreateNestedManyWithoutActivoInput
   movimientos?: Prisma.MovimientoActivoUncheckedCreateNestedManyWithoutActivoInput
   incidentes?: Prisma.IncidenteActivoUncheckedCreateNestedManyWithoutActivoInput
@@ -1142,6 +1166,7 @@ export type ActivoCreateWithoutCreadoPorInput = {
   creadoEn?: Date | string
   actualizadoEn?: Date | string
   dadoDeBajaEn?: Date | string | null
+  motivoBaja?: string | null
   categoria: Prisma.CategoriaActivoCreateNestedOneWithoutActivosInput
   ubicacion?: Prisma.UbicacionCreateNestedOneWithoutActivosInput
   areaActual?: Prisma.AreaCreateNestedOneWithoutActivosInput
@@ -1173,6 +1198,7 @@ export type ActivoUncheckedCreateWithoutCreadoPorInput = {
   creadoEn?: Date | string
   actualizadoEn?: Date | string
   dadoDeBajaEn?: Date | string | null
+  motivoBaja?: string | null
   asignaciones?: Prisma.AsignacionActivoUncheckedCreateNestedManyWithoutActivoInput
   movimientos?: Prisma.MovimientoActivoUncheckedCreateNestedManyWithoutActivoInput
   incidentes?: Prisma.IncidenteActivoUncheckedCreateNestedManyWithoutActivoInput
@@ -1204,6 +1230,7 @@ export type ActivoCreateWithoutActualizadoPorInput = {
   creadoEn?: Date | string
   actualizadoEn?: Date | string
   dadoDeBajaEn?: Date | string | null
+  motivoBaja?: string | null
   categoria: Prisma.CategoriaActivoCreateNestedOneWithoutActivosInput
   ubicacion?: Prisma.UbicacionCreateNestedOneWithoutActivosInput
   areaActual?: Prisma.AreaCreateNestedOneWithoutActivosInput
@@ -1235,6 +1262,7 @@ export type ActivoUncheckedCreateWithoutActualizadoPorInput = {
   creadoEn?: Date | string
   actualizadoEn?: Date | string
   dadoDeBajaEn?: Date | string | null
+  motivoBaja?: string | null
   asignaciones?: Prisma.AsignacionActivoUncheckedCreateNestedManyWithoutActivoInput
   movimientos?: Prisma.MovimientoActivoUncheckedCreateNestedManyWithoutActivoInput
   incidentes?: Prisma.IncidenteActivoUncheckedCreateNestedManyWithoutActivoInput
@@ -1291,6 +1319,7 @@ export type ActivoScalarWhereInput = {
   creadoEn?: Prisma.DateTimeFilter<"Activo"> | Date | string
   actualizadoEn?: Prisma.DateTimeFilter<"Activo"> | Date | string
   dadoDeBajaEn?: Prisma.DateTimeNullableFilter<"Activo"> | Date | string | null
+  motivoBaja?: Prisma.StringNullableFilter<"Activo"> | string | null
 }
 
 export type ActivoUpsertWithWhereUniqueWithoutCreadoPorInput = {
@@ -1340,6 +1369,7 @@ export type ActivoCreateWithoutAreaActualInput = {
   creadoEn?: Date | string
   actualizadoEn?: Date | string
   dadoDeBajaEn?: Date | string | null
+  motivoBaja?: string | null
   categoria: Prisma.CategoriaActivoCreateNestedOneWithoutActivosInput
   ubicacion?: Prisma.UbicacionCreateNestedOneWithoutActivosInput
   responsableActual?: Prisma.UsuarioCreateNestedOneWithoutActivosResponsableInput
@@ -1371,6 +1401,7 @@ export type ActivoUncheckedCreateWithoutAreaActualInput = {
   creadoEn?: Date | string
   actualizadoEn?: Date | string
   dadoDeBajaEn?: Date | string | null
+  motivoBaja?: string | null
   asignaciones?: Prisma.AsignacionActivoUncheckedCreateNestedManyWithoutActivoInput
   movimientos?: Prisma.MovimientoActivoUncheckedCreateNestedManyWithoutActivoInput
   incidentes?: Prisma.IncidenteActivoUncheckedCreateNestedManyWithoutActivoInput
@@ -1418,6 +1449,7 @@ export type ActivoCreateWithoutUbicacionInput = {
   creadoEn?: Date | string
   actualizadoEn?: Date | string
   dadoDeBajaEn?: Date | string | null
+  motivoBaja?: string | null
   categoria: Prisma.CategoriaActivoCreateNestedOneWithoutActivosInput
   areaActual?: Prisma.AreaCreateNestedOneWithoutActivosInput
   responsableActual?: Prisma.UsuarioCreateNestedOneWithoutActivosResponsableInput
@@ -1449,6 +1481,7 @@ export type ActivoUncheckedCreateWithoutUbicacionInput = {
   creadoEn?: Date | string
   actualizadoEn?: Date | string
   dadoDeBajaEn?: Date | string | null
+  motivoBaja?: string | null
   asignaciones?: Prisma.AsignacionActivoUncheckedCreateNestedManyWithoutActivoInput
   movimientos?: Prisma.MovimientoActivoUncheckedCreateNestedManyWithoutActivoInput
   incidentes?: Prisma.IncidenteActivoUncheckedCreateNestedManyWithoutActivoInput
@@ -1496,6 +1529,7 @@ export type ActivoCreateWithoutCategoriaInput = {
   creadoEn?: Date | string
   actualizadoEn?: Date | string
   dadoDeBajaEn?: Date | string | null
+  motivoBaja?: string | null
   ubicacion?: Prisma.UbicacionCreateNestedOneWithoutActivosInput
   areaActual?: Prisma.AreaCreateNestedOneWithoutActivosInput
   responsableActual?: Prisma.UsuarioCreateNestedOneWithoutActivosResponsableInput
@@ -1527,6 +1561,7 @@ export type ActivoUncheckedCreateWithoutCategoriaInput = {
   creadoEn?: Date | string
   actualizadoEn?: Date | string
   dadoDeBajaEn?: Date | string | null
+  motivoBaja?: string | null
   asignaciones?: Prisma.AsignacionActivoUncheckedCreateNestedManyWithoutActivoInput
   movimientos?: Prisma.MovimientoActivoUncheckedCreateNestedManyWithoutActivoInput
   incidentes?: Prisma.IncidenteActivoUncheckedCreateNestedManyWithoutActivoInput
@@ -1574,6 +1609,7 @@ export type ActivoCreateWithoutAsignacionesInput = {
   creadoEn?: Date | string
   actualizadoEn?: Date | string
   dadoDeBajaEn?: Date | string | null
+  motivoBaja?: string | null
   categoria: Prisma.CategoriaActivoCreateNestedOneWithoutActivosInput
   ubicacion?: Prisma.UbicacionCreateNestedOneWithoutActivosInput
   areaActual?: Prisma.AreaCreateNestedOneWithoutActivosInput
@@ -1606,6 +1642,7 @@ export type ActivoUncheckedCreateWithoutAsignacionesInput = {
   creadoEn?: Date | string
   actualizadoEn?: Date | string
   dadoDeBajaEn?: Date | string | null
+  motivoBaja?: string | null
   movimientos?: Prisma.MovimientoActivoUncheckedCreateNestedManyWithoutActivoInput
   incidentes?: Prisma.IncidenteActivoUncheckedCreateNestedManyWithoutActivoInput
   documentos?: Prisma.DocumentoActivoUncheckedCreateNestedManyWithoutActivoInput
@@ -1642,6 +1679,7 @@ export type ActivoUpdateWithoutAsignacionesInput = {
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   dadoDeBajaEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  motivoBaja?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   categoria?: Prisma.CategoriaActivoUpdateOneRequiredWithoutActivosNestedInput
   ubicacion?: Prisma.UbicacionUpdateOneWithoutActivosNestedInput
   areaActual?: Prisma.AreaUpdateOneWithoutActivosNestedInput
@@ -1674,6 +1712,7 @@ export type ActivoUncheckedUpdateWithoutAsignacionesInput = {
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   dadoDeBajaEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  motivoBaja?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   movimientos?: Prisma.MovimientoActivoUncheckedUpdateManyWithoutActivoNestedInput
   incidentes?: Prisma.IncidenteActivoUncheckedUpdateManyWithoutActivoNestedInput
   documentos?: Prisma.DocumentoActivoUncheckedUpdateManyWithoutActivoNestedInput
@@ -1694,6 +1733,7 @@ export type ActivoCreateWithoutMovimientosInput = {
   creadoEn?: Date | string
   actualizadoEn?: Date | string
   dadoDeBajaEn?: Date | string | null
+  motivoBaja?: string | null
   categoria: Prisma.CategoriaActivoCreateNestedOneWithoutActivosInput
   ubicacion?: Prisma.UbicacionCreateNestedOneWithoutActivosInput
   areaActual?: Prisma.AreaCreateNestedOneWithoutActivosInput
@@ -1726,6 +1766,7 @@ export type ActivoUncheckedCreateWithoutMovimientosInput = {
   creadoEn?: Date | string
   actualizadoEn?: Date | string
   dadoDeBajaEn?: Date | string | null
+  motivoBaja?: string | null
   asignaciones?: Prisma.AsignacionActivoUncheckedCreateNestedManyWithoutActivoInput
   incidentes?: Prisma.IncidenteActivoUncheckedCreateNestedManyWithoutActivoInput
   documentos?: Prisma.DocumentoActivoUncheckedCreateNestedManyWithoutActivoInput
@@ -1762,6 +1803,7 @@ export type ActivoUpdateWithoutMovimientosInput = {
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   dadoDeBajaEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  motivoBaja?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   categoria?: Prisma.CategoriaActivoUpdateOneRequiredWithoutActivosNestedInput
   ubicacion?: Prisma.UbicacionUpdateOneWithoutActivosNestedInput
   areaActual?: Prisma.AreaUpdateOneWithoutActivosNestedInput
@@ -1794,6 +1836,7 @@ export type ActivoUncheckedUpdateWithoutMovimientosInput = {
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   dadoDeBajaEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  motivoBaja?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   asignaciones?: Prisma.AsignacionActivoUncheckedUpdateManyWithoutActivoNestedInput
   incidentes?: Prisma.IncidenteActivoUncheckedUpdateManyWithoutActivoNestedInput
   documentos?: Prisma.DocumentoActivoUncheckedUpdateManyWithoutActivoNestedInput
@@ -1814,6 +1857,7 @@ export type ActivoCreateWithoutIncidentesInput = {
   creadoEn?: Date | string
   actualizadoEn?: Date | string
   dadoDeBajaEn?: Date | string | null
+  motivoBaja?: string | null
   categoria: Prisma.CategoriaActivoCreateNestedOneWithoutActivosInput
   ubicacion?: Prisma.UbicacionCreateNestedOneWithoutActivosInput
   areaActual?: Prisma.AreaCreateNestedOneWithoutActivosInput
@@ -1846,6 +1890,7 @@ export type ActivoUncheckedCreateWithoutIncidentesInput = {
   creadoEn?: Date | string
   actualizadoEn?: Date | string
   dadoDeBajaEn?: Date | string | null
+  motivoBaja?: string | null
   asignaciones?: Prisma.AsignacionActivoUncheckedCreateNestedManyWithoutActivoInput
   movimientos?: Prisma.MovimientoActivoUncheckedCreateNestedManyWithoutActivoInput
   documentos?: Prisma.DocumentoActivoUncheckedCreateNestedManyWithoutActivoInput
@@ -1882,6 +1927,7 @@ export type ActivoUpdateWithoutIncidentesInput = {
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   dadoDeBajaEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  motivoBaja?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   categoria?: Prisma.CategoriaActivoUpdateOneRequiredWithoutActivosNestedInput
   ubicacion?: Prisma.UbicacionUpdateOneWithoutActivosNestedInput
   areaActual?: Prisma.AreaUpdateOneWithoutActivosNestedInput
@@ -1914,6 +1960,7 @@ export type ActivoUncheckedUpdateWithoutIncidentesInput = {
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   dadoDeBajaEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  motivoBaja?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   asignaciones?: Prisma.AsignacionActivoUncheckedUpdateManyWithoutActivoNestedInput
   movimientos?: Prisma.MovimientoActivoUncheckedUpdateManyWithoutActivoNestedInput
   documentos?: Prisma.DocumentoActivoUncheckedUpdateManyWithoutActivoNestedInput
@@ -1934,6 +1981,7 @@ export type ActivoCreateWithoutDocumentosInput = {
   creadoEn?: Date | string
   actualizadoEn?: Date | string
   dadoDeBajaEn?: Date | string | null
+  motivoBaja?: string | null
   categoria: Prisma.CategoriaActivoCreateNestedOneWithoutActivosInput
   ubicacion?: Prisma.UbicacionCreateNestedOneWithoutActivosInput
   areaActual?: Prisma.AreaCreateNestedOneWithoutActivosInput
@@ -1966,6 +2014,7 @@ export type ActivoUncheckedCreateWithoutDocumentosInput = {
   creadoEn?: Date | string
   actualizadoEn?: Date | string
   dadoDeBajaEn?: Date | string | null
+  motivoBaja?: string | null
   asignaciones?: Prisma.AsignacionActivoUncheckedCreateNestedManyWithoutActivoInput
   movimientos?: Prisma.MovimientoActivoUncheckedCreateNestedManyWithoutActivoInput
   incidentes?: Prisma.IncidenteActivoUncheckedCreateNestedManyWithoutActivoInput
@@ -2002,6 +2051,7 @@ export type ActivoUpdateWithoutDocumentosInput = {
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   dadoDeBajaEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  motivoBaja?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   categoria?: Prisma.CategoriaActivoUpdateOneRequiredWithoutActivosNestedInput
   ubicacion?: Prisma.UbicacionUpdateOneWithoutActivosNestedInput
   areaActual?: Prisma.AreaUpdateOneWithoutActivosNestedInput
@@ -2034,6 +2084,7 @@ export type ActivoUncheckedUpdateWithoutDocumentosInput = {
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   dadoDeBajaEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  motivoBaja?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   asignaciones?: Prisma.AsignacionActivoUncheckedUpdateManyWithoutActivoNestedInput
   movimientos?: Prisma.MovimientoActivoUncheckedUpdateManyWithoutActivoNestedInput
   incidentes?: Prisma.IncidenteActivoUncheckedUpdateManyWithoutActivoNestedInput
@@ -2059,6 +2110,7 @@ export type ActivoCreateManyResponsableActualInput = {
   creadoEn?: Date | string
   actualizadoEn?: Date | string
   dadoDeBajaEn?: Date | string | null
+  motivoBaja?: string | null
 }
 
 export type ActivoCreateManyCreadoPorInput = {
@@ -2081,6 +2133,7 @@ export type ActivoCreateManyCreadoPorInput = {
   creadoEn?: Date | string
   actualizadoEn?: Date | string
   dadoDeBajaEn?: Date | string | null
+  motivoBaja?: string | null
 }
 
 export type ActivoCreateManyActualizadoPorInput = {
@@ -2103,6 +2156,7 @@ export type ActivoCreateManyActualizadoPorInput = {
   creadoEn?: Date | string
   actualizadoEn?: Date | string
   dadoDeBajaEn?: Date | string | null
+  motivoBaja?: string | null
 }
 
 export type ActivoUpdateWithoutResponsableActualInput = {
@@ -2120,6 +2174,7 @@ export type ActivoUpdateWithoutResponsableActualInput = {
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   dadoDeBajaEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  motivoBaja?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   categoria?: Prisma.CategoriaActivoUpdateOneRequiredWithoutActivosNestedInput
   ubicacion?: Prisma.UbicacionUpdateOneWithoutActivosNestedInput
   areaActual?: Prisma.AreaUpdateOneWithoutActivosNestedInput
@@ -2151,6 +2206,7 @@ export type ActivoUncheckedUpdateWithoutResponsableActualInput = {
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   dadoDeBajaEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  motivoBaja?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   asignaciones?: Prisma.AsignacionActivoUncheckedUpdateManyWithoutActivoNestedInput
   movimientos?: Prisma.MovimientoActivoUncheckedUpdateManyWithoutActivoNestedInput
   incidentes?: Prisma.IncidenteActivoUncheckedUpdateManyWithoutActivoNestedInput
@@ -2177,6 +2233,7 @@ export type ActivoUncheckedUpdateManyWithoutResponsableActualInput = {
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   dadoDeBajaEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  motivoBaja?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type ActivoUpdateWithoutCreadoPorInput = {
@@ -2194,6 +2251,7 @@ export type ActivoUpdateWithoutCreadoPorInput = {
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   dadoDeBajaEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  motivoBaja?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   categoria?: Prisma.CategoriaActivoUpdateOneRequiredWithoutActivosNestedInput
   ubicacion?: Prisma.UbicacionUpdateOneWithoutActivosNestedInput
   areaActual?: Prisma.AreaUpdateOneWithoutActivosNestedInput
@@ -2225,6 +2283,7 @@ export type ActivoUncheckedUpdateWithoutCreadoPorInput = {
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   dadoDeBajaEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  motivoBaja?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   asignaciones?: Prisma.AsignacionActivoUncheckedUpdateManyWithoutActivoNestedInput
   movimientos?: Prisma.MovimientoActivoUncheckedUpdateManyWithoutActivoNestedInput
   incidentes?: Prisma.IncidenteActivoUncheckedUpdateManyWithoutActivoNestedInput
@@ -2251,6 +2310,7 @@ export type ActivoUncheckedUpdateManyWithoutCreadoPorInput = {
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   dadoDeBajaEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  motivoBaja?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type ActivoUpdateWithoutActualizadoPorInput = {
@@ -2268,6 +2328,7 @@ export type ActivoUpdateWithoutActualizadoPorInput = {
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   dadoDeBajaEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  motivoBaja?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   categoria?: Prisma.CategoriaActivoUpdateOneRequiredWithoutActivosNestedInput
   ubicacion?: Prisma.UbicacionUpdateOneWithoutActivosNestedInput
   areaActual?: Prisma.AreaUpdateOneWithoutActivosNestedInput
@@ -2299,6 +2360,7 @@ export type ActivoUncheckedUpdateWithoutActualizadoPorInput = {
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   dadoDeBajaEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  motivoBaja?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   asignaciones?: Prisma.AsignacionActivoUncheckedUpdateManyWithoutActivoNestedInput
   movimientos?: Prisma.MovimientoActivoUncheckedUpdateManyWithoutActivoNestedInput
   incidentes?: Prisma.IncidenteActivoUncheckedUpdateManyWithoutActivoNestedInput
@@ -2325,6 +2387,7 @@ export type ActivoUncheckedUpdateManyWithoutActualizadoPorInput = {
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   dadoDeBajaEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  motivoBaja?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type ActivoCreateManyAreaActualInput = {
@@ -2347,6 +2410,7 @@ export type ActivoCreateManyAreaActualInput = {
   creadoEn?: Date | string
   actualizadoEn?: Date | string
   dadoDeBajaEn?: Date | string | null
+  motivoBaja?: string | null
 }
 
 export type ActivoUpdateWithoutAreaActualInput = {
@@ -2364,6 +2428,7 @@ export type ActivoUpdateWithoutAreaActualInput = {
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   dadoDeBajaEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  motivoBaja?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   categoria?: Prisma.CategoriaActivoUpdateOneRequiredWithoutActivosNestedInput
   ubicacion?: Prisma.UbicacionUpdateOneWithoutActivosNestedInput
   responsableActual?: Prisma.UsuarioUpdateOneWithoutActivosResponsableNestedInput
@@ -2395,6 +2460,7 @@ export type ActivoUncheckedUpdateWithoutAreaActualInput = {
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   dadoDeBajaEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  motivoBaja?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   asignaciones?: Prisma.AsignacionActivoUncheckedUpdateManyWithoutActivoNestedInput
   movimientos?: Prisma.MovimientoActivoUncheckedUpdateManyWithoutActivoNestedInput
   incidentes?: Prisma.IncidenteActivoUncheckedUpdateManyWithoutActivoNestedInput
@@ -2421,6 +2487,7 @@ export type ActivoUncheckedUpdateManyWithoutAreaActualInput = {
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   dadoDeBajaEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  motivoBaja?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type ActivoCreateManyUbicacionInput = {
@@ -2443,6 +2510,7 @@ export type ActivoCreateManyUbicacionInput = {
   creadoEn?: Date | string
   actualizadoEn?: Date | string
   dadoDeBajaEn?: Date | string | null
+  motivoBaja?: string | null
 }
 
 export type ActivoUpdateWithoutUbicacionInput = {
@@ -2460,6 +2528,7 @@ export type ActivoUpdateWithoutUbicacionInput = {
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   dadoDeBajaEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  motivoBaja?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   categoria?: Prisma.CategoriaActivoUpdateOneRequiredWithoutActivosNestedInput
   areaActual?: Prisma.AreaUpdateOneWithoutActivosNestedInput
   responsableActual?: Prisma.UsuarioUpdateOneWithoutActivosResponsableNestedInput
@@ -2491,6 +2560,7 @@ export type ActivoUncheckedUpdateWithoutUbicacionInput = {
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   dadoDeBajaEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  motivoBaja?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   asignaciones?: Prisma.AsignacionActivoUncheckedUpdateManyWithoutActivoNestedInput
   movimientos?: Prisma.MovimientoActivoUncheckedUpdateManyWithoutActivoNestedInput
   incidentes?: Prisma.IncidenteActivoUncheckedUpdateManyWithoutActivoNestedInput
@@ -2517,6 +2587,7 @@ export type ActivoUncheckedUpdateManyWithoutUbicacionInput = {
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   dadoDeBajaEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  motivoBaja?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type ActivoCreateManyCategoriaInput = {
@@ -2539,6 +2610,7 @@ export type ActivoCreateManyCategoriaInput = {
   creadoEn?: Date | string
   actualizadoEn?: Date | string
   dadoDeBajaEn?: Date | string | null
+  motivoBaja?: string | null
 }
 
 export type ActivoUpdateWithoutCategoriaInput = {
@@ -2556,6 +2628,7 @@ export type ActivoUpdateWithoutCategoriaInput = {
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   dadoDeBajaEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  motivoBaja?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   ubicacion?: Prisma.UbicacionUpdateOneWithoutActivosNestedInput
   areaActual?: Prisma.AreaUpdateOneWithoutActivosNestedInput
   responsableActual?: Prisma.UsuarioUpdateOneWithoutActivosResponsableNestedInput
@@ -2587,6 +2660,7 @@ export type ActivoUncheckedUpdateWithoutCategoriaInput = {
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   dadoDeBajaEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  motivoBaja?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   asignaciones?: Prisma.AsignacionActivoUncheckedUpdateManyWithoutActivoNestedInput
   movimientos?: Prisma.MovimientoActivoUncheckedUpdateManyWithoutActivoNestedInput
   incidentes?: Prisma.IncidenteActivoUncheckedUpdateManyWithoutActivoNestedInput
@@ -2613,6 +2687,7 @@ export type ActivoUncheckedUpdateManyWithoutCategoriaInput = {
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   dadoDeBajaEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  motivoBaja?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 
@@ -2694,6 +2769,7 @@ export type ActivoSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   creadoEn?: boolean
   actualizadoEn?: boolean
   dadoDeBajaEn?: boolean
+  motivoBaja?: boolean
   categoria?: boolean | Prisma.CategoriaActivoDefaultArgs<ExtArgs>
   ubicacion?: boolean | Prisma.Activo$ubicacionArgs<ExtArgs>
   areaActual?: boolean | Prisma.Activo$areaActualArgs<ExtArgs>
@@ -2728,6 +2804,7 @@ export type ActivoSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extens
   creadoEn?: boolean
   actualizadoEn?: boolean
   dadoDeBajaEn?: boolean
+  motivoBaja?: boolean
   categoria?: boolean | Prisma.CategoriaActivoDefaultArgs<ExtArgs>
   ubicacion?: boolean | Prisma.Activo$ubicacionArgs<ExtArgs>
   areaActual?: boolean | Prisma.Activo$areaActualArgs<ExtArgs>
@@ -2757,6 +2834,7 @@ export type ActivoSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extens
   creadoEn?: boolean
   actualizadoEn?: boolean
   dadoDeBajaEn?: boolean
+  motivoBaja?: boolean
   categoria?: boolean | Prisma.CategoriaActivoDefaultArgs<ExtArgs>
   ubicacion?: boolean | Prisma.Activo$ubicacionArgs<ExtArgs>
   areaActual?: boolean | Prisma.Activo$areaActualArgs<ExtArgs>
@@ -2786,9 +2864,10 @@ export type ActivoSelectScalar = {
   creadoEn?: boolean
   actualizadoEn?: boolean
   dadoDeBajaEn?: boolean
+  motivoBaja?: boolean
 }
 
-export type ActivoOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "codigo" | "nombre" | "descripcion" | "marca" | "modelo" | "numeroSerie" | "fechaAdquisicion" | "costoAdquisicion" | "vencimientoGarantia" | "estado" | "categoriaId" | "ubicacionId" | "areaActualId" | "responsableActualId" | "creadoPorId" | "actualizadoPorId" | "creadoEn" | "actualizadoEn" | "dadoDeBajaEn", ExtArgs["result"]["activo"]>
+export type ActivoOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "codigo" | "nombre" | "descripcion" | "marca" | "modelo" | "numeroSerie" | "fechaAdquisicion" | "costoAdquisicion" | "vencimientoGarantia" | "estado" | "categoriaId" | "ubicacionId" | "areaActualId" | "responsableActualId" | "creadoPorId" | "actualizadoPorId" | "creadoEn" | "actualizadoEn" | "dadoDeBajaEn" | "motivoBaja", ExtArgs["result"]["activo"]>
 export type ActivoInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   categoria?: boolean | Prisma.CategoriaActivoDefaultArgs<ExtArgs>
   ubicacion?: boolean | Prisma.Activo$ubicacionArgs<ExtArgs>
@@ -2854,6 +2933,7 @@ export type $ActivoPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
     creadoEn: Date
     actualizadoEn: Date
     dadoDeBajaEn: Date | null
+    motivoBaja: string | null
   }, ExtArgs["result"]["activo"]>
   composites: {}
 }
@@ -3307,6 +3387,7 @@ export interface ActivoFieldRefs {
   readonly creadoEn: Prisma.FieldRef<"Activo", 'DateTime'>
   readonly actualizadoEn: Prisma.FieldRef<"Activo", 'DateTime'>
   readonly dadoDeBajaEn: Prisma.FieldRef<"Activo", 'DateTime'>
+  readonly motivoBaja: Prisma.FieldRef<"Activo", 'String'>
 }
     
 

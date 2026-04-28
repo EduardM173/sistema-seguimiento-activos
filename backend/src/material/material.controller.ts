@@ -34,6 +34,7 @@ import {
   MaterialResponseDTO,
   MaterialEstadoFilter,
   AumentarStockDTO,
+  AjustarStockDTO,
   MaterialSortBy,
   MaterialSortType,
   SearchMaterialDTO,
@@ -377,6 +378,52 @@ export class MaterialController {
     const userId = (req.user as { id: string }).id;
     const result = await this.materialService.aumentarStock(id, dto.cantidad, userId);
     return ApiResponse.success(result, 'Ingreso de stock registrado correctamente');
+  }
+
+  @ApiOperation({
+    summary: 'Registrar ajuste por conteo físico',
+    description:
+      'Registra un ajuste de inventario comparando la cantidad registrada contra la cantidad física encontrada.',
+  })
+  @ApiParam({ name: 'id', description: 'ID del material' })
+  @ApiBody({
+    type: AjustarStockDTO,
+    examples: {
+      ajusteConteo: {
+        summary: 'Ajuste por conteo físico',
+        value: {
+          cantidadRegistrada: 15,
+          cantidadFisica: 12,
+          motivo: 'Ajuste por conteo físico mensual',
+        },
+      },
+    },
+  })
+  @ApiOkResponse({
+    description: 'Ajuste registrado correctamente y stock actualizado',
+  })
+  @ApiBadRequestResponse({
+    description:
+      'Los datos del ajuste son inválidos o la cantidad registrada no coincide con el stock actual',
+  })
+  @ApiNotFoundResponse({
+    description: 'No se encontró el material solicitado',
+  })
+  @Patch(':id/ajustar-stock')
+  async ajustarStock(
+    @Param('id') id: string,
+    @Body() dto: AjustarStockDTO,
+    @Req() req: Request,
+  ) {
+    const userId = (req.user as { id: string }).id;
+    const result = await this.materialService.ajustarStock(
+      id,
+      dto.cantidadRegistrada,
+      dto.cantidadFisica,
+      dto.motivo,
+      userId,
+    );
+    return ApiResponse.success(result, 'Ajuste de inventario registrado correctamente');
   }
 
   @ApiOperation({

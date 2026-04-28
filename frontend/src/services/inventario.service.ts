@@ -64,7 +64,7 @@ export const inventarioService = {
     }
   },
 
-  // Aumntar stock
+  // Aumentar stock
   aumentarStock: async (id: string, cantidad: number) => {
     try {
       const response = await apiClient.patch<
@@ -84,6 +84,36 @@ export const inventarioService = {
       >(`/inventory-items/${id}/aumentar-stock`, {
         cantidad,
       });
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  ajustarStock: async (
+    id: string,
+    payload: {
+      cantidadRegistrada: number;
+      cantidadFisica: number;
+      motivo: string;
+    },
+  ) => {
+    try {
+      const response = await apiClient.patch<
+        ApiResponse<{
+          message: string;
+          material: Material;
+          movimiento: {
+            id: string;
+            tipo: string;
+            cantidad: number;
+            stockAnterior: number;
+            stockNuevo: number;
+            motivo: string | null;
+            creadoEn: string;
+          };
+        }>
+      >(`/inventory-items/${id}/ajustar-stock`, payload);
       return response;
     } catch (error) {
       throw error;
@@ -218,7 +248,10 @@ export const inventarioService = {
       `/inventory-items/${materialId}/history`,
       { params: filtros }
     )) as any;
-    return response.data;
+    if (Array.isArray(response)) {
+      return response;
+    }
+    return response?.data ?? [];
   },
 };
 

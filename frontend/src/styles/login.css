@@ -384,8 +384,6 @@
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
-  margin: 0;
-}
 
 /* ── Card (is the form itself on desktop) ─────────────── */
 .login-card {

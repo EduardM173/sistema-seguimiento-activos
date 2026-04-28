@@ -1,12 +1,19 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, type FormEvent } from 'react';
 
 import {
+  createArea,
   searchLocations,
   deleteLocation,
+  getAreaResponsibles,
+  getAreasForLocations,
+  reassignAreaManager,
+  type AreaItem,
+  type AreaManagerItem,
   type LocationItem,
   type SearchLocationsParams,
 } from '../services/locations.service';
 import { useNotification } from '../context/NotificationContext';
+import { useAuth } from '../context/AuthContext';
 import { HttpError } from '../services/http.client';
 import type { PaginationMeta } from '../types/assets.types';
 
@@ -25,10 +32,16 @@ const PAGE_SIZE = 10;
 export default function LocationsPage() {
   const notify = useNotification();
   const { error: notifyError, success: notifySuccess } = notify;
+  const { hasPermission } = useAuth();
+  const canManageAreas = hasPermission('AREA_MANAGE');
 
   const [locations, setLocations] = useState<LocationItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [meta, setMeta] = useState<PaginationMeta | null>(null);
+  const [areas, setAreas] = useState<AreaItem[]>([]);
+  const [areaManagers, setAreaManagers] = useState<AreaManagerItem[]>([]);
+  const [loadingAreas, setLoadingAreas] = useState(false);
+  const [creatingArea, setCreatingArea] = useState(false);
 
   // Filters
   const [searchText, setSearchText] = useState('');
@@ -38,6 +51,12 @@ export default function LocationsPage() {
 
   // Create modal
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [areaNombre, setAreaNombre] = useState('');
+  const [areaDescripcion, setAreaDescripcion] = useState('');
+  const [areaUbicacionId, setAreaUbicacionId] = useState('');
+  const [areaEncargadoId, setAreaEncargadoId] = useState('');
+  const [areaManagerDrafts, setAreaManagerDrafts] = useState<Record<string, string>>({});
+  const [reassigningAreaId, setReassigningAreaId] = useState<string | null>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(searchText), 350);
@@ -69,6 +88,40 @@ export default function LocationsPage() {
     void loadLocations();
   }, [loadLocations]);
 
+  const loadAreas = useCallback(async () => {
+    if (!canManageAreas) return;
+
+    try {
+      setLoadingAreas(true);
+      const [areasResponse, managersResponse] = await Promise.all([
+        getAreasForLocations(),
+        getAreaResponsibles(),
+      ]);
+      setAreas(areasResponse.data ?? []);
+      setAreaManagers(managersResponse.data ?? []);
+      setAreaManagerDrafts(
+        Object.fromEntries(
+          (areasResponse.data ?? []).map((area) => [
+            area.id,
+            area.encargado?.id ?? '',
+          ]),
+        ),
+      );
+    } catch (err) {
+      const message =
+        err instanceof HttpError
+          ? err.message
+          : 'No se pudo cargar la información de áreas';
+      notifyError('Error al cargar áreas', message);
+    } finally {
+      setLoadingAreas(false);
+    }
+  }, [canManageAreas, notifyError]);
+
+  useEffect(() => {
+    void loadAreas();
+  }, [loadAreas]);
+
   useEffect(() => {
     setCurrentPage(1);
   }, [debouncedSearch, filterEdificio]);
@@ -94,6 +147,64 @@ export default function LocationsPage() {
     } catch (err) {
       const message = err instanceof HttpError ? err.message : 'No se pudo eliminar la ubicación';
       notifyError('Error', message);
+    }
+  }
+
+  async function handleCreateArea(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!areaNombre.trim()) {
+      notifyError('Área incompleta', 'Ingrese el nombre del área para continuar.');
+      return;
+    }
+
+    try {
+      setCreatingArea(true);
+      await createArea({
+        nombre: areaNombre.trim(),
+        descripcion: areaDescripcion.trim() || undefined,
+        ubicacionId: areaUbicacionId || undefined,
+        encargadoId: areaEncargadoId || undefined,
+      });
+
+      notifySuccess('Área creada', `"${areaNombre.trim()}" fue registrada exitosamente.`);
+      setAreaNombre('');
+      setAreaDescripcion('');
+      setAreaUbicacionId('');
+      setAreaEncargadoId('');
+      await Promise.all([loadAreas(), loadLocations()]);
+    } catch (err) {
+      const message = err instanceof HttpError ? err.message : 'No se pudo crear el área';
+      notifyError('Error al crear área', message);
+    } finally {
+      setCreatingArea(false);
+    }
+  }
+
+  async function handleReassignAreaManager(area: AreaItem) {
+    const nextManagerId = areaManagerDrafts[area.id] ?? '';
+    const currentManagerId = area.encargado?.id ?? '';
+
+    if (nextManagerId === currentManagerId) {
+      notify.info('Sin cambios', 'Seleccione otro responsable para reasignar el área.');
+      return;
+    }
+
+    try {
+      setReassigningAreaId(area.id);
+      await reassignAreaManager(area.id, {
+        encargadoId: nextManagerId || undefined,
+      });
+      notifySuccess('Responsable reasignado', `Se actualizó el responsable de "${area.nombre}".`);
+      await loadAreas();
+    } catch (err) {
+      const message =
+        err instanceof HttpError
+          ? err.message
+          : 'No se pudo reasignar el responsable del área';
+      notifyError('Error al reasignar responsable', message);
+    } finally {
+      setReassigningAreaId(null);
     }
   }
 
@@ -239,6 +350,157 @@ export default function LocationsPage() {
           </div>
         )}
       </div>
+
+      {canManageAreas ? (
+        <section className="locationsAreas">
+          <div className="locationsAreas__header">
+            <div>
+              <h2 className="locationsAreas__title">Áreas institucionales</h2>
+              <p className="locationsAreas__subtitle">
+                Cree áreas, vincúlelas a una ubicación y asigne un Responsable de Área.
+              </p>
+            </div>
+            <span className="locationsAreas__badge">Permiso AREA_MANAGE</span>
+          </div>
+
+          <div className="locationsAreas__layout">
+            <form className="locationsAreas__form" onSubmit={handleCreateArea}>
+              <label className="locationsAreas__field">
+                <span>Nombre del área</span>
+                <input
+                  type="text"
+                  value={areaNombre}
+                  onChange={(event) => setAreaNombre(event.target.value)}
+                  placeholder="Ej. Sistemas"
+                  disabled={creatingArea}
+                  maxLength={100}
+                  required
+                />
+              </label>
+
+              <label className="locationsAreas__field">
+                <span>Ubicación</span>
+                <select
+                  value={areaUbicacionId}
+                  onChange={(event) => setAreaUbicacionId(event.target.value)}
+                  disabled={creatingArea}
+                >
+                  <option value="">Sin ubicación específica</option>
+                  {locations.map((location) => (
+                    <option key={location.id} value={location.id}>
+                      {[location.nombre, location.edificio, location.piso, location.ambiente]
+                        .filter(Boolean)
+                        .join(' · ')}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="locationsAreas__field">
+                <span>Responsable</span>
+                <select
+                  value={areaEncargadoId}
+                  onChange={(event) => setAreaEncargadoId(event.target.value)}
+                  disabled={creatingArea || areaManagers.length === 0}
+                >
+                  <option value="">
+                    {areaManagers.length ? 'Sin responsable asignado' : 'No hay responsables disponibles'}
+                  </option>
+                  {areaManagers.map((manager) => (
+                    <option key={manager.id} value={manager.id}>
+                      {manager.nombreCompleto} · {manager.correo}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="locationsAreas__field locationsAreas__field--full">
+                <span>Descripción</span>
+                <textarea
+                  value={areaDescripcion}
+                  onChange={(event) => setAreaDescripcion(event.target.value)}
+                  placeholder="Opcional"
+                  disabled={creatingArea}
+                  rows={3}
+                  maxLength={500}
+                />
+              </label>
+
+              <div className="locationsAreas__actions">
+                <button
+                  type="submit"
+                  className="btn btn--primary"
+                  disabled={creatingArea}
+                >
+                  {creatingArea ? 'Creando...' : 'Crear Área'}
+                </button>
+              </div>
+            </form>
+
+            <div className="locationsAreas__list">
+              <div className="locationsAreas__listHeader">
+                <strong>Áreas registradas</strong>
+                <span>{loadingAreas ? 'Cargando...' : `${areas.length} área(s)`}</span>
+              </div>
+
+              {areas.length === 0 && !loadingAreas ? (
+                <p className="locationsAreas__empty">Todavía no hay áreas registradas.</p>
+              ) : (
+                <div className="locationsAreas__items">
+                  {areas.slice(0, 6).map((area) => (
+                    <article key={area.id} className="locationsAreas__item">
+                      <div>
+                        <strong>{area.nombre}</strong>
+                        <span>
+                          {area.ubicacion?.nombre ?? 'Sin ubicación'} ·{' '}
+                          {area.encargado
+                            ? `${area.encargado.nombres} ${area.encargado.apellidos}`
+                            : 'Sin responsable'}
+                        </span>
+                      </div>
+                      <div className="locationsAreas__itemActions">
+                        <span className="locationsAreas__count">
+                          {area._count?.activos ?? 0} activos
+                        </span>
+                        <div className="locationsAreas__reassign">
+                          <select
+                            value={areaManagerDrafts[area.id] ?? ''}
+                            onChange={(event) =>
+                              setAreaManagerDrafts((prev) => ({
+                                ...prev,
+                                [area.id]: event.target.value,
+                              }))
+                            }
+                            disabled={reassigningAreaId === area.id}
+                          >
+                            <option value="">Sin responsable</option>
+                            {areaManagers.map((manager) => (
+                              <option key={manager.id} value={manager.id}>
+                                {manager.nombreCompleto}
+                              </option>
+                            ))}
+                          </select>
+                          <button
+                            type="button"
+                            className="btn btn--outline locationsAreas__reassignBtn"
+                            disabled={
+                              reassigningAreaId === area.id ||
+                              (areaManagerDrafts[area.id] ?? '') === (area.encargado?.id ?? '')
+                            }
+                            onClick={() => void handleReassignAreaManager(area)}
+                          >
+                            {reassigningAreaId === area.id ? 'Guardando...' : 'Reasignar'}
+                          </button>
+                        </div>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+      ) : null}
 
       {/* Create Location Modal */}
       <OverlayModal

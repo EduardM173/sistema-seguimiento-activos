@@ -5,7 +5,9 @@ import ViewAssetModal from '../components/activos/ViewAssetModal';
 import OverlayModal from '../components/common/OverlayModal';
 import CreateAssetPage from './CreateAssetPage';
 import AssetDetailPanel from '../components/assets/AssetDetailPanel';
+import AssetTransferHistoryModal from '../components/assets/AssetTransferHistoryModal';
 import { useNotification } from '../context/NotificationContext';
+import { useAuth } from '../context/AuthContext';
 import { getAreas, getCategorias, getUbicaciones, getUsuarios } from '../services/catalogs.service';
 import {
   assignAsset,
@@ -54,6 +56,7 @@ const ESTADO_CLASS: Record<string, string> = {
 const PAGE_SIZE = 10;
 
 export default function AssetsPage() {
+  const { hasPermission } = useAuth();
   const notify = useNotification();
   const { error: notifyError, success: notifySuccess } = notify;
 
@@ -90,6 +93,21 @@ export default function AssetsPage() {
   const [showCreateAssetModal, setShowCreateAssetModal] = useState(false);
   const [editingAssetId, setEditingAssetId] = useState<string | null>(null);
   const [viewingAssetId, setViewingAssetId] = useState<string | null>(null);
+  const [historyAssetId, setHistoryAssetId] = useState<string | null>(null);
+  
+  // ========== MODAL DE BAJA ==========
+  const [bajaModalOpen, setBajaModalOpen] = useState(false);
+  const [bajaAsset, setBajaAsset] = useState<{ id: string; nombre: string } | null>(null);
+  const [bajaMotivo, setBajaMotivo] = useState('');
+  const [bajaLoading, setBajaLoading] = useState(false);
+  // ===================================
+
+  const canCreateAssets = hasPermission('ASSET_CREATE');
+  const canUpdateAssets = hasPermission('ASSET_UPDATE');
+  const canAssignAssets = hasPermission('ASSET_ASSIGN');
+  const canAssignUsers = canAssignAssets || hasPermission('ASSET_ASSIGN_USER');
+  const canAssignAreas = canAssignAssets || hasPermission('ASSET_ASSIGN_AREA');
+  const canOpenAssignModal = canAssignUsers || canAssignAreas;
 
   useEffect(() => {
     async function loadCatalogs() {
@@ -250,35 +268,105 @@ export default function AssetsPage() {
     setDetailLoading(false);
   }
 
-  async function handleDelete(id: string, nombre: string) {
-    if (!window.confirm(`¿Está seguro de dar de baja el activo "${nombre}"?`)) return;
-
-    try {
-      await deleteAsset(id);
-      notifySuccess('Activo dado de baja', `"${nombre}" fue dado de baja exitosamente.`);
-
-      if (selectedAssetId === id) {
-        closeDetailPanel();
-      }
-
-      await loadAssets();
-    } catch (err) {
-      const message = err instanceof HttpError ? err.message : 'No se pudo dar de baja el activo';
-      notifyError('Error', message);
-    }
+  // ========== ABRIR MODAL DE BAJA ==========
+  function openBajaModal(id: string, nombre: string) {
+    setBajaAsset({ id, nombre });
+    setBajaMotivo('');
+    setBajaModalOpen(true);
   }
 
+  // ========== EJECUTAR BAJA CON MOTIVO ==========
+  async function executeBaja() {
+  if (!bajaAsset) return;
+  
+  if (!bajaMotivo.trim()) {
+    alert('⚠️ El motivo de baja es obligatorio');
+    return;
+  }
+
+  setBajaLoading(true);
+
+  try {
+    const token = localStorage.getItem('access_token');
+    
+    // ✅ Enviar explícitamente como objeto con propiedad "motivo"
+    const requestBody = {
+      motivo: bajaMotivo.trim()
+    };
+    
+    console.log('Enviando baja:', requestBody); // Debug
+    
+    const response = await fetch(`/api/assets/${bajaAsset.id}/disable`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(requestBody)
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Error al dar de baja');
+    }
+    
+    notifySuccess('Activo dado de baja', `"${bajaAsset.nombre}" fue dado de baja exitosamente.`);
+
+    if (selectedAssetId === bajaAsset.id) {
+      closeDetailPanel();
+    }
+
+    await loadAssets();
+    setBajaModalOpen(false);
+    setBajaAsset(null);
+    setBajaMotivo('');
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'No se pudo dar de baja el activo';
+    notifyError('Error', message);
+    console.error('Error en baja:', err);
+  } finally {
+    setBajaLoading(false);
+  }
+}
+  // ===========================================
+
+  function openEditModal(assetId: string) {
+    if (!canUpdateAssets) {
+      notify.warning(
+        'Permiso requerido',
+        'No tienes permiso para editar activos.',
+      );
+      return;
+    }
+
+    setEditingAssetId(assetId);
+  }
+
+  useEffect(() => {
+    if (!canUpdateAssets && editingAssetId) {
+      setEditingAssetId(null);
+    }
+  }, [canUpdateAssets, editingAssetId]);
+
   function openAssignModal(asset: AssetListItem) {
+    if (!canOpenAssignModal) {
+      notify.warning(
+        'Permiso requerido',
+        'No tienes permiso para asignar activos.',
+      );
+      return;
+    }
+
     setAssigningAsset(asset);
 
-    if (asset.responsable?.id) {
+    if (canAssignUsers && asset.responsable?.id) {
       setAssignmentType('usuario');
       setAssignmentTargetId(asset.responsable.id);
-    } else if (asset.area?.id) {
+    } else if (canAssignAreas && asset.area?.id) {
       setAssignmentType('area');
       setAssignmentTargetId(asset.area.id);
     } else {
-      setAssignmentType('usuario');
+      setAssignmentType(canAssignUsers ? 'usuario' : 'area');
       setAssignmentTargetId('');
     }
 
@@ -298,6 +386,16 @@ export default function AssetsPage() {
 
     if (!assigningAsset || !assignmentTargetId) {
       notifyError('Asignación incompleta', 'Seleccione un usuario o un área para continuar.');
+      return;
+    }
+
+    if (assignmentType === 'usuario' && !canAssignUsers) {
+      notifyError('Permiso requerido', 'No tienes permiso para asignar activos a usuarios.');
+      return;
+    }
+
+    if (assignmentType === 'area' && !canAssignAreas) {
+      notifyError('Permiso requerido', 'No tienes permiso para asignar activos a áreas.');
       return;
     }
 
@@ -472,6 +570,8 @@ export default function AssetsPage() {
             type="button"
             className="btn btn--primary"
             onClick={() => setShowCreateAssetModal(true)}
+            disabled={!canCreateAssets}
+            title={!canCreateAssets ? 'No tienes permiso para registrar activos' : undefined}
           >
             <span>+</span> Nuevo Activo
           </button>
@@ -523,7 +623,6 @@ export default function AssetsPage() {
         </aside>
 
         <div className="assetsWorkspace__content">
-          {/* ── Column definitions ────────────────────────────── */}
           {(() => {
             const assetColumns: ColumnDef<AssetListItem>[] = [
               {
@@ -564,19 +663,18 @@ export default function AssetsPage() {
                 headerContent: renderSortLabel('Ubicación', 'ubicacion'),
               },
               {
+                id: 'area',
+                header: 'Área',
+                accessor: (row) => row.area?.nombre ?? '—',
+                width: 160,
+              },
+              {
                 id: 'responsable',
                 header: 'Responsable',
                 accessor: (row) => row.responsable?.nombreCompleto ?? '—',
                 width: 180,
                 headerContent: renderSortLabel('Responsable', 'responsable'),
-                render: (_value, row) => (
-                  <div className="assetsResponsible">
-                    <span>{row.responsable?.nombreCompleto ?? '—'}</span>
-                    {row.area?.nombre ? (
-                      <span className="assetsResponsible__meta">Área: {row.area.nombre}</span>
-                    ) : null}
-                  </div>
-                ),
+                render: (_value, row) => row.responsable?.nombreCompleto ?? '—',
               },
               {
                 id: 'estado',
@@ -599,22 +697,36 @@ export default function AssetsPage() {
                 onClick: (asset) => setViewingAssetId(asset.id),
               },
               {
+                label: 'Historial',
+                icon: '🕘',
+                onClick: (asset) => setHistoryAssetId(asset.id),
+              },
+            ];
+
+            if (canUpdateAssets) {
+              assetActions.push({
                 label: 'Editar',
                 icon: <IconEdit/>,
-                onClick: (asset) => setEditingAssetId(asset.id),
-              },
-              {
+                onClick: (asset) => openEditModal(asset.id),
+              });
+            }
+
+            if (canOpenAssignModal) {
+              assetActions.push({
                 label: 'Asignar',
                 icon: <IconGrid/>,
                 onClick: (asset) => openAssignModal(asset),
-              },
-              {
+              });
+            }
+
+            if (canUpdateAssets) {
+              assetActions.push({
                 label: 'Dar de baja',
                 icon: '⋯',
                 variant: 'danger',
-                onClick: (asset) => void handleDelete(asset.id, asset.nombre),
-              },
-            ];
+                onClick: (asset) => openBajaModal(asset.id, asset.nombre),
+              });
+            }
 
             return (
               <div className="assetsTable__wrap">
@@ -629,7 +741,6 @@ export default function AssetsPage() {
                   actions={assetActions}
                 />
 
-                {/* Server-side pagination */}
                 {!loading && assets.length > 0 && (
                   <div className="assetsPagination">
                     <span className="assetsPagination__info">
@@ -704,8 +815,8 @@ export default function AssetsPage() {
                   }}
                   disabled={submittingAssignment}
                 >
-                  <option value="usuario">Usuario</option>
-                  <option value="area">Área</option>
+                  {canAssignUsers ? <option value="usuario">Usuario</option> : null}
+                  {canAssignAreas ? <option value="area">Área</option> : null}
                 </select>
               </label>
 
@@ -781,7 +892,15 @@ export default function AssetsPage() {
         />
       ) : null}
 
-      {editingAssetId ? (
+      {historyAssetId ? (
+        <AssetTransferHistoryModal
+          assetId={historyAssetId}
+          open={Boolean(historyAssetId)}
+          onClose={() => setHistoryAssetId(null)}
+        />
+      ) : null}
+
+      {editingAssetId && canUpdateAssets ? (
         <EditAssetModal
           assetId={editingAssetId}
           open={Boolean(editingAssetId)}
@@ -803,6 +922,87 @@ export default function AssetsPage() {
           void loadAssets();
         }}
       />
+
+      {/* ========== MODAL DE BAJA ========== */}
+      {bajaModalOpen && bajaAsset && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 10000
+        }} onClick={() => !bajaLoading && setBajaModalOpen(false)}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '8px',
+            padding: '24px',
+            width: '450px',
+            maxWidth: '90%',
+            boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+          }} onClick={e => e.stopPropagation()}>
+            <h3 style={{ margin: '0 0 8px 0' }}>Dar de baja: {bajaAsset.nombre}</h3>
+            <p style={{ color: '#666', marginBottom: '20px', fontSize: '14px' }}>
+              Esta acción cambiará el estado del activo a "Dado de baja"
+            </p>
+
+            <div>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+                Motivo del retiro <span style={{ color: 'red' }}>*</span>
+              </label>
+              <textarea
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  border: '1px solid #ccc',
+                  borderRadius: '4px',
+                  minHeight: '100px',
+                  fontFamily: 'inherit'
+                }}
+                placeholder="Ej: Equipo obsoleto, dañado, robado, pérdida, baja por antigüedad..."
+                value={bajaMotivo}
+                onChange={(e) => setBajaMotivo(e.target.value)}
+                disabled={bajaLoading}
+              />
+            </div>
+
+            <div style={{ marginTop: '24px', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+              <button
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: '#e5e7eb',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: bajaLoading ? 'not-allowed' : 'pointer'
+                }}
+                onClick={() => setBajaModalOpen(false)}
+                disabled={bajaLoading}
+              >
+                Cancelar
+              </button>
+              <button
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: '#dc2626',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: (bajaLoading || !bajaMotivo.trim()) ? 'not-allowed' : 'pointer',
+                  opacity: (bajaLoading || !bajaMotivo.trim()) ? 0.6 : 1
+                }}
+                onClick={executeBaja}
+                disabled={bajaLoading || !bajaMotivo.trim()}
+              >
+                {bajaLoading ? 'Procesando...' : 'Confirmar baja'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
