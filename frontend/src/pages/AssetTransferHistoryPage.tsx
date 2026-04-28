@@ -106,11 +106,11 @@ export default function AssetTransferHistoryPage() {
 
       <div className="assetHistoryPage__header">
         <div>
-          <h1 className="assetHistoryPage__title">Historial de Transferencias</h1>
+          <h1 className="assetHistoryPage__title">Historial del Activo</h1>
           <p className="assetHistoryPage__subtitle">
             {asset
               ? `${asset.codigo} · ${asset.nombre}`
-              : 'Consulta los movimientos de transferencia del activo seleccionado.'}
+            : 'Consulta los movimientos del activo seleccionado.'}
           </p>
         </div>
       </div>
@@ -151,7 +151,7 @@ export default function AssetTransferHistoryPage() {
       <div className="assetHistoryCard">
         {loading ? (
           <div className="assetsState">
-            <p className="assetsState__text">Cargando historial de transferencias...</p>
+            <p className="assetsState__text">Cargando historial del activo...</p>
           </div>
         ) : errorMessage ? (
           <div className="assetsState assetsState--error">
@@ -160,24 +160,28 @@ export default function AssetTransferHistoryPage() {
         ) : filteredHistory.length === 0 ? (
           <div className="assetDetailHistory__empty">
             {asset?.historialTransferencias.length
-              ? 'No hay transferencias en el rango de fechas seleccionado.'
-              : 'No hay transferencias registradas para este activo.'}
+              ? 'No hay movimientos en el rango de fechas seleccionado.'
+              : 'No hay movimientos registrados para este activo.'}
           </div>
         ) : (
           <div className="assetDetailHistory__table">
             <div className="assetDetailHistory__row assetDetailHistory__row--head">
               <span>Fecha</span>
+              <span>Tipo</span>
               <span>Área de origen</span>
               <span>Área de destino</span>
               <span>Registrado por</span>
+              <span>Detalle</span>
             </div>
 
             {filteredHistory.map((transferencia) => (
               <div key={transferencia.id} className="assetDetailHistory__row">
                 <span>{formatDateTime(transferencia.fecha)}</span>
+                <span>{transferencia.tipo === 'BAJA' ? 'Baja' : 'Transferencia'}</span>
                 <span>{transferencia.areaOrigen?.nombre ?? 'No registrada'}</span>
                 <span>{transferencia.areaDestino?.nombre ?? 'No registrada'}</span>
                 <span>{transferencia.realizadoPor?.nombreCompleto ?? 'No registrado'}</span>
+                <span>{transferencia.detalle ?? 'Sin detalle'}</span>
               </div>
             ))}
           </div>

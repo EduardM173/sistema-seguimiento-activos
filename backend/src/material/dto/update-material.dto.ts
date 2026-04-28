@@ -37,4 +37,12 @@ export class UpdateMaterialDTO {
   @IsString()
   @IsOptional()
   categoriaId?: string;
+
+  @ApiPropertyOptional({
+    example: 'cmnkly3id000a2wl6area1234',
+    description: 'Nuevo ID del area responsable del material',
+  })
+  @IsString()
+  @IsOptional()
+  areaId?: string;
 }

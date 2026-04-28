@@ -155,14 +155,14 @@ export class MaterialController {
     },
   })
   @Get()
-  async findAll(@Query() query: SearchMaterialDTO): Promise<{
+  async findAll(@Query() query: SearchMaterialDTO, @Req() req: Request): Promise<{
     data: MaterialResponseDTO[];
     total: number;
     page: number;
     pageSize: number;
     totalPages: number;
   }> {
-    return this.materialService.findAll(query);
+    return this.materialService.findAll(query, req.user);
   }
 
   /**

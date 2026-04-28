@@ -3,7 +3,7 @@ import { Alert, Badge, Button, DataTable, SearchBar } from '../../components/com
 import OverlayModal from '../../components/common/OverlayModal';
 import ViewAssetModal from '../../components/activos/ViewAssetModal';
 import { useAuth } from '../../context/AuthContext';
-import auditoriaService from '../../services/auditoria.service';
+import auditoriaService, { emitNotificationsRefresh } from '../../services/auditoria.service';
 import { HttpError } from '../../services/http.client';
 import type { Notificacion } from '../../types/auditoria.types';
 import '../../styles/modules.css';
@@ -133,6 +133,7 @@ export const NotificacionesPage: React.FC = () => {
 
       if (!notification.leida) {
         await auditoriaService.marcarLeida(notification.id);
+        emitNotificationsRefresh();
 
         setNotifications((prev) =>
           prev.map((item) =>

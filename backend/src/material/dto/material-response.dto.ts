@@ -25,6 +25,9 @@ export class MaterialResponseDTO {
   @ApiPropertyOptional({ example: 'cmnkly3id000w2wl6qls04snz', description: 'ID de la categoría asociada' })
   categoriaId?: string;
 
+  @ApiPropertyOptional({ example: 'cmnkly3id000a2wl6area1234', description: 'ID del area responsable' })
+  areaId?: string;
+
   @ApiPropertyOptional({
     example: {
       id: 'cmnkly3id000w2wl6qls04snz',
@@ -37,6 +40,17 @@ export class MaterialResponseDTO {
     nombre: string;
     descripcion?: string;
   };
+
+  @ApiPropertyOptional({
+    example: {
+      id: 'cmnkly3id000a2wl6area1234',
+      nombre: 'Sistemas',
+    },
+  })
+  area?: {
+    id: string;
+    nombre: string;
+  } | null;
 
   @ApiProperty({ example: '2026-04-04T17:56:54.453Z', description: 'Fecha de creación del material' })
   creadoEn: Date;

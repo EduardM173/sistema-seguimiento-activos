@@ -114,7 +114,7 @@ export default function AssetTransferHistoryModal({
     <OverlayModal
       open={open}
       onClose={onClose}
-      title="Historial de Transferencias"
+      title="Historial del Activo"
       subtitle={
         asset
           ? `${asset.codigo} · ${asset.nombre}`
@@ -158,7 +158,7 @@ export default function AssetTransferHistoryModal({
       <div className="assetHistoryCard">
         {loading ? (
           <div className="assetsState">
-            <p className="assetsState__text">Cargando historial de transferencias...</p>
+            <p className="assetsState__text">Cargando historial del activo...</p>
           </div>
         ) : errorMessage ? (
           <div className="assetsState assetsState--error">
@@ -167,24 +167,28 @@ export default function AssetTransferHistoryModal({
         ) : filteredHistory.length === 0 ? (
           <div className="assetDetailHistory__empty">
             {asset?.historialTransferencias.length
-              ? 'No hay transferencias en el rango de fechas seleccionado.'
-              : 'No hay transferencias registradas para este activo.'}
+              ? 'No hay movimientos en el rango de fechas seleccionado.'
+              : 'No hay movimientos registrados para este activo.'}
           </div>
         ) : (
           <div className="assetDetailHistory__table">
             <div className="assetDetailHistory__row assetDetailHistory__row--head">
               <span>Fecha</span>
+              <span>Tipo</span>
               <span>Área de origen</span>
               <span>Área de destino</span>
               <span>Registrado por</span>
+              <span>Detalle</span>
             </div>
 
             {filteredHistory.map((transferencia) => (
               <div key={transferencia.id} className="assetDetailHistory__row">
                 <span>{formatDateTime(transferencia.fecha)}</span>
+                <span>{transferencia.tipo === 'BAJA' ? 'Baja' : 'Transferencia'}</span>
                 <span>{transferencia.areaOrigen?.nombre ?? 'No registrada'}</span>
                 <span>{transferencia.areaDestino?.nombre ?? 'No registrada'}</span>
                 <span>{transferencia.realizadoPor?.nombreCompleto ?? 'No registrado'}</span>
+                <span>{transferencia.detalle ?? 'Sin detalle'}</span>
               </div>
             ))}
           </div>

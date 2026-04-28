@@ -3,6 +3,7 @@ import { Button, Badge, SmartTable } from '../../components/common';
 import type { ColumnDef, ActionDef } from '../../components/common';
 import type { CategoriaMaterial, Material } from '../../types/inventario.types';
 import { inventarioService } from '../../services/inventario.service';
+import { getAreas } from '../../services/catalogs.service';
 import MaterialForm from '../../components/inventario/MaterialForm';
 import { useNotification } from '../../context/NotificationContext';
 import '../../styles/modules.css';
@@ -27,11 +28,13 @@ export const InventarioPage: React.FC = () => {
   const [isSalidaModalOpen, setIsSalidaModalOpen] = useState(false);
   const [isAjusteModalOpen, setIsAjusteModalOpen] = useState(false);
   const [categorias, setCategorias] = useState<CategoriaMaterial[]>([]);
+  const [areas, setAreas] = useState<{ id: string; nombre: string }[]>([]);
   const [searchText, setSearchText] = useState('');
   const [categoriaId, setCategoriaId] = useState('');
+  const [areaId, setAreaId] = useState('');
   const [estado, setEstado] = useState<'CRITICO' | 'NORMAL' | ''>('');
   const [sortBy, setSortBy] = useState<
-    'codigo' | 'nombre' | 'categoria' | 'stockActual' | 'stockMinimo' | 'unidad' | 'creadoEn'
+    'codigo' | 'nombre' | 'categoria' | 'stockActual' | 'stockMinimo' | 'unidad' | 'area' | 'creadoEn'
   >('creadoEn');
   const [sortType, setSortType] = useState<'ASC' | 'DESC'>('DESC');
   const [currentPage, setCurrentPage] = useState(1);
@@ -48,13 +51,17 @@ export const InventarioPage: React.FC = () => {
 
   useEffect(() => {
     void cargarMateriales();
-  }, [refreshKey, searchText, categoriaId, estado, sortBy, sortType, currentPage]);
+  }, [refreshKey, searchText, categoriaId, areaId, estado, sortBy, sortType, currentPage]);
 
   useEffect(() => {
     const cargarCategorias = async () => {
       try {
-        const data = await inventarioService.obtenerCategorias();
+        const [data, areasData] = await Promise.all([
+          inventarioService.obtenerCategorias(),
+          getAreas(),
+        ]);
         setCategorias(data);
+        setAreas(areasData);
       } catch {
         // noop
       }
@@ -71,6 +78,7 @@ export const InventarioPage: React.FC = () => {
       const resultado = await inventarioService.obtenerTodos({
         q: searchText || undefined,
         categoriaId: categoriaId || undefined,
+        areaId: areaId || undefined,
         estado: estado || undefined,
         page: currentPage,
         pageSize: 10,
@@ -126,6 +134,7 @@ export const InventarioPage: React.FC = () => {
   const handleFilterChange = (query: FilterQuery) => {
     setSearchText(query.search ?? '');
     setCategoriaId(query.categoria ?? '');
+    setAreaId(query.area ?? '');
     setEstado((query.estado ?? '') as 'CRITICO' | 'NORMAL' | '');
     setSortBy((query.sortBy || 'creadoEn') as typeof sortBy);
     setSortType((query.sortType || 'DESC') as 'ASC' | 'DESC');
@@ -135,6 +144,7 @@ export const InventarioPage: React.FC = () => {
   const clearFilters = () => {
     setSearchText('');
     setCategoriaId('');
+    setAreaId('');
     setEstado('');
     setSortBy('creadoEn');
     setSortType('DESC');
@@ -280,6 +290,11 @@ export const InventarioPage: React.FC = () => {
     header: 'Categoría',
     accessor: (row: Material) => row.categoria?.nombre || 'N/A',
   },
+  {
+    id: 'area',
+    header: 'Area',
+    accessor: (row: Material) => row.area?.nombre || 'Sin area',
+  },
     {
       id: 'stockActual',
       header: 'Disponible',
@@ -416,6 +431,13 @@ export const InventarioPage: React.FC = () => {
     },
     {
       type: 'select',
+      key: 'area',
+      label: 'AREA',
+      placeholder: 'Todas',
+      options: areas.map((area) => ({ value: area.id, label: area.nombre })),
+    },
+    {
+      type: 'select',
       key: 'estado',
       label: 'ESTADO',
       placeholder: 'Todos',
@@ -434,6 +456,7 @@ export const InventarioPage: React.FC = () => {
         { value: 'codigo', label: 'Código' },
         { value: 'nombre', label: 'Nombre' },
         { value: 'categoria', label: 'Categoría' },
+        { value: 'area', label: 'Area' },
         { value: 'stockActual', label: 'Stock actual' },
         { value: 'stockMinimo', label: 'Stock mínimo' },
         { value: 'unidad', label: 'Unidad' },
