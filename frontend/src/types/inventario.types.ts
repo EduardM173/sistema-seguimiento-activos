@@ -16,6 +16,11 @@ export interface Material {
   stockMinimo: number;
   categoriaId?: string | null;
   categoria?: CategoriaMaterial | null;
+  areaId?: string | null;
+  area?: {
+    id: string;
+    nombre: string;
+  } | null;
   creadoEn: Date;
   actualizadoEn: Date;
 
@@ -32,6 +37,7 @@ export interface CreateMaterialDTO {
   stockActual: number;
   stockMinimo: number;
   categoriaId?: string;
+  areaId?: string;
 }
 
 // DTO para actualizar material (UpdateMaterialDTO en el backend)
@@ -42,6 +48,7 @@ export interface UpdateMaterialDTO {
   stockActual?: number;
   stockMinimo?: number;
   categoriaId?: string;
+  areaId?: string;
 }
 
 // Movimiento de inventario
@@ -83,6 +90,8 @@ export interface CreateMovimientoInventarioDTO {
 export interface FiltrosInventario {
   q?: string;
   categoriaId?: string;
+  estado?: 'CRITICO' | 'NORMAL';
+  areaId?: string;
   page?: number;
   pageSize?: number;
   sortBy?:
@@ -92,6 +101,7 @@ export interface FiltrosInventario {
     | 'stockActual'
     | 'stockMinimo'
     | 'unidad'
+    | 'area'
     | 'creadoEn';
   sortType?: 'ASC' | 'DESC';
 }

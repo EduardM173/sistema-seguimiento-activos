@@ -32,10 +32,14 @@ import {
   CreateMaterialDTO,
   UpdateMaterialDTO,
   MaterialResponseDTO,
+  MaterialEstadoFilter,
   AumentarStockDTO,
+  ReducirStockDTO,
+  AjustarStockDTO,
   MaterialSortBy,
   MaterialSortType,
   SearchMaterialDTO,
+  SearchMaterialHistoryDTO,
 } from './dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ApiResponse } from '../common/api-response';
@@ -75,7 +79,8 @@ export class MaterialController {
    */
   @ApiOperation({
     summary: 'Listar materiales',
-    description: 'Obtiene el listado de materiales o recursos del inventario, incluyendo su stock actual y stock mínimo.',
+    description:
+      'Obtiene el listado de materiales o recursos del inventario, incluyendo su stock actual y stock mínimo.',
   })
   @ApiQuery({
     name: 'q',
@@ -112,6 +117,12 @@ export class MaterialController {
     description: 'Campo por el cual ordenar el listado',
   })
   @ApiQuery({
+    name: 'estado',
+    required: false,
+    enum: MaterialEstadoFilter,
+    description: 'Filtra materiales por estado de stock',
+  })
+  @ApiQuery({
     name: 'sortType',
     required: false,
     enum: MaterialSortType,
@@ -144,14 +155,14 @@ export class MaterialController {
     },
   })
   @Get()
-  async findAll(@Query() query: SearchMaterialDTO): Promise<{
+  async findAll(@Query() query: SearchMaterialDTO, @Req() req: Request): Promise<{
     data: MaterialResponseDTO[];
     total: number;
     page: number;
     pageSize: number;
     totalPages: number;
   }> {
-    return this.materialService.findAll(query);
+    return this.materialService.findAll(query, req.user);
   }
 
   /**
@@ -166,8 +177,68 @@ export class MaterialController {
     description: 'Categorías de materiales obtenidas correctamente',
   })
   @Get('categorias')
-  async obtenerCategorias(): Promise<{ id: string; nombre: string; descripcion?: string | null }[]> {
+  async obtenerCategorias(): Promise<
+    { id: string; nombre: string; descripcion?: string | null }[]
+  > {
     return this.materialService.obtenerCategorias();
+  }
+
+  /**
+   * GET /inventory-items/:id/history
+   * Obtener historial de movimientos de un material
+   */
+  @ApiOperation({
+    summary: 'Obtener historial de movimientos de un material',
+    description:
+      'Obtiene el historial de entradas, salidas y ajustes de un material, filtrable por rango de fechas.',
+  })
+  @ApiParam({ name: 'id', description: 'ID del material' })
+  @ApiQuery({
+    name: 'startDate',
+    required: false,
+    type: String,
+    description: 'Fecha inicial del rango',
+    example: '2026-04-01',
+  })
+  @ApiQuery({
+    name: 'endDate',
+    required: false,
+    type: String,
+    description: 'Fecha final del rango',
+    example: '2026-04-19',
+  })
+  @ApiOkResponse({
+    description: 'Historial del material obtenido correctamente',
+    schema: {
+      example: [
+        {
+          id: 'cmnmov123',
+          tipo: 'ENTRADA',
+          cantidad: 25,
+          fecha: '2026-04-19T10:30:00.000Z',
+          usuario: {
+            id: 'cmnuser123',
+            nombreCompleto: 'Juan Pérez',
+            email: 'juan@empresa.com',
+          },
+          material: {
+            id: 'cmnmaterial123',
+            codigo: 'MAT-001',
+            nombre: 'Papel bond carta',
+          },
+        },
+      ],
+    },
+  })
+  @ApiNotFoundResponse({
+    description: 'No se encontró el material solicitado',
+  })
+  @Get(':id/history')
+  async getHistory(
+    @Param('id') id: string,
+    @Query() query: SearchMaterialHistoryDTO,
+  ) {
+    return this.materialService.getHistory(id, query);
   }
 
   /**
@@ -308,6 +379,96 @@ export class MaterialController {
     const userId = (req.user as { id: string }).id;
     const result = await this.materialService.aumentarStock(id, dto.cantidad, userId);
     return ApiResponse.success(result, 'Ingreso de stock registrado correctamente');
+  }
+
+  @ApiOperation({
+    summary: 'Registrar salida de stock',
+    description:
+      'Registra una salida de inventario para un material existente y descuenta su stock disponible.',
+  })
+  @ApiParam({ name: 'id', description: 'ID del material' })
+  @ApiBody({
+    type: ReducirStockDTO,
+    examples: {
+      salidaStock: {
+        summary: 'Salida de stock',
+        value: {
+          cantidad: 3,
+          motivo: 'Entrega de material para laboratorio',
+        },
+      },
+    },
+  })
+  @ApiOkResponse({
+    description: 'Salida registrada correctamente y stock actualizado',
+  })
+  @ApiBadRequestResponse({
+    description:
+      'La cantidad de salida es inválida, supera el stock disponible o falta el motivo',
+  })
+  @ApiNotFoundResponse({
+    description: 'No se encontró el material solicitado',
+  })
+  @Patch(':id/reducir-stock')
+  async reducirStock(
+    @Param('id') id: string,
+    @Body() dto: ReducirStockDTO,
+    @Req() req: Request,
+  ) {
+    const userId = (req.user as { id: string }).id;
+    const result = await this.materialService.reducirStock(
+      id,
+      dto.cantidad,
+      dto.motivo,
+      userId,
+    );
+    return ApiResponse.success(result, 'Salida de inventario registrada correctamente');
+  }
+
+  @ApiOperation({
+    summary: 'Registrar ajuste por conteo físico',
+    description:
+      'Registra un ajuste de inventario comparando la cantidad registrada contra la cantidad física encontrada.',
+  })
+  @ApiParam({ name: 'id', description: 'ID del material' })
+  @ApiBody({
+    type: AjustarStockDTO,
+    examples: {
+      ajusteConteo: {
+        summary: 'Ajuste por conteo físico',
+        value: {
+          cantidadRegistrada: 15,
+          cantidadFisica: 12,
+          motivo: 'Ajuste por conteo físico mensual',
+        },
+      },
+    },
+  })
+  @ApiOkResponse({
+    description: 'Ajuste registrado correctamente y stock actualizado',
+  })
+  @ApiBadRequestResponse({
+    description:
+      'Los datos del ajuste son inválidos o la cantidad registrada no coincide con el stock actual',
+  })
+  @ApiNotFoundResponse({
+    description: 'No se encontró el material solicitado',
+  })
+  @Patch(':id/ajustar-stock')
+  async ajustarStock(
+    @Param('id') id: string,
+    @Body() dto: AjustarStockDTO,
+    @Req() req: Request,
+  ) {
+    const userId = (req.user as { id: string }).id;
+    const result = await this.materialService.ajustarStock(
+      id,
+      dto.cantidadRegistrada,
+      dto.cantidadFisica,
+      dto.motivo,
+      userId,
+    );
+    return ApiResponse.success(result, 'Ajuste de inventario registrado correctamente');
   }
 
   @ApiOperation({

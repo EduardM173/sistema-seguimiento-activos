@@ -45,4 +45,12 @@ export class CreateMaterialDTO {
   @IsString()
   @IsOptional()
   categoriaId?: string;
+
+  @ApiPropertyOptional({
+    example: 'cmnkly3id000a2wl6area1234',
+    description: 'ID del area responsable del material',
+  })
+  @IsString()
+  @IsOptional()
+  areaId?: string;
 }

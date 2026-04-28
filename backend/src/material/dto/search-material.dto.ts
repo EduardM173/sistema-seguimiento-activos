@@ -16,12 +16,18 @@ export enum MaterialSortBy {
   STOCK_ACTUAL = 'stockActual',
   STOCK_MINIMO = 'stockMinimo',
   UNIDAD = 'unidad',
+  AREA = 'area',
   CREADO_EN = 'creadoEn',
 }
 
 export enum MaterialSortType {
   ASC = 'ASC',
   DESC = 'DESC',
+}
+
+export enum MaterialEstadoFilter {
+  CRITICO = 'CRITICO',
+  NORMAL = 'NORMAL',
 }
 
 export class SearchMaterialDTO {
@@ -40,6 +46,23 @@ export class SearchMaterialDTO {
   @IsOptional()
   @IsString()
   categoriaId?: string;
+
+  @ApiPropertyOptional({
+    example: 'cmnkly3id000a2wl6area1234',
+    description: 'Filtra por area responsable',
+  })
+  @IsOptional()
+  @IsString()
+  areaId?: string;
+
+  @ApiPropertyOptional({
+    enum: MaterialEstadoFilter,
+    description: 'Filtra por estado del stock',
+    example: MaterialEstadoFilter.CRITICO,
+  })
+  @IsOptional()
+  @IsEnum(MaterialEstadoFilter)
+  estado?: MaterialEstadoFilter;
 
   @ApiPropertyOptional({
     enum: MaterialSortBy,

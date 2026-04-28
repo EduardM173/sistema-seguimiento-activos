@@ -34,6 +34,21 @@ function renderValue(value: string | null | undefined) {
   return value && String(value).trim() ? value : 'No registrado';
 }
 
+function formatDateTime(value: string | null) {
+  if (!value) return 'No registrado';
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+
+  return new Intl.DateTimeFormat('es-BO', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date);
+}
+
 function getStatusClass(estado: EstadoActivo) {
   if (estado === 'OPERATIVO') return 'statusBadge--activo';
   if (estado === 'MANTENIMIENTO') return 'statusBadge--mantenimiento';
@@ -267,6 +282,38 @@ export default function AssetDetailPanel({
             </div>
           </article>
         ))}
+
+        <article className="assetDetailCard assetDetailCard--history">
+          <div className="assetDetailCard__head">
+            <h3 className="assetDetailCard__title">Historial de Transferencias</h3>
+          </div>
+
+          {asset.historialTransferencias.length === 0 ? (
+            <div className="assetDetailHistory__empty">
+              No hay transferencias registradas para este activo.
+            </div>
+          ) : (
+            <div className="assetDetailHistory">
+              <div className="assetDetailHistory__table">
+                <div className="assetDetailHistory__row assetDetailHistory__row--head">
+                  <span>Fecha</span>
+                  <span>Área de origen</span>
+                  <span>Área de destino</span>
+                  <span>Registrado por</span>
+                </div>
+
+                {asset.historialTransferencias.map((transferencia) => (
+                  <div key={transferencia.id} className="assetDetailHistory__row">
+                    <span>{formatDateTime(transferencia.fecha)}</span>
+                    <span>{transferencia.areaOrigen?.nombre ?? 'No registrada'}</span>
+                    <span>{transferencia.areaDestino?.nombre ?? 'No registrada'}</span>
+                    <span>{transferencia.realizadoPor?.nombreCompleto ?? 'No registrado'}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </article>
       </div>
     </div>
   );

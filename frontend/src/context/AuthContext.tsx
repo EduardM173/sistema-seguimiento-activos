@@ -6,9 +6,11 @@ import type { AuthUser, LoginResponse } from '../types/auth.types';
 
 import {
   clearAuthSession,
+  getCurrentSession,
   getStoredUser,
   isAuthenticated as checkIsAuthenticated,
   saveAuthSession,
+  saveAuthUser,
 } from '../services/auth.service';
 
 type AuthContextType = {
@@ -50,15 +52,40 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }
 
   useEffect(() => {
+    async function syncCurrentSession() {
+      if (!checkIsAuthenticated()) {
+        return;
+      }
+
+      try {
+        const session = await getCurrentSession();
+        saveAuthUser(session.usuario);
+        setUser(session.usuario);
+        setIsAuthenticated(true);
+      } catch {
+        syncAuthState();
+      }
+    }
+
     function syncAuthState() {
       setUser(getStoredUser());
       setIsAuthenticated(checkIsAuthenticated());
     }
 
+    void syncCurrentSession();
+
+    function handleWindowFocus() {
+      void syncCurrentSession();
+    }
+
     window.addEventListener('storage', syncAuthState);
+    window.addEventListener('focus', handleWindowFocus);
+    document.addEventListener('visibilitychange', handleWindowFocus);
 
     return () => {
       window.removeEventListener('storage', syncAuthState);
+      window.removeEventListener('focus', handleWindowFocus);
+      document.removeEventListener('visibilitychange', handleWindowFocus);
     };
   }, []);
 

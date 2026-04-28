@@ -1,14 +1,23 @@
-import React, { useState, useEffect } from 'react';
-import { DataTable, Button, Badge } from '../../components/common';
+import React, { useEffect, useState } from 'react';
+import { Button, Badge, SmartTable } from '../../components/common';
+import type { ColumnDef, ActionDef } from '../../components/common';
 import type { CategoriaMaterial, Material } from '../../types/inventario.types';
 import { inventarioService } from '../../services/inventario.service';
+import { getAreas } from '../../services/catalogs.service';
 import MaterialForm from '../../components/inventario/MaterialForm';
 import { useNotification } from '../../context/NotificationContext';
 import '../../styles/modules.css';
+import '../../styles/assets.css';
 import IngresoStockModal from '../../components/inventario/IngresoStockModal';
+import AjusteInventarioModal from '../../components/inventario/AjusteInventarioModal';
+import SalidaStockModal from '../../components/inventario/SalidaStockModal';
+import { FilterRow } from '../../components/common/FilterRow';
+import type { FilterQuery } from '../../components/common/FilterRow';
+import { IconEdit, IconX } from '@/components/common/Icon';
 
 export const InventarioPage: React.FC = () => {
   const notify = useNotification();
+
   const [materiales, setMateriales] = useState<Material[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<{ type: 'error'; text: string } | null>(null);
@@ -16,25 +25,43 @@ export const InventarioPage: React.FC = () => {
   const [materialToEdit, setMaterialToEdit] = useState<Material | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [isIngresoModalOpen, setIsIngresoModalOpen] = useState(false);
+  const [isSalidaModalOpen, setIsSalidaModalOpen] = useState(false);
+  const [isAjusteModalOpen, setIsAjusteModalOpen] = useState(false);
   const [categorias, setCategorias] = useState<CategoriaMaterial[]>([]);
+  const [areas, setAreas] = useState<{ id: string; nombre: string }[]>([]);
   const [searchText, setSearchText] = useState('');
   const [categoriaId, setCategoriaId] = useState('');
-  const [sortBy, setSortBy] = useState<'codigo' | 'nombre' | 'categoria' | 'stockActual' | 'stockMinimo' | 'unidad' | 'creadoEn'>('creadoEn');
+  const [areaId, setAreaId] = useState('');
+  const [estado, setEstado] = useState<'CRITICO' | 'NORMAL' | ''>('');
+  const [sortBy, setSortBy] = useState<
+    'codigo' | 'nombre' | 'categoria' | 'stockActual' | 'stockMinimo' | 'unidad' | 'area' | 'creadoEn'
+  >('creadoEn');
   const [sortType, setSortType] = useState<'ASC' | 'DESC'>('DESC');
   const [currentPage, setCurrentPage] = useState(1);
   const [meta, setMeta] = useState({ total: 0, pageSize: 10, totalPages: 1 });
   const [creatingDemo, setCreatingDemo] = useState(false);
   const [deletingDemo, setDeletingDemo] = useState(false);
 
+  const [showHistorialModal, setShowHistorialModal] = useState(false);
+  const [materialSeleccionado, setMaterialSeleccionado] = useState<Material | null>(null);
+  const [historial, setHistorial] = useState<any[]>([]);
+  const [loadingHistorial, setLoadingHistorial] = useState(false);
+  const [fechaInicio, setFechaInicio] = useState('');
+  const [fechaFin, setFechaFin] = useState('');
+
   useEffect(() => {
-    cargarMateriales();
-  }, [refreshKey, searchText, categoriaId, sortBy, sortType, currentPage]);
+    void cargarMateriales();
+  }, [refreshKey, searchText, categoriaId, areaId, estado, sortBy, sortType, currentPage]);
 
   useEffect(() => {
     const cargarCategorias = async () => {
       try {
-        const data = await inventarioService.obtenerCategorias();
+        const [data, areasData] = await Promise.all([
+          inventarioService.obtenerCategorias(),
+          getAreas(),
+        ]);
         setCategorias(data);
+        setAreas(areasData);
       } catch {
         // noop
       }
@@ -47,14 +74,18 @@ export const InventarioPage: React.FC = () => {
     try {
       setLoading(true);
       setMessage(null);
+
       const resultado = await inventarioService.obtenerTodos({
         q: searchText || undefined,
         categoriaId: categoriaId || undefined,
+        areaId: areaId || undefined,
+        estado: estado || undefined,
         page: currentPage,
         pageSize: 10,
         sortBy,
         sortType,
       });
+
       setMateriales(resultado.data);
       setMeta({
         total: resultado.total,
@@ -71,7 +102,7 @@ export const InventarioPage: React.FC = () => {
 
   const handleMaterialCreated = async () => {
     setCurrentPage(1);
-    setRefreshKey(prev => prev + 1);
+    setRefreshKey((prev) => prev + 1);
   };
 
   const handleEdit = (material: Material) => {
@@ -80,14 +111,18 @@ export const InventarioPage: React.FC = () => {
   };
 
   const handleDelete = async (material: Material) => {
-    if (confirm(`¿Está seguro de eliminar el material "${material.nombre}"?`)) {
-      try {
-        await inventarioService.eliminar(material.id);
-        notify.success('Material eliminado correctamente');
-        setRefreshKey(prev => prev + 1);
-      } catch (err) {
-        notify.error('Error', 'No se pudo eliminar el material');
-      }
+    const confirmed = window.confirm(
+      `¿Está seguro de eliminar el material "${material.nombre}"?`,
+    );
+
+    if (!confirmed) return;
+
+    try {
+      await inventarioService.eliminar(material.id);
+      notify.success('Material eliminado correctamente');
+      setRefreshKey((prev) => prev + 1);
+    } catch (err) {
+      notify.error('Error', 'No se pudo eliminar el material');
     }
   };
 
@@ -96,12 +131,70 @@ export const InventarioPage: React.FC = () => {
     setMaterialToEdit(null);
   };
 
+  const handleFilterChange = (query: FilterQuery) => {
+    setSearchText(query.search ?? '');
+    setCategoriaId(query.categoria ?? '');
+    setAreaId(query.area ?? '');
+    setEstado((query.estado ?? '') as 'CRITICO' | 'NORMAL' | '');
+    setSortBy((query.sortBy || 'creadoEn') as typeof sortBy);
+    setSortType((query.sortType || 'DESC') as 'ASC' | 'DESC');
+    setCurrentPage(1);
+  };
+
   const clearFilters = () => {
     setSearchText('');
     setCategoriaId('');
+    setAreaId('');
+    setEstado('');
     setSortBy('creadoEn');
     setSortType('DESC');
     setCurrentPage(1);
+  };
+
+  const cargarHistorial = async (
+    material: Material,
+    filtros?: { startDate?: string; endDate?: string },
+  ) => {
+    setLoadingHistorial(true);
+
+    try {
+      const data = await inventarioService.obtenerHistorialMaterial(
+        material.id,
+        filtros,
+      );
+      setHistorial(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error('Error cargando historial', error);
+      setMessage({ type: 'error', text: 'Error al cargar historial' });
+      setHistorial([]);
+    } finally {
+      setLoadingHistorial(false);
+    }
+  };
+
+  const abrirHistorial = async (material: Material) => {
+    setMaterialSeleccionado(material);
+    setFechaInicio('');
+    setFechaFin('');
+    setShowHistorialModal(true);
+    await cargarHistorial(material);
+  };
+
+  const aplicarFiltroHistorial = async () => {
+    if (!materialSeleccionado) return;
+
+    await cargarHistorial(materialSeleccionado, {
+      startDate: fechaInicio || undefined,
+      endDate: fechaFin || undefined,
+    });
+  };
+
+  const limpiarFiltroHistorial = async () => {
+    if (!materialSeleccionado) return;
+
+    setFechaInicio('');
+    setFechaFin('');
+    await cargarHistorial(materialSeleccionado);
   };
 
   const handleCreateDemo = async () => {
@@ -114,11 +207,17 @@ export const InventarioPage: React.FC = () => {
     try {
       setCreatingDemo(true);
       const response = await inventarioService.crearDemo(100);
-      notify.success('Carga demo completada', `Se insertaron ${response.data?.inserted ?? 100} materiales ficticios.`);
+      notify.success(
+        'Carga demo completada',
+        `Se insertaron ${response.data?.inserted ?? 100} materiales ficticios.`,
+      );
       setCurrentPage(1);
-      setRefreshKey(prev => prev + 1);
+      setRefreshKey((prev) => prev + 1);
     } catch (err: any) {
-      notify.error('Error', err?.message || 'No se pudieron generar materiales demo');
+      notify.error(
+        'Error',
+        err?.message || 'No se pudieron generar materiales demo',
+      );
     } finally {
       setCreatingDemo(false);
     }
@@ -134,11 +233,17 @@ export const InventarioPage: React.FC = () => {
     try {
       setDeletingDemo(true);
       const response = await inventarioService.eliminarDemo();
-      notify.success('Limpieza demo completada', `Se eliminaron ${response.data?.deleted ?? 0} materiales ficticios.`);
+      notify.success(
+        'Limpieza demo completada',
+        `Se eliminaron ${response.data?.deleted ?? 0} materiales ficticios.`,
+      );
       setCurrentPage(1);
-      setRefreshKey(prev => prev + 1);
+      setRefreshKey((prev) => prev + 1);
     } catch (err: any) {
-      notify.error('Error', err?.message || 'No se pudieron eliminar materiales demo');
+      notify.error(
+        'Error',
+        err?.message || 'No se pudieron eliminar materiales demo',
+      );
     } finally {
       setDeletingDemo(false);
     }
@@ -151,77 +256,72 @@ export const InventarioPage: React.FC = () => {
   };
 
   const getStockStatus = (
-    stockActual: number,
-    stockMinimo: number
-  ): { label: string; variant: 'danger' | 'warning' | 'success' } => {
-    if (stockActual <= 0) return { label: 'SIN STOCK', variant: 'danger' };
-    if (stockActual < stockMinimo) return { label: 'CRÍTICO', variant: 'danger' };
-    return { label: 'NORMAL', variant: 'success' };
-  };
+      stockActual: number,
+      stockMinimo: number,
+    ): { label: string; variant: 'danger' | 'warning' | 'success' } => {
+      if (stockActual <= 0) return { label: 'SIN STOCK', variant: 'danger' };
+      if (stockActual < stockMinimo) return { label: 'CRÍTICO', variant: 'danger' };
+      return { label: 'NORMAL', variant: 'success' };
+    };
 
-  const columns = [
-    { header: 'Código', accessor: 'codigo' as keyof Material, width: '100px' },
-    { header: 'Nombre', accessor: 'nombre' as keyof Material },
-    { header: 'Categoría', accessor: (row: Material) => row.categoria?.nombre || 'N/A' },
+  const materialActions: ActionDef<Material>[] = [
     {
+      label: 'Editar',
+      icon: <IconEdit />,
+      onClick: (material: Material) => handleEdit(material),
+    },
+    {
+      label: 'Eliminar',
+      icon: <IconX />,
+      variant: 'danger' as const,
+      onClick: (material: Material) => void handleDelete(material),
+    },
+    {
+      label: 'Historial',
+      onClick: (material: Material) => void abrirHistorial(material),
+    },
+  ];
+
+  const columns: ColumnDef<Material>[] = [
+  { id: 'codigo', header: 'Código', accessor: 'codigo', width: 100 },
+  { id: 'nombre', header: 'Nombre', primary: true, accessor: 'nombre' },
+  {
+    id: 'categoria',
+    header: 'Categoría',
+    accessor: (row: Material) => row.categoria?.nombre || 'N/A',
+  },
+  {
+    id: 'area',
+    header: 'Area',
+    accessor: (row: Material) => row.area?.nombre || 'Sin area',
+  },
+    {
+      id: 'stockActual',
       header: 'Disponible',
       accessor: (row: Material) => row.stockActual,
-      render: (value: number, row: Material) => (
+      render: (value: unknown, row: Material) => (
         <strong style={{ color: getStockColor(row.stockActual, row.stockMinimo) }}>
-          {value.toFixed(2)}
+          {(value as number).toFixed(2)}
         </strong>
       ),
     },
     {
+      id: 'stockMinimo',
       header: 'Mínimo',
-      accessor: 'stockMinimo' as keyof Material,
-      render: (value: number) => value.toFixed(2),
+      accessor: 'stockMinimo',
+      render: (value: unknown) => (value as number).toFixed(2),
     },
-    { header: 'Un. Medida', accessor: 'unidad' as keyof Material, width: '100px' },
+
+    { id: 'unidad', header: 'Un. Medida', accessor: 'unidad', width: 100 },
+
     {
+      id: 'estado',
       header: 'Estado',
-      accessor: (row: Material) => row,
-      render: (row: Material) => {
+      accessor: (row: Material) => row.stockActual,
+      render: (_value: unknown, row: Material) => {
         const status = getStockStatus(row.stockActual, row.stockMinimo);
         return <Badge label={status.label} variant={status.variant} size="sm" />;
       },
-    },
-    {
-      header: 'Acciones',
-      accessor: (row: Material) => row.id,
-      render: (_id: string, row: Material) => (
-        <div className="actions-group" style={{ display: 'flex', gap: '8px' }}>
-          <button
-            className="btn-action btn-edit"
-            onClick={() => handleEdit(row)}
-            title="Editar"
-            style={{
-              cursor: 'pointer',
-              padding: '4px 8px',
-              background: '#e0e7ff',
-              borderRadius: '4px',
-              border: 'none',
-            }}
-          >
-            ✏️ Editar
-          </button>
-          <button
-            className="btn-action btn-delete"
-            onClick={() => handleDelete(row)}
-            title="Eliminar"
-            style={{
-              cursor: 'pointer',
-              padding: '4px 8px',
-              background: '#fee2e2',
-              borderRadius: '4px',
-              border: 'none',
-              color: '#dc2626',
-            }}
-          >
-            🗑️ Eliminar
-          </button>
-        </div>
-      ),
     },
   ];
 
@@ -230,7 +330,7 @@ export const InventarioPage: React.FC = () => {
       <div className="module-header">
         <h1>Gestión de Inventario</h1>
 
-        <div style={{ display: 'flex', gap: '10px' }}>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
           <button
             type="button"
             onClick={() => void handleCreateDemo()}
@@ -250,6 +350,7 @@ export const InventarioPage: React.FC = () => {
           >
             {creatingDemo ? 'cargando...' : 'demo x100'}
           </button>
+
           <button
             type="button"
             onClick={() => void handleDeleteDemo()}
@@ -269,6 +370,7 @@ export const InventarioPage: React.FC = () => {
           >
             {deletingDemo ? 'limpiando...' : 'limpiar demo'}
           </button>
+
           <Button
             label="+ Nuevo Material"
             variant="primary"
@@ -285,6 +387,22 @@ export const InventarioPage: React.FC = () => {
               setIsIngresoModalOpen(true);
             }}
           />
+
+          <Button
+            label="+ Registrar salida"
+            variant="secondary"
+            onClick={() => {
+              setIsSalidaModalOpen(true);
+            }}
+          />
+
+          <Button
+            label="+ Registrar ajuste"
+            variant="secondary"
+            onClick={() => {
+              setIsAjusteModalOpen(true);
+            }}
+          />
         </div>
       </div>
 
@@ -294,119 +412,77 @@ export const InventarioPage: React.FC = () => {
         </div>
       )}
 
-      <div
-        style={{
-          display: 'flex',
-          gap: '12px',
-          alignItems: 'flex-end',
-          flexWrap: 'wrap',
-          background: '#ffffff',
-          border: '1px solid #e5e7eb',
-          borderRadius: '14px',
-          padding: '16px',
-          marginBottom: '14px',
-        }}
-      >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: '220px', flex: 2 }}>
-          <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase' }}>
-            Buscar
-          </label>
-          <input
-            type="text"
-            value={searchText}
-            onChange={(e) => {
-              setSearchText(e.target.value);
-              setCurrentPage(1);
-            }}
-            placeholder="Código o nombre..."
-            style={{ padding: '10px 12px', borderRadius: '8px', border: '1px solid #d1d5db' }}
-          />
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: '180px', flex: 1 }}>
-          <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase' }}>
-            Categoría
-          </label>
-          <select
-            value={categoriaId}
-            onChange={(e) => {
-              setCategoriaId(e.target.value);
-              setCurrentPage(1);
-            }}
-            style={{ padding: '10px 12px', borderRadius: '8px', border: '1px solid #d1d5db' }}
-          >
-            <option value="">Todas</option>
-            {categorias.map((categoria) => (
-              <option key={categoria.id} value={categoria.id}>
-                {categoria.nombre}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: '160px', flex: 1 }}>
-          <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase' }}>
-            Ordenar por
-          </label>
-          <select
-            value={sortBy}
-            onChange={(e) => {
-              setSortBy(e.target.value as typeof sortBy);
-              setCurrentPage(1);
-            }}
-            style={{ padding: '10px 12px', borderRadius: '8px', border: '1px solid #d1d5db' }}
-          >
-            <option value="creadoEn">Más recientes</option>
-            <option value="codigo">Código</option>
-            <option value="nombre">Nombre</option>
-            <option value="categoria">Categoría</option>
-            <option value="stockActual">Stock actual</option>
-            <option value="stockMinimo">Stock mínimo</option>
-            <option value="unidad">Unidad</option>
-          </select>
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: '130px' }}>
-          <label style={{ fontSize: '0.72rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase' }}>
-            Dirección
-          </label>
-          <select
-            value={sortType}
-            onChange={(e) => {
-              setSortType(e.target.value as 'ASC' | 'DESC');
-              setCurrentPage(1);
-            }}
-            style={{ padding: '10px 12px', borderRadius: '8px', border: '1px solid #d1d5db' }}
-          >
-            <option value="ASC">Ascendente</option>
-            <option value="DESC">Descendente</option>
-          </select>
-        </div>
-
-        <button
-          type="button"
-          onClick={clearFilters}
-          style={{
-            border: 'none',
-            background: 'transparent',
-            color: '#6b7280',
-            padding: '10px 8px',
-            cursor: 'pointer',
-            fontWeight: 600,
-          }}
-        >
-          Limpiar
-        </button>
-      </div>
-
+<FilterRow
+  onChange={handleFilterChange}
+  elements={[
+    {
+      type: 'search',
+      key: 'search',
+      label: 'BUSCAR',
+      placeholder: 'Código o nombre...',
+      flex: 2,
+    },
+    {
+      type: 'select',
+      key: 'categoria',
+      label: 'CATEGORÍA',
+      placeholder: 'Todas',
+      options: categorias.map((c) => ({ value: c.id, label: c.nombre })),
+    },
+    {
+      type: 'select',
+      key: 'area',
+      label: 'AREA',
+      placeholder: 'Todas',
+      options: areas.map((area) => ({ value: area.id, label: area.nombre })),
+    },
+    {
+      type: 'select',
+      key: 'estado',
+      label: 'ESTADO',
+      placeholder: 'Todos',
+      options: [
+        { value: 'NORMAL', label: 'Normal' },
+        { value: 'CRITICO', label: 'Crítico' },
+      ],
+    },
+    {
+      type: 'select',
+      key: 'sortBy',
+      label: 'ORDENAR POR',
+      placeholder: 'Más recientes',
+      options: [
+        { value: 'creadoEn', label: 'Más recientes' },
+        { value: 'codigo', label: 'Código' },
+        { value: 'nombre', label: 'Nombre' },
+        { value: 'categoria', label: 'Categoría' },
+        { value: 'area', label: 'Area' },
+        { value: 'stockActual', label: 'Stock actual' },
+        { value: 'stockMinimo', label: 'Stock mínimo' },
+        { value: 'unidad', label: 'Unidad' },
+      ],
+    },
+    {
+      type: 'select',
+      key: 'sortType',
+      label: 'DIRECCIÓN',
+      placeholder: 'Descendente',
+      options: [
+        { value: 'ASC', label: 'Ascendente' },
+        { value: 'DESC', label: 'Descendente' },
+      ],
+    },
+  ]}
+/>
       <div className="module-list">
-        <DataTable<Material>
+        <SmartTable<Material>
           columns={columns}
           data={materiales}
           loading={loading}
           emptyMessage="📦 No hay materiales registrados en el inventario"
-          striped
-          hover
+          keyExtractor={(m) => m.id}
+          actions={materialActions}
+          onRowClick={(m) => handleEdit(m)}
         />
       </div>
 
@@ -422,15 +498,25 @@ export const InventarioPage: React.FC = () => {
         }}
       >
         <span>
-          Mostrando <strong>{materiales.length === 0 ? 0 : (currentPage - 1) * meta.pageSize + 1}-{Math.min(currentPage * meta.pageSize, meta.total)}</strong> de <strong>{meta.total}</strong> materiales
+          Mostrando{' '}
+          <strong>
+            {materiales.length === 0 ? 0 : (currentPage - 1) * meta.pageSize + 1}-
+            {Math.min(currentPage * meta.pageSize, meta.total)}
+          </strong>{' '}
+          de <strong>{meta.total}</strong> materiales
         </span>
 
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           <button
             type="button"
-            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+            onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
             disabled={currentPage === 1}
-            style={{ padding: '8px 14px', borderRadius: '8px', border: '1px solid #d1d5db', background: '#fff' }}
+            style={{
+              padding: '8px 14px',
+              borderRadius: '8px',
+              border: '1px solid #d1d5db',
+              background: '#fff',
+            }}
           >
             Anterior
           </button>
@@ -439,9 +525,16 @@ export const InventarioPage: React.FC = () => {
           </span>
           <button
             type="button"
-            onClick={() => setCurrentPage(prev => Math.min(meta.totalPages, prev + 1))}
+            onClick={() =>
+              setCurrentPage((prev) => Math.min(meta.totalPages, prev + 1))
+            }
             disabled={currentPage >= meta.totalPages}
-            style={{ padding: '8px 14px', borderRadius: '8px', border: '1px solid #d1d5db', background: '#fff' }}
+            style={{
+              padding: '8px 14px',
+              borderRadius: '8px',
+              border: '1px solid #d1d5db',
+              background: '#fff',
+            }}
           >
             Siguiente
           </button>
@@ -461,6 +554,228 @@ export const InventarioPage: React.FC = () => {
         materiales={materiales}
         onSuccess={handleMaterialCreated}
       />
+
+      <SalidaStockModal
+        isOpen={isSalidaModalOpen}
+        onClose={() => setIsSalidaModalOpen(false)}
+        materiales={materiales}
+        onSuccess={handleMaterialCreated}
+      />
+
+      <AjusteInventarioModal
+        isOpen={isAjusteModalOpen}
+        onClose={() => setIsAjusteModalOpen(false)}
+        materiales={materiales}
+        onSuccess={handleMaterialCreated}
+      />
+
+      {showHistorialModal && materialSeleccionado && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+          }}
+          onClick={() => setShowHistorialModal(false)}
+        >
+          <div
+            style={{
+              background: '#fff',
+              borderRadius: '12px',
+              padding: '24px',
+              width: '90%',
+              maxWidth: '900px',
+              maxHeight: '80vh',
+              overflowY: 'auto',
+              boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '20px',
+              }}
+            >
+              <div>
+                <h2 style={{ margin: 0, color: '#111827' }}>
+                  Historial de movimientos
+                </h2>
+                <p style={{ margin: '4px 0 0 0', color: '#374151' }}>
+                  {materialSeleccionado?.nombre} ({materialSeleccionado?.codigo})
+                </p>
+              </div>
+
+              <button
+                onClick={() => setShowHistorialModal(false)}
+                style={{
+                  cursor: 'pointer',
+                  padding: '6px 10px',
+                  background: '#f3f4f6',
+                  borderRadius: '6px',
+                  border: 'none',
+                  color: '#374151',
+                }}
+              >
+                ✖ Cerrar
+              </button>
+            </div>
+
+            <div
+              style={{
+                display: 'flex',
+                gap: '12px',
+                flexWrap: 'wrap',
+                alignItems: 'flex-end',
+                marginBottom: '16px',
+                marginTop: '16px',
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '6px',
+                }}
+              >
+                <label
+                  style={{
+                    fontSize: '0.85rem',
+                    color: '#374151',
+                    fontWeight: 600,
+                  }}
+                >
+                  Fecha inicio
+                </label>
+                <input
+                  type="date"
+                  value={fechaInicio}
+                  onChange={(e) => setFechaInicio(e.target.value)}
+                  style={{
+                    padding: '10px 12px',
+                    borderRadius: '8px',
+                    border: '1px solid #d1d5db',
+                  }}
+                />
+              </div>
+
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '6px',
+                }}
+              >
+                <label
+                  style={{
+                    fontSize: '0.85rem',
+                    color: '#374151',
+                    fontWeight: 600,
+                  }}
+                >
+                  Fecha fin
+                </label>
+                <input
+                  type="date"
+                  value={fechaFin}
+                  onChange={(e) => setFechaFin(e.target.value)}
+                  style={{
+                    padding: '10px 12px',
+                    borderRadius: '8px',
+                    border: '1px solid #d1d5db',
+                  }}
+                />
+              </div>
+
+              <button
+                onClick={() => void aplicarFiltroHistorial()}
+                style={{
+                  cursor: 'pointer',
+                  padding: '10px 14px',
+                  background: '#2563eb',
+                  borderRadius: '8px',
+                  border: 'none',
+                  color: '#fff',
+                  fontWeight: 600,
+                }}
+              >
+                Aplicar filtro
+              </button>
+
+              <button
+                onClick={() => void limpiarFiltroHistorial()}
+                style={{
+                  cursor: 'pointer',
+                  padding: '10px 14px',
+                  background: '#e5e7eb',
+                  borderRadius: '8px',
+                  border: 'none',
+                  color: '#111827',
+                  fontWeight: 600,
+                }}
+              >
+                Limpiar filtro
+              </button>
+            </div>
+
+            {loadingHistorial ? (
+              <p style={{ color: '#6b7280' }}>Cargando historial...</p>
+            ) : historial.length === 0 ? (
+              <p style={{ color: '#6b7280' }}>
+                No hay movimientos registrados para este material.
+              </p>
+            ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table
+                  style={{
+                    width: '100%',
+                    borderCollapse: 'collapse',
+                    marginTop: '12px',
+                  }}
+                >
+                  <thead>
+                    <tr style={{ background: '#f9fafb' }}>
+                      <th style={{ padding: '10px', textAlign: 'left' }}>Fecha</th>
+                      <th style={{ padding: '10px', textAlign: 'left' }}>Tipo</th>
+                      <th style={{ padding: '10px', textAlign: 'left' }}>Cantidad</th>
+                      <th style={{ padding: '10px', textAlign: 'left' }}>Responsable</th>
+                      <th style={{ padding: '10px', textAlign: 'left' }}>Observación</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {historial.map((item, index) => (
+                      <tr key={item.id ?? index} style={{ borderTop: '1px solid #e5e7eb' }}>
+                        <td style={{ padding: '10px' }}>
+                          {item.fecha
+                            ? new Date(item.fecha).toLocaleString('es-BO')
+                            : '—'}
+                        </td>
+                        <td style={{ padding: '10px' }}>{item.tipo ?? '—'}</td>
+                        <td style={{ padding: '10px' }}>{item.cantidad ?? '—'}</td>
+                        <td style={{ padding: '10px' }}>
+                          {item.responsable ?? item.usuario?.nombreCompleto ?? '—'}
+                        </td>
+                        <td style={{ padding: '10px' }}>
+                          {item.observacion ?? item.motivo ?? '—'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

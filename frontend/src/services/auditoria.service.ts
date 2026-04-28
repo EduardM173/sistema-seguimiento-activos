@@ -2,6 +2,14 @@ import { http as apiClient } from './http.client';
 import type { Auditoria, FiltrosAuditoria, ResumenAuditoria, Notificacion, ConfiguracionAuditoria } from '../types/auditoria.types';
 import type { PaginatedResponse, ApiResponse } from '../types';
 
+export const NOTIFICATIONS_REFRESH_EVENT = 'notificaciones:refresh';
+
+export function emitNotificationsRefresh() {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(NOTIFICATIONS_REFRESH_EVENT));
+  }
+}
+
 export const auditoriaService = {
   // Obtener registros de auditoría
   obtenerRegistros: async (filtros?: FiltrosAuditoria) => {
@@ -119,6 +127,29 @@ export const auditoriaService = {
         '/auditoria/notificaciones',
         {
           params: leidas !== undefined ? { leidas } : {},
+        }
+      );
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // Obtener notificaciones del usuario autenticado
+  obtenerMisNotificaciones: async (params?: {
+    leidas?: boolean;
+    page?: number;
+    pageSize?: number;
+  }) => {
+    try {
+      const response = await apiClient.get<PaginatedResponse<Notificacion>>(
+        '/auditoria/notificaciones/mias',
+        {
+          params: {
+            ...(params?.leidas !== undefined ? { leidas: params.leidas } : {}),
+            ...(params?.page !== undefined ? { page: params.page } : {}),
+            ...(params?.pageSize !== undefined ? { pageSize: params.pageSize } : {}),
+          },
         }
       );
       return response;

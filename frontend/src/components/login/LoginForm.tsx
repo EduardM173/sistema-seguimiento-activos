@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { login } from '../../services/auth.service';
 import { useAuth } from '../../context/AuthContext';
+import { IconMail, IconLock, IconEye, IconEyeOff, IconShield } from '../common/Icon';
 // 👈 IMPORTANTE
 
 export default function LoginForm() {
@@ -60,15 +61,14 @@ export default function LoginForm() {
   return (
     <div className="login-card">
       <div className="login-card__header">
-        <h2>Acceso al Sistema</h2>
-        <p>Ingrese sus credenciales para continuar.</p>
+        <h2>Iniciar Sesión</h2>
       </div>
 
       <form onSubmit={handleSubmit} className="login-form">
         <div className="form-group">
           <label htmlFor="identifier">Correo Electrónico o Usuario</label>
           <div className="input-wrapper">
-            <span className="input-icon">✉</span>
+            <span className="input-icon"><IconMail size={16} /></span>
             <input
               id="identifier"
               type="text"
@@ -94,7 +94,7 @@ export default function LoginForm() {
           </div>
 
           <div className="input-wrapper">
-            <span className="input-icon">🔒</span>
+            <span className="input-icon"><IconLock size={16} /></span>
             <input
               id="password"
               type={showPassword ? 'text' : 'password'}
@@ -107,7 +107,7 @@ export default function LoginForm() {
               className="password-toggle"
               onClick={() => setShowPassword((prev) => !prev)}
             >
-              {showPassword ? '🙈' : '👁'}
+              {showPassword ? <IconEyeOff size={16} /> : <IconEye size={16} />}
             </button>
           </div>
         </div>
@@ -128,9 +128,7 @@ export default function LoginForm() {
         </button>
       </form>
 
-      <div className="login-card__footer">
-        <span>🛡 Conexión cifrada de alta seguridad</span>
-      </div>
+
     </div>
   );
 }

@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { Button, Modal } from '../common';
 import type { CreateMaterialDTO, Material, UpdateMaterialDTO } from '../../types/inventario.types';
 import { inventarioService } from '../../services/inventario.service';
+import { getAreas } from '../../services/catalogs.service';
 import { useAuth } from '../../context/AuthContext';
 import { useNotification } from '../../context/NotificationContext';
 
@@ -35,6 +36,7 @@ export const MaterialForm: React.FC<MaterialFormProps> = ({
       stockActual: minStockValue,
       stockMinimo: minStockValue,
       categoriaId: undefined,
+      areaId: undefined,
     }),
     [minStockValue]
   );
@@ -44,12 +46,14 @@ export const MaterialForm: React.FC<MaterialFormProps> = ({
   const [stockMinimoInput, setStockMinimoInput] = useState(String(initialState.stockMinimo));
   const [loading, setLoading] = useState(false);
   const [categorias, setCategorias] = useState<{ id: string; nombre: string }[]>([]);
+  const [areas, setAreas] = useState<{ id: string; nombre: string }[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Reset cuando se abre/cierra
   useEffect(() => {
     if (isOpen) {
       cargarCategorias();
+      cargarAreas();
       
       if (materialToEdit) {
         // Modo edición: cargar datos del material
@@ -60,6 +64,7 @@ export const MaterialForm: React.FC<MaterialFormProps> = ({
           stockActual: materialToEdit.stockActual,
           stockMinimo: materialToEdit.stockMinimo,
           categoriaId: materialToEdit.categoriaId || undefined,
+          areaId: materialToEdit.areaId || undefined,
         });
         setStockActualInput(String(materialToEdit.stockActual));
         setStockMinimoInput(String(materialToEdit.stockMinimo));
@@ -79,6 +84,15 @@ export const MaterialForm: React.FC<MaterialFormProps> = ({
       setCategorias(categoriasData);
     } catch (error) {
       console.error('Error al cargar categorías:', error);
+    }
+  };
+
+  const cargarAreas = async () => {
+    try {
+      const areasData = await getAreas();
+      setAreas(areasData);
+    } catch (error) {
+      console.error('Error al cargar areas:', error);
     }
   };
 
@@ -130,6 +144,9 @@ export const MaterialForm: React.FC<MaterialFormProps> = ({
       if (name === 'categoriaId') {
         return { ...prev, categoriaId: value || undefined };
       }
+      if (name === 'areaId') {
+        return { ...prev, areaId: value || undefined };
+      }
       return { ...prev, [name]: value };
     });
     
@@ -159,6 +176,7 @@ export const MaterialForm: React.FC<MaterialFormProps> = ({
           stockActual: formData.stockActual,
           stockMinimo: formData.stockMinimo,
           categoriaId: formData.categoriaId,
+          areaId: formData.areaId,
         };
         await inventarioService.actualizar(materialToEdit.id, updateData);
         notify.success('Material actualizado correctamente');
@@ -233,6 +251,22 @@ export const MaterialForm: React.FC<MaterialFormProps> = ({
               ))}
             </select>
             {errors.categoriaId && <span style={{ color: '#dc2626', fontSize: '12px' }}>{errors.categoriaId}</span>}
+          </div>
+
+          <div className="form-group">
+            <label>Ãrea</label>
+            <select
+              name="areaId"
+              value={formData.areaId || ''}
+              onChange={handleChange}
+            >
+              <option value="">Sin Ã¡rea asignada</option>
+              {areas.map((area) => (
+                <option key={area.id} value={area.id}>
+                  {area.nombre}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className={`form-group ${errors.unidad ? 'formField--error' : ''}`}>

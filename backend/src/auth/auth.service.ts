@@ -2,6 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 
+import { ensureCoreAccessPermissions } from '../common/access-permissions';
 import { PrismaService } from '../common/prisma.service';
 import { LoginDto } from './dto/login.dto';
 import { EstadoUsuario } from '../generated/prisma/client';
@@ -15,6 +16,8 @@ export class AuthService {
 
   async login(loginDto: LoginDto) {
     const { identifier, password } = loginDto;
+
+    await ensureCoreAccessPermissions(this.prisma);
 
     const usuario = await this.prisma.usuario.findFirst({
       where: {
@@ -62,29 +65,85 @@ export class AuthService {
 
     return {
       accessToken,
-      usuario: {
-        id: usuario.id,
-        nombres: usuario.nombres,
-        apellidos: usuario.apellidos,
-        correo: usuario.correo,
-        nombreUsuario: usuario.nombreUsuario,
-        estado: usuario.estado,
+      usuario: this.buildAuthenticatedUser(usuario),
+    };
+  }
+
+  async getCurrentSession(userId: string) {
+    const usuario = await this.prisma.usuario.findUnique({
+      where: { id: userId },
+      include: {
         rol: {
-          id: usuario.rol.id,
-          nombre: usuario.rol.nombre,
+          include: {
+            permisos: {
+              include: {
+                permiso: true,
+              },
+            },
+          },
         },
-        area: usuario.area
-          ? {
-              id: usuario.area.id,
-              nombre: usuario.area.nombre,
-            }
-          : null,
-        permisos: usuario.rol.permisos.map((item) => ({
-          id: item.permiso.id,
-          codigo: item.permiso.codigo,
-          nombre: item.permiso.nombre,
-        })),
+        area: true,
       },
+    });
+
+    if (!usuario) {
+      throw new UnauthorizedException('Usuario autenticado no encontrado');
+    }
+
+    if (usuario.estado !== EstadoUsuario.ACTIVO) {
+      throw new UnauthorizedException('La cuenta no está activa');
+    }
+
+    return {
+      usuario: this.buildAuthenticatedUser(usuario),
+    };
+  }
+
+  private buildAuthenticatedUser(usuario: {
+    id: string;
+    nombres: string;
+    apellidos: string;
+    correo: string;
+    nombreUsuario: string;
+    estado: EstadoUsuario;
+    rol: {
+      id: string;
+      nombre: string;
+      permisos: Array<{
+        permiso: {
+          id: string;
+          codigo: string;
+          nombre: string;
+        };
+      }>;
+    };
+    area: {
+      id: string;
+      nombre: string;
+    } | null;
+  }) {
+    return {
+      id: usuario.id,
+      nombres: usuario.nombres,
+      apellidos: usuario.apellidos,
+      correo: usuario.correo,
+      nombreUsuario: usuario.nombreUsuario,
+      estado: usuario.estado,
+      rol: {
+        id: usuario.rol.id,
+        nombre: usuario.rol.nombre,
+      },
+      area: usuario.area
+        ? {
+            id: usuario.area.id,
+            nombre: usuario.area.nombre,
+          }
+        : null,
+      permisos: usuario.rol.permisos.map((item) => ({
+        id: item.permiso.id,
+        codigo: item.permiso.codigo,
+        nombre: item.permiso.nombre,
+      })),
     };
   }
 }

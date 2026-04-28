@@ -191,7 +191,8 @@ export const ActivoScalarFieldEnum = {
   actualizadoPorId: 'actualizadoPorId',
   creadoEn: 'creadoEn',
   actualizadoEn: 'actualizadoEn',
-  dadoDeBajaEn: 'dadoDeBajaEn'
+  dadoDeBajaEn: 'dadoDeBajaEn',
+  motivoBaja: 'motivoBaja'
 } as const
 
 export type ActivoScalarFieldEnum = (typeof ActivoScalarFieldEnum)[keyof typeof ActivoScalarFieldEnum]
@@ -275,6 +276,7 @@ export const MaterialScalarFieldEnum = {
   stockActual: 'stockActual',
   stockMinimo: 'stockMinimo',
   categoriaId: 'categoriaId',
+  areaId: 'areaId',
   creadoEn: 'creadoEn',
   actualizadoEn: 'actualizadoEn'
 } as const

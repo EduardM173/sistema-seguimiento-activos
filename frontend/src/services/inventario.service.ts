@@ -64,7 +64,7 @@ export const inventarioService = {
     }
   },
 
-  // Aumntar stock
+  // Aumentar stock
   aumentarStock: async (id: string, cantidad: number) => {
     try {
       const response = await apiClient.patch<
@@ -84,6 +84,65 @@ export const inventarioService = {
       >(`/inventory-items/${id}/aumentar-stock`, {
         cantidad,
       });
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  registrarSalidaStock: async (
+    id: string,
+    payload: {
+      cantidad: number;
+      motivo: string;
+    },
+  ) => {
+    try {
+      const response = await apiClient.patch<
+        ApiResponse<{
+          message: string;
+          material: Material;
+          movimiento: {
+            id: string;
+            tipo: string;
+            cantidad: number;
+            stockAnterior: number;
+            stockNuevo: number;
+            motivo: string | null;
+            creadoEn: string;
+          };
+        }>
+      >(`/inventory-items/${id}/reducir-stock`, payload);
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  ajustarStock: async (
+    id: string,
+    payload: {
+      cantidadRegistrada: number;
+      cantidadFisica: number;
+      motivo: string;
+    },
+  ) => {
+    try {
+      const response = await apiClient.patch<
+        ApiResponse<{
+          message: string;
+          material: Material;
+          movimiento: {
+            id: string;
+            tipo: string;
+            cantidad: number;
+            stockAnterior: number;
+            stockNuevo: number;
+            motivo: string | null;
+            creadoEn: string;
+          };
+        }>
+      >(`/inventory-items/${id}/ajustar-stock`, payload);
       return response;
     } catch (error) {
       throw error;
@@ -208,6 +267,20 @@ export const inventarioService = {
     } catch (error) {
       throw error;
     }
+  },
+
+  obtenerHistorialMaterial: async (
+    materialId: string,
+    filtros?: { startDate?: string; endDate?: string }
+  ) => {
+    const response = (await apiClient.get(
+      `/inventory-items/${materialId}/history`,
+      { params: filtros }
+    )) as any;
+    if (Array.isArray(response)) {
+      return response;
+    }
+    return response?.data ?? [];
   },
 };
 

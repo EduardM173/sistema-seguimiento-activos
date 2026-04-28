@@ -26,13 +26,16 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 
+import { RejectReceptionDto } from './dto/reject-reception.dto';
 import { AssetsService } from './assets.service';
 import { CreateAssetDto } from './dto/create-asset.dto';
 import { UpdateAssetDto } from './dto/update-asset.dto';
 import { SearchAssetsDto } from './dto/search-assets.dto';
 import { AssignAssetDto } from './dto/assign-asset.dto';
+import { TransferAssetDto } from './dto/transfer-asset.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ApiResponse } from '../common/api-response';
+import { DisableAssetDto } from './dto/disable-asset.dto';
 
 @ApiTags('assets')
 @ApiBearerAuth()
@@ -104,6 +107,14 @@ export class AssetsController {
     description: 'Cantidad de resultados por página',
     example: 10,
   })
+  @ApiQuery({
+    name: 'soloTransferibles',
+    required: false,
+    type: Boolean,
+    description:
+      'Cuando es true, devuelve solo activos disponibles para registrar una transferencia',
+    example: true,
+  })
   @ApiOkResponse({
     description: 'Listado paginado de activos obtenido correctamente',
     schema: {
@@ -135,8 +146,12 @@ export class AssetsController {
     description: 'Los filtros o parámetros de paginación enviados no son válidos',
   })
   @Get()
-  async findAll(@Query() query: SearchAssetsDto) {
-    const result = await this.assetsService.findAll(query);
+  async findAll(
+    @Query() query: SearchAssetsDto,
+    @Req() req: any,
+  ) {
+    const result = await this.assetsService.findAll(query, req.user);
+
     return ApiResponse.paginated(
       result.data,
       result.total,
@@ -306,9 +321,112 @@ export class AssetsController {
       },
     },
   })
+  @ApiOperation({ summary: 'Confirmar recepción de transferencia (HU41)' })
+  @ApiParam({ name: 'asignacionId', description: 'ID de la asignación pendiente' })
+  @ApiOkResponse({ description: 'Recepción confirmada correctamente' })
+  @ApiConflictResponse({
+    description: 'La recepción no está pendiente o el usuario no pertenece al área destino',
+  })
+  @ApiNotFoundResponse({ description: 'No se encontró la asignación solicitada' })
+  @Patch('asignaciones/:asignacionId/confirmar')
+  async confirmarRecepcion(
+    @Param('asignacionId') asignacionId: string,
+    @Req() req: Request,
+  ) {
+    const userId = (req.user as { id: string }).id;
+    const result = await this.assetsService.confirmarRecepcion(asignacionId, userId);
+    return ApiResponse.success(result, result.message);
+  }
+
+  /**
+   * HU42 – Rechazar recepción indicando motivo obligatorio.
+   * PA1: Solo el Responsable de Área destino puede rechazar.
+   * PA2: El motivo es obligatorio.
+   * PA3: El activo vuelve al área de origen.
+   * PA4: El motivo queda visible en el historial del activo.
+   */
+  @ApiOperation({
+    summary: 'Rechazar recepción de transferencia con motivo obligatorio (HU42)',
+    description: 'Solo el Responsable de Área destino puede rechazar. El motivo es obligatorio. El activo vuelve al área de origen y queda registrado en el historial.',
+  })
+  @ApiParam({ name: 'asignacionId', description: 'ID de la asignación pendiente' })
+  @ApiBody({ type: RejectReceptionDto })
+  @ApiOkResponse({ description: 'Recepción rechazada y activo devuelto al área de origen' })
+  @ApiBadRequestResponse({ description: 'El motivo del rechazo es obligatorio' })
+  @ApiConflictResponse({
+    description: 'La recepción no está pendiente o el usuario no pertenece al área destino',
+  })
+  @ApiNotFoundResponse({ description: 'No se encontró la asignación solicitada' })
+  @Patch('asignaciones/:asignacionId/rechazar')
+  async rechazarRecepcion(
+    @Param('asignacionId') asignacionId: string,
+    @Body() dto: RejectReceptionDto,
+    @Req() req: Request,
+  ) {
+    const userId = (req.user as { id: string }).id;
+    const result = await this.assetsService.rechazarRecepcion(
+      asignacionId,
+      userId,
+      dto.motivoRechazo,
+    );
+    return ApiResponse.success(result, result.message);
+  }
+  
   @ApiNotFoundResponse({
     description: 'No se encontró el activo solicitado',
   })
+  @ApiOperation({
+    summary: 'Transferencias pendientes de recepción de un área',
+    description:
+      'HU41 – Devuelve los activos con recepción pendiente cuyo área de destino es el área indicada.',
+  })
+  @ApiQuery({
+    name: 'areaId',
+    required: true,
+    type: String,
+    description: 'ID del área de destino para filtrar las recepciones pendientes',
+  })
+  @ApiOkResponse({
+    description: 'Listado de transferencias pendientes de recepción para el área',
+  })
+  @ApiBadRequestResponse({ description: 'El areaId enviado no es válido' })
+  @Get('pendientes-recepcion')
+  async pendientesDeRecepcion(@Query('areaId') areaId: string) {
+    const data = await this.assetsService.pendientesDeRecepcion(areaId ?? '');
+    return ApiResponse.success(data, 'Transferencias pendientes obtenidas correctamente');
+  }
+
+  @ApiOperation({
+    summary: 'Solicitudes de transferencia enviadas por usuario (HU41)',
+    description:
+      'Lista transferencias pendientes registradas por el usuario. Puede filtrarse opcionalmente por área origen.',
+  })
+  @ApiQuery({
+    name: 'registradoPorId',
+    required: true,
+    type: String,
+    description: 'ID del usuario que registró la transferencia',
+  })
+  @ApiQuery({
+    name: 'areaOrigenId',
+    required: false,
+    type: String,
+    description: 'ID del área origen que envió la transferencia',
+  })
+  @ApiOkResponse({
+    description: 'Listado de solicitudes enviadas pendientes',
+  })
+  @ApiBadRequestResponse({ description: 'Parámetros de consulta inválidos' })
+  @Get('solicitudes-enviadas')
+  
+  async solicitudesEnviadas(
+    @Query('registradoPorId') registradoPorId: string,
+    @Query('areaOrigenId') areaOrigenId?: string,
+  ) {
+    const data = await this.assetsService.solicitudesEnviadas(registradoPorId);
+    return ApiResponse.success(data, 'Solicitudes enviadas obtenidas correctamente');
+  }
+
   @Get(':id')
   async findOne(@Param('id') id: string) {
     const activo = await this.assetsService.findOne(id);
@@ -452,6 +570,49 @@ export class AssetsController {
     return ApiResponse.success(result, 'Activo asignado exitosamente');
   }
 
+  @ApiOperation({
+    summary: 'Registrar transferencia de un activo entre áreas',
+    description:
+      'Crea la transferencia del activo, registra el movimiento y deja una recepción pendiente para el área de destino.',
+  })
+  @ApiParam({ name: 'id', description: 'ID del activo a transferir' })
+  @ApiBody({
+    type: TransferAssetDto,
+    examples: {
+      transferenciaArea: {
+        summary: 'Transferencia entre áreas',
+        value: {
+          areaDestinoId: 'cm1area124',
+          observaciones: 'Transferencia operativa entre áreas',
+        },
+      },
+    },
+  })
+  @ApiOkResponse({
+    description: 'Transferencia registrada exitosamente',
+  })
+  @ApiBadRequestResponse({
+    description:
+      'Solicitud inválida. El activo no tiene área de origen o el área de destino coincide con la de origen.',
+  })
+  @ApiNotFoundResponse({
+    description: 'Activo o área de destino no encontrado',
+  })
+  @ApiConflictResponse({
+    description:
+      'El activo no está operativo o ya tiene una recepción pendiente por una transferencia o asignación anterior.',
+  })
+  @Post(':id/transfer')
+  async transfer(
+    @Param('id') id: string,
+    @Body() dto: TransferAssetDto,
+    @Req() req: Request,
+  ) {
+    const userId = (req.user as { id: string }).id;
+    const result = await this.assetsService.transfer(id, dto, userId);
+    return ApiResponse.success(result, 'Transferencia registrada exitosamente');
+  }
+
   /**
    * DELETE /api/assets/:id
    * Soft-delete (dar de baja) an asset.
@@ -473,4 +634,50 @@ export class AssetsController {
     const activo = await this.assetsService.remove(id, userId);
     return ApiResponse.success(activo, 'Activo dado de baja exitosamente');
   }
+  /**
+ * POST /api/assets/:id/disable
+ * HU23 - Dar de baja un activo con motivo obligatorio
+ */
+@ApiOperation({
+  summary: 'Dar de baja un activo con motivo (HU23)',
+  description: 'Registra la baja de un activo, guarda motivo y fecha. El activo cambia su estado a DADO_DE_BAJA y queda excluido de futuras asignaciones/transferencias.',
+})
+@ApiParam({ name: 'id', description: 'ID del activo a dar de baja' })
+@ApiBody({ type: DisableAssetDto })
+@ApiOkResponse({
+  description: 'Activo dado de baja exitosamente',
+  schema: {
+    example: {
+      success: true,
+      message: 'Activo dado de baja exitosamente',
+      data: {
+        id: 'cm1activo123',
+        codigo: 'ACT-001',
+        nombre: 'Laptop Dell',
+        estado: 'DADO_DE_BAJA',
+        estadoLabel: 'Dado de baja',
+        dadoDeBajaEn: '2026-04-28T10:30:00.000Z',
+        motivoBaja: 'Equipo obsoleto',
+      },
+    },
+  },
+})
+@ApiBadRequestResponse({ description: 'El motivo de baja es obligatorio' })
+@ApiNotFoundResponse({ description: 'No se encontró el activo solicitado' })
+@ApiConflictResponse({ description: 'El activo ya fue dado de baja' })
+@Post(':id/disable')
+async disable(
+  @Param('id') id: string,
+  @Body() dto: DisableAssetDto,
+  @Req() req: Request,
+) {
+  console.log('=== DISABLE ENDPOINT ===');
+  console.log('ID:', id);
+  console.log('DTO recibido:', dto);
+  console.log('Motivo:', dto?.motivo);
+  
+  const userId = (req.user as { id: string }).id;
+  const activo = await this.assetsService.disable(id, dto.motivo, userId);
+  return ApiResponse.success(activo, 'Activo dado de baja exitosamente');
+}
 }

@@ -54,6 +54,26 @@ export type AssetDetail = AssetListItem & {
     id: string;
     nombreCompleto: string;
   } | null;
+  historialTransferencias: {
+    id: string;
+    tipo: 'TRANSFERENCIA' | 'ASIGNACION' | 'BAJA';
+    fecha: string;
+    detalle: string | null;
+    areaOrigen: {
+      id: string;
+      nombre: string;
+    } | null;
+    areaDestino: {
+      id: string;
+      nombre: string;
+    } | null;
+    realizadoPor: {
+      id: string;
+      nombreCompleto: string;
+    } | null;
+  }[];
+  dadoDeBajaEn?: string | null;
+  motivoBaja?: string | null;
 };
 
 export type CreateAssetPayload = {
@@ -88,6 +108,7 @@ export type SearchAssetsParams = {
   estado?: EstadoActivo | '';
   categoriaId?: string;
   ubicacionId?: string;
+  soloTransferibles?: boolean;
   sortBy?: AssetSortBy;
   sortType?: SortType;
   page?: number;
@@ -150,4 +171,64 @@ export type AssignAssetResponse = {
     areaAsignada: { id: string; nombre: string } | null;
   };
   asset: AssetDetail;
+};
+
+export type TransferAssetPayload = {
+  areaDestinoId: string;
+  observaciones?: string;
+};
+
+// HU21/HU42 – Registro de transferencia pendiente de recepción
+// Incluye recibidoPor y recibidoEn para cumplir PA3 de HU21
+export type PendienteRecepcion = {
+  id: string;
+  fechaEnvio: string;
+  observaciones: string | null;
+  motivoRechazo: string | null;
+  // PA3 HU21: quién y cuándo confirmó (null si aún está pendiente)
+  recibidoEn: string | null;
+  recibidoPor: { id: string; nombreCompleto: string } | null;
+  activo: {
+    id: string;
+    codigo: string;
+    nombre: string;
+    marca: string | null;
+    modelo: string | null;
+    categoria: { id: string; nombre: string } | null;
+  };
+  areaDestino: { id: string; nombre: string } | null;
+  areaOrigen: { id: string; nombre: string } | null;
+  registradoPor: { id: string; nombreCompleto: string } | null;
+};
+
+export type SolicitudEnviada = {
+  id: string;
+  estado: string;
+  fechaEnvio: string;
+  observaciones: string | null;
+  activo: { id: string; codigo: string; nombre: string };
+  areaOrigen: { id: string; nombre: string } | null;
+  areaDestino: { id: string; nombre: string } | null;
+  registradoPor: { id: string; nombreCompleto: string } | null;
+};
+
+export type TransferAssetResponse = {
+  message: string;
+  transferencia: {
+    id: string;
+    estado: string;
+    asignadoEn: string;
+    observaciones: string | null;
+    areaOrigen: { id: string; nombre: string };
+    areaDestino: { id: string; nombre: string };
+    registradoPorId: string;
+  };
+  asset: AssetDetail;
+};
+
+// HU21 – Respuesta de confirmar recepción (PA3: fecha y persona)
+export type ConfirmarRecepcionResponse = {
+  message: string;
+  recibidoEn: string;
+  recibidoPor: { id: string; nombreCompleto: string };
 };

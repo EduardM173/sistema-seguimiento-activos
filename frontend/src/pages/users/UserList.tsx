@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import CreateUser from '../../components/users/CreateUser';
 
 import { useAuth } from '../../context/AuthContext';
 import {
@@ -12,15 +12,20 @@ import {
 } from '../../services/user.service';
 
 import type { Permission, Role, User } from '../../types/user.types';
+import { SmartTable } from '../../components/common/SmartTable';
+import type { ColumnDef, ActionDef } from '../../components/common/SmartTable';
+import { FilterRow } from '../../components/common/FilterRow';
+import '../../styles/assets.css';
 
 type TabKey = 'users' | 'roles';
 
 type PermissionMatrixState = Record<string, Record<string, boolean>>;
 
 export default function UserList() {
-  const navigate = useNavigate();
-  const location = useLocation();
   const { user: authUser } = useAuth();
+
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [editingUserId, setEditingUserId] = useState<string | null>(null);
 
   const [activeTab, setActiveTab] = useState<TabKey>('users');
 
@@ -115,14 +120,7 @@ export default function UserList() {
     loadAllData();
   }, []);
 
-  useEffect(() => {
-    const state = location.state as { successMessage?: string } | null;
 
-    if (state?.successMessage) {
-      setSuccessMessage(state.successMessage);
-      navigate(location.pathname, { replace: true, state: {} });
-    }
-  }, [location.pathname, location.state, navigate]);
 
   function getMissingUserFields(user: User) {
     const missing: string[] = [];
@@ -337,167 +335,117 @@ export default function UserList() {
   };
 
   const renderUsersTab = () => {
-    if (loading) {
-      return <p style={{ marginTop: '20px' }}>Cargando usuarios...</p>;
-    }
+    const userColumns: ColumnDef<User>[] = [
+      {
+        id: 'nombre',
+        header: 'Nombre',
+        accessor: (u) => `${u.nombres} ${u.apellidos}`,
+        primary: true,
+        width: 220,
+        sortable: true,
+        render: (value, u) => {
+          const missing = getMissingUserFields(u);
+          return (
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              {value as string}
+              {missing.length > 0 && (
+                <span
+                  title={`Datos incompletos: ${missing.join(', ')}`}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: 20,
+                    height: 20,
+                    borderRadius: '999px',
+                    background: 'var(--color-warning-light)',
+                    color: 'var(--color-warning)',
+                    fontSize: 12,
+                    fontWeight: 700,
+                    flexShrink: 0,
+                  }}
+                >
+                  !
+                </span>
+              )}
+            </span>
+          );
+        },
+      },
+      { id: 'nombreUsuario', header: 'Usuario',  accessor: 'nombreUsuario', width: 150, sortable: true },
+      { id: 'correo',        header: 'Correo',   accessor: 'correo',        width: 220, sortable: true },
+      {
+        id: 'rol',
+        header: 'Rol',
+        accessor: (u) => u.rol?.nombre ?? 'Sin rol',
+        width: 150,
+        render: (v) => (
+          <span
+            style={{
+              background: 'var(--color-primary-muted)',
+              color: 'var(--color-primary-light)',
+              padding: '3px 8px',
+              borderRadius: 'var(--radius-full)',
+              fontSize: '0.8rem',
+              fontWeight: 600,
+            }}
+          >
+            {v as string}
+          </span>
+        ),
+      },
+      {
+        id: 'estado',
+        header: 'Estado',
+        accessor: 'estado',
+        width: 130,
+        render: (v, u) => {
+          const isActive = String(v) === 'ACTIVO';
+          const missing = getMissingUserFields(u);
+          return (
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <span
+                style={{
+                  background: isActive ? 'var(--color-success-light)' : 'var(--color-danger-light)',
+                  color: isActive ? 'var(--color-success)' : 'var(--color-danger)',
+                  padding: '3px 8px',
+                  borderRadius: 4,
+                  fontSize: '0.8rem',
+                  fontWeight: 600,
+                }}
+              >
+                {String(v) || 'Sin estado'}
+              </span>
+              {missing.length > 0 && (
+                <span style={{ color: 'var(--color-warning)', fontSize: '0.75rem', fontWeight: 600 }}>
+                  Incompleto
+                </span>
+              )}
+            </span>
+          );
+        },
+      },
+    ];
+
+    const userActions: ActionDef<User>[] = [
+      {
+        label: 'Editar',
+        icon: '✏️',
+        onClick: (u) => setEditingUserId(u.id),
+      },
+    ];
 
     return (
-      <div style={sectionCardStyle}>
-        <table
-          style={{
-            width: '100%',
-            borderCollapse: 'collapse',
-          }}
-        >
-          <thead>
-            <tr style={{ backgroundColor: '#f8fafc', textAlign: 'left' }}>
-              <th style={{ padding: '12px' }}>Nombre</th>
-              <th style={{ padding: '12px' }}>Usuario</th>
-              <th style={{ padding: '12px' }}>Correo</th>
-              <th style={{ padding: '12px' }}>Rol</th>
-              <th style={{ padding: '12px' }}>Estado</th>
-              <th style={{ padding: '12px' }}>Acciones</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {filteredUsers.length > 0 ? (
-              filteredUsers.map((currentUser) => {
-                const missingFields = getMissingUserFields(currentUser);
-                const isIncomplete = missingFields.length > 0;
-
-                return (
-                  <tr
-                    key={currentUser.id}
-                    style={{ borderBottom: '1px solid #e5e7eb' }}
-                  >
-                  <td style={{ padding: '12px' }}>
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                      }}
-                    >
-                      <span>
-                        {currentUser.nombres} {currentUser.apellidos}
-                      </span>
-                      {isIncomplete && (
-                        <span
-                          title={`Datos incompletos: ${missingFields.join(', ')}`}
-                          style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            width: '22px',
-                            height: '22px',
-                            borderRadius: '999px',
-                            backgroundColor: '#fef3c7',
-                            color: '#b45309',
-                            fontSize: '13px',
-                            fontWeight: 700,
-                          }}
-                        >
-                          !
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td style={{ padding: '12px' }}>{currentUser.nombreUsuario}</td>
-                  <td style={{ padding: '12px' }}>{currentUser.correo}</td>
-                  <td style={{ padding: '12px' }}>
-                    <span
-                      style={{
-                        backgroundColor: '#eff6ff',
-                        color: '#1d4ed8',
-                        padding: '4px 8px',
-                        borderRadius: '999px',
-                        fontSize: '13px',
-                        fontWeight: 600,
-                      }}
-                    >
-                      {currentUser.rol?.nombre || 'Sin rol'}
-                    </span>
-                  </td>
-                  <td style={{ padding: '12px' }}>
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        flexWrap: 'wrap',
-                      }}
-                    >
-                      <span
-                        style={{
-                          backgroundColor:
-                            currentUser.estado === 'ACTIVO' ? '#dcfce7' : '#fee2e2',
-                          color:
-                            currentUser.estado === 'ACTIVO' ? '#166534' : '#991b1b',
-                          padding: '4px 8px',
-                          borderRadius: '6px',
-                          fontSize: '13px',
-                          fontWeight: 600,
-                        }}
-                      >
-                        {currentUser.estado || 'Sin estado'}
-                      </span>
-                      {isIncomplete && (
-                        <span
-                          style={{
-                            color: '#b45309',
-                            fontSize: '12px',
-                            fontWeight: 600,
-                          }}
-                        >
-                          Incompleto
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td style={{ padding: '12px' }}>
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '10px',
-                      }}
-                    >
-                      <button
-                        type="button"
-                        title={
-                          isIncomplete
-                            ? 'Completar datos faltantes'
-                            : 'Editar usuario'
-                        }
-                        onClick={() => navigate(`/users/${currentUser.id}/edit`)}
-                        style={{
-                          border: '1px solid #cbd5e1',
-                          backgroundColor: '#ffffff',
-                          borderRadius: '8px',
-                          padding: '6px 10px',
-                          cursor: 'pointer',
-                          fontSize: '14px',
-                        }}
-                      >
-                        ✏️
-                      </button>
-                      <span title="Vista previa no disponible aun">👁️</span>
-                      <span title="Mas acciones">⋯</span>
-                    </div>
-                  </td>
-                  </tr>
-                );
-              })
-            ) : (
-              <tr>
-                <td colSpan={6} style={{ padding: '20px', textAlign: 'center' }}>
-                  No hay usuarios para mostrar.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+      <div className="assetsTable__wrap" style={{ marginTop: 20 }}>
+        <SmartTable<User>
+          columns={userColumns}
+          data={filteredUsers}
+          loading={loading}
+          keyExtractor={(u) => u.id}
+          emptyMessage="No hay usuarios para mostrar."
+          onRowClick={(u) => setEditingUserId(u.id)}
+          actions={userActions}
+        />
       </div>
     );
   };
@@ -861,7 +809,7 @@ export default function UserList() {
         </div>
 
         <button
-          onClick={() => navigate('/users/create')}
+          onClick={() => setShowCreateModal(true)}
           style={{
             backgroundColor: '#2563eb',
             color: 'white',
@@ -918,18 +866,16 @@ export default function UserList() {
       </div>
 
       <div style={{ marginTop: '20px' }}>
-        <input
-          type="text"
-          placeholder="Filtrar por nombre, correo, rol o permiso..."
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-          style={{
-            padding: '10px',
-            width: '340px',
-            maxWidth: '100%',
-            borderRadius: '8px',
-            border: '1px solid #cbd5e1',
-          }}
+        <FilterRow
+          elements={[
+            {
+              type: 'search',
+              key: 'search',
+              label: 'BUSCAR',
+              placeholder: 'Filtrar por nombre, correo, rol o permiso...',
+            },
+          ]}
+          onChange={(q) => setFilter(q.search ?? '')}
         />
       </div>
 
@@ -964,6 +910,16 @@ export default function UserList() {
       )}
 
       {activeTab === 'users' ? renderUsersTab() : renderRolesTab()}
+
+      <CreateUser
+        open={showCreateModal || Boolean(editingUserId)}
+        userId={editingUserId ?? undefined}
+        onClose={() => {
+          setShowCreateModal(false);
+          setEditingUserId(null);
+          void loadAllData();
+        }}
+      />
     </div>
   );
 }

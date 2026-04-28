@@ -1,0 +1,15 @@
+FROM node:lts-alpine3.22
+
+RUN mkdir -p /app && chown -R node:node /app
+
+WORKDIR /app
+
+COPY --chown=node:node ./ /app/
+
+USER node
+
+RUN npm install
+
+EXPOSE 5173
+
+CMD ["npm", "run", "dev"]

@@ -1,0 +1,19 @@
+services:
+  jenkins:
+    build:
+      context: ./jenkins
+      dockerfile: dockerfile
+
+    container_name: jenkins
+    restart: unless-stopped
+    group_add:
+      - "${DOCKER_HOST_GID}"
+    ports:
+      - "8083:8080"
+      - "50003:50000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - jenkins_home:/var/jenkins_home
+
+volumes:
+  jenkins_home:

@@ -5,6 +5,17 @@ import { RecentActivity } from './RecentActivity';
 import { QuickAction } from './QuickAction';
 import { Card, LoadingSpinner } from '../common';
 import { useAuth } from '../../hooks';
+import {
+  IconPackage,
+  IconAlertTriangle,
+  IconArrowsLeftRight,
+  IconShield,
+  IconPlus,
+  IconBarChart,
+  IconUsers,
+  IconClipboard,
+  IconSearch,
+} from '../common/Icon';
 import '../../styles/dashboard.css';
 
 export const DashboardContent: React.FC = () => {
@@ -26,8 +37,8 @@ export const DashboardContent: React.FC = () => {
     <div className="dashboard-content">
       {/* Bienvenida */}
       <div className="dashboard-header">
-        <h1>Bienvenido, {usuario?.nombres}! 👋</h1>
-        <p className="dashboard-subtitle">Panel de Control - Sistema de Gestión de Activos</p>
+        <h1>Bienvenido, {usuario?.nombres}</h1>
+        <p className="dashboard-subtitle">Panel de Control — Sistema de Gestión de Activos</p>
       </div>
 
       {/* Widgets de estadísticas */}
@@ -35,32 +46,28 @@ export const DashboardContent: React.FC = () => {
         <StatWidget
           title="Total de Activos"
           value={stats.totalActivos}
-          icon="📦"
-          variant="primary"
+          icon={<IconPackage size={18} />}
           trend={2.5}
           onClick={() => handleNavigate('activos')}
         />
         <StatWidget
           title="Stock Bajo"
           value={stats.stockBajo}
-          icon="⚠️"
-          variant="warning"
+          icon={<IconAlertTriangle size={18} />}
           trend={-1.2}
           onClick={() => handleNavigate('inventario')}
         />
         <StatWidget
           title="Transferencias en Espera"
           value={stats.transferenciasEspera}
-          icon="🔄"
-          variant="info"
+          icon={<IconArrowsLeftRight size={18} />}
           trend={5.3}
           onClick={() => handleNavigate('transferencias')}
         />
         <StatWidget
           title="Alertas de Seguridad"
           value={stats.alertasSeguridad}
-          icon="🚨"
-          variant="danger"
+          icon={<IconShield size={18} />}
           trend={0.8}
           onClick={() => handleNavigate('auditoria')}
         />
@@ -72,32 +79,32 @@ export const DashboardContent: React.FC = () => {
         <Card title="Acciones Rápidas" padding="lg">
           <div className="quick-actions-grid">
             <QuickAction
-              icon="➕"
+              icon={<IconPlus size={20} />}
               label="Nuevo Activo"
               onClick={() => handleNavigate('activos')}
             />
             <QuickAction
-              icon="🔄"
+              icon={<IconArrowsLeftRight size={20} />}
               label="Transferencia"
               onClick={() => handleNavigate('transferencias')}
             />
             <QuickAction
-              icon="📊"
+              icon={<IconBarChart size={20} />}
               label="Generar Reporte"
               onClick={() => handleNavigate('reportes')}
             />
             <QuickAction
-              icon="👥"
+              icon={<IconUsers size={20} />}
               label="Gestionar Usuarios"
               onClick={() => handleNavigate('usuarios')}
             />
             <QuickAction
-              icon="📋"
+              icon={<IconClipboard size={20} />}
               label="Inventario"
               onClick={() => handleNavigate('inventario')}
             />
             <QuickAction
-              icon="🔍"
+              icon={<IconSearch size={20} />}
               label="Auditoría"
               onClick={() => handleNavigate('auditoria')}
             />

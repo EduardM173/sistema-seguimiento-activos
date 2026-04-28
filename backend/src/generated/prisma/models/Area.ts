@@ -202,6 +202,7 @@ export type AreaWhereInput = {
   encargado?: Prisma.XOR<Prisma.UsuarioNullableScalarRelationFilter, Prisma.UsuarioWhereInput> | null
   usuarios?: Prisma.UsuarioListRelationFilter
   activos?: Prisma.ActivoListRelationFilter
+  materiales?: Prisma.MaterialListRelationFilter
   asignaciones?: Prisma.AsignacionActivoListRelationFilter
   notificaciones?: Prisma.NotificacionListRelationFilter
 }
@@ -218,6 +219,7 @@ export type AreaOrderByWithRelationInput = {
   encargado?: Prisma.UsuarioOrderByWithRelationInput
   usuarios?: Prisma.UsuarioOrderByRelationAggregateInput
   activos?: Prisma.ActivoOrderByRelationAggregateInput
+  materiales?: Prisma.MaterialOrderByRelationAggregateInput
   asignaciones?: Prisma.AsignacionActivoOrderByRelationAggregateInput
   notificaciones?: Prisma.NotificacionOrderByRelationAggregateInput
 }
@@ -237,6 +239,7 @@ export type AreaWhereUniqueInput = Prisma.AtLeast<{
   encargado?: Prisma.XOR<Prisma.UsuarioNullableScalarRelationFilter, Prisma.UsuarioWhereInput> | null
   usuarios?: Prisma.UsuarioListRelationFilter
   activos?: Prisma.ActivoListRelationFilter
+  materiales?: Prisma.MaterialListRelationFilter
   asignaciones?: Prisma.AsignacionActivoListRelationFilter
   notificaciones?: Prisma.NotificacionListRelationFilter
 }, "id" | "nombre">
@@ -277,6 +280,7 @@ export type AreaCreateInput = {
   encargado?: Prisma.UsuarioCreateNestedOneWithoutAreasGestionadasInput
   usuarios?: Prisma.UsuarioCreateNestedManyWithoutAreaInput
   activos?: Prisma.ActivoCreateNestedManyWithoutAreaActualInput
+  materiales?: Prisma.MaterialCreateNestedManyWithoutAreaInput
   asignaciones?: Prisma.AsignacionActivoCreateNestedManyWithoutAreaAsignadaInput
   notificaciones?: Prisma.NotificacionCreateNestedManyWithoutAreaInput
 }
@@ -291,6 +295,7 @@ export type AreaUncheckedCreateInput = {
   actualizadoEn?: Date | string
   usuarios?: Prisma.UsuarioUncheckedCreateNestedManyWithoutAreaInput
   activos?: Prisma.ActivoUncheckedCreateNestedManyWithoutAreaActualInput
+  materiales?: Prisma.MaterialUncheckedCreateNestedManyWithoutAreaInput
   asignaciones?: Prisma.AsignacionActivoUncheckedCreateNestedManyWithoutAreaAsignadaInput
   notificaciones?: Prisma.NotificacionUncheckedCreateNestedManyWithoutAreaInput
 }
@@ -305,6 +310,7 @@ export type AreaUpdateInput = {
   encargado?: Prisma.UsuarioUpdateOneWithoutAreasGestionadasNestedInput
   usuarios?: Prisma.UsuarioUpdateManyWithoutAreaNestedInput
   activos?: Prisma.ActivoUpdateManyWithoutAreaActualNestedInput
+  materiales?: Prisma.MaterialUpdateManyWithoutAreaNestedInput
   asignaciones?: Prisma.AsignacionActivoUpdateManyWithoutAreaAsignadaNestedInput
   notificaciones?: Prisma.NotificacionUpdateManyWithoutAreaNestedInput
 }
@@ -319,6 +325,7 @@ export type AreaUncheckedUpdateInput = {
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   usuarios?: Prisma.UsuarioUncheckedUpdateManyWithoutAreaNestedInput
   activos?: Prisma.ActivoUncheckedUpdateManyWithoutAreaActualNestedInput
+  materiales?: Prisma.MaterialUncheckedUpdateManyWithoutAreaNestedInput
   asignaciones?: Prisma.AsignacionActivoUncheckedUpdateManyWithoutAreaAsignadaNestedInput
   notificaciones?: Prisma.NotificacionUncheckedUpdateManyWithoutAreaNestedInput
 }
@@ -528,6 +535,22 @@ export type AreaUpdateOneWithoutAsignacionesNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.AreaUpdateToOneWithWhereWithoutAsignacionesInput, Prisma.AreaUpdateWithoutAsignacionesInput>, Prisma.AreaUncheckedUpdateWithoutAsignacionesInput>
 }
 
+export type AreaCreateNestedOneWithoutMaterialesInput = {
+  create?: Prisma.XOR<Prisma.AreaCreateWithoutMaterialesInput, Prisma.AreaUncheckedCreateWithoutMaterialesInput>
+  connectOrCreate?: Prisma.AreaCreateOrConnectWithoutMaterialesInput
+  connect?: Prisma.AreaWhereUniqueInput
+}
+
+export type AreaUpdateOneWithoutMaterialesNestedInput = {
+  create?: Prisma.XOR<Prisma.AreaCreateWithoutMaterialesInput, Prisma.AreaUncheckedCreateWithoutMaterialesInput>
+  connectOrCreate?: Prisma.AreaCreateOrConnectWithoutMaterialesInput
+  upsert?: Prisma.AreaUpsertWithoutMaterialesInput
+  disconnect?: Prisma.AreaWhereInput | boolean
+  delete?: Prisma.AreaWhereInput | boolean
+  connect?: Prisma.AreaWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.AreaUpdateToOneWithWhereWithoutMaterialesInput, Prisma.AreaUpdateWithoutMaterialesInput>, Prisma.AreaUncheckedUpdateWithoutMaterialesInput>
+}
+
 export type AreaCreateNestedOneWithoutNotificacionesInput = {
   create?: Prisma.XOR<Prisma.AreaCreateWithoutNotificacionesInput, Prisma.AreaUncheckedCreateWithoutNotificacionesInput>
   connectOrCreate?: Prisma.AreaCreateOrConnectWithoutNotificacionesInput
@@ -553,6 +576,7 @@ export type AreaCreateWithoutUsuariosInput = {
   ubicacion?: Prisma.UbicacionCreateNestedOneWithoutAreasInput
   encargado?: Prisma.UsuarioCreateNestedOneWithoutAreasGestionadasInput
   activos?: Prisma.ActivoCreateNestedManyWithoutAreaActualInput
+  materiales?: Prisma.MaterialCreateNestedManyWithoutAreaInput
   asignaciones?: Prisma.AsignacionActivoCreateNestedManyWithoutAreaAsignadaInput
   notificaciones?: Prisma.NotificacionCreateNestedManyWithoutAreaInput
 }
@@ -566,6 +590,7 @@ export type AreaUncheckedCreateWithoutUsuariosInput = {
   creadoEn?: Date | string
   actualizadoEn?: Date | string
   activos?: Prisma.ActivoUncheckedCreateNestedManyWithoutAreaActualInput
+  materiales?: Prisma.MaterialUncheckedCreateNestedManyWithoutAreaInput
   asignaciones?: Prisma.AsignacionActivoUncheckedCreateNestedManyWithoutAreaAsignadaInput
   notificaciones?: Prisma.NotificacionUncheckedCreateNestedManyWithoutAreaInput
 }
@@ -584,6 +609,7 @@ export type AreaCreateWithoutEncargadoInput = {
   ubicacion?: Prisma.UbicacionCreateNestedOneWithoutAreasInput
   usuarios?: Prisma.UsuarioCreateNestedManyWithoutAreaInput
   activos?: Prisma.ActivoCreateNestedManyWithoutAreaActualInput
+  materiales?: Prisma.MaterialCreateNestedManyWithoutAreaInput
   asignaciones?: Prisma.AsignacionActivoCreateNestedManyWithoutAreaAsignadaInput
   notificaciones?: Prisma.NotificacionCreateNestedManyWithoutAreaInput
 }
@@ -597,6 +623,7 @@ export type AreaUncheckedCreateWithoutEncargadoInput = {
   actualizadoEn?: Date | string
   usuarios?: Prisma.UsuarioUncheckedCreateNestedManyWithoutAreaInput
   activos?: Prisma.ActivoUncheckedCreateNestedManyWithoutAreaActualInput
+  materiales?: Prisma.MaterialUncheckedCreateNestedManyWithoutAreaInput
   asignaciones?: Prisma.AsignacionActivoUncheckedCreateNestedManyWithoutAreaAsignadaInput
   notificaciones?: Prisma.NotificacionUncheckedCreateNestedManyWithoutAreaInput
 }
@@ -631,6 +658,7 @@ export type AreaUpdateWithoutUsuariosInput = {
   ubicacion?: Prisma.UbicacionUpdateOneWithoutAreasNestedInput
   encargado?: Prisma.UsuarioUpdateOneWithoutAreasGestionadasNestedInput
   activos?: Prisma.ActivoUpdateManyWithoutAreaActualNestedInput
+  materiales?: Prisma.MaterialUpdateManyWithoutAreaNestedInput
   asignaciones?: Prisma.AsignacionActivoUpdateManyWithoutAreaAsignadaNestedInput
   notificaciones?: Prisma.NotificacionUpdateManyWithoutAreaNestedInput
 }
@@ -644,6 +672,7 @@ export type AreaUncheckedUpdateWithoutUsuariosInput = {
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   activos?: Prisma.ActivoUncheckedUpdateManyWithoutAreaActualNestedInput
+  materiales?: Prisma.MaterialUncheckedUpdateManyWithoutAreaNestedInput
   asignaciones?: Prisma.AsignacionActivoUncheckedUpdateManyWithoutAreaAsignadaNestedInput
   notificaciones?: Prisma.NotificacionUncheckedUpdateManyWithoutAreaNestedInput
 }
@@ -686,6 +715,7 @@ export type AreaCreateWithoutUbicacionInput = {
   encargado?: Prisma.UsuarioCreateNestedOneWithoutAreasGestionadasInput
   usuarios?: Prisma.UsuarioCreateNestedManyWithoutAreaInput
   activos?: Prisma.ActivoCreateNestedManyWithoutAreaActualInput
+  materiales?: Prisma.MaterialCreateNestedManyWithoutAreaInput
   asignaciones?: Prisma.AsignacionActivoCreateNestedManyWithoutAreaAsignadaInput
   notificaciones?: Prisma.NotificacionCreateNestedManyWithoutAreaInput
 }
@@ -699,6 +729,7 @@ export type AreaUncheckedCreateWithoutUbicacionInput = {
   actualizadoEn?: Date | string
   usuarios?: Prisma.UsuarioUncheckedCreateNestedManyWithoutAreaInput
   activos?: Prisma.ActivoUncheckedCreateNestedManyWithoutAreaActualInput
+  materiales?: Prisma.MaterialUncheckedCreateNestedManyWithoutAreaInput
   asignaciones?: Prisma.AsignacionActivoUncheckedCreateNestedManyWithoutAreaAsignadaInput
   notificaciones?: Prisma.NotificacionUncheckedCreateNestedManyWithoutAreaInput
 }
@@ -738,6 +769,7 @@ export type AreaCreateWithoutActivosInput = {
   ubicacion?: Prisma.UbicacionCreateNestedOneWithoutAreasInput
   encargado?: Prisma.UsuarioCreateNestedOneWithoutAreasGestionadasInput
   usuarios?: Prisma.UsuarioCreateNestedManyWithoutAreaInput
+  materiales?: Prisma.MaterialCreateNestedManyWithoutAreaInput
   asignaciones?: Prisma.AsignacionActivoCreateNestedManyWithoutAreaAsignadaInput
   notificaciones?: Prisma.NotificacionCreateNestedManyWithoutAreaInput
 }
@@ -751,6 +783,7 @@ export type AreaUncheckedCreateWithoutActivosInput = {
   creadoEn?: Date | string
   actualizadoEn?: Date | string
   usuarios?: Prisma.UsuarioUncheckedCreateNestedManyWithoutAreaInput
+  materiales?: Prisma.MaterialUncheckedCreateNestedManyWithoutAreaInput
   asignaciones?: Prisma.AsignacionActivoUncheckedCreateNestedManyWithoutAreaAsignadaInput
   notificaciones?: Prisma.NotificacionUncheckedCreateNestedManyWithoutAreaInput
 }
@@ -780,6 +813,7 @@ export type AreaUpdateWithoutActivosInput = {
   ubicacion?: Prisma.UbicacionUpdateOneWithoutAreasNestedInput
   encargado?: Prisma.UsuarioUpdateOneWithoutAreasGestionadasNestedInput
   usuarios?: Prisma.UsuarioUpdateManyWithoutAreaNestedInput
+  materiales?: Prisma.MaterialUpdateManyWithoutAreaNestedInput
   asignaciones?: Prisma.AsignacionActivoUpdateManyWithoutAreaAsignadaNestedInput
   notificaciones?: Prisma.NotificacionUpdateManyWithoutAreaNestedInput
 }
@@ -793,6 +827,7 @@ export type AreaUncheckedUpdateWithoutActivosInput = {
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   usuarios?: Prisma.UsuarioUncheckedUpdateManyWithoutAreaNestedInput
+  materiales?: Prisma.MaterialUncheckedUpdateManyWithoutAreaNestedInput
   asignaciones?: Prisma.AsignacionActivoUncheckedUpdateManyWithoutAreaAsignadaNestedInput
   notificaciones?: Prisma.NotificacionUncheckedUpdateManyWithoutAreaNestedInput
 }
@@ -807,6 +842,7 @@ export type AreaCreateWithoutAsignacionesInput = {
   encargado?: Prisma.UsuarioCreateNestedOneWithoutAreasGestionadasInput
   usuarios?: Prisma.UsuarioCreateNestedManyWithoutAreaInput
   activos?: Prisma.ActivoCreateNestedManyWithoutAreaActualInput
+  materiales?: Prisma.MaterialCreateNestedManyWithoutAreaInput
   notificaciones?: Prisma.NotificacionCreateNestedManyWithoutAreaInput
 }
 
@@ -820,6 +856,7 @@ export type AreaUncheckedCreateWithoutAsignacionesInput = {
   actualizadoEn?: Date | string
   usuarios?: Prisma.UsuarioUncheckedCreateNestedManyWithoutAreaInput
   activos?: Prisma.ActivoUncheckedCreateNestedManyWithoutAreaActualInput
+  materiales?: Prisma.MaterialUncheckedCreateNestedManyWithoutAreaInput
   notificaciones?: Prisma.NotificacionUncheckedCreateNestedManyWithoutAreaInput
 }
 
@@ -849,6 +886,7 @@ export type AreaUpdateWithoutAsignacionesInput = {
   encargado?: Prisma.UsuarioUpdateOneWithoutAreasGestionadasNestedInput
   usuarios?: Prisma.UsuarioUpdateManyWithoutAreaNestedInput
   activos?: Prisma.ActivoUpdateManyWithoutAreaActualNestedInput
+  materiales?: Prisma.MaterialUpdateManyWithoutAreaNestedInput
   notificaciones?: Prisma.NotificacionUpdateManyWithoutAreaNestedInput
 }
 
@@ -862,6 +900,79 @@ export type AreaUncheckedUpdateWithoutAsignacionesInput = {
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   usuarios?: Prisma.UsuarioUncheckedUpdateManyWithoutAreaNestedInput
   activos?: Prisma.ActivoUncheckedUpdateManyWithoutAreaActualNestedInput
+  materiales?: Prisma.MaterialUncheckedUpdateManyWithoutAreaNestedInput
+  notificaciones?: Prisma.NotificacionUncheckedUpdateManyWithoutAreaNestedInput
+}
+
+export type AreaCreateWithoutMaterialesInput = {
+  id?: string
+  nombre: string
+  descripcion?: string | null
+  creadoEn?: Date | string
+  actualizadoEn?: Date | string
+  ubicacion?: Prisma.UbicacionCreateNestedOneWithoutAreasInput
+  encargado?: Prisma.UsuarioCreateNestedOneWithoutAreasGestionadasInput
+  usuarios?: Prisma.UsuarioCreateNestedManyWithoutAreaInput
+  activos?: Prisma.ActivoCreateNestedManyWithoutAreaActualInput
+  asignaciones?: Prisma.AsignacionActivoCreateNestedManyWithoutAreaAsignadaInput
+  notificaciones?: Prisma.NotificacionCreateNestedManyWithoutAreaInput
+}
+
+export type AreaUncheckedCreateWithoutMaterialesInput = {
+  id?: string
+  nombre: string
+  descripcion?: string | null
+  ubicacionId?: string | null
+  encargadoId?: string | null
+  creadoEn?: Date | string
+  actualizadoEn?: Date | string
+  usuarios?: Prisma.UsuarioUncheckedCreateNestedManyWithoutAreaInput
+  activos?: Prisma.ActivoUncheckedCreateNestedManyWithoutAreaActualInput
+  asignaciones?: Prisma.AsignacionActivoUncheckedCreateNestedManyWithoutAreaAsignadaInput
+  notificaciones?: Prisma.NotificacionUncheckedCreateNestedManyWithoutAreaInput
+}
+
+export type AreaCreateOrConnectWithoutMaterialesInput = {
+  where: Prisma.AreaWhereUniqueInput
+  create: Prisma.XOR<Prisma.AreaCreateWithoutMaterialesInput, Prisma.AreaUncheckedCreateWithoutMaterialesInput>
+}
+
+export type AreaUpsertWithoutMaterialesInput = {
+  update: Prisma.XOR<Prisma.AreaUpdateWithoutMaterialesInput, Prisma.AreaUncheckedUpdateWithoutMaterialesInput>
+  create: Prisma.XOR<Prisma.AreaCreateWithoutMaterialesInput, Prisma.AreaUncheckedCreateWithoutMaterialesInput>
+  where?: Prisma.AreaWhereInput
+}
+
+export type AreaUpdateToOneWithWhereWithoutMaterialesInput = {
+  where?: Prisma.AreaWhereInput
+  data: Prisma.XOR<Prisma.AreaUpdateWithoutMaterialesInput, Prisma.AreaUncheckedUpdateWithoutMaterialesInput>
+}
+
+export type AreaUpdateWithoutMaterialesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  nombre?: Prisma.StringFieldUpdateOperationsInput | string
+  descripcion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ubicacion?: Prisma.UbicacionUpdateOneWithoutAreasNestedInput
+  encargado?: Prisma.UsuarioUpdateOneWithoutAreasGestionadasNestedInput
+  usuarios?: Prisma.UsuarioUpdateManyWithoutAreaNestedInput
+  activos?: Prisma.ActivoUpdateManyWithoutAreaActualNestedInput
+  asignaciones?: Prisma.AsignacionActivoUpdateManyWithoutAreaAsignadaNestedInput
+  notificaciones?: Prisma.NotificacionUpdateManyWithoutAreaNestedInput
+}
+
+export type AreaUncheckedUpdateWithoutMaterialesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  nombre?: Prisma.StringFieldUpdateOperationsInput | string
+  descripcion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ubicacionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  encargadoId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  usuarios?: Prisma.UsuarioUncheckedUpdateManyWithoutAreaNestedInput
+  activos?: Prisma.ActivoUncheckedUpdateManyWithoutAreaActualNestedInput
+  asignaciones?: Prisma.AsignacionActivoUncheckedUpdateManyWithoutAreaAsignadaNestedInput
   notificaciones?: Prisma.NotificacionUncheckedUpdateManyWithoutAreaNestedInput
 }
 
@@ -875,6 +986,7 @@ export type AreaCreateWithoutNotificacionesInput = {
   encargado?: Prisma.UsuarioCreateNestedOneWithoutAreasGestionadasInput
   usuarios?: Prisma.UsuarioCreateNestedManyWithoutAreaInput
   activos?: Prisma.ActivoCreateNestedManyWithoutAreaActualInput
+  materiales?: Prisma.MaterialCreateNestedManyWithoutAreaInput
   asignaciones?: Prisma.AsignacionActivoCreateNestedManyWithoutAreaAsignadaInput
 }
 
@@ -888,6 +1000,7 @@ export type AreaUncheckedCreateWithoutNotificacionesInput = {
   actualizadoEn?: Date | string
   usuarios?: Prisma.UsuarioUncheckedCreateNestedManyWithoutAreaInput
   activos?: Prisma.ActivoUncheckedCreateNestedManyWithoutAreaActualInput
+  materiales?: Prisma.MaterialUncheckedCreateNestedManyWithoutAreaInput
   asignaciones?: Prisma.AsignacionActivoUncheckedCreateNestedManyWithoutAreaAsignadaInput
 }
 
@@ -917,6 +1030,7 @@ export type AreaUpdateWithoutNotificacionesInput = {
   encargado?: Prisma.UsuarioUpdateOneWithoutAreasGestionadasNestedInput
   usuarios?: Prisma.UsuarioUpdateManyWithoutAreaNestedInput
   activos?: Prisma.ActivoUpdateManyWithoutAreaActualNestedInput
+  materiales?: Prisma.MaterialUpdateManyWithoutAreaNestedInput
   asignaciones?: Prisma.AsignacionActivoUpdateManyWithoutAreaAsignadaNestedInput
 }
 
@@ -930,6 +1044,7 @@ export type AreaUncheckedUpdateWithoutNotificacionesInput = {
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   usuarios?: Prisma.UsuarioUncheckedUpdateManyWithoutAreaNestedInput
   activos?: Prisma.ActivoUncheckedUpdateManyWithoutAreaActualNestedInput
+  materiales?: Prisma.MaterialUncheckedUpdateManyWithoutAreaNestedInput
   asignaciones?: Prisma.AsignacionActivoUncheckedUpdateManyWithoutAreaAsignadaNestedInput
 }
 
@@ -951,6 +1066,7 @@ export type AreaUpdateWithoutEncargadoInput = {
   ubicacion?: Prisma.UbicacionUpdateOneWithoutAreasNestedInput
   usuarios?: Prisma.UsuarioUpdateManyWithoutAreaNestedInput
   activos?: Prisma.ActivoUpdateManyWithoutAreaActualNestedInput
+  materiales?: Prisma.MaterialUpdateManyWithoutAreaNestedInput
   asignaciones?: Prisma.AsignacionActivoUpdateManyWithoutAreaAsignadaNestedInput
   notificaciones?: Prisma.NotificacionUpdateManyWithoutAreaNestedInput
 }
@@ -964,6 +1080,7 @@ export type AreaUncheckedUpdateWithoutEncargadoInput = {
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   usuarios?: Prisma.UsuarioUncheckedUpdateManyWithoutAreaNestedInput
   activos?: Prisma.ActivoUncheckedUpdateManyWithoutAreaActualNestedInput
+  materiales?: Prisma.MaterialUncheckedUpdateManyWithoutAreaNestedInput
   asignaciones?: Prisma.AsignacionActivoUncheckedUpdateManyWithoutAreaAsignadaNestedInput
   notificaciones?: Prisma.NotificacionUncheckedUpdateManyWithoutAreaNestedInput
 }
@@ -995,6 +1112,7 @@ export type AreaUpdateWithoutUbicacionInput = {
   encargado?: Prisma.UsuarioUpdateOneWithoutAreasGestionadasNestedInput
   usuarios?: Prisma.UsuarioUpdateManyWithoutAreaNestedInput
   activos?: Prisma.ActivoUpdateManyWithoutAreaActualNestedInput
+  materiales?: Prisma.MaterialUpdateManyWithoutAreaNestedInput
   asignaciones?: Prisma.AsignacionActivoUpdateManyWithoutAreaAsignadaNestedInput
   notificaciones?: Prisma.NotificacionUpdateManyWithoutAreaNestedInput
 }
@@ -1008,6 +1126,7 @@ export type AreaUncheckedUpdateWithoutUbicacionInput = {
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   usuarios?: Prisma.UsuarioUncheckedUpdateManyWithoutAreaNestedInput
   activos?: Prisma.ActivoUncheckedUpdateManyWithoutAreaActualNestedInput
+  materiales?: Prisma.MaterialUncheckedUpdateManyWithoutAreaNestedInput
   asignaciones?: Prisma.AsignacionActivoUncheckedUpdateManyWithoutAreaAsignadaNestedInput
   notificaciones?: Prisma.NotificacionUncheckedUpdateManyWithoutAreaNestedInput
 }
@@ -1029,6 +1148,7 @@ export type AreaUncheckedUpdateManyWithoutUbicacionInput = {
 export type AreaCountOutputType = {
   usuarios: number
   activos: number
+  materiales: number
   asignaciones: number
   notificaciones: number
 }
@@ -1036,6 +1156,7 @@ export type AreaCountOutputType = {
 export type AreaCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   usuarios?: boolean | AreaCountOutputTypeCountUsuariosArgs
   activos?: boolean | AreaCountOutputTypeCountActivosArgs
+  materiales?: boolean | AreaCountOutputTypeCountMaterialesArgs
   asignaciones?: boolean | AreaCountOutputTypeCountAsignacionesArgs
   notificaciones?: boolean | AreaCountOutputTypeCountNotificacionesArgs
 }
@@ -1067,6 +1188,13 @@ export type AreaCountOutputTypeCountActivosArgs<ExtArgs extends runtime.Types.Ex
 /**
  * AreaCountOutputType without action
  */
+export type AreaCountOutputTypeCountMaterialesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.MaterialWhereInput
+}
+
+/**
+ * AreaCountOutputType without action
+ */
 export type AreaCountOutputTypeCountAsignacionesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.AsignacionActivoWhereInput
 }
@@ -1091,6 +1219,7 @@ export type AreaSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   encargado?: boolean | Prisma.Area$encargadoArgs<ExtArgs>
   usuarios?: boolean | Prisma.Area$usuariosArgs<ExtArgs>
   activos?: boolean | Prisma.Area$activosArgs<ExtArgs>
+  materiales?: boolean | Prisma.Area$materialesArgs<ExtArgs>
   asignaciones?: boolean | Prisma.Area$asignacionesArgs<ExtArgs>
   notificaciones?: boolean | Prisma.Area$notificacionesArgs<ExtArgs>
   _count?: boolean | Prisma.AreaCountOutputTypeDefaultArgs<ExtArgs>
@@ -1136,6 +1265,7 @@ export type AreaInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   encargado?: boolean | Prisma.Area$encargadoArgs<ExtArgs>
   usuarios?: boolean | Prisma.Area$usuariosArgs<ExtArgs>
   activos?: boolean | Prisma.Area$activosArgs<ExtArgs>
+  materiales?: boolean | Prisma.Area$materialesArgs<ExtArgs>
   asignaciones?: boolean | Prisma.Area$asignacionesArgs<ExtArgs>
   notificaciones?: boolean | Prisma.Area$notificacionesArgs<ExtArgs>
   _count?: boolean | Prisma.AreaCountOutputTypeDefaultArgs<ExtArgs>
@@ -1156,6 +1286,7 @@ export type $AreaPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     encargado: Prisma.$UsuarioPayload<ExtArgs> | null
     usuarios: Prisma.$UsuarioPayload<ExtArgs>[]
     activos: Prisma.$ActivoPayload<ExtArgs>[]
+    materiales: Prisma.$MaterialPayload<ExtArgs>[]
     asignaciones: Prisma.$AsignacionActivoPayload<ExtArgs>[]
     notificaciones: Prisma.$NotificacionPayload<ExtArgs>[]
   }
@@ -1565,6 +1696,7 @@ export interface Prisma__AreaClient<T, Null = never, ExtArgs extends runtime.Typ
   encargado<T extends Prisma.Area$encargadoArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Area$encargadoArgs<ExtArgs>>): Prisma.Prisma__UsuarioClient<runtime.Types.Result.GetResult<Prisma.$UsuarioPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   usuarios<T extends Prisma.Area$usuariosArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Area$usuariosArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UsuarioPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   activos<T extends Prisma.Area$activosArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Area$activosArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ActivoPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  materiales<T extends Prisma.Area$materialesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Area$materialesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MaterialPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   asignaciones<T extends Prisma.Area$asignacionesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Area$asignacionesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AsignacionActivoPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   notificaciones<T extends Prisma.Area$notificacionesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Area$notificacionesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$NotificacionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
@@ -2087,6 +2219,30 @@ export type Area$activosArgs<ExtArgs extends runtime.Types.Extensions.InternalAr
   take?: number
   skip?: number
   distinct?: Prisma.ActivoScalarFieldEnum | Prisma.ActivoScalarFieldEnum[]
+}
+
+/**
+ * Area.materiales
+ */
+export type Area$materialesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Material
+   */
+  select?: Prisma.MaterialSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Material
+   */
+  omit?: Prisma.MaterialOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.MaterialInclude<ExtArgs> | null
+  where?: Prisma.MaterialWhereInput
+  orderBy?: Prisma.MaterialOrderByWithRelationInput | Prisma.MaterialOrderByWithRelationInput[]
+  cursor?: Prisma.MaterialWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.MaterialScalarFieldEnum | Prisma.MaterialScalarFieldEnum[]
 }
 
 /**

@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 
 import EditAssetModal from '../components/activos/EditAssetModal';
 import ViewAssetModal from '../components/activos/ViewAssetModal';
+import OverlayModal from '../components/common/OverlayModal';
+import CreateAssetPage from './CreateAssetPage';
 import AssetDetailPanel from '../components/assets/AssetDetailPanel';
+import AssetTransferHistoryModal from '../components/assets/AssetTransferHistoryModal';
 import { useNotification } from '../context/NotificationContext';
+import { useAuth } from '../context/AuthContext';
 import { getAreas, getCategorias, getUbicaciones, getUsuarios } from '../services/catalogs.service';
 import {
   assignAsset,
@@ -28,8 +31,13 @@ import type {
   Ubicacion,
   UsuarioResumen,
 } from '../types/assets.types';
+import { SmartTable } from '../components/common/SmartTable';
+import type { ColumnDef, ActionDef } from '../components/common/SmartTable';
+import { FilterRow } from '../components/common/FilterRow';
+import type { FilterQuery } from '../components/common/FilterRow';
 
 import '../styles/assets.css';
+import { IconInfo, IconEdit, IconGrid } from '@/components/common/Icon';
 
 const ESTADO_OPTIONS: { value: EstadoActivo; label: string }[] = [
   { value: 'OPERATIVO', label: 'Operativo' },
@@ -48,7 +56,7 @@ const ESTADO_CLASS: Record<string, string> = {
 const PAGE_SIZE = 10;
 
 export default function AssetsPage() {
-  const navigate = useNavigate();
+  const { hasPermission } = useAuth();
   const notify = useNotification();
   const { error: notifyError, success: notifySuccess } = notify;
 
@@ -61,14 +69,13 @@ export default function AssetsPage() {
   const [areas, setAreas] = useState<Area[]>([]);
   const [usuarios, setUsuarios] = useState<UsuarioResumen[]>([]);
 
-  const [searchText, setSearchText] = useState('');
+  const [filterSearch, setFilterSearch] = useState('');
   const [filterEstado, setFilterEstado] = useState<EstadoActivo | ''>('');
   const [filterCategoria, setFilterCategoria] = useState('');
   const [filterUbicacion, setFilterUbicacion] = useState('');
   const [sortBy, setSortBy] = useState<AssetSortBy>('creadoEn');
   const [sortType, setSortType] = useState<SortType>('DESC');
   const [currentPage, setCurrentPage] = useState(1);
-  const [debouncedSearch, setDebouncedSearch] = useState('');
 
   const [selectedAssetId, setSelectedAssetId] = useState<string | null>(null);
   const [selectedAssetDetail, setSelectedAssetDetail] = useState<AssetDetail | null>(null);
@@ -83,8 +90,24 @@ export default function AssetsPage() {
   const [creatingFakeAssets, setCreatingFakeAssets] = useState(false);
   const [deletingFakeAssets, setDeletingFakeAssets] = useState(false);
 
+  const [showCreateAssetModal, setShowCreateAssetModal] = useState(false);
   const [editingAssetId, setEditingAssetId] = useState<string | null>(null);
   const [viewingAssetId, setViewingAssetId] = useState<string | null>(null);
+  const [historyAssetId, setHistoryAssetId] = useState<string | null>(null);
+  
+  // ========== MODAL DE BAJA ==========
+  const [bajaModalOpen, setBajaModalOpen] = useState(false);
+  const [bajaAsset, setBajaAsset] = useState<{ id: string; nombre: string } | null>(null);
+  const [bajaMotivo, setBajaMotivo] = useState('');
+  const [bajaLoading, setBajaLoading] = useState(false);
+  // ===================================
+
+  const canCreateAssets = hasPermission('ASSET_CREATE');
+  const canUpdateAssets = hasPermission('ASSET_UPDATE');
+  const canAssignAssets = hasPermission('ASSET_ASSIGN');
+  const canAssignUsers = canAssignAssets || hasPermission('ASSET_ASSIGN_USER');
+  const canAssignAreas = canAssignAssets || hasPermission('ASSET_ASSIGN_AREA');
+  const canOpenAssignModal = canAssignUsers || canAssignAreas;
 
   useEffect(() => {
     async function loadCatalogs() {
@@ -107,11 +130,6 @@ export default function AssetsPage() {
     void loadCatalogs();
   }, []);
 
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(searchText), 350);
-    return () => clearTimeout(timer);
-  }, [searchText]);
-
   const loadAssets = useCallback(async () => {
     try {
       setLoading(true);
@@ -120,7 +138,7 @@ export default function AssetsPage() {
         pageSize: PAGE_SIZE,
       };
 
-      if (debouncedSearch) params.q = debouncedSearch;
+      if (filterSearch) params.q = filterSearch;
       if (filterEstado) params.estado = filterEstado;
       if (filterCategoria) params.categoriaId = filterCategoria;
       if (filterUbicacion) params.ubicacionId = filterUbicacion;
@@ -139,7 +157,7 @@ export default function AssetsPage() {
     }
   }, [
     currentPage,
-    debouncedSearch,
+    filterSearch,
     filterEstado,
     filterCategoria,
     filterUbicacion,
@@ -183,17 +201,11 @@ export default function AssetsPage() {
     void refreshAssetDetail(selectedAssetId);
   }, [selectedAssetId, refreshAssetDetail]);
 
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [debouncedSearch, filterEstado, filterCategoria, filterUbicacion, sortBy, sortType]);
-
-  function clearFilters() {
-    setSearchText('');
-    setFilterEstado('');
-    setFilterCategoria('');
-    setFilterUbicacion('');
-    setSortBy('creadoEn');
-    setSortType('DESC');
+  function handleFilterChange(query: FilterQuery) {
+    setFilterSearch(query.search ?? '');
+    setFilterEstado((query.estado ?? '') as EstadoActivo | '');
+    setFilterCategoria(query.categoria ?? '');
+    setFilterUbicacion(query.ubicacion ?? '');
     setCurrentPage(1);
   }
 
@@ -256,35 +268,105 @@ export default function AssetsPage() {
     setDetailLoading(false);
   }
 
-  async function handleDelete(id: string, nombre: string) {
-    if (!window.confirm(`¿Está seguro de dar de baja el activo "${nombre}"?`)) return;
-
-    try {
-      await deleteAsset(id);
-      notifySuccess('Activo dado de baja', `"${nombre}" fue dado de baja exitosamente.`);
-
-      if (selectedAssetId === id) {
-        closeDetailPanel();
-      }
-
-      await loadAssets();
-    } catch (err) {
-      const message = err instanceof HttpError ? err.message : 'No se pudo dar de baja el activo';
-      notifyError('Error', message);
-    }
+  // ========== ABRIR MODAL DE BAJA ==========
+  function openBajaModal(id: string, nombre: string) {
+    setBajaAsset({ id, nombre });
+    setBajaMotivo('');
+    setBajaModalOpen(true);
   }
 
+  // ========== EJECUTAR BAJA CON MOTIVO ==========
+  async function executeBaja() {
+  if (!bajaAsset) return;
+  
+  if (!bajaMotivo.trim()) {
+    alert('⚠️ El motivo de baja es obligatorio');
+    return;
+  }
+
+  setBajaLoading(true);
+
+  try {
+    const token = localStorage.getItem('access_token');
+    
+    // ✅ Enviar explícitamente como objeto con propiedad "motivo"
+    const requestBody = {
+      motivo: bajaMotivo.trim()
+    };
+    
+    console.log('Enviando baja:', requestBody); // Debug
+    
+    const response = await fetch(`/api/assets/${bajaAsset.id}/disable`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(requestBody)
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || 'Error al dar de baja');
+    }
+    
+    notifySuccess('Activo dado de baja', `"${bajaAsset.nombre}" fue dado de baja exitosamente.`);
+
+    if (selectedAssetId === bajaAsset.id) {
+      closeDetailPanel();
+    }
+
+    await loadAssets();
+    setBajaModalOpen(false);
+    setBajaAsset(null);
+    setBajaMotivo('');
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'No se pudo dar de baja el activo';
+    notifyError('Error', message);
+    console.error('Error en baja:', err);
+  } finally {
+    setBajaLoading(false);
+  }
+}
+  // ===========================================
+
+  function openEditModal(assetId: string) {
+    if (!canUpdateAssets) {
+      notify.warning(
+        'Permiso requerido',
+        'No tienes permiso para editar activos.',
+      );
+      return;
+    }
+
+    setEditingAssetId(assetId);
+  }
+
+  useEffect(() => {
+    if (!canUpdateAssets && editingAssetId) {
+      setEditingAssetId(null);
+    }
+  }, [canUpdateAssets, editingAssetId]);
+
   function openAssignModal(asset: AssetListItem) {
+    if (!canOpenAssignModal) {
+      notify.warning(
+        'Permiso requerido',
+        'No tienes permiso para asignar activos.',
+      );
+      return;
+    }
+
     setAssigningAsset(asset);
 
-    if (asset.responsable?.id) {
+    if (canAssignUsers && asset.responsable?.id) {
       setAssignmentType('usuario');
       setAssignmentTargetId(asset.responsable.id);
-    } else if (asset.area?.id) {
+    } else if (canAssignAreas && asset.area?.id) {
       setAssignmentType('area');
       setAssignmentTargetId(asset.area.id);
     } else {
-      setAssignmentType('usuario');
+      setAssignmentType(canAssignUsers ? 'usuario' : 'area');
       setAssignmentTargetId('');
     }
 
@@ -304,6 +386,16 @@ export default function AssetsPage() {
 
     if (!assigningAsset || !assignmentTargetId) {
       notifyError('Asignación incompleta', 'Seleccione un usuario o un área para continuar.');
+      return;
+    }
+
+    if (assignmentType === 'usuario' && !canAssignUsers) {
+      notifyError('Permiso requerido', 'No tienes permiso para asignar activos a usuarios.');
+      return;
+    }
+
+    if (assignmentType === 'area' && !canAssignAreas) {
+      notifyError('Permiso requerido', 'No tienes permiso para asignar activos a áreas.');
       return;
     }
 
@@ -477,300 +569,241 @@ export default function AssetsPage() {
           <button
             type="button"
             className="btn btn--primary"
-            onClick={() => navigate('/activos/nuevo')}
+            onClick={() => setShowCreateAssetModal(true)}
+            disabled={!canCreateAssets}
+            title={!canCreateAssets ? 'No tienes permiso para registrar activos' : undefined}
           >
             <span>+</span> Nuevo Activo
           </button>
         </div>
       </header>
 
-      <div className="assetsFilters">
-        <div className="assetsFilters__group">
-          <label className="assetsFilters__label">BUSCAR</label>
-          <div className="assetsFilters__inputWrap">
-            <span className="assetsFilters__searchIcon">🔍</span>
-            <input
-              type="text"
-              className="assetsFilters__input"
-              placeholder="Código, nombre, responsable, categoría o ubicación..."
-              value={searchText}
-              onChange={(event) => setSearchText(event.target.value)}
-            />
-          </div>
-        </div>
-
-        <div className="assetsFilters__group">
-          <label className="assetsFilters__label">CATEGORÍA</label>
-          <select
-            className="assetsFilters__select"
-            value={filterCategoria}
-            onChange={(event) => setFilterCategoria(event.target.value)}
-          >
-            <option value="">Todas</option>
-            {categorias.map((cat) => (
-              <option key={cat.id} value={cat.id}>
-                {cat.nombre}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="assetsFilters__group">
-          <label className="assetsFilters__label">UBICACIÓN</label>
-          <select
-            className="assetsFilters__select"
-            value={filterUbicacion}
-            onChange={(event) => setFilterUbicacion(event.target.value)}
-          >
-            <option value="">Cualquiera</option>
-            {ubicaciones.map((ubi) => (
-              <option key={ubi.id} value={ubi.id}>
-                {[ubi.nombre, ubi.edificio].filter(Boolean).join(' — ')}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="assetsFilters__group">
-          <label className="assetsFilters__label">ESTADO</label>
-          <select
-            className="assetsFilters__select"
-            value={filterEstado}
-            onChange={(event) => setFilterEstado(event.target.value as EstadoActivo | '')}
-          >
-            <option value="">Todos</option>
-            {ESTADO_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <button type="button" className="assetsFilters__clearBtn" onClick={clearFilters}>
-          <span>⊘</span> Limpiar Filtros
-        </button>
-      </div>
+      <FilterRow
+        onChange={handleFilterChange}
+        elements={[
+          {
+            type: 'search',
+            key: 'search',
+            label: 'BUSCAR',
+            placeholder: 'Código, nombre, responsable, categoría o ubicación...',
+            flex: 2,
+          },
+          {
+            type: 'select',
+            key: 'categoria',
+            label: 'CATEGORÍA',
+            placeholder: 'Todas',
+            options: categorias.map((c) => ({ value: c.id, label: c.nombre })),
+          },
+          {
+            type: 'select',
+            key: 'ubicacion',
+            label: 'UBICACIÓN',
+            placeholder: 'Cualquiera',
+            options: ubicaciones.map((u) => ({
+              value: u.id,
+              label: [u.nombre, u.edificio].filter(Boolean).join(' — '),
+            })),
+          },
+          {
+            type: 'select',
+            key: 'estado',
+            label: 'ESTADO',
+            placeholder: 'Todos',
+            options: ESTADO_OPTIONS.map((o) => ({ value: o.value, label: o.label })),
+          },
+        ]}
+      />
 
       <div className={`assetsWorkspace ${selectedAssetId ? 'assetsWorkspace--detailOpen' : ''}`}>
         <aside
           className={`assetsWorkspace__panel ${selectedAssetId ? 'assetsWorkspace__panel--open' : ''}`}
         >
-          <AssetDetailPanel
-            asset={selectedAssetDetail}
-            loading={detailLoading}
-            errorMessage={detailError}
-            onClose={closeDetailPanel}
-            compact
-          />
+
         </aside>
 
         <div className="assetsWorkspace__content">
-          <div className="assetsCard">
-            {loading ? (
-              <div className="assetsState">
-                <p className="assetsState__text">Cargando activos registrados...</p>
-              </div>
-            ) : assets.length === 0 ? (
-              <div className="assetsState">
-                <p className="assetsState__text">
-                  No se encontraron activos con los filtros seleccionados.
-                </p>
-              </div>
-            ) : (
-              <>
-                <div className="assetsTableWrapper">
-                  <table className="assetsTable">
-                    <thead>
-                      <tr>
-                        <th>{renderSortLabel('Código', 'codigo')}</th>
-                        <th>{renderSortLabel('Activo', 'nombre')}</th>
-                        <th>{renderSortLabel('Categoría', 'categoria')}</th>
-                        <th>{renderSortLabel('Ubicación', 'ubicacion')}</th>
-                        <th>{renderSortLabel('Responsable', 'responsable')}</th>
-                        <th>{renderSortLabel('Estado', 'estado')}</th>
-                        <th>Acciones</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {assets.map((asset) => (
-                        <tr
-                          key={asset.id}
-                          className={
-                            selectedAssetId === asset.id ? 'assetsTable__row--selected' : ''
-                          }
-                          onClick={() => openDetailPanel(asset.id)}
-                          style={{ cursor: 'pointer' }}
-                        >
-                          <td className="assetsTable__code">{asset.codigo}</td>
-                          <td className="assetsTable__name">{asset.nombre}</td>
-                          <td>
-                            {asset.categoria ? (
-                              <span className="assetsTable__category">
-                                <span className="assetsTable__catIcon">◫</span>
-                                {asset.categoria.nombre}
-                              </span>
-                            ) : (
-                              '—'
-                            )}
-                          </td>
-                          <td>{asset.ubicacion?.nombre ?? '—'}</td>
-                          <td>
-                            <div className="assetsResponsible">
-                              <span>{asset.responsable?.nombreCompleto ?? '—'}</span>
-                              {asset.area?.nombre ? (
-                                <span className="assetsResponsible__meta">
-                                  Área: {asset.area.nombre}
-                                </span>
-                              ) : null}
-                            </div>
-                          </td>
-                          <td>
-                            <span className={`statusBadge ${ESTADO_CLASS[asset.estado] ?? ''}`}>
-                              {asset.estadoLabel}
-                            </span>
-                          </td>
-                          <td>
-                            <div className="assetsTable__actions">
-                              <button
-                                type="button"
-                                className="actionBtn"
-                                title="Ver detalle completo"
-                                onClick={(event) => {
-                                  event.stopPropagation();
-                                  setViewingAssetId(asset.id);
-                                }}
-                              >
-                                👁
-                              </button>
-
-                              <button
-                                type="button"
-                                className="actionBtn"
-                                title="Editar"
-                                onClick={(event) => {
-                                  event.stopPropagation();
-                                  setEditingAssetId(asset.id);
-                                }}
-                              >
-                                ✏️
-                              </button>
-
-                              <button
-                                type="button"
-                                className="actionBtn"
-                                title="Asignar"
-                                onClick={(event) => {
-                                  event.stopPropagation();
-                                  openAssignModal(asset);
-                                }}
-                              >
-                                👤
-                              </button>
-
-                              <button
-                                type="button"
-                                className="actionBtn actionBtn--danger"
-                                title="Dar de baja"
-                                onClick={(event) => {
-                                  event.stopPropagation();
-                                  void handleDelete(asset.id, asset.nombre);
-                                }}
-                              >
-                                ⋯
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-
-                <div className="assetsPagination">
-                  <span className="assetsPagination__info">
-                    Mostrando{' '}
-                    <strong>
-                      {(currentPage - 1) * PAGE_SIZE + 1}-
-                      {Math.min(currentPage * PAGE_SIZE, meta?.total ?? 0)}
-                    </strong>{' '}
-                    de <strong>{meta?.total ?? 0}</strong> activos registrados
+          {(() => {
+            const assetColumns: ColumnDef<AssetListItem>[] = [
+              {
+                id: 'codigo',
+                header: 'Código',
+                accessor: 'codigo',
+                width: 110,
+                headerContent: renderSortLabel('Código', 'codigo'),
+              },
+              {
+                id: 'nombre',
+                header: 'Nombre',
+                accessor: 'nombre',
+                primary: true,
+                width: 200,
+                headerContent: renderSortLabel('Activo', 'nombre'),
+              },
+              {
+                id: 'categoria',
+                header: 'Categoría',
+                accessor: (row) => row.categoria?.nombre ?? null,
+                width: 150,
+                headerContent: renderSortLabel('Categoría', 'categoria'),
+                render: (value, row) =>
+                  row.categoria ? (
+                    <span className="assetsTable__category">
+                      {row.categoria.nombre}
+                    </span>
+                  ) : (
+                    '—'
+                  ),
+              },
+              {
+                id: 'ubicacion',
+                header: 'Ubicación',
+                accessor: (row) => row.ubicacion?.nombre ?? '—',
+                width: 150,
+                headerContent: renderSortLabel('Ubicación', 'ubicacion'),
+              },
+              {
+                id: 'area',
+                header: 'Área',
+                accessor: (row) => row.area?.nombre ?? '—',
+                width: 160,
+              },
+              {
+                id: 'responsable',
+                header: 'Responsable',
+                accessor: (row) => row.responsable?.nombreCompleto ?? '—',
+                width: 180,
+                headerContent: renderSortLabel('Responsable', 'responsable'),
+                render: (_value, row) => row.responsable?.nombreCompleto ?? '—',
+              },
+              {
+                id: 'estado',
+                header: 'Estado',
+                accessor: 'estado',
+                width: 150,
+                headerContent: renderSortLabel('Estado', 'estado'),
+                render: (value, row) => (
+                  <span className={`statusBadge ${ESTADO_CLASS[value as string] ?? ''}`}>
+                    {row.estadoLabel}
                   </span>
+                ),
+              },
+            ];
 
-                  <div className="assetsPagination__controls">
-                    <button
-                      type="button"
-                      className="pageBtn"
-                      disabled={currentPage <= 1}
-                      onClick={() => setCurrentPage((page) => page - 1)}
-                    >
-                      &lt; Anterior
-                    </button>
+            const assetActions: ActionDef<AssetListItem>[] = [
+              {
+                label: 'Ver detalle',
+                icon: <IconInfo/>,
+                onClick: (asset) => setViewingAssetId(asset.id),
+              },
+              {
+                label: 'Historial',
+                icon: '🕘',
+                onClick: (asset) => setHistoryAssetId(asset.id),
+              },
+            ];
 
-                    {buildPageNumbers().map((page, index) =>
-                      page === '...' ? (
-                        <span key={`dots-${index}`} className="pageDots">
-                          …
-                        </span>
-                      ) : (
-                        <button
-                          key={page}
-                          type="button"
-                          className={`pageBtn pageBtn--num ${
-                            page === currentPage ? 'pageBtn--active' : ''
-                          }`}
-                          onClick={() => setCurrentPage(page)}
-                        >
-                          {page}
-                        </button>
-                      ),
-                    )}
+            if (canUpdateAssets) {
+              assetActions.push({
+                label: 'Editar',
+                icon: <IconEdit/>,
+                onClick: (asset) => openEditModal(asset.id),
+              });
+            }
 
-                    <button
-                      type="button"
-                      className="pageBtn"
-                      disabled={currentPage >= totalPages}
-                      onClick={() => setCurrentPage((page) => page + 1)}
-                    >
-                      Siguiente &gt;
-                    </button>
+            if (canOpenAssignModal) {
+              assetActions.push({
+                label: 'Asignar',
+                icon: <IconGrid/>,
+                onClick: (asset) => openAssignModal(asset),
+              });
+            }
+
+            if (canUpdateAssets) {
+              assetActions.push({
+                label: 'Dar de baja',
+                icon: '⋯',
+                variant: 'danger',
+                onClick: (asset) => openBajaModal(asset.id, asset.nombre),
+              });
+            }
+
+            return (
+              <div className="assetsTable__wrap">
+                <SmartTable<AssetListItem>
+                  columns={assetColumns}
+                  data={assets}
+                  loading={loading}
+                  keyExtractor={(a) => a.id}
+                  emptyMessage="No se encontraron activos con los filtros seleccionados."
+                  sortable={false}
+                  onRowClick={(asset) => openDetailPanel(asset.id)}
+                  actions={assetActions}
+                />
+
+                {!loading && assets.length > 0 && (
+                  <div className="assetsPagination">
+                    <span className="assetsPagination__info">
+                      Mostrando{' '}
+                      <strong>
+                        {(currentPage - 1) * PAGE_SIZE + 1}–
+                        {Math.min(currentPage * PAGE_SIZE, meta?.total ?? 0)}
+                      </strong>{' '}
+                      de <strong>{meta?.total ?? 0}</strong> activos registrados
+                    </span>
+
+                    <div className="assetsPagination__controls">
+                      <button
+                        type="button"
+                        className="pageBtn"
+                        disabled={currentPage <= 1}
+                        onClick={() => setCurrentPage((page) => page - 1)}
+                      >
+                        &lt; Anterior
+                      </button>
+
+                      {buildPageNumbers().map((page, index) =>
+                        page === '...' ? (
+                          <span key={`dots-${index}`} className="pageDots">…</span>
+                        ) : (
+                          <button
+                            key={page}
+                            type="button"
+                            className={`pageBtn pageBtn--num ${page === currentPage ? 'pageBtn--active' : ''}`}
+                            onClick={() => setCurrentPage(page)}
+                          >
+                            {page}
+                          </button>
+                        ),
+                      )}
+
+                      <button
+                        type="button"
+                        className="pageBtn"
+                        disabled={currentPage >= totalPages}
+                        onClick={() => setCurrentPage((page) => page + 1)}
+                      >
+                        Siguiente &gt;
+                      </button>
+                    </div>
                   </div>
-                </div>
-              </>
-            )}
-          </div>
+                )}
+              </div>
+            );
+          })()}
         </div>
       </div>
 
-      {assigningAsset ? (
-        <div className="assetsModalBackdrop" role="presentation" onClick={closeAssignModal}>
-          <div
-            className="assetsModal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="assign-asset-title"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="assetsModal__header">
-              <div>
-                <h2 id="assign-asset-title" className="assetsModal__title">
-                  Asignar activo
-                </h2>
-                <p className="assetsModal__subtitle">
-                  {assigningAsset.codigo} · {assigningAsset.nombre}
-                </p>
-              </div>
-              <button
-                type="button"
-                className="actionBtn"
-                onClick={closeAssignModal}
-                disabled={submittingAssignment}
-              >
-                ✕
-              </button>
-            </div>
-
-            <form className="assetsModal__form" onSubmit={handleAssignSubmit}>
+      <OverlayModal
+        open={Boolean(assigningAsset)}
+        onClose={closeAssignModal}
+        title="Asignar activo"
+        subtitle={assigningAsset ? `${assigningAsset.codigo} · ${assigningAsset.nombre}` : ''}
+        disabled={submittingAssignment}
+        width="560px"
+      >
+        {assigningAsset ? (
+          <form className="assetsModal__form" onSubmit={handleAssignSubmit}>
               <label className="assetsModal__field">
                 <span className="assetsFilters__label">Tipo de asignación</span>
                 <select
@@ -782,8 +815,8 @@ export default function AssetsPage() {
                   }}
                   disabled={submittingAssignment}
                 >
-                  <option value="usuario">Usuario</option>
-                  <option value="area">Área</option>
+                  {canAssignUsers ? <option value="usuario">Usuario</option> : null}
+                  {canAssignAreas ? <option value="area">Área</option> : null}
                 </select>
               </label>
 
@@ -830,7 +863,7 @@ export default function AssetsPage() {
                 />
               </label>
 
-              <div className="assetsModal__actions">
+              <div className="overlayModal__footer">
                 <button
                   type="button"
                   className="btn btn--ghost"
@@ -848,9 +881,8 @@ export default function AssetsPage() {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      ) : null}
+        ) : null}
+      </OverlayModal>
 
       {viewingAssetId ? (
         <ViewAssetModal
@@ -860,7 +892,15 @@ export default function AssetsPage() {
         />
       ) : null}
 
-      {editingAssetId ? (
+      {historyAssetId ? (
+        <AssetTransferHistoryModal
+          assetId={historyAssetId}
+          open={Boolean(historyAssetId)}
+          onClose={() => setHistoryAssetId(null)}
+        />
+      ) : null}
+
+      {editingAssetId && canUpdateAssets ? (
         <EditAssetModal
           assetId={editingAssetId}
           open={Boolean(editingAssetId)}
@@ -874,6 +914,95 @@ export default function AssetsPage() {
           }}
         />
       ) : null}
+
+      <CreateAssetPage
+        open={showCreateAssetModal}
+        onClose={() => {
+          setShowCreateAssetModal(false);
+          void loadAssets();
+        }}
+      />
+
+      {/* ========== MODAL DE BAJA ========== */}
+      {bajaModalOpen && bajaAsset && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 10000
+        }} onClick={() => !bajaLoading && setBajaModalOpen(false)}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '8px',
+            padding: '24px',
+            width: '450px',
+            maxWidth: '90%',
+            boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+          }} onClick={e => e.stopPropagation()}>
+            <h3 style={{ margin: '0 0 8px 0' }}>Dar de baja: {bajaAsset.nombre}</h3>
+            <p style={{ color: '#666', marginBottom: '20px', fontSize: '14px' }}>
+              Esta acción cambiará el estado del activo a "Dado de baja"
+            </p>
+
+            <div>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>
+                Motivo del retiro <span style={{ color: 'red' }}>*</span>
+              </label>
+              <textarea
+                style={{
+                  width: '100%',
+                  padding: '10px',
+                  border: '1px solid #ccc',
+                  borderRadius: '4px',
+                  minHeight: '100px',
+                  fontFamily: 'inherit'
+                }}
+                placeholder="Ej: Equipo obsoleto, dañado, robado, pérdida, baja por antigüedad..."
+                value={bajaMotivo}
+                onChange={(e) => setBajaMotivo(e.target.value)}
+                disabled={bajaLoading}
+              />
+            </div>
+
+            <div style={{ marginTop: '24px', display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+              <button
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: '#e5e7eb',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: bajaLoading ? 'not-allowed' : 'pointer'
+                }}
+                onClick={() => setBajaModalOpen(false)}
+                disabled={bajaLoading}
+              >
+                Cancelar
+              </button>
+              <button
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: '#dc2626',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '4px',
+                  cursor: (bajaLoading || !bajaMotivo.trim()) ? 'not-allowed' : 'pointer',
+                  opacity: (bajaLoading || !bajaMotivo.trim()) ? 0.6 : 1
+                }}
+                onClick={executeBaja}
+                disabled={bajaLoading || !bajaMotivo.trim()}
+              >
+                {bajaLoading ? 'Procesando...' : 'Confirmar baja'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }

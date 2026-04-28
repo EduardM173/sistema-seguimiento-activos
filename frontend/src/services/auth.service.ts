@@ -1,32 +1,55 @@
-import type { LoginRequest, LoginResponse, AuthUser } from '../types/auth.types';
+import type {
+  LoginRequest,
+  LoginResponse,
+  AuthUser,
+} from "../types/auth.types";
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
 
-const ACCESS_TOKEN_KEY = 'access_token';
+const ACCESS_TOKEN_KEY = "access_token";
 
-const AUTH_USER_KEY = 'auth_user';
+const AUTH_USER_KEY = "auth_user";
+
+function tryParseJson(raw: string): Record<string, any> {
+  if (!raw) return {};
+
+  try {
+    return JSON.parse(raw) as Record<string, any>;
+  } catch {
+    return {};
+  }
+}
 
 export async function login(data: LoginRequest): Promise<LoginResponse> {
-  const response = await fetch(`${API_URL}/auth/login`, {    /*AQUI*/
-    method: 'POST',
+  const response = await fetch(`${API_URL}/auth/login`, {
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
     body: JSON.stringify(data),
   });
 
-  const result = await response.json();
+  const raw = await response.text();
+  const result = tryParseJson(raw);
 
   if (!response.ok) {
-    throw new Error(result.message || 'No se pudo iniciar sesión');
+    throw new Error(result.message || "No se pudo iniciar sesión");
   }
 
-  return result;
+  return result as LoginResponse;
 }
 
 export function saveAuthSession(data: LoginResponse): void {
   localStorage.setItem(ACCESS_TOKEN_KEY, data.accessToken);
   localStorage.setItem(AUTH_USER_KEY, JSON.stringify(data.usuario));
+}
+
+export function saveAuthUser(user: AuthUser): void {
+  if (localStorage.getItem(ACCESS_TOKEN_KEY) || !sessionStorage.getItem(ACCESS_TOKEN_KEY)) {
+    localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
+  } else {
+    sessionStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
+  }
 }
 
 export function getAccessToken(): string | null {
@@ -62,4 +85,25 @@ export function clearAuthSession(): void {
 
 export function isAuthenticated(): boolean {
   return Boolean(getAccessToken());
+}
+
+export async function getCurrentSession(): Promise<{ usuario: AuthUser }> {
+  const token = getAccessToken();
+
+  const response = await fetch(`${API_URL}/auth/me`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  });
+
+  const raw = await response.text();
+  const result = tryParseJson(raw);
+
+  if (!response.ok) {
+    throw new Error(result.message || "No se pudo refrescar la sesión");
+  }
+
+  return result as { usuario: AuthUser };
 }

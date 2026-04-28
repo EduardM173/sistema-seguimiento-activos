@@ -7,9 +7,14 @@ import type {
   UpdateAssetPayload,
   AssignAssetPayload,
   AssignAssetResponse,
+  TransferAssetPayload,
+  TransferAssetResponse,
   SearchAssetsParams,
   Categoria,
   Ubicacion,
+  PendienteRecepcion,
+  SolicitudEnviada,
+  ConfirmarRecepcionResponse,
 } from '../types/assets.types';
 
 export type { AssetListItem } from '../types/assets.types';
@@ -21,6 +26,9 @@ export async function searchAssets(params: SearchAssetsParams = {}) {
   if (params.estado) query.set('estado', params.estado);
   if (params.categoriaId) query.set('categoriaId', params.categoriaId);
   if (params.ubicacionId) query.set('ubicacionId', params.ubicacionId);
+  if (params.soloTransferibles !== undefined) {
+    query.set('soloTransferibles', String(params.soloTransferibles));
+  }
   if (params.sortBy) query.set('sortBy', params.sortBy);
   if (params.sortType) query.set('sortType', params.sortType);
   if (params.page) query.set('page', String(params.page));
@@ -53,6 +61,13 @@ export async function assignAsset(id: string, payload: AssignAssetPayload) {
   );
 }
 
+export async function transferAsset(id: string, payload: TransferAssetPayload) {
+  return http.post<ApiResponse<TransferAssetResponse>>(
+    `/assets/${encodeURIComponent(id)}/transfer`,
+    payload,
+  );
+}
+
 export async function getCategorias() {
   return http.get<ApiResponse<Categoria[]>>('/catalogs/categorias');
 }
@@ -70,4 +85,40 @@ export async function createFakeAssets(count = 1000) {
 
 export async function deleteFakeAssets() {
   return http.delete<ApiResponse<{ deleted: number }>>('/assets/dev/fake-bulk');
+}
+
+// HU21 – Transferencias pendientes de recepción para un área
+export async function getPendientesRecepcion(areaId: string) {
+  return http.get<ApiResponse<PendienteRecepcion[]>>(
+    `/assets/pendientes-recepcion?areaId=${encodeURIComponent(areaId)}`,
+  );
+}
+
+// HU21 – Confirmar recepción. Devuelve recibidoPor y recibidoEn (PA3)
+export async function confirmarRecepcion(asignacionId: string) {
+  return http.patch<ApiResponse<ConfirmarRecepcionResponse>>(
+    `/assets/asignaciones/${encodeURIComponent(asignacionId)}/confirmar`,
+  );
+}
+
+// HU42 – Rechazar recepción con motivo obligatorio (PA2)
+export async function rechazarRecepcion(asignacionId: string, motivoRechazo: string) {
+  return http.patch<ApiResponse<{ message: string }>>(
+    `/assets/asignaciones/${encodeURIComponent(asignacionId)}/rechazar`,
+    { motivoRechazo },
+  );
+}
+
+// HU41/HU21 – Solicitudes enviadas por área/usuario
+export async function getSolicitudesEnviadas(
+  registradoPorId: string,
+  areaOrigenId?: string,
+) {
+  const qs = new URLSearchParams();
+  qs.set('registradoPorId', registradoPorId);
+  if (areaOrigenId) qs.set('areaOrigenId', areaOrigenId);
+
+  return http.get<ApiResponse<SolicitudEnviada[]>>(
+    `/assets/solicitudes-enviadas?${qs.toString()}`,
+  );
 }

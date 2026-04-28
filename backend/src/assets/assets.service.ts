@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -15,29 +16,91 @@ import {
   SortType,
 } from './dto/search-assets.dto';
 import { AssignAssetDto } from './dto/assign-asset.dto';
-import { EstadoActivo, Prisma } from '../generated/prisma/client';
+import { TransferAssetDto } from './dto/transfer-asset.dto';
+import {
+  EstadoAsignacion,
+  EstadoActivo,
+  EstadoNotificacion,
+  Prisma,
+  TipoNotificacion,
+  TipoMovimientoActivo,
+} from '../generated/prisma/client';
 
 @Injectable()
 export class AssetsService {
+  
   constructor(private readonly prisma: PrismaService) {}
 
   /**
    * Paginated list of all assets with optional filters.
    */
-  async findAll(query: SearchAssetsDto) {
-    const {
+  async findAll(query: SearchAssetsDto, user?: any) {
+    
+    const { 
       page,
       pageSize,
       q,
       estado,
       categoriaId,
-      ubicacionId,
+      ubicacionId ,
+      soloTransferibles,
       sortBy = AssetSortBy.CREADO_EN,
       sortType = SortType.DESC,
     } = query;
     const skip = (page - 1) * pageSize;
 
     const where: Prisma.ActivoWhereInput = {};
+
+    // PA4: ocultar activos con asignaciones pendientes
+      where.asignaciones = {
+        none: {
+          estado: EstadoAsignacion.PENDIENTE,
+        },
+      };
+
+    const isAreaManager = this.isAreaManagerRole(user?.rol);
+
+    if (isAreaManager && user?.id) {
+      const userScope = await this.prisma.usuario.findUnique({
+        where: { id: user.id },
+        select: {
+          areaId: true,
+          areasGestionadas: {
+            select: { id: true },
+          },
+        },
+      });
+
+      const scopedAreaIds = [
+        userScope?.areaId ?? null,
+        ...(userScope?.areasGestionadas.map((area) => area.id) ?? []),
+      ].filter((value, index, values): value is string => Boolean(value) && values.indexOf(value) === index);
+
+      if (scopedAreaIds.length === 1) {
+        where.areaActualId = scopedAreaIds[0];
+      } else if (scopedAreaIds.length > 1) {
+        where.areaActualId = { in: scopedAreaIds };
+      } else {
+        where.areaActualId = '__AREA_SIN_ACCESO__';
+      }
+    }
+
+    if (query.q) {
+      where.OR = [
+        { codigo: { contains: query.q, mode: 'insensitive' } },
+        { nombre: { contains: query.q, mode: 'insensitive' } },
+        { categoria: { nombre: { contains: query.q, mode: 'insensitive' } } },
+        { ubicacion: { nombre: { contains: query.q, mode: 'insensitive' } } },
+        {
+          responsableActual: {
+            OR: [
+              { nombres: { contains: query.q, mode: 'insensitive' } },
+              { apellidos: { contains: query.q, mode: 'insensitive' } },
+            ],
+          },
+        },
+      ];
+    }
 
     // Search by asset data, category, location or responsible person
     if (q) {
@@ -103,6 +166,20 @@ export class AssetsService {
     // Filter by location
     if(ubicacionId) {
       where.ubicacionId = ubicacionId;
+    }
+
+    if (soloTransferibles) {
+      where.estado = EstadoActivo.OPERATIVO;
+      where.asignaciones = {
+        none: {
+          estado: EstadoAsignacion.PENDIENTE,
+          movimientos: {
+            some: {
+              tipo: TipoMovimientoActivo.TRANSFERENCIA,
+            },
+          },
+        },
+      };
     }
 
     const orderDirection: Prisma.SortOrder =
@@ -222,9 +299,65 @@ export class AssetsService {
       throw new NotFoundException(`No se encontró el activo con ID: ${id}`);
     }
 
+    const assetMovements = await this.prisma.movimientoActivo.findMany({
+      where: {
+        activoId: id,
+        tipo: {
+          in: [TipoMovimientoActivo.TRANSFERENCIA, TipoMovimientoActivo.BAJA],
+        },
+      },
+      select: {
+        id: true,
+        tipo: true,
+        areaOrigenId: true,
+        areaDestinoId: true,
+        creadoEn: true,
+        detalle: true,
+        realizadoPor: {
+          select: {
+            id: true,
+            nombres: true,
+            apellidos: true,
+          },
+        },
+      },
+      orderBy: {
+        creadoEn: 'desc',
+      },
+    });
+
+    const transferAreaIds = [
+      ...new Set(
+        assetMovements
+          .flatMap((movement) => [movement.areaOrigenId, movement.areaDestinoId])
+          .filter((areaId): areaId is string => Boolean(areaId)),
+      ),
+    ];
+
+    const transferAreas =
+      transferAreaIds.length > 0
+        ? await this.prisma.area.findMany({
+            where: {
+              id: {
+                in: transferAreaIds,
+              },
+            },
+            select: {
+              id: true,
+              nombre: true,
+            },
+          })
+        : [];
+
+    const transferAreaMap = Object.fromEntries(
+      transferAreas.map((area) => [area.id, area]),
+    );
+
     return {
       ...activo,
       estadoLabel: this.formatEstado(activo.estado),
+      fechaBaja: activo.dadoDeBajaEn,      // ← AGREGAR ESTA LÍNEA
+      motivoBaja: activo.motivoBaja,        // ← AGREGAR ESTA LÍNEA
       area: activo.areaActual
         ? {
             id: activo.areaActual.id,
@@ -267,6 +400,27 @@ export class AssetsService {
             ),
           }
         : null,
+      historialTransferencias: assetMovements.map((movement) => ({
+        id: movement.id,
+        tipo: movement.tipo,
+        fecha: movement.creadoEn,
+        detalle: movement.detalle,
+        areaOrigen: movement.areaOrigenId
+          ? (transferAreaMap[movement.areaOrigenId] ?? null)
+          : null,
+        areaDestino: movement.areaDestinoId
+          ? (transferAreaMap[movement.areaDestinoId] ?? null)
+          : null,
+        realizadoPor: movement.realizadoPor
+          ? {
+              id: movement.realizadoPor.id,
+              nombreCompleto: this.buildFullName(
+                movement.realizadoPor.nombres,
+                movement.realizadoPor.apellidos,
+              ),
+            }
+          : null,
+      })),
     };
   }
 
@@ -372,6 +526,12 @@ export class AssetsService {
    * Validates code uniqueness if the code is changing.
    */
   async update(id: string, dto: UpdateAssetDto, userId: string) {
+    await this.assertUserHasPermission(
+      userId,
+      'ASSET_UPDATE',
+      'No tienes permisos para actualizar activos',
+    );
+
     // Verify asset exists
     const existing = await this.prisma.activo.findUnique({
       where: { id },
@@ -387,6 +547,14 @@ export class AssetsService {
       dto.nombre !== undefined ? dto.nombre.trim() : existing.nombre;
     const nextCategoriaId =
       dto.categoriaId !== undefined ? dto.categoriaId.trim() : existing.categoriaId;
+    const nextUbicacionId =
+      dto.ubicacionId !== undefined ? dto.ubicacionId.trim() || null : undefined;
+    const nextAreaActualId =
+      dto.areaActualId !== undefined ? dto.areaActualId.trim() || null : undefined;
+    const nextResponsableActualId =
+      dto.responsableActualId !== undefined
+        ? dto.responsableActualId.trim() || null
+        : undefined;
 
     if (!nextCodigo) {
       throw new BadRequestException('El código del activo es obligatorio');
@@ -398,6 +566,18 @@ export class AssetsService {
 
     if (!nextCategoriaId) {
       throw new BadRequestException('La categoría del activo es obligatoria');
+    }
+
+    const isTransferUpdate =
+      (nextUbicacionId !== undefined && nextUbicacionId !== existing.ubicacionId) ||
+      (nextAreaActualId !== undefined && nextAreaActualId !== existing.areaActualId) ||
+      (nextResponsableActualId !== undefined &&
+        nextResponsableActualId !== existing.responsableActualId);
+
+    if (isTransferUpdate && existing.estado !== EstadoActivo.OPERATIVO) {
+      throw new ConflictException(
+        'Solo se puede transferir un activo cuando está en estado Operativo',
+      );
     }
 
     // Validate code uniqueness if changing
@@ -439,40 +619,236 @@ export class AssetsService {
       }
     }
 
-    const activo = await this.prisma.activo.update({
-      where: { id },
-      data: {
-        ...(dto.codigo !== undefined && { codigo: nextCodigo }),
-        ...(dto.nombre !== undefined && { nombre: nextNombre }),
-        ...(dto.descripcion !== undefined && { descripcion: dto.descripcion }),
-        ...(dto.marca !== undefined && { marca: dto.marca }),
-        ...(dto.modelo !== undefined && { modelo: dto.modelo }),
-        ...(dto.numeroSerie !== undefined && { numeroSerie: dto.numeroSerie }),
-        ...(dto.fechaAdquisicion !== undefined && {
-          fechaAdquisicion: new Date(dto.fechaAdquisicion),
-        }),
-        ...(dto.costoAdquisicion !== undefined && {
-          costoAdquisicion: dto.costoAdquisicion,
-        }),
-        ...(dto.vencimientoGarantia !== undefined && {
-          vencimientoGarantia: new Date(dto.vencimientoGarantia),
-        }),
-        ...(dto.estado !== undefined && { estado: dto.estado }),
-        ...(dto.categoriaId !== undefined && { categoriaId: nextCategoriaId }),
-        ...(dto.ubicacionId !== undefined && { ubicacionId: dto.ubicacionId }),
-        ...(dto.areaActualId !== undefined && {
-          areaActualId: dto.areaActualId,
-        }),
-        ...(dto.responsableActualId !== undefined && {
-          responsableActualId: dto.responsableActualId,
-        }),
-        actualizadoPorId: userId,
-      },
-      include: {
-        categoria: true,
-        ubicacion: true,
-        areaActual: true,
-      },
+    if (nextUbicacionId !== undefined && nextUbicacionId !== existing.ubicacionId) {
+      if (nextUbicacionId) {
+        const ubicacion = await this.prisma.ubicacion.findUnique({
+          where: { id: nextUbicacionId },
+        });
+
+        if (!ubicacion) {
+          throw new NotFoundException(
+            `No se encontró la ubicación con ID: ${nextUbicacionId}`,
+          );
+        }
+      }
+    }
+
+    if (nextAreaActualId !== undefined && nextAreaActualId !== existing.areaActualId) {
+      if (nextAreaActualId) {
+        const area = await this.prisma.area.findUnique({
+          where: { id: nextAreaActualId },
+        });
+
+        if (!area) {
+          throw new NotFoundException(
+            `No se encontró el área con ID: ${nextAreaActualId}`,
+          );
+        }
+      }
+    }
+
+    if (
+      nextResponsableActualId !== undefined &&
+      nextResponsableActualId !== existing.responsableActualId
+    ) {
+      if (nextResponsableActualId) {
+        const responsable = await this.prisma.usuario.findUnique({
+          where: { id: nextResponsableActualId },
+          select: { id: true },
+        });
+
+        if (!responsable) {
+          throw new NotFoundException(
+            `No se encontró el usuario con ID: ${nextResponsableActualId}`,
+          );
+        }
+      }
+    }
+
+    const finalAreaActualId =
+      nextAreaActualId !== undefined ? nextAreaActualId : existing.areaActualId;
+    const finalResponsableActualId =
+      nextResponsableActualId !== undefined
+        ? nextResponsableActualId
+        : existing.responsableActualId;
+    const finalUbicacionId =
+      nextUbicacionId !== undefined ? nextUbicacionId : existing.ubicacionId;
+
+    const stateChanged =
+      dto.estado !== undefined && dto.estado !== existing.estado;
+    const locationChanged =
+      nextUbicacionId !== undefined && nextUbicacionId !== existing.ubicacionId;
+    const responsibleChanged =
+      nextResponsableActualId !== undefined &&
+      nextResponsableActualId !== existing.responsableActualId;
+
+    const shouldNotifyAssignedArea =
+      Boolean(existing.areaActualId) &&
+      (stateChanged || locationChanged || responsibleChanged);
+
+    const [
+      currentArea,
+      previousUbicacion,
+      nextUbicacion,
+      previousResponsable,
+      nextResponsable,
+    ] = await Promise.all([
+      shouldNotifyAssignedArea && existing.areaActualId
+        ? this.prisma.area.findUnique({
+            where: { id: existing.areaActualId },
+            select: {
+              id: true,
+              nombre: true,
+              encargadoId: true,
+            },
+          })
+        : Promise.resolve(null),
+      locationChanged && existing.ubicacionId
+        ? this.prisma.ubicacion.findUnique({
+            where: { id: existing.ubicacionId },
+            select: { nombre: true },
+          })
+        : Promise.resolve(null),
+      locationChanged && finalUbicacionId
+        ? this.prisma.ubicacion.findUnique({
+            where: { id: finalUbicacionId },
+            select: { nombre: true },
+          })
+        : Promise.resolve(null),
+      responsibleChanged && existing.responsableActualId
+        ? this.prisma.usuario.findUnique({
+            where: { id: existing.responsableActualId },
+            select: { nombres: true, apellidos: true },
+          })
+        : Promise.resolve(null),
+      responsibleChanged && finalResponsableActualId
+        ? this.prisma.usuario.findUnique({
+            where: { id: finalResponsableActualId },
+            select: { nombres: true, apellidos: true },
+          })
+        : Promise.resolve(null),
+    ]);
+
+    const describeChange = (
+      label: string,
+      previousValue: string | null,
+      nextValue: string | null,
+    ) =>
+      `${label}: ${previousValue ?? 'sin asignar'} -> ${nextValue ?? 'sin asignar'}`;
+
+    const activo = await this.prisma.$transaction(async (tx) => {
+      const updatedAsset = await tx.activo.update({
+        where: { id },
+        data: {
+          ...(dto.codigo !== undefined && { codigo: nextCodigo }),
+          ...(dto.nombre !== undefined && { nombre: nextNombre }),
+          ...(dto.descripcion !== undefined && { descripcion: dto.descripcion }),
+          ...(dto.marca !== undefined && { marca: dto.marca }),
+          ...(dto.modelo !== undefined && { modelo: dto.modelo }),
+          ...(dto.numeroSerie !== undefined && { numeroSerie: dto.numeroSerie }),
+          ...(dto.fechaAdquisicion !== undefined && {
+            fechaAdquisicion: new Date(dto.fechaAdquisicion),
+          }),
+          ...(dto.costoAdquisicion !== undefined && {
+            costoAdquisicion: dto.costoAdquisicion,
+          }),
+          ...(dto.vencimientoGarantia !== undefined && {
+            vencimientoGarantia: new Date(dto.vencimientoGarantia),
+          }),
+          ...(dto.estado !== undefined && { estado: dto.estado }),
+          ...(dto.categoriaId !== undefined && { categoriaId: nextCategoriaId }),
+          ...(dto.ubicacionId !== undefined && { ubicacionId: nextUbicacionId }),
+          ...(dto.areaActualId !== undefined && {
+            areaActualId: nextAreaActualId,
+          }),
+          ...(dto.responsableActualId !== undefined && {
+            responsableActualId: nextResponsableActualId,
+          }),
+          actualizadoPorId: userId,
+        },
+        include: {
+          categoria: true,
+          ubicacion: true,
+          areaActual: true,
+        },
+      });
+
+      if (isTransferUpdate) {
+        const detailParts: string[] = [];
+
+        if (nextUbicacionId !== undefined && nextUbicacionId !== existing.ubicacionId) {
+          detailParts.push(
+            describeChange('Ubicación', existing.ubicacionId, finalUbicacionId),
+          );
+        }
+
+        if (nextAreaActualId !== undefined && nextAreaActualId !== existing.areaActualId) {
+          detailParts.push(
+            describeChange('Área', existing.areaActualId, finalAreaActualId),
+          );
+        }
+
+        if (
+          nextResponsableActualId !== undefined &&
+          nextResponsableActualId !== existing.responsableActualId
+        ) {
+          detailParts.push(
+            describeChange(
+              'Asignado a',
+              existing.responsableActualId,
+              finalResponsableActualId,
+            ),
+          );
+        }
+
+        await tx.movimientoActivo.create({
+          data: {
+            activoId: id,
+            tipo: TipoMovimientoActivo.TRANSFERENCIA,
+            areaOrigenId: existing.areaActualId,
+            areaDestinoId: finalAreaActualId,
+            usuarioOrigenId: existing.responsableActualId,
+            usuarioDestinoId: finalResponsableActualId,
+            realizadoPorId: userId,
+            detalle: detailParts.join(' | '),
+          },
+        });
+      }
+
+      if (currentArea && shouldNotifyAssignedArea) {
+        const notificationParts: string[] = [];
+
+        if (stateChanged) {
+          notificationParts.push(
+            `Estado: ${this.formatEstado(existing.estado)} -> ${this.formatEstado(dto.estado!)}`,
+          );
+        }
+
+        if (locationChanged) {
+          notificationParts.push(
+            `Ubicación: ${previousUbicacion?.nombre ?? 'Sin ubicación'} -> ${nextUbicacion?.nombre ?? 'Sin ubicación'}`,
+          );
+        }
+
+        if (responsibleChanged) {
+          notificationParts.push(
+            `Responsable: ${previousResponsable ? this.buildFullName(previousResponsable.nombres, previousResponsable.apellidos) : 'Sin responsable'} -> ${nextResponsable ? this.buildFullName(nextResponsable.nombres, nextResponsable.apellidos) : 'Sin responsable'}`,
+          );
+        }
+
+        await tx.notificacion.create({
+          data: {
+            usuarioId: currentArea.encargadoId ?? null,
+            areaId: currentArea.id,
+            tipo: TipoNotificacion.ALERTA_SISTEMA,
+            titulo: `Cambios en el activo ${existing.codigo}`,
+            mensaje: `${this.buildAssetNotificationReference(id)} El activo ${existing.nombre} asignado al área ${currentArea.nombre} fue actualizado. ${notificationParts.join(' | ')}`,
+            estado: EstadoNotificacion.NO_LEIDA,
+          },
+        });
+      }
+
+      return updatedAsset;
     });
 
     return activo;
@@ -485,6 +861,22 @@ export class AssetsService {
     if ((!assignToUser && !assignToArea) || (assignToUser && assignToArea)) {
       throw new BadRequestException(
         'Debe asignar el activo a un usuario o a un área, pero no a ambos',
+      );
+    }
+
+    if (assignToUser) {
+      await this.assertUserHasAnyPermission(
+        userId,
+        ['ASSET_ASSIGN_USER', 'ASSET_ASSIGN'],
+        'No tienes permisos para asignar activos a usuarios',
+      );
+    }
+
+    if (assignToArea) {
+      await this.assertUserHasAnyPermission(
+        userId,
+        ['ASSET_ASSIGN_AREA', 'ASSET_ASSIGN'],
+        'No tienes permisos para asignar activos a áreas',
       );
     }
 
@@ -643,11 +1035,588 @@ export class AssetsService {
     };
   }
 
+  async transfer(id: string, dto: TransferAssetDto, userId: string) {
+    await this.assertUserHasPermission(userId, 'TRANSFER_MANAGE');
+
+    const areaDestinoId = dto.areaDestinoId.trim();
+    const observaciones = dto.observaciones?.trim() || undefined;
+
+    const existing = await this.prisma.activo.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        codigo: true,
+        nombre: true,
+        estado: true,
+        areaActualId: true,
+        responsableActualId: true,
+        areaActual: {
+          select: {
+            id: true,
+            nombre: true,
+          },
+        },
+      },
+    });
+
+    if (!existing) {
+      throw new NotFoundException(`No se encontró el activo con ID: ${id}`);
+    }
+
+    if (existing.estado !== EstadoActivo.OPERATIVO) {
+      throw new ConflictException(
+        'Solo se puede transferir un activo cuando está en estado Operativo',
+      );
+    }
+
+    if (!existing.areaActualId || !existing.areaActual) {
+      throw new BadRequestException(
+        'El activo debe tener un área de origen registrada antes de transferirse',
+      );
+    }
+
+    const areaOrigen = existing.areaActual;
+
+    if (areaDestinoId === existing.areaActualId) {
+      throw new BadRequestException(
+        'El área de destino debe ser distinta del área de origen',
+      );
+    }
+
+    const [areaDestino, pendingReception] = await Promise.all([
+      this.prisma.area.findUnique({
+        where: { id: areaDestinoId },
+        select: {
+          id: true,
+          nombre: true,
+          encargadoId: true,
+        },
+      }),
+      this.prisma.asignacionActivo.findFirst({
+        where: {
+          activoId: id,
+          estado: EstadoAsignacion.PENDIENTE,
+          movimientos: {
+            some: {
+              tipo: TipoMovimientoActivo.TRANSFERENCIA,
+            },
+          },
+        },
+        select: {
+          id: true,
+        },
+      }),
+    ]);
+
+    if (!areaDestino) {
+      throw new NotFoundException(
+        `No se encontró el área con ID: ${areaDestinoId}`,
+      );
+    }
+
+    if (pendingReception) {
+      throw new ConflictException(
+        'El activo tiene una recepción pendiente y no puede transferirse nuevamente',
+      );
+    }
+
+    const result = await this.prisma.$transaction(async (tx) => {
+      const recepcionPendiente = await tx.asignacionActivo.create({
+        data: {
+          activoId: id,
+          areaAsignadaId: areaDestino.id,
+          asignadoPorId: userId,
+          estado: EstadoAsignacion.PENDIENTE,
+          observaciones,
+        },
+        select: {
+          id: true,
+          estado: true,
+          asignadoEn: true,
+          observaciones: true,
+        },
+      });
+
+      await tx.movimientoActivo.create({
+        data: {
+          activoId: id,
+          tipo: TipoMovimientoActivo.TRANSFERENCIA,
+          areaOrigenId: existing.areaActualId,
+          areaDestinoId: areaDestino.id,
+          usuarioOrigenId: existing.responsableActualId,
+          realizadoPorId: userId,
+          asignacionId: recepcionPendiente.id,
+          detalle:
+            observaciones ??
+            `Transferencia registrada de ${areaOrigen.nombre} a ${areaDestino.nombre}`,
+        },
+      });
+
+      await tx.activo.update({
+        where: { id },
+        data: {
+          areaActualId: areaDestino.id,
+          responsableActualId: null,
+          actualizadoPorId: userId,
+        },
+      });
+
+      await tx.notificacion.create({
+        data: {
+          usuarioId: areaDestino.encargadoId ?? null,
+          areaId: areaDestino.id,
+          tipo: TipoNotificacion.ACTIVO_PENDIENTE_CONFIRMACION,
+          titulo: `Recepción pendiente del activo ${existing.codigo}`,
+          mensaje: `${this.buildAssetNotificationReference(id)} El activo ${existing.nombre} fue transferido desde ${areaOrigen.nombre} hacia ${areaDestino.nombre}. La recepción quedó pendiente para el área de destino.`,
+          estado: EstadoNotificacion.NO_LEIDA,
+        },
+      });
+
+      return recepcionPendiente;
+    });
+
+    const asset = await this.findOne(id);
+
+    return {
+      message: `Transferencia registrada de ${areaOrigen.nombre} a ${areaDestino.nombre}. La recepción quedó pendiente para el área de destino.`,
+      transferencia: {
+        id: result.id,
+        estado: result.estado,
+        asignadoEn: result.asignadoEn,
+        observaciones: result.observaciones,
+        areaOrigen,
+        areaDestino,
+        registradoPorId: userId,
+      },
+      asset,
+    };
+  }
+
+  private async assertUserHasPermission(
+    userId: string,
+    permissionCode: string,
+    message = 'No tienes permisos para registrar transferencias',
+  ) {
+    return this.assertUserHasAnyPermission(userId, [permissionCode], message);
+  }
+
+  private async assertUserHasAnyPermission(
+    userId: string,
+    permissionCodes: string[],
+    message = 'No tienes permisos para realizar esta acción',
+  ) {
+    const usuario = await this.prisma.usuario.findUnique({
+      where: { id: userId },
+      select: {
+        rol: {
+          select: {
+            permisos: {
+              select: {
+                permiso: {
+                  select: {
+                    codigo: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const hasPermission = Boolean(
+      usuario?.rol?.permisos?.some(
+        (item) => permissionCodes.includes(item.permiso.codigo),
+      ),
+    );
+
+    if (!hasPermission) {
+      throw new ForbiddenException(message);
+    }
+  }
+
+  private buildAssetNotificationReference(assetId: string) {
+    return `[ASSET_ID:${assetId}]`;
+  }
+
+  /**
+   * HU21/HU42 – Transferencias pendientes de recepción para un área destino.
+   * Incluye recibidoPor y recibidoEn para cumplir PA3 de HU21.
+   */
+  async pendientesDeRecepcion(areaId: string) {
+    if (!areaId) return [];
+
+    const asignaciones = await this.prisma.asignacionActivo.findMany({
+      where: {
+        areaAsignadaId: areaId,
+        estado: EstadoAsignacion.PENDIENTE,
+        movimientos: {
+          some: {
+            tipo: TipoMovimientoActivo.TRANSFERENCIA,
+          },
+        },
+      },
+      select: {
+        id: true,
+        asignadoEn: true,
+        observaciones: true,
+        recibidoEn: true,
+        motivoRechazo: true,
+        activo: {
+          select: {
+            id: true,
+            codigo: true,
+            nombre: true,
+            marca: true,
+            modelo: true,
+            categoria: { select: { id: true, nombre: true } },
+          },
+        },
+        areaAsignada: {
+          select: { id: true, nombre: true },
+        },
+        asignadoPor: {
+          select: { id: true, nombres: true, apellidos: true },
+        },
+        recibidoPor: {
+          select: { id: true, nombres: true, apellidos: true },
+        },
+        movimientos: {
+          where: { tipo: TipoMovimientoActivo.TRANSFERENCIA },
+          select: {
+            areaOrigenId: true,
+            creadoEn: true,
+          },
+          take: 1,
+          orderBy: { creadoEn: 'desc' },
+        },
+      },
+      orderBy: { asignadoEn: 'desc' },
+    });
+
+    const areaOrigenIds = [
+      ...new Set(
+        asignaciones
+          .map((a) => a.movimientos[0]?.areaOrigenId)
+          .filter((id): id is string => Boolean(id)),
+      ),
+    ];
+    const areasOrigen =
+      areaOrigenIds.length > 0
+        ? await this.prisma.area.findMany({
+            where: { id: { in: areaOrigenIds } },
+            select: { id: true, nombre: true },
+          })
+        : [];
+    const areaMap = Object.fromEntries(areasOrigen.map((a) => [a.id, a]));
+
+    return asignaciones.map((a) => ({
+      id: a.id,
+      fechaEnvio: a.movimientos[0]?.creadoEn ?? a.asignadoEn,
+      observaciones: a.observaciones,
+      motivoRechazo: a.motivoRechazo,
+      // PA3: fecha y persona que confirmó (null si aún pendiente)
+      recibidoEn: a.recibidoEn,
+      recibidoPor: a.recibidoPor
+        ? {
+            id: a.recibidoPor.id,
+            nombreCompleto: `${a.recibidoPor.nombres} ${a.recibidoPor.apellidos}`,
+          }
+        : null,
+      activo: {
+        ...a.activo,
+        categoria: a.activo.categoria,
+      },
+      areaDestino: a.areaAsignada,
+      areaOrigen: a.movimientos[0]?.areaOrigenId
+        ? (areaMap[a.movimientos[0].areaOrigenId] ?? null)
+        : null,
+      registradoPor: a.asignadoPor
+        ? {
+            id: a.asignadoPor.id,
+            nombreCompleto: `${a.asignadoPor.nombres} ${a.asignadoPor.apellidos}`,
+          }
+        : null,
+    }));
+  }
+
+  /**
+   * HU21 – Confirmar recepción de una transferencia pendiente.
+   * PA1: El activo estaba como pendiente hasta que el Responsable confirma.
+   * PA2: Después de confirmar, el activo pasa a formar parte del área destino.
+   * PA3: La fecha y persona que confirmó quedan registradas.
+   * PA4: Solo el Responsable de Área destino puede confirmar.
+   */
+  async confirmarRecepcion(asignacionId: string, userId: string) {
+    const [asignacion, usuario] = await Promise.all([
+      this.prisma.asignacionActivo.findUnique({
+        where: { id: asignacionId },
+        select: {
+          id: true,
+          estado: true,
+          activoId: true,
+          areaAsignadaId: true,
+          movimientos: {
+            where: { tipo: TipoMovimientoActivo.TRANSFERENCIA },
+            select: {
+              usuarioOrigenId: true,
+              areaOrigenId: true,
+            },
+            take: 1,
+            orderBy: { creadoEn: 'desc' },
+          },
+        },
+      }),
+      this.prisma.usuario.findUnique({
+        where: { id: userId },
+        select: { 
+          id: true, 
+          areaId: true, 
+          nombres: true, 
+          apellidos: true, 
+          areasGestionadas: {
+            select: { id: true },
+          },
+      }
+      }),
+    ]);
+
+    if (!asignacion) {
+      throw new NotFoundException(`No se encontró la asignación con ID: ${asignacionId}`);
+    }
+
+    // PA4: Solo el Responsable del área destino puede confirmar
+    const areasPermitidas = [
+      usuario?.areaId ?? null,
+      ...(usuario?.areasGestionadas.map((area) => area.id) ?? []),
+    ].filter(Boolean);
+
+    if (!usuario || areasPermitidas.length === 0) {
+      throw new ConflictException('El usuario no tiene un área asignada para confirmar recepciones');
+    }
+
+    if (!asignacion.areaAsignadaId || !areasPermitidas.includes(asignacion.areaAsignadaId)) {
+      throw new ConflictException('Solo el Responsable de Área destino puede confirmar esta recepción');
+    }
+
+    if (asignacion.estado !== EstadoAsignacion.PENDIENTE) {
+      throw new ConflictException('Solo se puede confirmar una recepción en estado PENDIENTE');
+    }
+
+    const movimientoOriginal = asignacion.movimientos[0];
+    const areaOrigenId = movimientoOriginal?.areaOrigenId ?? null;
+    const ahora = new Date();
+
+    await this.prisma.$transaction(async (tx) => {
+      // PA3: Guardar quién y cuándo confirmó
+      await tx.asignacionActivo.update({
+        where: { id: asignacionId },
+        data: {
+          estado: EstadoAsignacion.RECIBIDO,
+          recibidoPorId: userId,
+          recibidoEn: ahora,
+        },
+      });
+
+      // PA2: El activo pasa a pertenecer al área destino (responsableActual = quien confirma)
+      await tx.activo.update({
+        where: { id: asignacion.activoId },
+        data: {
+          areaActualId: asignacion.areaAsignadaId,
+          responsableActualId: userId,
+          actualizadoPorId: userId,
+        },
+      });
+
+      // Registrar movimiento de confirmación en historial
+      await tx.movimientoActivo.create({
+        data: {
+          activoId: asignacion.activoId,
+          tipo: TipoMovimientoActivo.TRANSFERENCIA,
+          areaOrigenId: areaOrigenId,
+          areaDestinoId: asignacion.areaAsignadaId,
+          usuarioDestinoId: userId,
+          realizadoPorId: userId,
+          asignacionId: asignacionId,
+          detalle: `Recepción confirmada por ${usuario.nombres} ${usuario.apellidos} el ${ahora.toLocaleDateString('es-BO')}`,
+        },
+      });
+
+      // Notificar al área de origen que la recepción fue confirmada
+      if (areaOrigenId) {
+        const [areaOrigen, activo] = await Promise.all([
+          tx.area.findUnique({
+            where: { id: areaOrigenId },
+            select: { encargadoId: true, nombre: true },
+          }),
+          tx.activo.findUnique({
+            where: { id: asignacion.activoId },
+            select: { codigo: true, nombre: true },
+          }),
+        ]);
+
+        if (areaOrigen && activo) {
+          await tx.notificacion.create({
+            data: {
+              usuarioId: areaOrigen.encargadoId ?? null,
+              areaId: areaOrigenId,
+              tipo: TipoNotificacion.ALERTA_SISTEMA,
+              titulo: `Recepción confirmada del activo ${activo.codigo}`,
+              mensaje: `${this.buildAssetNotificationReference(asignacion.activoId)} El área destino confirmó la recepción del activo ${activo.nombre}. Confirmado por: ${usuario.nombres} ${usuario.apellidos}.`,
+              estado: EstadoNotificacion.NO_LEIDA,
+            },
+          });
+        }
+      }
+    });
+
+    return {
+      message: 'Recepción confirmada correctamente',
+      recibidoEn: ahora,
+      recibidoPor: {
+        id: userId,
+        nombreCompleto: `${usuario.nombres} ${usuario.apellidos}`,
+      },
+    };
+  }
+
+
+  /**
+   * HU42 – Rechazar recepción indicando motivo obligatorio.
+   * PA1: Solo el Responsable del área destino puede rechazar.
+   * PA2: El motivo es obligatorio (validado en DTO antes de llegar aquí).
+   * PA3: El activo vuelve al área de origen.
+   * PA4: El motivo queda visible en el historial del activo.
+   */
+  async rechazarRecepcion(asignacionId: string, userId: string, motivoRechazo: string) {
+    const [asignacion, usuario] = await Promise.all([
+      this.prisma.asignacionActivo.findUnique({
+        where: { id: asignacionId },
+        select: {
+          id: true,
+          estado: true,
+          activoId: true,
+          areaAsignadaId: true,
+          movimientos: {
+            where: { tipo: TipoMovimientoActivo.TRANSFERENCIA },
+            select: {
+              areaOrigenId: true,
+              usuarioOrigenId: true,
+            },
+            take: 1,
+            orderBy: { creadoEn: 'desc' },
+          },
+        },
+      }),
+      this.prisma.usuario.findUnique({
+        where: { id: userId },
+        select: { id: true, areaId: true },
+      }),
+    ]);
+
+    if (!asignacion) {
+      throw new NotFoundException(`No se encontró la asignación con ID: ${asignacionId}`);
+    }
+
+    // PA1: Solo el área destino puede rechazar
+    if (!usuario || !usuario.areaId) {
+      throw new ConflictException('El usuario no tiene un área asignada para rechazar recepciones');
+    }
+
+    if (asignacion.areaAsignadaId !== usuario.areaId) {
+      throw new ConflictException('Solo el Responsable de Área destino puede rechazar esta recepción');
+    }
+
+    if (asignacion.estado !== EstadoAsignacion.PENDIENTE) {
+      throw new ConflictException('Solo se puede rechazar una recepción en estado PENDIENTE');
+    }
+
+    // PA3: área y responsable de origen para devolver el activo
+    const movimientoOriginal = asignacion.movimientos[0];
+    const areaOrigenId = movimientoOriginal?.areaOrigenId ?? null;
+    const usuarioOrigenId = movimientoOriginal?.usuarioOrigenId ?? null;
+
+    await this.prisma.$transaction(async (tx) => {
+      // PA2 + PA4: guardar el motivo en la asignación
+      await tx.asignacionActivo.update({
+        where: { id: asignacionId },
+        data: {
+          estado: EstadoAsignacion.RECHAZADO,
+          recibidoPorId: userId,
+          recibidoEn: new Date(),
+          motivoRechazo,
+        },
+      });
+
+      // PA3: devolver el activo al área de origen
+      await tx.activo.update({
+        where: { id: asignacion.activoId },
+        data: {
+          areaActualId: areaOrigenId,
+          responsableActualId: usuarioOrigenId,
+          actualizadoPorId: userId,
+        },
+      });
+
+      // PA4: registrar el rechazo en el historial de movimientos
+      await tx.movimientoActivo.create({
+        data: {
+          activoId: asignacion.activoId,
+          tipo: TipoMovimientoActivo.TRANSFERENCIA,
+          areaOrigenId: asignacion.areaAsignadaId,
+          areaDestinoId: areaOrigenId,
+          usuarioOrigenId: null,
+          usuarioDestinoId: usuarioOrigenId,
+          realizadoPorId: userId,
+          asignacionId: asignacionId,
+          detalle: `Recepción rechazada. Motivo: ${motivoRechazo}`,
+        },
+      });
+
+      // Notificar al área de origen del rechazo
+      if (areaOrigenId) {
+        const [areaOrigen, activo] = await Promise.all([
+          tx.area.findUnique({
+            where: { id: areaOrigenId },
+            select: { encargadoId: true, nombre: true },
+          }),
+          tx.activo.findUnique({
+            where: { id: asignacion.activoId },
+            select: { codigo: true, nombre: true },
+          }),
+        ]);
+
+        if (areaOrigen && activo) {
+          await tx.notificacion.create({
+            data: {
+              usuarioId: areaOrigen.encargadoId ?? null,
+              areaId: areaOrigenId,
+              tipo: TipoNotificacion.ALERTA_SISTEMA,
+              titulo: `Recepción rechazada del activo ${activo.codigo}`,
+              mensaje: `${this.buildAssetNotificationReference(asignacion.activoId)} El área destino rechazó la recepción del activo ${activo.nombre}. Motivo: ${motivoRechazo}. El activo volvió al área ${areaOrigen.nombre}.`,
+              estado: EstadoNotificacion.NO_LEIDA,
+            },
+          });
+        }
+      }
+    });
+
+    return {
+      message: 'Recepción rechazada correctamente. El activo fue devuelto al área de origen.',
+    };
+  }
+
   /**
    * Soft-delete an asset (dar de baja).
    * Sets status to DADO_DE_BAJA and records the timestamp.
    */
   async remove(id: string, userId: string) {
+    await this.assertUserHasPermission(
+      userId,
+      'ASSET_UPDATE',
+      'No tienes permisos para actualizar activos',
+    );
+
     const existing = await this.prisma.activo.findUnique({
       where: { id },
     });
@@ -671,7 +1640,83 @@ export class AssetsService {
 
     return activo;
   }
+/**
+ * HU23 - Dar de baja un activo con motivo obligatorio
+ * PA1: Guarda motivo y fecha de baja
+ * PA2: Cambia estado a DADO_DE_BAJA
+ * PA3: El activo queda excluido de asignaciones/transferencias (se filtra en findAll)
+ * PA4: Fecha y motivo visibles en detalle
+ */
+async disable(id: string, motivo: string, userId: string) {
+  // Verificar permisos
+  await this.assertUserHasPermission(
+    userId,
+    'ASSET_UPDATE',
+    'No tienes permisos para dar de baja activos',
+  );
 
+  // Verificar que el activo existe
+  const existing = await this.prisma.activo.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      estado: true,
+      codigo: true,
+      nombre: true,
+    },
+  });
+
+  if (!existing) {
+    throw new NotFoundException(`No se encontró el activo con ID: ${id}`);
+  }
+
+  // Verificar que no esté ya dado de baja
+  if (existing.estado === EstadoActivo.DADO_DE_BAJA) {
+    throw new ConflictException('Este activo ya fue dado de baja');
+  }
+
+  const ahora = new Date();
+
+  // Actualizar el activo con estado DADO_DE_BAJA, fecha y motivo
+  const activo = await this.prisma.activo.update({
+    where: { id },
+    data: {
+      estado: EstadoActivo.DADO_DE_BAJA,
+      dadoDeBajaEn: ahora,
+      motivoBaja: motivo,
+      actualizadoPorId: userId,
+    },
+    include: {
+      categoria: true,
+      ubicacion: true,
+      areaActual: true,
+      responsableActual: {
+        select: {
+          id: true,
+          nombres: true,
+          apellidos: true,
+        },
+      },
+    },
+  });
+
+  // Registrar el movimiento en el historial (PROSIN-308)
+  await this.prisma.movimientoActivo.create({
+    data: {
+      activoId: id,
+      tipo: TipoMovimientoActivo.BAJA,
+      realizadoPorId: userId,
+      detalle: `Activo dado de baja. Motivo: ${motivo}`,
+    },
+  });
+
+  return {
+    ...activo,
+    estadoLabel: this.formatEstado(activo.estado),
+    motivoBaja: activo.motivoBaja,
+    fechaBaja: activo.dadoDeBajaEn,
+  };
+}
   /**
    * Generate a unique asset code that does not exist in the database.
    * Format: ACT-XXXXXXXX (8-char hex from UUID).
@@ -844,4 +1889,30 @@ export class AssetsService {
   private buildFullName(nombres: string, apellidos?: string | null): string {
     return [nombres, apellidos].filter(Boolean).join(' ').trim();
   }
+
+  private isAreaManagerRole(roleName?: string | null): boolean {
+    if (!roleName) {
+      return false;
+    }
+
+    const normalized = roleName
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[_\s]+/g, ' ')
+      .trim()
+      .toUpperCase();
+
+    return (
+      normalized === 'RESPONSABLE DE AREA' ||
+      normalized === 'RESPONSABLE AREA'
+    );
+  }
+
+  async solicitudesEnviadas(registradoPorId: string, areaOrigenId?: string) {
+  return this.prisma.activo.findMany({
+    where: {
+      creadoPorId: registradoPorId,
+    },
+  });
+}
 }
