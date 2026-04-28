@@ -315,7 +315,7 @@ export const InventarioPage: React.FC = () => {
       <div className="module-header">
         <h1>Gestión de Inventario</h1>
 
-        <div style={{ display: 'flex', gap: '10px' }}>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
           <button
             type="button"
             onClick={() => void handleCreateDemo()}

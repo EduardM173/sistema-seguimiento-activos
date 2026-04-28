@@ -10,22 +10,33 @@ const ACCESS_TOKEN_KEY = "access_token";
 
 const AUTH_USER_KEY = "auth_user";
 
+function tryParseJson(raw: string): Record<string, any> {
+  if (!raw) return {};
+
+  try {
+    return JSON.parse(raw) as Record<string, any>;
+  } catch {
+    return {};
+  }
+}
+
 export async function login(data: LoginRequest): Promise<LoginResponse> {
   const response = await fetch(`${API_URL}/auth/login`, {
-    /*AQUI*/ method: "POST",
+    method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify(data),
   });
 
-  const result = await response.json();
+  const raw = await response.text();
+  const result = tryParseJson(raw);
 
   if (!response.ok) {
     throw new Error(result.message || "No se pudo iniciar sesión");
   }
 
-  return result;
+  return result as LoginResponse;
 }
 
 export function saveAuthSession(data: LoginResponse): void {
@@ -87,7 +98,8 @@ export async function getCurrentSession(): Promise<{ usuario: AuthUser }> {
     },
   });
 
-  const result = await response.json();
+  const raw = await response.text();
+  const result = tryParseJson(raw);
 
   if (!response.ok) {
     throw new Error(result.message || "No se pudo refrescar la sesión");
