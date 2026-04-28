@@ -9,6 +9,7 @@ import '../../styles/modules.css';
 import '../../styles/assets.css';
 import IngresoStockModal from '../../components/inventario/IngresoStockModal';
 import AjusteInventarioModal from '../../components/inventario/AjusteInventarioModal';
+import SalidaStockModal from '../../components/inventario/SalidaStockModal';
 import { FilterRow } from '../../components/common/FilterRow';
 import type { FilterQuery } from '../../components/common/FilterRow';
 import { IconEdit, IconX } from '@/components/common/Icon';
@@ -23,6 +24,7 @@ export const InventarioPage: React.FC = () => {
   const [materialToEdit, setMaterialToEdit] = useState<Material | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [isIngresoModalOpen, setIsIngresoModalOpen] = useState(false);
+  const [isSalidaModalOpen, setIsSalidaModalOpen] = useState(false);
   const [isAjusteModalOpen, setIsAjusteModalOpen] = useState(false);
   const [categorias, setCategorias] = useState<CategoriaMaterial[]>([]);
   const [searchText, setSearchText] = useState('');
@@ -372,6 +374,14 @@ export const InventarioPage: React.FC = () => {
           />
 
           <Button
+            label="+ Registrar salida"
+            variant="secondary"
+            onClick={() => {
+              setIsSalidaModalOpen(true);
+            }}
+          />
+
+          <Button
             label="+ Registrar ajuste"
             variant="secondary"
             onClick={() => {
@@ -518,6 +528,13 @@ export const InventarioPage: React.FC = () => {
       <IngresoStockModal
         isOpen={isIngresoModalOpen}
         onClose={() => setIsIngresoModalOpen(false)}
+        materiales={materiales}
+        onSuccess={handleMaterialCreated}
+      />
+
+      <SalidaStockModal
+        isOpen={isSalidaModalOpen}
+        onClose={() => setIsSalidaModalOpen(false)}
         materiales={materiales}
         onSuccess={handleMaterialCreated}
       />
