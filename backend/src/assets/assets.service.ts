@@ -1365,7 +1365,15 @@ export class AssetsService {
       }),
       this.prisma.usuario.findUnique({
         where: { id: userId },
-        select: { id: true, areaId: true, nombres: true, apellidos: true },
+        select: { 
+          id: true, 
+          areaId: true, 
+          nombres: true, 
+          apellidos: true, 
+          areasGestionadas: {
+            select: { id: true },
+          },
+      }
       }),
     ]);
 
@@ -1374,11 +1382,16 @@ export class AssetsService {
     }
 
     // PA4: Solo el Responsable del área destino puede confirmar
-    if (!usuario || !usuario.areaId) {
+    const areasPermitidas = [
+      usuario?.areaId ?? null,
+      ...(usuario?.areasGestionadas.map((area) => area.id) ?? []),
+    ].filter(Boolean);
+
+    if (!usuario || areasPermitidas.length === 0) {
       throw new ConflictException('El usuario no tiene un área asignada para confirmar recepciones');
     }
 
-    if (asignacion.areaAsignadaId !== usuario.areaId) {
+    if (!asignacion.areaAsignadaId || !areasPermitidas.includes(asignacion.areaAsignadaId)) {
       throw new ConflictException('Solo el Responsable de Área destino puede confirmar esta recepción');
     }
 
