@@ -18,6 +18,7 @@ import { HttpError } from '../services/http.client';
 import type { PaginationMeta } from '../types/assets.types';
 
 import OverlayModal from '../components/common/OverlayModal';
+import { useModalUrlSync } from '@/deeplink';
 import CreateLocationForm from '../components/common/CreateLocationForm';
 import { SmartTable } from '../components/common/SmartTable';
 import type { ColumnDef, ActionDef } from '../components/common/SmartTable';
@@ -57,6 +58,9 @@ export default function LocationsPage() {
   const [areaEncargadoId, setAreaEncargadoId] = useState('');
   const [areaManagerDrafts, setAreaManagerDrafts] = useState<Record<string, string>>({});
   const [reassigningAreaId, setReassigningAreaId] = useState<string | null>(null);
+
+  // Deeplink URL sync — `?modal=create-location` toggles the create modal.
+  useModalUrlSync('create-location', showCreateModal, setShowCreateModal);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(searchText), 350);

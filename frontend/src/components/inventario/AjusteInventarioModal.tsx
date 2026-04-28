@@ -127,7 +127,7 @@ const AjusteInventarioModal: React.FC<AjusteInventarioModalProps> = ({
           }}
         >
           <div style={{ gridColumn: '1 / -1' }}>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 700, color: 'var(--color-text-muted)', fontSize: '0.78rem', letterSpacing: '0.05em', textTransform: 'uppercase' as const }}>
               Material *
             </label>
             <select
@@ -137,8 +137,8 @@ const AjusteInventarioModal: React.FC<AjusteInventarioModalProps> = ({
               style={{
                 width: '100%',
                 padding: '12px 14px',
-                border: '1px solid #d1d5db',
-                borderRadius: '8px',
+                border: 'var(--input-border)',
+                borderRadius: 'var(--radius-base)',
                 fontSize: '16px',
               }}
             >
@@ -152,7 +152,7 @@ const AjusteInventarioModal: React.FC<AjusteInventarioModalProps> = ({
           </div>
 
           <div>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 700, color: 'var(--color-text-muted)', fontSize: '0.78rem', letterSpacing: '0.05em', textTransform: 'uppercase' as const }}>
               Cantidad registrada *
             </label>
             <input
@@ -163,15 +163,15 @@ const AjusteInventarioModal: React.FC<AjusteInventarioModalProps> = ({
               style={{
                 width: '100%',
                 padding: '12px 14px',
-                border: '1px solid #d1d5db',
-                borderRadius: '8px',
-                background: '#f9fafb',
+                border: 'var(--input-border)',
+                borderRadius: 'var(--radius-base)',
+                background: 'var(--input-bg)',
               }}
             />
           </div>
 
           <div>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 700, color: 'var(--color-text-muted)', fontSize: '0.78rem', letterSpacing: '0.05em', textTransform: 'uppercase' as const }}>
               Cantidad física *
             </label>
             <input
@@ -183,14 +183,14 @@ const AjusteInventarioModal: React.FC<AjusteInventarioModalProps> = ({
               style={{
                 width: '100%',
                 padding: '12px 14px',
-                border: '1px solid #d1d5db',
-                borderRadius: '8px',
+                border: 'var(--input-border)',
+                borderRadius: 'var(--radius-base)',
               }}
             />
           </div>
 
           <div style={{ gridColumn: '1 / -1' }}>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 700, color: 'var(--color-text-muted)', fontSize: '0.78rem', letterSpacing: '0.05em', textTransform: 'uppercase' as const }}>
               Motivo del ajuste *
             </label>
             <textarea
@@ -201,15 +201,15 @@ const AjusteInventarioModal: React.FC<AjusteInventarioModalProps> = ({
               style={{
                 width: '100%',
                 padding: '12px 14px',
-                border: '1px solid #d1d5db',
-                borderRadius: '8px',
+                border: 'var(--input-border)',
+                borderRadius: 'var(--radius-base)',
                 resize: 'vertical',
               }}
             />
           </div>
 
           <div style={{ gridColumn: '1 / -1' }}>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 700, color: 'var(--color-text-muted)', fontSize: '0.78rem', letterSpacing: '0.05em', textTransform: 'uppercase' as const }}>
               Diferencia detectada
             </label>
             <input
@@ -223,10 +223,10 @@ const AjusteInventarioModal: React.FC<AjusteInventarioModalProps> = ({
               style={{
                 width: '100%',
                 padding: '12px 14px',
-                border: '1px solid #d1d5db',
-                borderRadius: '8px',
-                background: diferencia === 0 ? '#f9fafb' : '#fff7ed',
-                color: diferencia === 0 ? '#374151' : '#9a3412',
+                border: 'var(--input-border)',
+                borderRadius: 'var(--radius-base)',
+                background: diferencia === 0 ? 'var(--input-bg)' : 'var(--color-warning-light)',
+                color: diferencia === 0 ? 'var(--color-text)' : 'var(--color-warning)',
                 fontWeight: 700,
               }}
             />
@@ -234,7 +234,7 @@ const AjusteInventarioModal: React.FC<AjusteInventarioModalProps> = ({
               style={{
                 margin: '8px 0 0',
                 fontSize: '13px',
-                color: cantidadFisica === '' ? '#6b7280' : diferencia === 0 ? '#4b5563' : '#9a3412',
+                color: cantidadFisica === '' ? 'var(--color-text-muted)' : diferencia === 0 ? 'var(--color-text)' : 'var(--color-warning)',
               }}
             >
               {resumenDiferencia}
@@ -242,7 +242,7 @@ const AjusteInventarioModal: React.FC<AjusteInventarioModalProps> = ({
           </div>
 
           <div style={{ gridColumn: '1 / -1' }}>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 700, color: 'var(--color-text-muted)', fontSize: '0.78rem', letterSpacing: '0.05em', textTransform: 'uppercase' as const }}>
               Cantidad disponible luego del ajuste
             </label>
             <input
@@ -252,10 +252,10 @@ const AjusteInventarioModal: React.FC<AjusteInventarioModalProps> = ({
               style={{
                 width: '100%',
                 padding: '12px 14px',
-                border: '1px solid #d1d5db',
-                borderRadius: '8px',
-                background: '#eff6ff',
-                color: '#1d4ed8',
+                border: 'var(--input-border)',
+                borderRadius: 'var(--radius-base)',
+                background: 'var(--color-info-light)',
+                color: 'var(--color-primary-light)',
                 fontWeight: 700,
               }}
             />

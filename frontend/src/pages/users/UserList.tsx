@@ -15,6 +15,7 @@ import type { Permission, Role, User } from '../../types/user.types';
 import { SmartTable } from '../../components/common/SmartTable';
 import type { ColumnDef, ActionDef } from '../../components/common/SmartTable';
 import { FilterRow } from '../../components/common/FilterRow';
+import { useModalUrlSync } from '@/deeplink';
 import '../../styles/assets.css';
 
 type TabKey = 'users' | 'roles';
@@ -26,6 +27,14 @@ export default function UserList() {
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
+
+  // Deeplink URL sync — `?modal=create-user` and `?modal=edit-user&userId=...`.
+  useModalUrlSync('create-user', showCreateModal, setShowCreateModal);
+  useModalUrlSync(
+    'edit-user',
+    Boolean(editingUserId),
+    (open) => { if (!open) setEditingUserId(null); },
+  );
 
   const [activeTab, setActiveTab] = useState<TabKey>('users');
 
@@ -327,11 +336,12 @@ export default function UserList() {
   }
 
   const sectionCardStyle: React.CSSProperties = {
-    backgroundColor: '#ffffff',
-    border: '1px solid #e2e8f0',
-    borderRadius: '14px',
-    padding: '18px',
-    marginTop: '20px',
+    backgroundColor: 'transparent',
+    border: 'none',
+    borderTop: '1px solid var(--color-border-light)',
+    borderRadius: 0,
+    padding: '24px 0 0',
+    marginTop: '32px',
   };
 
   const renderUsersTab = () => {
@@ -458,7 +468,7 @@ export default function UserList() {
     if (!canManageRoles) {
       return (
         <div style={sectionCardStyle}>
-          <p style={{ margin: 0, color: '#9a3412' }}>
+          <p style={{ margin: 0, color: 'var(--color-warning)' }}>
             No tienes el permiso necesario para gestionar roles y permisos.
           </p>
         </div>
@@ -469,7 +479,7 @@ export default function UserList() {
       <>
         <div style={sectionCardStyle}>
           <h3 style={{ marginTop: 0 }}>Asignación de roles a usuarios</h3>
-          <p style={{ color: '#475569' }}>
+          <p style={{ color: 'var(--color-text-secondary)' }}>
             Selecciona el rol correspondiente para cada usuario del sistema.
           </p>
 
@@ -481,7 +491,7 @@ export default function UserList() {
             }}
           >
             <thead>
-              <tr style={{ backgroundColor: '#f8fafc', textAlign: 'left' }}>
+              <tr style={{ backgroundColor: 'var(--glass-bg)', textAlign: 'left' }}>
                 <th style={{ padding: '12px' }}>Usuario</th>
                 <th style={{ padding: '12px' }}>Correo</th>
                 <th style={{ padding: '12px' }}>Rol actual</th>
@@ -497,7 +507,7 @@ export default function UserList() {
                   const selectedRoleId = selectedRoles[currentUser.id] || '';
 
                   return (
-                    <tr key={currentUser.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
+                    <tr key={currentUser.id} style={{ borderBottom: '1px solid var(--color-border-light)' }}>
                       <td style={{ padding: '12px' }}>
                         {currentUser.nombres} {currentUser.apellidos}
                       </td>
@@ -505,8 +515,8 @@ export default function UserList() {
                       <td style={{ padding: '12px' }}>
                         <span
                           style={{
-                            backgroundColor: '#f1f5f9',
-                            color: '#0f172a',
+                            backgroundColor: 'var(--glass-bg)',
+                            color: 'var(--color-text-bright)',
                             padding: '4px 8px',
                             borderRadius: '999px',
                             fontSize: '13px',
@@ -524,8 +534,11 @@ export default function UserList() {
                           }
                           style={{
                             padding: '10px 12px',
-                            borderRadius: '8px',
-                            border: '1px solid #cbd5e1',
+                            borderRadius: 0,
+                            border: 'none',
+                            borderBottom: '1px solid var(--color-border)',
+                            background: 'transparent',
+                            color: 'var(--color-text-bright)',
                             minWidth: '220px',
                           }}
                         >
@@ -539,25 +552,15 @@ export default function UserList() {
                       </td>
                       <td style={{ padding: '12px' }}>
                         <button
+                          className="btn btn-primary btn-sm"
                           onClick={() => handleSaveRole(currentUser)}
                           disabled={
                             savingUserId === currentUser.id ||
                             !selectedRoleId ||
                             selectedRoleId === currentRoleId
                           }
-                          style={{
-                            backgroundColor:
-                              savingUserId === currentUser.id ? '#93c5fd' : '#2563eb',
-                            color: '#ffffff',
-                            padding: '10px 14px',
-                            borderRadius: '8px',
-                            border: 'none',
-                            cursor:
-                              savingUserId === currentUser.id ? 'not-allowed' : 'pointer',
-                            fontWeight: 600,
-                          }}
                         >
-                          {savingUserId === currentUser.id ? 'Guardando...' : 'Guardar'}
+                          {savingUserId === currentUser.id ? 'Guardando…' : 'Guardar'}
                         </button>
                       </td>
                     </tr>
@@ -576,7 +579,7 @@ export default function UserList() {
 
         <div style={sectionCardStyle}>
           <h3 style={{ marginTop: 0 }}>Matriz de permisos por rol</h3>
-          <p style={{ color: '#475569' }}>
+          <p style={{ color: 'var(--color-text-secondary)' }}>
             Activa o desactiva qué permisos pertenecen a cada rol.
           </p>
 
@@ -589,7 +592,7 @@ export default function UserList() {
               }}
             >
               <thead>
-                <tr style={{ backgroundColor: '#f8fafc' }}>
+                <tr style={{ backgroundColor: 'var(--glass-bg)' }}>
                   <th
                     style={{
                       padding: '12px',
@@ -617,10 +620,10 @@ export default function UserList() {
 
               <tbody>
                 {permissions.map((permission) => (
-                  <tr key={permission.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
+                  <tr key={permission.id} style={{ borderBottom: '1px solid var(--color-border-light)' }}>
                     <td style={{ padding: '12px' }}>
                       <div style={{ fontWeight: 600 }}>{permission.nombre}</div>
-                      <div style={{ fontSize: '13px', color: '#64748b' }}>
+                      <div style={{ fontSize: '13px', color: 'var(--color-text-muted)' }}>
                         {permission.codigo}
                       </div>
                     </td>
@@ -648,26 +651,18 @@ export default function UserList() {
 
           <div style={{ marginTop: '18px' }}>
             <button
+              className="btn btn-primary"
               onClick={handleSaveMatrix}
               disabled={savingMatrix}
-              style={{
-                backgroundColor: savingMatrix ? '#93c5fd' : '#2563eb',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '8px',
-                padding: '10px 16px',
-                cursor: savingMatrix ? 'not-allowed' : 'pointer',
-                fontWeight: 600,
-              }}
             >
-              {savingMatrix ? 'Guardando matriz...' : 'Guardar cambios de matriz'}
+              {savingMatrix ? 'Guardando matriz…' : 'Guardar cambios de matriz'}
             </button>
           </div>
         </div>
 
         <div style={sectionCardStyle}>
           <h3 style={{ marginTop: 0 }}>Crear nuevo rol</h3>
-          <p style={{ color: '#475569' }}>
+          <p style={{ color: 'var(--color-text-secondary)' }}>
             Registra un nuevo rol y asígnale permisos iniciales desde esta misma
             pantalla.
           </p>
@@ -695,9 +690,12 @@ export default function UserList() {
                 placeholder="Ejemplo: AUDITOR"
                 style={{
                   width: '100%',
-                  padding: '10px 12px',
-                  borderRadius: '8px',
-                  border: '1px solid #cbd5e1',
+                  padding: '10px 0',
+                  borderRadius: 0,
+                  border: 'none',
+                  borderBottom: '1px solid var(--color-border)',
+                  background: 'transparent',
+                  color: 'var(--color-text-bright)',
                 }}
               />
             </div>
@@ -717,9 +715,12 @@ export default function UserList() {
                 placeholder="Describe el propósito del rol"
                 style={{
                   width: '100%',
-                  padding: '10px 12px',
-                  borderRadius: '8px',
-                  border: '1px solid #cbd5e1',
+                  padding: '10px 0',
+                  borderRadius: 0,
+                  border: 'none',
+                  borderBottom: '1px solid var(--color-border)',
+                  background: 'transparent',
+                  color: 'var(--color-text-bright)',
                 }}
               />
             </div>
@@ -743,10 +744,11 @@ export default function UserList() {
                       display: 'flex',
                       alignItems: 'flex-start',
                       gap: '8px',
-                      padding: '10px',
-                      border: '1px solid #e2e8f0',
-                      borderRadius: '10px',
-                      backgroundColor: '#f8fafc',
+                      padding: '10px 0',
+                      border: 'none',
+                      borderBottom: '1px solid var(--color-border-light)',
+                      borderRadius: 0,
+                      backgroundColor: 'transparent',
                     }}
                   >
                     <input
@@ -757,7 +759,7 @@ export default function UserList() {
                     <span>
                       <strong>{permission.nombre}</strong>
                       <br />
-                      <span style={{ fontSize: '13px', color: '#64748b' }}>
+                      <span style={{ fontSize: '13px', color: 'var(--color-text-muted)' }}>
                         {permission.codigo}
                       </span>
                     </span>
@@ -768,19 +770,11 @@ export default function UserList() {
 
             <div>
               <button
+                className="btn btn-success"
                 onClick={handleCreateRole}
                 disabled={creatingRole}
-                style={{
-                  backgroundColor: creatingRole ? '#93c5fd' : '#16a34a',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '8px',
-                  padding: '10px 16px',
-                  cursor: creatingRole ? 'not-allowed' : 'pointer',
-                  fontWeight: 600,
-                }}
               >
-                {creatingRole ? 'Creando rol...' : 'Crear rol'}
+                {creatingRole ? 'Creando rol…' : 'Crear rol'}
               </button>
             </div>
           </div>
@@ -802,7 +796,7 @@ export default function UserList() {
       >
         <div>
           <h1 style={{ marginBottom: '8px' }}>Gestión de Usuarios</h1>
-          <p style={{ marginTop: 0, color: '#475569' }}>
+          <p style={{ marginTop: 0, color: 'var(--color-text-secondary)' }}>
             Administra el acceso del personal universitario y configura permisos por
             roles.
           </p>
@@ -811,10 +805,10 @@ export default function UserList() {
         <button
           onClick={() => setShowCreateModal(true)}
           style={{
-            backgroundColor: '#2563eb',
+            backgroundColor: 'var(--color-accent)',
             color: 'white',
             padding: '10px 16px',
-            borderRadius: '8px',
+            borderRadius: 'var(--radius-base)',
             border: 'none',
             cursor: 'pointer',
             fontWeight: 600,
@@ -827,7 +821,7 @@ export default function UserList() {
       <div
         style={{
           marginTop: '20px',
-          borderBottom: '1px solid #cbd5e1',
+          borderBottom: '1px solid var(--color-border-light)',
           display: 'flex',
           gap: '12px',
         }}
@@ -839,7 +833,7 @@ export default function UserList() {
             border: 'none',
             borderBottom:
               activeTab === 'users' ? '2px solid #2563eb' : '2px solid transparent',
-            color: activeTab === 'users' ? '#2563eb' : '#64748b',
+            color: activeTab === 'users' ? 'var(--color-accent)' : '#64748b',
             padding: '10px 0',
             cursor: 'pointer',
             fontWeight: 600,
@@ -855,7 +849,7 @@ export default function UserList() {
             border: 'none',
             borderBottom:
               activeTab === 'roles' ? '2px solid #2563eb' : '2px solid transparent',
-            color: activeTab === 'roles' ? '#2563eb' : '#64748b',
+            color: activeTab === 'roles' ? 'var(--color-accent)' : '#64748b',
             padding: '10px 0',
             cursor: 'pointer',
             fontWeight: 600,
@@ -883,9 +877,9 @@ export default function UserList() {
         <p
           style={{
             marginTop: '16px',
-            color: '#b91c1c',
-            backgroundColor: '#fef2f2',
-            border: '1px solid #fecaca',
+            color: 'var(--color-danger)',
+            backgroundColor: 'var(--color-danger-light)',
+            border: '1px solid rgba(239,68,68,0.30)',
             padding: '12px 14px',
             borderRadius: '10px',
           }}
@@ -898,9 +892,9 @@ export default function UserList() {
         <p
           style={{
             marginTop: '16px',
-            color: '#166534',
-            backgroundColor: '#f0fdf4',
-            border: '1px solid #bbf7d0',
+            color: 'var(--color-success)',
+            backgroundColor: 'var(--color-success-light)',
+            border: '1px solid rgba(34,197,94,0.30)',
             padding: '12px 14px',
             borderRadius: '10px',
           }}

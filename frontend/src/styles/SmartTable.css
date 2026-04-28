@@ -77,11 +77,11 @@
 }
 
 .st__th > button:hover {
-  color: var(--color-primary-light);
+  color: var(--color-accent);
 }
 
 .st__th > button[class*='--active'] {
-  color: var(--color-primary-light);
+  color: var(--color-accent);
 }
 
 /* Inner flex: label + sort icon */
@@ -127,7 +127,7 @@
 }
 
 .st__tr:hover {
-  background: var(--color-surface-2);
+  background: var(--table-row-hover);
 }
 
 .st__tr:last-child {

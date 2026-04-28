@@ -12,7 +12,9 @@ import AjusteInventarioModal from '../../components/inventario/AjusteInventarioM
 import SalidaStockModal from '../../components/inventario/SalidaStockModal';
 import { FilterRow } from '../../components/common/FilterRow';
 import type { FilterQuery } from '../../components/common/FilterRow';
-import { IconEdit, IconX } from '@/components/common/Icon';
+import { IconClock, IconEdit, IconX } from '@/components/common/Icon';
+import OverlayModal from '../../components/common/OverlayModal';
+import { useModalUrlSync } from '@/deeplink';
 
 export const InventarioPage: React.FC = () => {
   const notify = useNotification();
@@ -41,6 +43,13 @@ export const InventarioPage: React.FC = () => {
 
   const [showHistorialModal, setShowHistorialModal] = useState(false);
   const [materialSeleccionado, setMaterialSeleccionado] = useState<Material | null>(null);
+
+  // Deeplink URL sync — keeps `?modal=<id>` aligned with each modal's flag.
+  useModalUrlSync('material-form', isMaterialModalOpen, setIsMaterialModalOpen);
+  useModalUrlSync('ingreso-stock', isIngresoModalOpen, setIsIngresoModalOpen);
+  useModalUrlSync('salida-stock', isSalidaModalOpen, setIsSalidaModalOpen);
+  useModalUrlSync('ajuste-inventario', isAjusteModalOpen, setIsAjusteModalOpen);
+  useModalUrlSync('historial-material', showHistorialModal, setShowHistorialModal);
   const [historial, setHistorial] = useState<any[]>([]);
   const [loadingHistorial, setLoadingHistorial] = useState(false);
   const [fechaInicio, setFechaInicio] = useState('');
@@ -261,15 +270,16 @@ export const InventarioPage: React.FC = () => {
       onClick: (material: Material) => handleEdit(material),
     },
     {
+      label: 'Historial',
+      icon: <IconClock/>,
+      onClick: (material: Material) => void abrirHistorial(material),
+    },
+    {
       label: 'Eliminar',
       icon: <IconX />,
       variant: 'danger' as const,
       onClick: (material: Material) => void handleDelete(material),
-    },
-    {
-      label: 'Historial',
-      onClick: (material: Material) => void abrirHistorial(material),
-    },
+    }
   ];
 
   const columns: ColumnDef<Material>[] = [
@@ -318,42 +328,24 @@ export const InventarioPage: React.FC = () => {
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
           <button
             type="button"
+            className="btn btn-ghost btn-sm"
             onClick={() => void handleCreateDemo()}
             disabled={creatingDemo}
             title="Carga rápida de materiales demo"
-            style={{
-              border: '1px dashed rgba(100, 116, 139, 0.45)',
-              background: 'rgba(255,255,255,0.7)',
-              color: '#64748b',
-              borderRadius: '999px',
-              padding: '6px 10px',
-              fontSize: '0.73rem',
-              fontWeight: 700,
-              opacity: 0.55,
-              cursor: creatingDemo ? 'wait' : 'pointer',
-            }}
+            style={{ opacity: 0.7 }}
           >
-            {creatingDemo ? 'cargando...' : 'demo x100'}
+            {creatingDemo ? 'cargando…' : 'demo x100'}
           </button>
 
           <button
             type="button"
+            className="btn btn-ghost btn-sm"
             onClick={() => void handleDeleteDemo()}
             disabled={deletingDemo}
             title="Eliminar materiales demo"
-            style={{
-              border: '1px dashed rgba(220, 38, 38, 0.35)',
-              background: 'rgba(255,255,255,0.7)',
-              color: '#991b1b',
-              borderRadius: '999px',
-              padding: '6px 10px',
-              fontSize: '0.73rem',
-              fontWeight: 700,
-              opacity: 0.5,
-              cursor: deletingDemo ? 'wait' : 'pointer',
-            }}
+            style={{ opacity: 0.7, color: 'var(--color-danger)' }}
           >
-            {deletingDemo ? 'limpiando...' : 'limpiar demo'}
+            {deletingDemo ? 'limpiando…' : 'limpiar demo'}
           </button>
 
           <Button
@@ -471,7 +463,7 @@ export const InventarioPage: React.FC = () => {
           gap: '12px',
           flexWrap: 'wrap',
           marginTop: '12px',
-          color: '#6b7280',
+          color: 'var(--color-text-muted)',
         }}
       >
         <span>
@@ -546,213 +538,99 @@ export const InventarioPage: React.FC = () => {
         onSuccess={handleMaterialCreated}
       />
 
-      {showHistorialModal && materialSeleccionado && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            width: '100vw',
-            height: '100vh',
-            backgroundColor: 'rgba(0, 0, 0, 0.5)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 9999,
-          }}
-          onClick={() => setShowHistorialModal(false)}
-        >
-          <div
-            style={{
-              background: '#fff',
-              borderRadius: '12px',
-              padding: '24px',
-              width: '90%',
-              maxWidth: '900px',
-              maxHeight: '80vh',
-              overflowY: 'auto',
-              boxShadow: '0 10px 30px rgba(0,0,0,0.2)',
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div
+      <OverlayModal
+        open={showHistorialModal && !!materialSeleccionado}
+        onClose={() => setShowHistorialModal(false)}
+        title="Historial de movimientos"
+        subtitle={materialSeleccionado ? `${materialSeleccionado.nombre} (${materialSeleccionado.codigo})` : ''}
+        width="900px"
+      >
+        {/* Filters */}
+        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: '16px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Fecha inicio</label>
+            <input
+              type="date"
+              value={fechaInicio}
+              onChange={(e) => setFechaInicio(e.target.value)}
               style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: '20px',
+                padding: '9px 12px',
+                border: 'var(--input-border)',
+                borderRadius: 'var(--input-radius)',
+                background: 'var(--input-bg)',
+                color: 'var(--color-text-bright)',
+                fontFamily: 'var(--font-family)',
+                colorScheme: 'dark',
               }}
-            >
-              <div>
-                <h2 style={{ margin: 0, color: '#111827' }}>
-                  Historial de movimientos
-                </h2>
-                <p style={{ margin: '4px 0 0 0', color: '#374151' }}>
-                  {materialSeleccionado?.nombre} ({materialSeleccionado?.codigo})
-                </p>
-              </div>
-
-              <button
-                onClick={() => setShowHistorialModal(false)}
-                style={{
-                  cursor: 'pointer',
-                  padding: '6px 10px',
-                  background: '#f3f4f6',
-                  borderRadius: '6px',
-                  border: 'none',
-                  color: '#374151',
-                }}
-              >
-                ✖ Cerrar
-              </button>
-            </div>
-
-            <div
-              style={{
-                display: 'flex',
-                gap: '12px',
-                flexWrap: 'wrap',
-                alignItems: 'flex-end',
-                marginBottom: '16px',
-                marginTop: '16px',
-              }}
-            >
-              <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '6px',
-                }}
-              >
-                <label
-                  style={{
-                    fontSize: '0.85rem',
-                    color: '#374151',
-                    fontWeight: 600,
-                  }}
-                >
-                  Fecha inicio
-                </label>
-                <input
-                  type="date"
-                  value={fechaInicio}
-                  onChange={(e) => setFechaInicio(e.target.value)}
-                  style={{
-                    padding: '10px 12px',
-                    borderRadius: '8px',
-                    border: '1px solid #d1d5db',
-                  }}
-                />
-              </div>
-
-              <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '6px',
-                }}
-              >
-                <label
-                  style={{
-                    fontSize: '0.85rem',
-                    color: '#374151',
-                    fontWeight: 600,
-                  }}
-                >
-                  Fecha fin
-                </label>
-                <input
-                  type="date"
-                  value={fechaFin}
-                  onChange={(e) => setFechaFin(e.target.value)}
-                  style={{
-                    padding: '10px 12px',
-                    borderRadius: '8px',
-                    border: '1px solid #d1d5db',
-                  }}
-                />
-              </div>
-
-              <button
-                onClick={() => void aplicarFiltroHistorial()}
-                style={{
-                  cursor: 'pointer',
-                  padding: '10px 14px',
-                  background: '#2563eb',
-                  borderRadius: '8px',
-                  border: 'none',
-                  color: '#fff',
-                  fontWeight: 600,
-                }}
-              >
-                Aplicar filtro
-              </button>
-
-              <button
-                onClick={() => void limpiarFiltroHistorial()}
-                style={{
-                  cursor: 'pointer',
-                  padding: '10px 14px',
-                  background: '#e5e7eb',
-                  borderRadius: '8px',
-                  border: 'none',
-                  color: '#111827',
-                  fontWeight: 600,
-                }}
-              >
-                Limpiar filtro
-              </button>
-            </div>
-
-            {loadingHistorial ? (
-              <p style={{ color: '#6b7280' }}>Cargando historial...</p>
-            ) : historial.length === 0 ? (
-              <p style={{ color: '#6b7280' }}>
-                No hay movimientos registrados para este material.
-              </p>
-            ) : (
-              <div style={{ overflowX: 'auto' }}>
-                <table
-                  style={{
-                    width: '100%',
-                    borderCollapse: 'collapse',
-                    marginTop: '12px',
-                  }}
-                >
-                  <thead>
-                    <tr style={{ background: '#f9fafb' }}>
-                      <th style={{ padding: '10px', textAlign: 'left' }}>Fecha</th>
-                      <th style={{ padding: '10px', textAlign: 'left' }}>Tipo</th>
-                      <th style={{ padding: '10px', textAlign: 'left' }}>Cantidad</th>
-                      <th style={{ padding: '10px', textAlign: 'left' }}>Responsable</th>
-                      <th style={{ padding: '10px', textAlign: 'left' }}>Observación</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {historial.map((item, index) => (
-                      <tr key={item.id ?? index} style={{ borderTop: '1px solid #e5e7eb' }}>
-                        <td style={{ padding: '10px' }}>
-                          {item.fecha
-                            ? new Date(item.fecha).toLocaleString('es-BO')
-                            : '—'}
-                        </td>
-                        <td style={{ padding: '10px' }}>{item.tipo ?? '—'}</td>
-                        <td style={{ padding: '10px' }}>{item.cantidad ?? '—'}</td>
-                        <td style={{ padding: '10px' }}>
-                          {item.responsable ?? item.usuario?.nombreCompleto ?? '—'}
-                        </td>
-                        <td style={{ padding: '10px' }}>
-                          {item.observacion ?? item.motivo ?? '—'}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+            />
           </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-text-muted)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Fecha fin</label>
+            <input
+              type="date"
+              value={fechaFin}
+              onChange={(e) => setFechaFin(e.target.value)}
+              style={{
+                padding: '9px 12px',
+                border: 'var(--input-border)',
+                borderRadius: 'var(--input-radius)',
+                background: 'var(--input-bg)',
+                color: 'var(--color-text-bright)',
+                fontFamily: 'var(--font-family)',
+                colorScheme: 'dark',
+              }}
+            />
+          </div>
+          <button
+            onClick={() => void aplicarFiltroHistorial()}
+            className="btn btn-primary"
+          >
+            Aplicar filtro
+          </button>
+          <button
+            onClick={() => void limpiarFiltroHistorial()}
+            className="btn btn-secondary"
+          >
+            Limpiar filtro
+          </button>
         </div>
-      )}
+
+        {/* Table */}
+        {loadingHistorial ? (
+          <p style={{ color: 'var(--color-text-muted)' }}>Cargando historial...</p>
+        ) : historial.length === 0 ? (
+          <p style={{ color: 'var(--color-text-muted)' }}>No hay movimientos registrados para este material.</p>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ background: 'var(--table-header-bg)' }}>
+                  {['Fecha', 'Tipo', 'Cantidad', 'Responsable', 'Observación'].map((h) => (
+                    <th key={h} style={{ padding: '10px 12px', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-text-muted)', letterSpacing: '0.05em', textTransform: 'uppercase', borderBottom: '1px solid var(--table-row-border)' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {historial.map((item, index) => (
+                  <tr key={item.id ?? index} style={{ borderBottom: '1px solid var(--table-row-border)' }}>
+                    <td style={{ padding: '10px 12px', color: 'var(--color-text)', fontSize: '0.88rem' }}>
+                      {item.fecha ? new Date(item.fecha).toLocaleString('es-BO') : '—'}
+                    </td>
+                    <td style={{ padding: '10px 12px', color: 'var(--color-text-bright)', fontWeight: 600, fontSize: '0.85rem' }}>{item.tipo ?? '—'}</td>
+                    <td style={{ padding: '10px 12px', color: 'var(--color-text)', fontSize: '0.88rem' }}>{item.cantidad ?? '—'}</td>
+                    <td style={{ padding: '10px 12px', color: 'var(--color-text)', fontSize: '0.88rem' }}>
+                      {item.responsable ?? item.usuario?.nombreCompleto ?? '—'}
+                    </td>
+                    <td style={{ padding: '10px 12px', color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>
+                      {item.observacion ?? item.motivo ?? '—'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </OverlayModal>
     </div>
   );
 };

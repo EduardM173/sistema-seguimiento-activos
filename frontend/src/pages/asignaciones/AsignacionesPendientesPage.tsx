@@ -169,7 +169,7 @@ export const AsignacionesPendientesPage: React.FC = () => {
     <div className="module-page">
       <div className="module-header">
         <h1>Recepción de Activos</h1>
-        <p style={{ color: '#6b7280', marginTop: '4px' }}>
+        <p style={{ color: 'var(--color-text-muted)', marginTop: '4px' }}>
           Activos pendientes de recepción para <strong>{areaNombre}</strong>
         </p>
       </div>

@@ -2,6 +2,7 @@ import { defineConfig } from 'vite'
 import dotenv from "dotenv"
 import react from '@vitejs/plugin-react'
 import path from 'path'
+import { deeplinkApi } from './vite-plugins/deeplink-api'
 
 dotenv.config()
 
@@ -20,7 +21,7 @@ export default defineConfig(() => {
   const port = parseInt(process.env.FRONTEND_PORT || '5173', 10)
 
   return {
-    plugins: [react()],
+    plugins: [react(), deeplinkApi()],
     server: {
       host: '0.0.0.0',
 

@@ -545,7 +545,7 @@
   padding: var(--space-5);
   border: 1px dashed #cbd5e1;
   border-radius: var(--radius-lg);
-  color: #334155;
+  color: var(--color-text);
   font-size: var(--font-size-sm);
   background: #f8fafc;
   text-align: center;
@@ -599,7 +599,7 @@
 }
 
 .assetHistoryFilters .assetsFilters__label {
-  color: #0f172a;
+  color: var(--color-text-bright);
   font-weight: var(--font-weight-bold);
   letter-spacing: 0.03em;
 }
@@ -616,7 +616,7 @@
 }
 
 .assetHistoryFilters .btn--ghost {
-  color: #0f172a;
+  color: var(--color-text-bright);
   border-color: #cbd5e1;
   background: #ffffff;
 }

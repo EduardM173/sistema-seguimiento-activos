@@ -37,7 +37,8 @@ import { FilterRow } from '../components/common/FilterRow';
 import type { FilterQuery } from '../components/common/FilterRow';
 
 import '../styles/assets.css';
-import { IconInfo, IconEdit, IconGrid } from '@/components/common/Icon';
+import { IconInfo, IconEdit, IconGrid, IconClock} from '@/components/common/Icon';
+import { useModalUrlSync } from '@/deeplink';
 
 const ESTADO_OPTIONS: { value: EstadoActivo; label: string }[] = [
   { value: 'OPERATIVO', label: 'Operativo' },
@@ -108,6 +109,30 @@ export default function AssetsPage() {
   const canAssignUsers = canAssignAssets || hasPermission('ASSET_ASSIGN_USER');
   const canAssignAreas = canAssignAssets || hasPermission('ASSET_ASSIGN_AREA');
   const canOpenAssignModal = canAssignUsers || canAssignAreas;
+
+  // Deeplink URL sync — each modal becomes addressable via `?modal=<id>`.
+  useModalUrlSync('create-asset', showCreateAssetModal, setShowCreateAssetModal);
+  useModalUrlSync('baja-asset', bajaModalOpen, setBajaModalOpen);
+  useModalUrlSync(
+    'edit-asset',
+    Boolean(editingAssetId),
+    (open) => { if (!open) setEditingAssetId(null); },
+  );
+  useModalUrlSync(
+    'view-asset',
+    Boolean(viewingAssetId),
+    (open) => { if (!open) setViewingAssetId(null); },
+  );
+  useModalUrlSync(
+    'asset-history',
+    Boolean(historyAssetId),
+    (open) => { if (!open) setHistoryAssetId(null); },
+  );
+  useModalUrlSync(
+    'assign-asset',
+    Boolean(assigningAsset),
+    (open) => { if (!open) setAssigningAsset(null); },
+  );
 
   useEffect(() => {
     async function loadCatalogs() {
@@ -698,7 +723,7 @@ export default function AssetsPage() {
               },
               {
                 label: 'Historial',
-                icon: '🕘',
+                icon: <IconClock/>,
                 onClick: (asset) => setHistoryAssetId(asset.id),
               },
             ];
@@ -938,15 +963,16 @@ export default function AssetsPage() {
           zIndex: 10000
         }} onClick={() => !bajaLoading && setBajaModalOpen(false)}>
           <div style={{
-            backgroundColor: 'white',
-            borderRadius: '8px',
+            backgroundColor: 'var(--modal-bg)',
+            borderRadius: 'var(--modal-radius)',
+            border: '1px solid var(--modal-border)',
             padding: '24px',
             width: '450px',
             maxWidth: '90%',
-            boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+            boxShadow: 'var(--shadow-lg)'
           }} onClick={e => e.stopPropagation()}>
             <h3 style={{ margin: '0 0 8px 0' }}>Dar de baja: {bajaAsset.nombre}</h3>
-            <p style={{ color: '#666', marginBottom: '20px', fontSize: '14px' }}>
+            <p style={{ color: 'var(--color-text-muted)', marginBottom: '20px', fontSize: '14px' }}>
               Esta acción cambiará el estado del activo a "Dado de baja"
             </p>
 
@@ -958,10 +984,12 @@ export default function AssetsPage() {
                 style={{
                   width: '100%',
                   padding: '10px',
-                  border: '1px solid #ccc',
-                  borderRadius: '4px',
+                  border: 'var(--input-border)',
+                  borderRadius: 'var(--input-radius)',
                   minHeight: '100px',
-                  fontFamily: 'inherit'
+                  fontFamily: 'inherit',
+                  background: 'var(--input-bg)',
+                  color: 'var(--color-text-bright)',
                 }}
                 placeholder="Ej: Equipo obsoleto, dañado, robado, pérdida, baja por antigüedad..."
                 value={bajaMotivo}
@@ -974,10 +1002,11 @@ export default function AssetsPage() {
               <button
                 style={{
                   padding: '8px 16px',
-                  backgroundColor: '#e5e7eb',
-                  border: 'none',
-                  borderRadius: '4px',
-                  cursor: bajaLoading ? 'not-allowed' : 'pointer'
+                  backgroundColor: 'var(--glass-bg)',
+                  border: '1px solid var(--glass-border)',
+                  borderRadius: 'var(--radius-base)',
+                  cursor: bajaLoading ? 'not-allowed' : 'pointer',
+                  color: 'var(--color-text)',
                 }}
                 onClick={() => setBajaModalOpen(false)}
                 disabled={bajaLoading}
@@ -987,10 +1016,10 @@ export default function AssetsPage() {
               <button
                 style={{
                   padding: '8px 16px',
-                  backgroundColor: '#dc2626',
+                  backgroundColor: 'var(--color-danger)',
                   color: 'white',
                   border: 'none',
-                  borderRadius: '4px',
+                  borderRadius: 'var(--radius-base)',
                   cursor: (bajaLoading || !bajaMotivo.trim()) ? 'not-allowed' : 'pointer',
                   opacity: (bajaLoading || !bajaMotivo.trim()) ? 0.6 : 1
                 }}

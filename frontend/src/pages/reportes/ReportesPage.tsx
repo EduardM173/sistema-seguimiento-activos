@@ -170,7 +170,7 @@ export const ReportesPage: React.FC = () => {
       }
 
       .reporte-fecha {
-        color: #999;
+        color: var(--color-text-muted);
         margin: 4px 0;
         font-size: 12px;
       }

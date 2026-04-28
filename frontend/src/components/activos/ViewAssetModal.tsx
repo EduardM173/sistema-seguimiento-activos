@@ -59,16 +59,16 @@ export default function ViewAssetModal({ assetId, open, onClose }: Props) {
     fontSize: '11px',
     fontWeight: 600,
     textTransform: 'uppercase',
-    color: '#6b7280',
+    color: 'var(--color-text-muted)',
     letterSpacing: '0.5px',
   };
   const valueStyle: React.CSSProperties = {
     fontSize: '14px',
-    color: '#1f2937',
+    color: 'var(--color-text-bright)',
     padding: '8px 12px',
-    background: '#f9fafb',
-    borderRadius: '6px',
-    border: '1px solid #e5e7eb',
+    background: 'var(--field-bg)',
+    borderRadius: 'var(--radius-base)',
+    border: '1px solid var(--field-border)',
     minHeight: '38px',
     display: 'flex',
     alignItems: 'center',
@@ -90,7 +90,7 @@ export default function ViewAssetModal({ assetId, open, onClose }: Props) {
       width="680px"
     >
       {loading || !asset ? (
-        <div style={{ padding: '40px', textAlign: 'center', color: '#6b7280' }}>
+        <div style={{ padding: '40px', textAlign: 'center', color: 'var(--color-text-muted)' }}>
           Cargando información del activo...
         </div>
       ) : (
@@ -138,10 +138,10 @@ export default function ViewAssetModal({ assetId, open, onClose }: Props) {
           {/* ========== PA4: INFORMACIÓN DE BAJA ========== */}
           {asset.estado === 'DADO_DE_BAJA' && (
             <div style={{
-              backgroundColor: '#fef2f2',
-              borderLeft: '4px solid #dc2626',
+              backgroundColor: 'var(--color-danger-light)',
+              borderLeft: '4px solid var(--color-danger)',
               padding: '12px 16px',
-              borderRadius: '8px',
+              borderRadius: 'var(--radius-base)',
               marginTop: '4px'
             }}>
               <div style={{
@@ -150,8 +150,8 @@ export default function ViewAssetModal({ assetId, open, onClose }: Props) {
                 gap: '12px'
               }}>
                 <div style={fieldStyle}>
-                  <span style={{ ...labelStyle, color: '#991b1b' }}>📅 Fecha de baja</span>
-                  <div style={{ ...valueStyle, backgroundColor: '#fff5f5' }}>
+                  <span style={{ ...labelStyle, color: 'var(--color-danger)' }}>📅 Fecha de baja</span>
+                  <div style={{ ...valueStyle, background: 'var(--field-bg-danger)' }}>
                     {asset.dadoDeBajaEn 
                       ? new Date(asset.dadoDeBajaEn).toLocaleDateString('es-ES', {
                           year: 'numeric',
@@ -164,8 +164,8 @@ export default function ViewAssetModal({ assetId, open, onClose }: Props) {
                   </div>
                 </div>
                 <div style={fieldStyle}>
-                  <span style={{ ...labelStyle, color: '#991b1b' }}>⚠️ Motivo del retiro</span>
-                  <div style={{ ...valueStyle, backgroundColor: '#fff5f5', fontStyle: 'italic' }}>
+                  <span style={{ ...labelStyle, color: 'var(--color-danger)' }}>⚠️ Motivo del retiro</span>
+                  <div style={{ ...valueStyle, background: 'var(--field-bg-danger)', fontStyle: 'italic' }}>
                     {asset.motivoBaja || 'No especificado'}
                   </div>
                 </div>

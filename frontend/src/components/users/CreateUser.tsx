@@ -273,7 +273,7 @@ export default function CreateUser({ open, onClose, userId }: CreateUserProps) {
       width="700px"
     >
       {loadingData ? (
-        <p style={{ color: '#64748b', margin: 0 }}>Cargando información del usuario...</p>
+        <p style={{ color: 'var(--color-text-muted)', margin: 0 }}>Cargando información del usuario...</p>
       ) : (
         <form onSubmit={handleSubmit} className="form-container" noValidate>
           <div className="form-grid">
@@ -300,7 +300,7 @@ export default function CreateUser({ open, onClose, userId }: CreateUserProps) {
                 <span
                   style={{
                     fontSize: '12px',
-                    color: '#64748b',
+                    color: 'var(--color-text-muted)',
                     background: '#f1f5f9',
                     borderRadius: '999px',
                     padding: '2px 8px',
@@ -363,7 +363,7 @@ export default function CreateUser({ open, onClose, userId }: CreateUserProps) {
                 <span
                   style={{
                     fontSize: '12px',
-                    color: '#64748b',
+                    color: 'var(--color-text-muted)',
                     background: '#f1f5f9',
                     borderRadius: '999px',
                     padding: '2px 8px',

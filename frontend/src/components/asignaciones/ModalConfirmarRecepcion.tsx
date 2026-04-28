@@ -64,7 +64,7 @@ export const ModalConfirmarRecepcion: React.FC<ModalConfirmarRecepcionProps> = (
           marginBottom: '16px' 
         }}>
           <p style={{ margin: 0, fontWeight: 'bold' }}>{asignacion?.activo?.nombre}</p>
-          <p style={{ margin: '4px 0 0 0', fontSize: '14px', color: '#6b7280' }}>
+          <p style={{ margin: '4px 0 0 0', fontSize: '14px', color: 'var(--color-text-muted)' }}>
             Código: {asignacion?.activo?.codigoActivo}
           </p>
         </div>

@@ -189,82 +189,59 @@
 
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ── Card — glassmorphism with spherical specular ──────── */
+/* ── Card — flat matte panel ─────────────────────── */
 .card {
   position: relative;
-  background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-base);
-  overflow: hidden;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  overflow: visible;
 }
 
-/* Top-edge highlight — rim light of glass panel */
-.card::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 1px;
-  background: linear-gradient(90deg,
-    transparent 5%,
-    rgba(255, 255, 255, 0.20) 30%,
-    rgba(255, 255, 255, 0.32) 55%,
-    rgba(255, 255, 255, 0.20) 75%,
-    transparent 95%
-  );
-  pointer-events: none;
-  z-index: 1;
+/* Optional bordered variant for surfaces that genuinely need framing. */
+.card--bordered {
+  background: var(--color-bg-2);
+  border-top: 1px solid var(--color-border-light);
 }
 
-/* Spherical specular lobe — upper-left ambient reflection */
-.card::after {
-  content: '';
-  position: absolute;
-  top: -25%;
-  left: -15%;
-  width: 58%;
-  height: 55%;
-  background: radial-gradient(ellipse at center,
-    rgba(255, 255, 255, 0.055) 0%,
-    transparent 68%
-  );
-  pointer-events: none;
-  border-radius: 50%;
-  z-index: 0;
+.card--surface {
+  background: var(--color-bg-2);
 }
 
-.card-sm  { padding: var(--space-3); }
-.card-md  { padding: var(--space-5); }
-.card-lg  { padding: var(--space-6); }
+.card-sm  { padding: var(--space-3) 0; }
+.card-md  { padding: var(--space-5) 0; }
+.card-lg  { padding: var(--space-6) 0; }
+
+.card--bordered.card-sm,
+.card--surface.card-sm  { padding: var(--space-3); }
+.card--bordered.card-md,
+.card--surface.card-md  { padding: var(--space-5); }
+.card--bordered.card-lg,
+.card--surface.card-lg  { padding: var(--space-6); }
 
 .card-hoverable {
-  transition:
-    box-shadow var(--transition-base),
-    border-color var(--transition-base),
-    transform var(--transition-base);
+  transition: color var(--transition-base);
   cursor: pointer;
 }
-.card-hoverable:hover {
-  box-shadow: var(--shadow-glow);
-  border-color: var(--glass-border-hover);
-  transform: translateY(-2px);
+.card-hoverable:hover .card-title {
+  color: var(--color-accent);
 }
 
 .card-title {
-  font-size: var(--font-size-base);
+  font-family: var(--font-family-heading);
+  font-size: 11px;
   font-weight: var(--font-weight-bold);
-  color: var(--color-text-bright);
-  margin: 0 0 var(--space-4);
-  position: relative;
-  z-index: 1;
+  color: var(--color-accent);
+  margin: 0 0 var(--space-3);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--color-border-light);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 .card-content {
-  color: var(--color-text-secondary);
-  position: relative;
-  z-index: 1;
+  color: var(--color-text);
 }
 
 /* ── Badge ─────────────────────────────────────────────── */
@@ -366,33 +343,14 @@
 
 .modal {
   position: relative;
-  background: rgba(13, 18, 34, 0.92);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-border-highlight);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-lg), 0 0 60px rgba(0, 0, 0, 0.60);
+  background: var(--modal-bg);
+  border: 1px solid var(--modal-border);
+  border-radius: 0;
+  box-shadow: var(--shadow-lg);
   width: 100%;
   max-width: 560px;
   max-height: 90vh;
-  overflow-y: auto;
   overflow: hidden;
-}
-
-/* Modal specular rim */
-.modal::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 1px;
-  background: linear-gradient(90deg,
-    transparent 5%,
-    rgba(255, 255, 255, 0.28) 40%,
-    rgba(255, 255, 255, 0.38) 60%,
-    transparent 95%
-  );
-  pointer-events: none;
-  z-index: 1;
 }
 
 .modal-header {
@@ -407,6 +365,7 @@
   font-size: var(--font-size-lg);
   font-weight: var(--font-weight-bold);
   color: var(--color-text-bright);
+  letter-spacing: 0.01em;
   margin: 0;
 }
 
@@ -440,18 +399,15 @@
   width: 36px;
   height: 36px;
   border: 2px solid rgba(255, 255, 255, 0.08);
-  border-top-color: var(--color-primary);
+  border-top-color: var(--color-accent);
   border-radius: var(--radius-full);
   animation: spin 0.9s linear infinite;
-  box-shadow: 0 0 14px var(--color-primary-glow);
 }
 
 .loading-spinner--fullscreen {
   position: fixed;
   inset: 0;
-  background: rgba(9, 13, 26, 0.85);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: rgba(10, 16, 28, 0.85);
   z-index: var(--z-overlay);
 }
 
@@ -463,16 +419,13 @@
   height: var(--input-height);
   padding: 0 var(--space-3);
   border: var(--input-border);
-  border-radius: var(--radius-md);
+  border-radius: 0;
   background: var(--input-bg);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  transition: border-color var(--transition-base), box-shadow var(--transition-base);
+  transition: border-color var(--transition-base);
 }
 
 .search-bar:focus-within {
   border: var(--input-border-focus);
-  box-shadow: var(--input-shadow-focus);
   background: var(--input-bg-focus);
 }
 
