@@ -45,6 +45,7 @@ export type MaterialMinAggregateOutputType = {
   stockActual: runtime.Decimal | null
   stockMinimo: runtime.Decimal | null
   categoriaId: string | null
+  areaId: string | null
   creadoEn: Date | null
   actualizadoEn: Date | null
 }
@@ -58,6 +59,7 @@ export type MaterialMaxAggregateOutputType = {
   stockActual: runtime.Decimal | null
   stockMinimo: runtime.Decimal | null
   categoriaId: string | null
+  areaId: string | null
   creadoEn: Date | null
   actualizadoEn: Date | null
 }
@@ -71,6 +73,7 @@ export type MaterialCountAggregateOutputType = {
   stockActual: number
   stockMinimo: number
   categoriaId: number
+  areaId: number
   creadoEn: number
   actualizadoEn: number
   _all: number
@@ -96,6 +99,7 @@ export type MaterialMinAggregateInputType = {
   stockActual?: true
   stockMinimo?: true
   categoriaId?: true
+  areaId?: true
   creadoEn?: true
   actualizadoEn?: true
 }
@@ -109,6 +113,7 @@ export type MaterialMaxAggregateInputType = {
   stockActual?: true
   stockMinimo?: true
   categoriaId?: true
+  areaId?: true
   creadoEn?: true
   actualizadoEn?: true
 }
@@ -122,6 +127,7 @@ export type MaterialCountAggregateInputType = {
   stockActual?: true
   stockMinimo?: true
   categoriaId?: true
+  areaId?: true
   creadoEn?: true
   actualizadoEn?: true
   _all?: true
@@ -222,6 +228,7 @@ export type MaterialGroupByOutputType = {
   stockActual: runtime.Decimal
   stockMinimo: runtime.Decimal
   categoriaId: string | null
+  areaId: string | null
   creadoEn: Date
   actualizadoEn: Date
   _count: MaterialCountAggregateOutputType | null
@@ -258,9 +265,11 @@ export type MaterialWhereInput = {
   stockActual?: Prisma.DecimalFilter<"Material"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   stockMinimo?: Prisma.DecimalFilter<"Material"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   categoriaId?: Prisma.StringNullableFilter<"Material"> | string | null
+  areaId?: Prisma.StringNullableFilter<"Material"> | string | null
   creadoEn?: Prisma.DateTimeFilter<"Material"> | Date | string
   actualizadoEn?: Prisma.DateTimeFilter<"Material"> | Date | string
   categoria?: Prisma.XOR<Prisma.CategoriaMaterialNullableScalarRelationFilter, Prisma.CategoriaMaterialWhereInput> | null
+  area?: Prisma.XOR<Prisma.AreaNullableScalarRelationFilter, Prisma.AreaWhereInput> | null
   movimientos?: Prisma.MovimientoInventarioListRelationFilter
   notificaciones?: Prisma.NotificacionListRelationFilter
 }
@@ -274,9 +283,11 @@ export type MaterialOrderByWithRelationInput = {
   stockActual?: Prisma.SortOrder
   stockMinimo?: Prisma.SortOrder
   categoriaId?: Prisma.SortOrderInput | Prisma.SortOrder
+  areaId?: Prisma.SortOrderInput | Prisma.SortOrder
   creadoEn?: Prisma.SortOrder
   actualizadoEn?: Prisma.SortOrder
   categoria?: Prisma.CategoriaMaterialOrderByWithRelationInput
+  area?: Prisma.AreaOrderByWithRelationInput
   movimientos?: Prisma.MovimientoInventarioOrderByRelationAggregateInput
   notificaciones?: Prisma.NotificacionOrderByRelationAggregateInput
 }
@@ -293,9 +304,11 @@ export type MaterialWhereUniqueInput = Prisma.AtLeast<{
   stockActual?: Prisma.DecimalFilter<"Material"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   stockMinimo?: Prisma.DecimalFilter<"Material"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   categoriaId?: Prisma.StringNullableFilter<"Material"> | string | null
+  areaId?: Prisma.StringNullableFilter<"Material"> | string | null
   creadoEn?: Prisma.DateTimeFilter<"Material"> | Date | string
   actualizadoEn?: Prisma.DateTimeFilter<"Material"> | Date | string
   categoria?: Prisma.XOR<Prisma.CategoriaMaterialNullableScalarRelationFilter, Prisma.CategoriaMaterialWhereInput> | null
+  area?: Prisma.XOR<Prisma.AreaNullableScalarRelationFilter, Prisma.AreaWhereInput> | null
   movimientos?: Prisma.MovimientoInventarioListRelationFilter
   notificaciones?: Prisma.NotificacionListRelationFilter
 }, "id" | "codigo">
@@ -309,6 +322,7 @@ export type MaterialOrderByWithAggregationInput = {
   stockActual?: Prisma.SortOrder
   stockMinimo?: Prisma.SortOrder
   categoriaId?: Prisma.SortOrderInput | Prisma.SortOrder
+  areaId?: Prisma.SortOrderInput | Prisma.SortOrder
   creadoEn?: Prisma.SortOrder
   actualizadoEn?: Prisma.SortOrder
   _count?: Prisma.MaterialCountOrderByAggregateInput
@@ -330,6 +344,7 @@ export type MaterialScalarWhereWithAggregatesInput = {
   stockActual?: Prisma.DecimalWithAggregatesFilter<"Material"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   stockMinimo?: Prisma.DecimalWithAggregatesFilter<"Material"> | runtime.Decimal | runtime.DecimalJsLike | number | string
   categoriaId?: Prisma.StringNullableWithAggregatesFilter<"Material"> | string | null
+  areaId?: Prisma.StringNullableWithAggregatesFilter<"Material"> | string | null
   creadoEn?: Prisma.DateTimeWithAggregatesFilter<"Material"> | Date | string
   actualizadoEn?: Prisma.DateTimeWithAggregatesFilter<"Material"> | Date | string
 }
@@ -345,6 +360,7 @@ export type MaterialCreateInput = {
   creadoEn?: Date | string
   actualizadoEn?: Date | string
   categoria?: Prisma.CategoriaMaterialCreateNestedOneWithoutMaterialesInput
+  area?: Prisma.AreaCreateNestedOneWithoutMaterialesInput
   movimientos?: Prisma.MovimientoInventarioCreateNestedManyWithoutMaterialInput
   notificaciones?: Prisma.NotificacionCreateNestedManyWithoutMaterialInput
 }
@@ -358,6 +374,7 @@ export type MaterialUncheckedCreateInput = {
   stockActual: runtime.Decimal | runtime.DecimalJsLike | number | string
   stockMinimo: runtime.Decimal | runtime.DecimalJsLike | number | string
   categoriaId?: string | null
+  areaId?: string | null
   creadoEn?: Date | string
   actualizadoEn?: Date | string
   movimientos?: Prisma.MovimientoInventarioUncheckedCreateNestedManyWithoutMaterialInput
@@ -375,6 +392,7 @@ export type MaterialUpdateInput = {
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   categoria?: Prisma.CategoriaMaterialUpdateOneWithoutMaterialesNestedInput
+  area?: Prisma.AreaUpdateOneWithoutMaterialesNestedInput
   movimientos?: Prisma.MovimientoInventarioUpdateManyWithoutMaterialNestedInput
   notificaciones?: Prisma.NotificacionUpdateManyWithoutMaterialNestedInput
 }
@@ -388,6 +406,7 @@ export type MaterialUncheckedUpdateInput = {
   stockActual?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   stockMinimo?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   categoriaId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  areaId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   movimientos?: Prisma.MovimientoInventarioUncheckedUpdateManyWithoutMaterialNestedInput
@@ -403,6 +422,7 @@ export type MaterialCreateManyInput = {
   stockActual: runtime.Decimal | runtime.DecimalJsLike | number | string
   stockMinimo: runtime.Decimal | runtime.DecimalJsLike | number | string
   categoriaId?: string | null
+  areaId?: string | null
   creadoEn?: Date | string
   actualizadoEn?: Date | string
 }
@@ -428,6 +448,7 @@ export type MaterialUncheckedUpdateManyInput = {
   stockActual?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   stockMinimo?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   categoriaId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  areaId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -451,6 +472,7 @@ export type MaterialCountOrderByAggregateInput = {
   stockActual?: Prisma.SortOrder
   stockMinimo?: Prisma.SortOrder
   categoriaId?: Prisma.SortOrder
+  areaId?: Prisma.SortOrder
   creadoEn?: Prisma.SortOrder
   actualizadoEn?: Prisma.SortOrder
 }
@@ -469,6 +491,7 @@ export type MaterialMaxOrderByAggregateInput = {
   stockActual?: Prisma.SortOrder
   stockMinimo?: Prisma.SortOrder
   categoriaId?: Prisma.SortOrder
+  areaId?: Prisma.SortOrder
   creadoEn?: Prisma.SortOrder
   actualizadoEn?: Prisma.SortOrder
 }
@@ -482,6 +505,7 @@ export type MaterialMinOrderByAggregateInput = {
   stockActual?: Prisma.SortOrder
   stockMinimo?: Prisma.SortOrder
   categoriaId?: Prisma.SortOrder
+  areaId?: Prisma.SortOrder
   creadoEn?: Prisma.SortOrder
   actualizadoEn?: Prisma.SortOrder
 }
@@ -499,6 +523,48 @@ export type MaterialScalarRelationFilter = {
 export type MaterialNullableScalarRelationFilter = {
   is?: Prisma.MaterialWhereInput | null
   isNot?: Prisma.MaterialWhereInput | null
+}
+
+export type MaterialCreateNestedManyWithoutAreaInput = {
+  create?: Prisma.XOR<Prisma.MaterialCreateWithoutAreaInput, Prisma.MaterialUncheckedCreateWithoutAreaInput> | Prisma.MaterialCreateWithoutAreaInput[] | Prisma.MaterialUncheckedCreateWithoutAreaInput[]
+  connectOrCreate?: Prisma.MaterialCreateOrConnectWithoutAreaInput | Prisma.MaterialCreateOrConnectWithoutAreaInput[]
+  createMany?: Prisma.MaterialCreateManyAreaInputEnvelope
+  connect?: Prisma.MaterialWhereUniqueInput | Prisma.MaterialWhereUniqueInput[]
+}
+
+export type MaterialUncheckedCreateNestedManyWithoutAreaInput = {
+  create?: Prisma.XOR<Prisma.MaterialCreateWithoutAreaInput, Prisma.MaterialUncheckedCreateWithoutAreaInput> | Prisma.MaterialCreateWithoutAreaInput[] | Prisma.MaterialUncheckedCreateWithoutAreaInput[]
+  connectOrCreate?: Prisma.MaterialCreateOrConnectWithoutAreaInput | Prisma.MaterialCreateOrConnectWithoutAreaInput[]
+  createMany?: Prisma.MaterialCreateManyAreaInputEnvelope
+  connect?: Prisma.MaterialWhereUniqueInput | Prisma.MaterialWhereUniqueInput[]
+}
+
+export type MaterialUpdateManyWithoutAreaNestedInput = {
+  create?: Prisma.XOR<Prisma.MaterialCreateWithoutAreaInput, Prisma.MaterialUncheckedCreateWithoutAreaInput> | Prisma.MaterialCreateWithoutAreaInput[] | Prisma.MaterialUncheckedCreateWithoutAreaInput[]
+  connectOrCreate?: Prisma.MaterialCreateOrConnectWithoutAreaInput | Prisma.MaterialCreateOrConnectWithoutAreaInput[]
+  upsert?: Prisma.MaterialUpsertWithWhereUniqueWithoutAreaInput | Prisma.MaterialUpsertWithWhereUniqueWithoutAreaInput[]
+  createMany?: Prisma.MaterialCreateManyAreaInputEnvelope
+  set?: Prisma.MaterialWhereUniqueInput | Prisma.MaterialWhereUniqueInput[]
+  disconnect?: Prisma.MaterialWhereUniqueInput | Prisma.MaterialWhereUniqueInput[]
+  delete?: Prisma.MaterialWhereUniqueInput | Prisma.MaterialWhereUniqueInput[]
+  connect?: Prisma.MaterialWhereUniqueInput | Prisma.MaterialWhereUniqueInput[]
+  update?: Prisma.MaterialUpdateWithWhereUniqueWithoutAreaInput | Prisma.MaterialUpdateWithWhereUniqueWithoutAreaInput[]
+  updateMany?: Prisma.MaterialUpdateManyWithWhereWithoutAreaInput | Prisma.MaterialUpdateManyWithWhereWithoutAreaInput[]
+  deleteMany?: Prisma.MaterialScalarWhereInput | Prisma.MaterialScalarWhereInput[]
+}
+
+export type MaterialUncheckedUpdateManyWithoutAreaNestedInput = {
+  create?: Prisma.XOR<Prisma.MaterialCreateWithoutAreaInput, Prisma.MaterialUncheckedCreateWithoutAreaInput> | Prisma.MaterialCreateWithoutAreaInput[] | Prisma.MaterialUncheckedCreateWithoutAreaInput[]
+  connectOrCreate?: Prisma.MaterialCreateOrConnectWithoutAreaInput | Prisma.MaterialCreateOrConnectWithoutAreaInput[]
+  upsert?: Prisma.MaterialUpsertWithWhereUniqueWithoutAreaInput | Prisma.MaterialUpsertWithWhereUniqueWithoutAreaInput[]
+  createMany?: Prisma.MaterialCreateManyAreaInputEnvelope
+  set?: Prisma.MaterialWhereUniqueInput | Prisma.MaterialWhereUniqueInput[]
+  disconnect?: Prisma.MaterialWhereUniqueInput | Prisma.MaterialWhereUniqueInput[]
+  delete?: Prisma.MaterialWhereUniqueInput | Prisma.MaterialWhereUniqueInput[]
+  connect?: Prisma.MaterialWhereUniqueInput | Prisma.MaterialWhereUniqueInput[]
+  update?: Prisma.MaterialUpdateWithWhereUniqueWithoutAreaInput | Prisma.MaterialUpdateWithWhereUniqueWithoutAreaInput[]
+  updateMany?: Prisma.MaterialUpdateManyWithWhereWithoutAreaInput | Prisma.MaterialUpdateManyWithWhereWithoutAreaInput[]
+  deleteMany?: Prisma.MaterialScalarWhereInput | Prisma.MaterialScalarWhereInput[]
 }
 
 export type MaterialCreateNestedManyWithoutCategoriaInput = {
@@ -581,6 +647,79 @@ export type MaterialUpdateOneWithoutNotificacionesNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.MaterialUpdateToOneWithWhereWithoutNotificacionesInput, Prisma.MaterialUpdateWithoutNotificacionesInput>, Prisma.MaterialUncheckedUpdateWithoutNotificacionesInput>
 }
 
+export type MaterialCreateWithoutAreaInput = {
+  id?: string
+  codigo: string
+  nombre: string
+  descripcion?: string | null
+  unidad: string
+  stockActual: runtime.Decimal | runtime.DecimalJsLike | number | string
+  stockMinimo: runtime.Decimal | runtime.DecimalJsLike | number | string
+  creadoEn?: Date | string
+  actualizadoEn?: Date | string
+  categoria?: Prisma.CategoriaMaterialCreateNestedOneWithoutMaterialesInput
+  movimientos?: Prisma.MovimientoInventarioCreateNestedManyWithoutMaterialInput
+  notificaciones?: Prisma.NotificacionCreateNestedManyWithoutMaterialInput
+}
+
+export type MaterialUncheckedCreateWithoutAreaInput = {
+  id?: string
+  codigo: string
+  nombre: string
+  descripcion?: string | null
+  unidad: string
+  stockActual: runtime.Decimal | runtime.DecimalJsLike | number | string
+  stockMinimo: runtime.Decimal | runtime.DecimalJsLike | number | string
+  categoriaId?: string | null
+  creadoEn?: Date | string
+  actualizadoEn?: Date | string
+  movimientos?: Prisma.MovimientoInventarioUncheckedCreateNestedManyWithoutMaterialInput
+  notificaciones?: Prisma.NotificacionUncheckedCreateNestedManyWithoutMaterialInput
+}
+
+export type MaterialCreateOrConnectWithoutAreaInput = {
+  where: Prisma.MaterialWhereUniqueInput
+  create: Prisma.XOR<Prisma.MaterialCreateWithoutAreaInput, Prisma.MaterialUncheckedCreateWithoutAreaInput>
+}
+
+export type MaterialCreateManyAreaInputEnvelope = {
+  data: Prisma.MaterialCreateManyAreaInput | Prisma.MaterialCreateManyAreaInput[]
+  skipDuplicates?: boolean
+}
+
+export type MaterialUpsertWithWhereUniqueWithoutAreaInput = {
+  where: Prisma.MaterialWhereUniqueInput
+  update: Prisma.XOR<Prisma.MaterialUpdateWithoutAreaInput, Prisma.MaterialUncheckedUpdateWithoutAreaInput>
+  create: Prisma.XOR<Prisma.MaterialCreateWithoutAreaInput, Prisma.MaterialUncheckedCreateWithoutAreaInput>
+}
+
+export type MaterialUpdateWithWhereUniqueWithoutAreaInput = {
+  where: Prisma.MaterialWhereUniqueInput
+  data: Prisma.XOR<Prisma.MaterialUpdateWithoutAreaInput, Prisma.MaterialUncheckedUpdateWithoutAreaInput>
+}
+
+export type MaterialUpdateManyWithWhereWithoutAreaInput = {
+  where: Prisma.MaterialScalarWhereInput
+  data: Prisma.XOR<Prisma.MaterialUpdateManyMutationInput, Prisma.MaterialUncheckedUpdateManyWithoutAreaInput>
+}
+
+export type MaterialScalarWhereInput = {
+  AND?: Prisma.MaterialScalarWhereInput | Prisma.MaterialScalarWhereInput[]
+  OR?: Prisma.MaterialScalarWhereInput[]
+  NOT?: Prisma.MaterialScalarWhereInput | Prisma.MaterialScalarWhereInput[]
+  id?: Prisma.StringFilter<"Material"> | string
+  codigo?: Prisma.StringFilter<"Material"> | string
+  nombre?: Prisma.StringFilter<"Material"> | string
+  descripcion?: Prisma.StringNullableFilter<"Material"> | string | null
+  unidad?: Prisma.StringFilter<"Material"> | string
+  stockActual?: Prisma.DecimalFilter<"Material"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  stockMinimo?: Prisma.DecimalFilter<"Material"> | runtime.Decimal | runtime.DecimalJsLike | number | string
+  categoriaId?: Prisma.StringNullableFilter<"Material"> | string | null
+  areaId?: Prisma.StringNullableFilter<"Material"> | string | null
+  creadoEn?: Prisma.DateTimeFilter<"Material"> | Date | string
+  actualizadoEn?: Prisma.DateTimeFilter<"Material"> | Date | string
+}
+
 export type MaterialCreateWithoutCategoriaInput = {
   id?: string
   codigo: string
@@ -591,6 +730,7 @@ export type MaterialCreateWithoutCategoriaInput = {
   stockMinimo: runtime.Decimal | runtime.DecimalJsLike | number | string
   creadoEn?: Date | string
   actualizadoEn?: Date | string
+  area?: Prisma.AreaCreateNestedOneWithoutMaterialesInput
   movimientos?: Prisma.MovimientoInventarioCreateNestedManyWithoutMaterialInput
   notificaciones?: Prisma.NotificacionCreateNestedManyWithoutMaterialInput
 }
@@ -603,6 +743,7 @@ export type MaterialUncheckedCreateWithoutCategoriaInput = {
   unidad: string
   stockActual: runtime.Decimal | runtime.DecimalJsLike | number | string
   stockMinimo: runtime.Decimal | runtime.DecimalJsLike | number | string
+  areaId?: string | null
   creadoEn?: Date | string
   actualizadoEn?: Date | string
   movimientos?: Prisma.MovimientoInventarioUncheckedCreateNestedManyWithoutMaterialInput
@@ -635,22 +776,6 @@ export type MaterialUpdateManyWithWhereWithoutCategoriaInput = {
   data: Prisma.XOR<Prisma.MaterialUpdateManyMutationInput, Prisma.MaterialUncheckedUpdateManyWithoutCategoriaInput>
 }
 
-export type MaterialScalarWhereInput = {
-  AND?: Prisma.MaterialScalarWhereInput | Prisma.MaterialScalarWhereInput[]
-  OR?: Prisma.MaterialScalarWhereInput[]
-  NOT?: Prisma.MaterialScalarWhereInput | Prisma.MaterialScalarWhereInput[]
-  id?: Prisma.StringFilter<"Material"> | string
-  codigo?: Prisma.StringFilter<"Material"> | string
-  nombre?: Prisma.StringFilter<"Material"> | string
-  descripcion?: Prisma.StringNullableFilter<"Material"> | string | null
-  unidad?: Prisma.StringFilter<"Material"> | string
-  stockActual?: Prisma.DecimalFilter<"Material"> | runtime.Decimal | runtime.DecimalJsLike | number | string
-  stockMinimo?: Prisma.DecimalFilter<"Material"> | runtime.Decimal | runtime.DecimalJsLike | number | string
-  categoriaId?: Prisma.StringNullableFilter<"Material"> | string | null
-  creadoEn?: Prisma.DateTimeFilter<"Material"> | Date | string
-  actualizadoEn?: Prisma.DateTimeFilter<"Material"> | Date | string
-}
-
 export type MaterialCreateWithoutMovimientosInput = {
   id?: string
   codigo: string
@@ -662,6 +787,7 @@ export type MaterialCreateWithoutMovimientosInput = {
   creadoEn?: Date | string
   actualizadoEn?: Date | string
   categoria?: Prisma.CategoriaMaterialCreateNestedOneWithoutMaterialesInput
+  area?: Prisma.AreaCreateNestedOneWithoutMaterialesInput
   notificaciones?: Prisma.NotificacionCreateNestedManyWithoutMaterialInput
 }
 
@@ -674,6 +800,7 @@ export type MaterialUncheckedCreateWithoutMovimientosInput = {
   stockActual: runtime.Decimal | runtime.DecimalJsLike | number | string
   stockMinimo: runtime.Decimal | runtime.DecimalJsLike | number | string
   categoriaId?: string | null
+  areaId?: string | null
   creadoEn?: Date | string
   actualizadoEn?: Date | string
   notificaciones?: Prisma.NotificacionUncheckedCreateNestedManyWithoutMaterialInput
@@ -706,6 +833,7 @@ export type MaterialUpdateWithoutMovimientosInput = {
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   categoria?: Prisma.CategoriaMaterialUpdateOneWithoutMaterialesNestedInput
+  area?: Prisma.AreaUpdateOneWithoutMaterialesNestedInput
   notificaciones?: Prisma.NotificacionUpdateManyWithoutMaterialNestedInput
 }
 
@@ -718,6 +846,7 @@ export type MaterialUncheckedUpdateWithoutMovimientosInput = {
   stockActual?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   stockMinimo?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   categoriaId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  areaId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   notificaciones?: Prisma.NotificacionUncheckedUpdateManyWithoutMaterialNestedInput
@@ -734,6 +863,7 @@ export type MaterialCreateWithoutNotificacionesInput = {
   creadoEn?: Date | string
   actualizadoEn?: Date | string
   categoria?: Prisma.CategoriaMaterialCreateNestedOneWithoutMaterialesInput
+  area?: Prisma.AreaCreateNestedOneWithoutMaterialesInput
   movimientos?: Prisma.MovimientoInventarioCreateNestedManyWithoutMaterialInput
 }
 
@@ -746,6 +876,7 @@ export type MaterialUncheckedCreateWithoutNotificacionesInput = {
   stockActual: runtime.Decimal | runtime.DecimalJsLike | number | string
   stockMinimo: runtime.Decimal | runtime.DecimalJsLike | number | string
   categoriaId?: string | null
+  areaId?: string | null
   creadoEn?: Date | string
   actualizadoEn?: Date | string
   movimientos?: Prisma.MovimientoInventarioUncheckedCreateNestedManyWithoutMaterialInput
@@ -778,6 +909,7 @@ export type MaterialUpdateWithoutNotificacionesInput = {
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   categoria?: Prisma.CategoriaMaterialUpdateOneWithoutMaterialesNestedInput
+  area?: Prisma.AreaUpdateOneWithoutMaterialesNestedInput
   movimientos?: Prisma.MovimientoInventarioUpdateManyWithoutMaterialNestedInput
 }
 
@@ -790,9 +922,66 @@ export type MaterialUncheckedUpdateWithoutNotificacionesInput = {
   stockActual?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   stockMinimo?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   categoriaId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  areaId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   movimientos?: Prisma.MovimientoInventarioUncheckedUpdateManyWithoutMaterialNestedInput
+}
+
+export type MaterialCreateManyAreaInput = {
+  id?: string
+  codigo: string
+  nombre: string
+  descripcion?: string | null
+  unidad: string
+  stockActual: runtime.Decimal | runtime.DecimalJsLike | number | string
+  stockMinimo: runtime.Decimal | runtime.DecimalJsLike | number | string
+  categoriaId?: string | null
+  creadoEn?: Date | string
+  actualizadoEn?: Date | string
+}
+
+export type MaterialUpdateWithoutAreaInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  codigo?: Prisma.StringFieldUpdateOperationsInput | string
+  nombre?: Prisma.StringFieldUpdateOperationsInput | string
+  descripcion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  unidad?: Prisma.StringFieldUpdateOperationsInput | string
+  stockActual?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  stockMinimo?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  categoria?: Prisma.CategoriaMaterialUpdateOneWithoutMaterialesNestedInput
+  movimientos?: Prisma.MovimientoInventarioUpdateManyWithoutMaterialNestedInput
+  notificaciones?: Prisma.NotificacionUpdateManyWithoutMaterialNestedInput
+}
+
+export type MaterialUncheckedUpdateWithoutAreaInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  codigo?: Prisma.StringFieldUpdateOperationsInput | string
+  nombre?: Prisma.StringFieldUpdateOperationsInput | string
+  descripcion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  unidad?: Prisma.StringFieldUpdateOperationsInput | string
+  stockActual?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  stockMinimo?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  categoriaId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  movimientos?: Prisma.MovimientoInventarioUncheckedUpdateManyWithoutMaterialNestedInput
+  notificaciones?: Prisma.NotificacionUncheckedUpdateManyWithoutMaterialNestedInput
+}
+
+export type MaterialUncheckedUpdateManyWithoutAreaInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  codigo?: Prisma.StringFieldUpdateOperationsInput | string
+  nombre?: Prisma.StringFieldUpdateOperationsInput | string
+  descripcion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  unidad?: Prisma.StringFieldUpdateOperationsInput | string
+  stockActual?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  stockMinimo?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  categoriaId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type MaterialCreateManyCategoriaInput = {
@@ -803,6 +992,7 @@ export type MaterialCreateManyCategoriaInput = {
   unidad: string
   stockActual: runtime.Decimal | runtime.DecimalJsLike | number | string
   stockMinimo: runtime.Decimal | runtime.DecimalJsLike | number | string
+  areaId?: string | null
   creadoEn?: Date | string
   actualizadoEn?: Date | string
 }
@@ -817,6 +1007,7 @@ export type MaterialUpdateWithoutCategoriaInput = {
   stockMinimo?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  area?: Prisma.AreaUpdateOneWithoutMaterialesNestedInput
   movimientos?: Prisma.MovimientoInventarioUpdateManyWithoutMaterialNestedInput
   notificaciones?: Prisma.NotificacionUpdateManyWithoutMaterialNestedInput
 }
@@ -829,6 +1020,7 @@ export type MaterialUncheckedUpdateWithoutCategoriaInput = {
   unidad?: Prisma.StringFieldUpdateOperationsInput | string
   stockActual?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   stockMinimo?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  areaId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   movimientos?: Prisma.MovimientoInventarioUncheckedUpdateManyWithoutMaterialNestedInput
@@ -843,6 +1035,7 @@ export type MaterialUncheckedUpdateManyWithoutCategoriaInput = {
   unidad?: Prisma.StringFieldUpdateOperationsInput | string
   stockActual?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
   stockMinimo?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  areaId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -896,9 +1089,11 @@ export type MaterialSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs
   stockActual?: boolean
   stockMinimo?: boolean
   categoriaId?: boolean
+  areaId?: boolean
   creadoEn?: boolean
   actualizadoEn?: boolean
   categoria?: boolean | Prisma.Material$categoriaArgs<ExtArgs>
+  area?: boolean | Prisma.Material$areaArgs<ExtArgs>
   movimientos?: boolean | Prisma.Material$movimientosArgs<ExtArgs>
   notificaciones?: boolean | Prisma.Material$notificacionesArgs<ExtArgs>
   _count?: boolean | Prisma.MaterialCountOutputTypeDefaultArgs<ExtArgs>
@@ -913,9 +1108,11 @@ export type MaterialSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exte
   stockActual?: boolean
   stockMinimo?: boolean
   categoriaId?: boolean
+  areaId?: boolean
   creadoEn?: boolean
   actualizadoEn?: boolean
   categoria?: boolean | Prisma.Material$categoriaArgs<ExtArgs>
+  area?: boolean | Prisma.Material$areaArgs<ExtArgs>
 }, ExtArgs["result"]["material"]>
 
 export type MaterialSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -927,9 +1124,11 @@ export type MaterialSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exte
   stockActual?: boolean
   stockMinimo?: boolean
   categoriaId?: boolean
+  areaId?: boolean
   creadoEn?: boolean
   actualizadoEn?: boolean
   categoria?: boolean | Prisma.Material$categoriaArgs<ExtArgs>
+  area?: boolean | Prisma.Material$areaArgs<ExtArgs>
 }, ExtArgs["result"]["material"]>
 
 export type MaterialSelectScalar = {
@@ -941,28 +1140,33 @@ export type MaterialSelectScalar = {
   stockActual?: boolean
   stockMinimo?: boolean
   categoriaId?: boolean
+  areaId?: boolean
   creadoEn?: boolean
   actualizadoEn?: boolean
 }
 
-export type MaterialOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "codigo" | "nombre" | "descripcion" | "unidad" | "stockActual" | "stockMinimo" | "categoriaId" | "creadoEn" | "actualizadoEn", ExtArgs["result"]["material"]>
+export type MaterialOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "codigo" | "nombre" | "descripcion" | "unidad" | "stockActual" | "stockMinimo" | "categoriaId" | "areaId" | "creadoEn" | "actualizadoEn", ExtArgs["result"]["material"]>
 export type MaterialInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   categoria?: boolean | Prisma.Material$categoriaArgs<ExtArgs>
+  area?: boolean | Prisma.Material$areaArgs<ExtArgs>
   movimientos?: boolean | Prisma.Material$movimientosArgs<ExtArgs>
   notificaciones?: boolean | Prisma.Material$notificacionesArgs<ExtArgs>
   _count?: boolean | Prisma.MaterialCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type MaterialIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   categoria?: boolean | Prisma.Material$categoriaArgs<ExtArgs>
+  area?: boolean | Prisma.Material$areaArgs<ExtArgs>
 }
 export type MaterialIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   categoria?: boolean | Prisma.Material$categoriaArgs<ExtArgs>
+  area?: boolean | Prisma.Material$areaArgs<ExtArgs>
 }
 
 export type $MaterialPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "Material"
   objects: {
     categoria: Prisma.$CategoriaMaterialPayload<ExtArgs> | null
+    area: Prisma.$AreaPayload<ExtArgs> | null
     movimientos: Prisma.$MovimientoInventarioPayload<ExtArgs>[]
     notificaciones: Prisma.$NotificacionPayload<ExtArgs>[]
   }
@@ -975,6 +1179,7 @@ export type $MaterialPayload<ExtArgs extends runtime.Types.Extensions.InternalAr
     stockActual: runtime.Decimal
     stockMinimo: runtime.Decimal
     categoriaId: string | null
+    areaId: string | null
     creadoEn: Date
     actualizadoEn: Date
   }, ExtArgs["result"]["material"]>
@@ -1372,6 +1577,7 @@ readonly fields: MaterialFieldRefs;
 export interface Prisma__MaterialClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   categoria<T extends Prisma.Material$categoriaArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Material$categoriaArgs<ExtArgs>>): Prisma.Prisma__CategoriaMaterialClient<runtime.Types.Result.GetResult<Prisma.$CategoriaMaterialPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  area<T extends Prisma.Material$areaArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Material$areaArgs<ExtArgs>>): Prisma.Prisma__AreaClient<runtime.Types.Result.GetResult<Prisma.$AreaPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   movimientos<T extends Prisma.Material$movimientosArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Material$movimientosArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MovimientoInventarioPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   notificaciones<T extends Prisma.Material$notificacionesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Material$notificacionesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$NotificacionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
@@ -1411,6 +1617,7 @@ export interface MaterialFieldRefs {
   readonly stockActual: Prisma.FieldRef<"Material", 'Decimal'>
   readonly stockMinimo: Prisma.FieldRef<"Material", 'Decimal'>
   readonly categoriaId: Prisma.FieldRef<"Material", 'String'>
+  readonly areaId: Prisma.FieldRef<"Material", 'String'>
   readonly creadoEn: Prisma.FieldRef<"Material", 'DateTime'>
   readonly actualizadoEn: Prisma.FieldRef<"Material", 'DateTime'>
 }
@@ -1830,6 +2037,25 @@ export type Material$categoriaArgs<ExtArgs extends runtime.Types.Extensions.Inte
    */
   include?: Prisma.CategoriaMaterialInclude<ExtArgs> | null
   where?: Prisma.CategoriaMaterialWhereInput
+}
+
+/**
+ * Material.area
+ */
+export type Material$areaArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Area
+   */
+  select?: Prisma.AreaSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Area
+   */
+  omit?: Prisma.AreaOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.AreaInclude<ExtArgs> | null
+  where?: Prisma.AreaWhereInput
 }
 
 /**

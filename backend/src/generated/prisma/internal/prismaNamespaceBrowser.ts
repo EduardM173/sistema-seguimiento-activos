@@ -276,6 +276,7 @@ export const MaterialScalarFieldEnum = {
   stockActual: 'stockActual',
   stockMinimo: 'stockMinimo',
   categoriaId: 'categoriaId',
+  areaId: 'areaId',
   creadoEn: 'creadoEn',
   actualizadoEn: 'actualizadoEn'
 } as const

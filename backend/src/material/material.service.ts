@@ -46,6 +46,16 @@ export class MaterialService {
         }
       }
 
+      if (createMaterialDTO.areaId) {
+        const area = await this.prisma.area.findUnique({
+          where: { id: createMaterialDTO.areaId },
+        });
+
+        if (!area) {
+          throw new BadRequestException('El area especificada no existe');
+        }
+      }
+
       // Convertir strings a números si es necesario
       const stockActual =
         typeof createMaterialDTO.stockActual === 'string'
@@ -72,6 +82,7 @@ export class MaterialService {
           stockActual,
           stockMinimo,
           categoriaId: createMaterialDTO.categoriaId,
+          areaId: createMaterialDTO.areaId,
         },
       });
 
@@ -80,6 +91,7 @@ export class MaterialService {
         where: { id: material.id },
         include: {
           categoria: true,
+          area: true,
         },
       });
 
@@ -103,7 +115,7 @@ export class MaterialService {
   /**
    * Obtener todos los materiales con filtros opcionales
    */
-  async findAll(filters?: SearchMaterialDTO): Promise<{
+  async findAll(filters?: SearchMaterialDTO, user?: any): Promise<{
     data: MaterialResponseDTO[];
     total: number;
     page: number;
@@ -133,6 +145,37 @@ export class MaterialService {
         where.categoriaId = filters.categoriaId;
       }
 
+      if (filters?.areaId) {
+        where.areaId = filters.areaId;
+      }
+
+      const isAreaManager = this.isAreaManagerRole(user?.rol);
+
+      if (isAreaManager && user?.id) {
+        const userScope = await this.prisma.usuario.findUnique({
+          where: { id: user.id },
+          select: {
+            areaId: true,
+            areasGestionadas: {
+              select: { id: true },
+            },
+          },
+        });
+
+        const scopedAreaIds = [
+          userScope?.areaId ?? null,
+          ...(userScope?.areasGestionadas.map((area) => area.id) ?? []),
+        ].filter((value, index, values): value is string => Boolean(value) && values.indexOf(value) === index);
+
+        if (scopedAreaIds.length === 1) {
+          where.areaId = scopedAreaIds[0];
+        } else if (scopedAreaIds.length > 1) {
+          where.areaId = { in: scopedAreaIds };
+        } else {
+          where.areaId = '__AREA_SIN_ACCESO__';
+        }
+      }
+
       const orderDirection: Prisma.SortOrder =
         filters?.sortType === MaterialSortType.ASC ? 'asc' : 'desc';
 
@@ -149,7 +192,9 @@ export class MaterialService {
                   ? { stockMinimo: orderDirection }
                   : filters?.sortBy === MaterialSortBy.UNIDAD
                     ? { unidad: orderDirection }
-                    : { creadoEn: orderDirection };
+                    : filters?.sortBy === MaterialSortBy.AREA
+                      ? { area: { nombre: orderDirection } }
+                      : { creadoEn: orderDirection };
 
       // Prisma no permite comparar columnas (stockActual vs stockMinimo) directamente en `where`.
       // Para mantener el filtro CRITICO/NORMAL sin tocar BD, filtramos en backend y luego paginamos.
@@ -164,6 +209,7 @@ export class MaterialService {
           orderBy,
           include: {
             categoria: true,
+            area: true,
           },
         }),
         this.prisma.material.count({ where }),
@@ -210,6 +256,7 @@ export class MaterialService {
         where: { id },
         include: {
           categoria: true,
+          area: true,
         },
       });
 
@@ -258,12 +305,23 @@ export class MaterialService {
         }
       }
 
+      if (updateMaterialDTO.areaId) {
+        const area = await this.prisma.area.findUnique({
+          where: { id: updateMaterialDTO.areaId },
+        });
+
+        if (!area) {
+          throw new BadRequestException('El area especificada no existe');
+        }
+      }
+
       // Preparar datos a actualizar
       const data: any = {};
       if (updateMaterialDTO.nombre !== undefined) data.nombre = updateMaterialDTO.nombre;
       if (updateMaterialDTO.descripcion !== undefined) data.descripcion = updateMaterialDTO.descripcion;
       if (updateMaterialDTO.unidad !== undefined) data.unidad = updateMaterialDTO.unidad;
       if (updateMaterialDTO.categoriaId !== undefined) data.categoriaId = updateMaterialDTO.categoriaId;
+      if (updateMaterialDTO.areaId !== undefined) data.areaId = updateMaterialDTO.areaId || null;
 
       if (updateMaterialDTO.stockActual !== undefined) {
         const actualValue =
@@ -290,6 +348,10 @@ export class MaterialService {
       const updatedMaterial = await this.prisma.material.update({
         where: { id },
         data,
+        include: {
+          categoria: true,
+          area: true,
+        },
       });
 
       return this.mapMaterialToDTO(updatedMaterial);
@@ -384,6 +446,13 @@ export class MaterialService {
       stockMinimo: Number(material.stockMinimo),
       categoriaId: material.categoriaId,
       categoria: material.categoria,
+      areaId: material.areaId,
+      area: material.area
+        ? {
+            id: material.area.id,
+            nombre: material.area.nombre,
+          }
+        : null,
       creadoEn: material.creadoEn,
       actualizadoEn: material.actualizadoEn,
     };
@@ -744,12 +813,30 @@ async getHistory(
         unidad: unidades[index % unidades.length],
         stockActual,
         stockMinimo,
-        categoriaId: categoria?.id,
+          categoriaId: categoria?.id,
       };
     });
 
     const result = await this.prisma.material.createMany({ data });
     return result.count;
+  }
+
+  private isAreaManagerRole(roleName?: string | null): boolean {
+    if (!roleName) {
+      return false;
+    }
+
+    const normalized = roleName
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[_\s]+/g, ' ')
+      .trim()
+      .toUpperCase();
+
+    return (
+      normalized === 'RESPONSABLE DE AREA' ||
+      normalized === 'RESPONSABLE AREA'
+    );
   }
 
   async deleteFakeBulk() {

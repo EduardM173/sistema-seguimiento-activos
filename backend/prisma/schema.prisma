@@ -147,6 +147,7 @@ model Area {
   encargado      Usuario?           @relation("AreaEncargado", fields: [encargadoId], references: [id])
   usuarios       Usuario[]
   activos        Activo[]
+  materiales     Material[]
   asignaciones   AsignacionActivo[]
   notificaciones Notificacion[]
 
@@ -339,14 +340,17 @@ model Material {
   stockActual   Decimal  @db.Decimal(12, 2)
   stockMinimo   Decimal  @db.Decimal(12, 2)
   categoriaId   String?
+  areaId        String?
   creadoEn      DateTime @default(now())
   actualizadoEn DateTime @updatedAt
 
   categoria      CategoriaMaterial?     @relation(fields: [categoriaId], references: [id])
+  area           Area?                  @relation(fields: [areaId], references: [id])
   movimientos    MovimientoInventario[]
   notificaciones Notificacion[]
 
   @@index([categoriaId])
+  @@index([areaId])
   @@index([nombre])
   @@map("materiales")
 }
