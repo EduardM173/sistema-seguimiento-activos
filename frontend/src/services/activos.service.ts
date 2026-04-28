@@ -125,12 +125,8 @@ export const activosService = {
   // ========== NUEVO MÉTODO PARA HU23 ==========
   // Dar de baja un activo (PROSIN-307, PROSIN-308)
   darDeBaja: async (id: string, motivo: string) => {
-    try {
-      const response = await apiClient.post<ApiResponse<Activo>>(`/assets/${id}/baja`, { motivo });
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+  const response = await apiClient.post<ApiResponse<Activo>>(`/assets/${id}/disable`, { motivo });
+  return response.data;
   },
   // ==========================================
 };

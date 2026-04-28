@@ -78,7 +78,6 @@ export default function ViewAssetModal({ assetId, open, onClose }: Props) {
   function ubicacionLabel() {
     if (!asset?.ubicacion) return emptyValue;
     const parts = [asset.ubicacion.nombre];
-    // ubicacion only has id + nombre from AssetDetail
     return parts.filter(Boolean).join(' — ');
   }
 
@@ -135,6 +134,45 @@ export default function ViewAssetModal({ assetId, open, onClose }: Props) {
               <div style={valueStyle}>{ESTADO_LABEL[asset.estado as EstadoActivo] ?? asset.estado}</div>
             </div>
           </div>
+
+          {/* ========== PA4: INFORMACIÓN DE BAJA ========== */}
+          {asset.estado === 'DADO_DE_BAJA' && (
+            <div style={{
+              backgroundColor: '#fef2f2',
+              borderLeft: '4px solid #dc2626',
+              padding: '12px 16px',
+              borderRadius: '8px',
+              marginTop: '4px'
+            }}>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: '12px'
+              }}>
+                <div style={fieldStyle}>
+                  <span style={{ ...labelStyle, color: '#991b1b' }}>📅 Fecha de baja</span>
+                  <div style={{ ...valueStyle, backgroundColor: '#fff5f5' }}>
+                    {asset.dadoDeBajaEn 
+                      ? new Date(asset.dadoDeBajaEn).toLocaleDateString('es-ES', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })
+                      : 'No registrada'}
+                  </div>
+                </div>
+                <div style={fieldStyle}>
+                  <span style={{ ...labelStyle, color: '#991b1b' }}>⚠️ Motivo del retiro</span>
+                  <div style={{ ...valueStyle, backgroundColor: '#fff5f5', fontStyle: 'italic' }}>
+                    {asset.motivoBaja || 'No especificado'}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          {/* ========================================== */}
 
           {/* Ubicación + Área */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>

@@ -205,6 +205,7 @@ model Activo {
   creadoEn            DateTime     @default(now())
   actualizadoEn       DateTime     @updatedAt
   dadoDeBajaEn        DateTime?
+  motivoBaja          String?      // LÍNEA QUE AGREGADA PARA MOTIVOBAJA
 
   categoria         CategoriaActivo @relation(fields: [categoriaId], references: [id])
   ubicacion         Ubicacion?      @relation(fields: [ubicacionId], references: [id])

@@ -87,7 +87,7 @@ export interface Activo {
   updatedAt: Date;
   
   // NUEVOS CAMPOS PARA BAJA DE ACTIVO (HU23)
-  fechaBaja?: Date;
+  fechaBaja?: string | Date;  // ← Cambiado a string | Date para flexibilidad
   motivoBaja?: string;
 }
 
