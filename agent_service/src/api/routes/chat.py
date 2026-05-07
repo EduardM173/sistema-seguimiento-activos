@@ -253,7 +253,8 @@ async def send_message(session_id: str, body: SendMessageRequest) -> SendMessage
     _db_persist_message(user_msg)
     
     # Fetch the UserStateAgent to update ephemeral conversational state
-    from ..dependencies import get_chat_reasoning_agent, get_user_state_agent
+    from ..dependencies import get_chat_reasoning_agent, get_user_state_agent, get_deeplink_agent
+    from ...config import settings
     
     try:
         user_state_agent = get_user_state_agent()
@@ -390,6 +391,33 @@ async def send_message(session_id: str, body: SendMessageRequest) -> SendMessage
         new_facts_count,
     )
 
+    # Deeplink annotation: weave [[link:<slug>]] tokens into the answer
+    # using the frontend navigation map. Failures here must NOT break the
+    # chat response — the agent is best-effort.
+    annotated_text = assistant_msg.content
+    deeplinks_payload: dict[str, dict[str, Any]] = {}
+    if settings.deeplink_enabled:
+        try:
+            permissions = (body.context or {}).get("permissions") if body.context else None
+            if permissions is not None and not isinstance(permissions, list):
+                permissions = None
+            deeplink_agent = get_deeplink_agent()
+            annotation = await deeplink_agent.annotate(
+                user_message=body.content,
+                assistant_reply=assistant_msg.content,
+                permissions=permissions,
+            )
+            annotated_text = annotation.text
+            deeplinks_payload = {
+                slug: sug.to_dict() for slug, sug in annotation.deeplinks.items()
+            }
+            if deeplinks_payload:
+                # Persist the annotated text so reloaded history keeps the tokens.
+                assistant_msg.content = annotated_text
+                _db_persist_message(assistant_msg)
+        except Exception as e:  # pragma: no cover - defensive
+            logger.warning("DeeplinkAgent failed for session %s: %s", session_id, e)
+
     log_event("chat.request.completed", {
         "session_id": session_id,
         "request_id": request_id,
@@ -407,7 +435,7 @@ async def send_message(session_id: str, body: SendMessageRequest) -> SendMessage
     return SendMessageResponse(
         message_id=assistant_msg.id,
         role=MessageRole.ASSISTANT,
-        content=assistant_msg.content,
+        content=annotated_text,
         dsl_conclusion=getattr(result, 'dsl_conclusion', ''),
         proof_trace=result.proof_trace,
         facts_used=assistant_msg.facts_used,
@@ -415,6 +443,7 @@ async def send_message(session_id: str, body: SendMessageRequest) -> SendMessage
         z3_validations=assistant_msg.z3_validations,
         is_conjecture=getattr(result, "is_conjecture", False),
         new_facts_count=new_facts_count,
+        deeplinks=deeplinks_payload,
     )
 
 

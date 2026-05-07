@@ -222,6 +222,12 @@ class SendMessageResponse(BaseModel):
     # New facts discovered in this turn
     new_facts_count: int
 
+    # Deeplinks
+    # `content` may contain `[[link:<slug>]]` tokens. Each slug is a key in
+    # `deeplinks` whose value describes the URL/label the frontend should
+    # render. Empty when no deeplink applies.
+    deeplinks: dict[str, dict[str, Any]] = Field(default_factory=dict)
+
 
 class EndSessionRequest(BaseModel):
     """Request to end a chat session with feedback."""

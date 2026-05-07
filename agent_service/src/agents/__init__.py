@@ -24,6 +24,7 @@ from .tools import (
 from .reasoning_agent import ReasoningAgent, ReasoningResult
 from .chat_reasoning_agent import ChatReasoningAgent, ChatReasoningResult
 from .user_state_agent import UserStateAgent
+from .deeplink_agent import DeeplinkAgent, DeeplinkAnnotationResult, DeeplinkSuggestion
 from .ingestion_agents import (
     ChatIngestionAgent,
     DocumentIngestionAgent,
@@ -99,6 +100,9 @@ __all__ = [
     "ChatReasoningAgent",
     "ChatReasoningResult",
     "UserStateAgent",
+    "DeeplinkAgent",
+    "DeeplinkAnnotationResult",
+    "DeeplinkSuggestion",
     "ChatIngestionAgent",
     "DocumentIngestionAgent",
     "JiraIngestionAgent",

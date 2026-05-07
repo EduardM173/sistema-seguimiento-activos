@@ -18,6 +18,11 @@ export default defineConfig(() => {
     throw new Error("Falta VITE_BACKEND_URL en el entorno")
   }
 
+  // Agent service (GraphRAG / DeeplinkAgent). Default apunta al stack
+  // levantado por deploy_rag.sh. Sobrescribir con VITE_AGENT_URL si hace
+  // falta (ej. localhost cuando se corre fuera de docker).
+  const VITE_AGENT_URL = process.env.VITE_AGENT_URL || 'http://graphrag_app:8000'
+
   const port = parseInt(process.env.FRONTEND_PORT || '5173', 10)
 
   return {
@@ -33,6 +38,14 @@ export default defineConfig(() => {
         "^\\/api.*$": {
           target: VITE_BACKEND_URL,
           changeOrigin: true
+        },
+        // Proxy hacia el agent_service. El frontend habla con `/agent/...`
+        // y Vite lo reescribe quitando el prefijo, así el agent recibe
+        // p.ej. `/chat/sessions`.
+        "^\\/agent/.*$": {
+          target: VITE_AGENT_URL,
+          changeOrigin: true,
+          rewrite: (p: string) => p.replace(/^\/agent/, ''),
         }
       },
 

@@ -162,6 +162,20 @@ def get_user_state_agent() -> Any:
 
 
 @functools.lru_cache(maxsize=1)
+def get_deeplink_agent() -> Any:
+    """Return the DeeplinkAgent instance.
+
+    Reads the navigation map URL from settings; falls back to None-like
+    behaviour if disabled."""
+    from ..agents import DeeplinkAgent
+    return DeeplinkAgent(
+        llm=get_llm(),
+        nav_map_url=settings.deeplink_nav_map_url,
+        cache_ttl_s=settings.deeplink_cache_ttl_s,
+    )
+
+
+@functools.lru_cache(maxsize=1)
 def get_chat_ingestion_agent() -> Any:
     """Return the ChatIngestionAgent instance."""
     from ..agents import ChatIngestionAgent

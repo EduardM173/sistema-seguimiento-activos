@@ -6,6 +6,7 @@ import { DeeplinkProvider } from './deeplink';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import PrivateLayout from './components/layout/PrivateLayout';
 import ToastContainer from './components/notifications/ToastContainer';
+import ChatWidget from './components/chat/ChatWidget';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import UserList from './pages/users/UserList';
@@ -65,6 +66,7 @@ export default function App() {
       <NotificationProvider>
         <DeeplinkBridge>
         <ToastContainer />
+        <ChatWidget />
         <Routes>
           <Route path="/" element={<LoginPage />} />
           <Route element={<ProtectedRoute />}>

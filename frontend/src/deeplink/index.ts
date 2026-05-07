@@ -30,3 +30,5 @@ export {
   getNavigationMapJson,
   parseDeeplinkUrl,
 } from './ai';
+export { DeeplinkText, renderDeeplinkTextToHtml } from './DeeplinkText';
+export type { DeeplinkRef, DeeplinkTextProps } from './DeeplinkText';

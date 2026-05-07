@@ -50,6 +50,14 @@ class Settings(BaseSettings):
     dsl_max_deduction_steps: int = 100
     dsl_simplify_before_answer: bool = True
 
+    # Deeplink agent
+    # Absolute URL of the frontend's navigation map endpoint.
+    # In dev: http://localhost:5173/__deeplink/navigation-map.json
+    # In docker-compose: http://frontend:5173/__deeplink/navigation-map.json
+    deeplink_nav_map_url: str = "http://frontend:5173/__deeplink/navigation-map.json"
+    deeplink_cache_ttl_s: int = 60
+    deeplink_enabled: bool = True
+
     @property
     def postgres_url(self) -> str:
         return (
