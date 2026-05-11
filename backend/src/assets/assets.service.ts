@@ -1838,13 +1838,13 @@ async disable(id: string, motivo: string, userId: string) {
     const fakeAssetIds = fakeAssets.map((asset) => asset.id);
 
     await this.prisma.$transaction(async (tx) => {
-      await tx.asignacionActivo.deleteMany({
+      await tx.movimientoActivo.deleteMany({
         where: {
           activoId: { in: fakeAssetIds },
         },
       });
 
-      await tx.movimientoActivo.deleteMany({
+      await tx.asignacionActivo.deleteMany({
         where: {
           activoId: { in: fakeAssetIds },
         },
