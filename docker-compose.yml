@@ -19,6 +19,8 @@ services:
   backend_local:
     container_name: activos_backend_local
     image: ${DOCKER_REGISTRY:-local_activos}/backend:${TAG:-latest}
+    env_file:
+      - ./.env
 
     build:
       dockerfile: dockerfile
@@ -38,6 +40,7 @@ services:
 
     volumes:
       - ./backend:/app/
+      - /app/node_modules
     command: "npm run start:dev"
 
   reports_service:
@@ -64,7 +67,8 @@ services:
 
     volumes:
       - ./reports-service:/app/
-    command: "npm run start:dev"
+      - /app/node_modules
+    command: "npm run start:prod"
 
   frontend_local:
     container_name: activos_frontend_local
@@ -88,6 +92,7 @@ services:
 
     volumes:
       - ./frontend:/app/
+      - /app/node_modules
 
     depends_on:
       backend_local:
