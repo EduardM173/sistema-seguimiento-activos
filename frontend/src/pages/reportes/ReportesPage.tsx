@@ -1,68 +1,72 @@
-import React, { useState, useEffect } from 'react';
-import { Card, Button, Alert, LoadingSpinner } from '../../components/common';
-import type { ReporteGenerado } from '../../types/reportes.types';
-import { tipoReporte } from '../../types/reportes.types';
+import React, { useEffect, useMemo, useState } from 'react';
+import { AlertTriangle, Archive, Boxes, CheckCircle2, RefreshCw } from 'lucide-react';
+import { Alert, Button, Card, LoadingSpinner } from '../../components/common';
 import { reportesService } from '../../services/reportes.service';
+import type { ReporteInventarioGeneral } from '../../types/reportes.types';
 import '../../styles/modules.css';
 
+const emptyReport: ReporteInventarioGeneral = {
+  generatedAt: '',
+  assets: {
+    total: 0,
+    byStatus: [],
+  },
+  materials: {
+    total: 0,
+    lowStock: 0,
+  },
+  downloadReady: false,
+};
+
 export const ReportesPage: React.FC = () => {
-  const [reportes, setReportes] = useState<ReporteGenerado[]>([]);
+  const [report, setReport] = useState<ReporteInventarioGeneral>(emptyReport);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  const [generando, setGenerando] = useState(false);
-  const [tipoSeleccionado, setTipoSeleccionado] = useState<TipoReporte>(TipoReporte.INVENTARIO_GENERAL);
+
+  const generatedAt = useMemo(() => {
+    if (!report.generatedAt) return 'Sin consulta';
+
+    return new Intl.DateTimeFormat('es-BO', {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    }).format(new Date(report.generatedAt));
+  }, [report.generatedAt]);
 
   useEffect(() => {
-    cargarReportes();
+    cargarReporte();
   }, []);
 
-  const cargarReportes = async () => {
+  const cargarReporte = async () => {
     try {
       setLoading(true);
-      const resultado = await reportesService.obtenerTodos();
-      setReportes(resultado.data);
+      const data = await reportesService.obtenerInventarioGeneral();
+      setReport(data);
+      setMessage(null);
     } catch (err) {
-      setMessage({ type: 'error', text: 'Error al cargar reportes' });
+      setMessage({
+        type: 'error',
+        text: 'No se pudo consultar el reporte general del inventario',
+      });
       console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleGenerarReporte = async () => {
-    try {
-      setGenerando(true);
-      const nuevoReporte = await reportesService.generar({
-        tipo: tipoSeleccionado,
-        formato: 'pdf',
-      });
-      setReportes([nuevoReporte, ...reportes]);
-      setMessage({ type: 'success', text: 'Reporte generado exitosamente' });
-    } catch (err) {
-      setMessage({ type: 'error', text: 'Error al generar reporte' });
-      console.error(err);
-    } finally {
-      setGenerando(false);
-    }
-  };
-
-  const handleDescargar = async (reporteId: string) => {
-    try {
-      const blob = await reportesService.descargar(reporteId);
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `reporte-${reporteId}.pdf`;
-      a.click();
-    } catch (err) {
-      setMessage({ type: 'error', text: 'Error al descargar reporte' });
-    }
-  };
-
   return (
     <div className="module-page">
       <div className="module-header">
-        <h1>Generador de Reportes</h1>
+        <div>
+          <h1>Reporte general del inventario</h1>
+          <p>Consulta actualizada: {generatedAt}</p>
+        </div>
+        <Button
+          label="Actualizar"
+          variant="primary"
+          onClick={cargarReporte}
+          isLoading={loading}
+          icon={<RefreshCw size={16} />}
+        />
       </div>
 
       {message && (
@@ -74,129 +78,125 @@ export const ReportesPage: React.FC = () => {
         />
       )}
 
-      {/* Generador de reportes */}
-      <Card title="Generar Nuevo Reporte" padding="lg" className="reporte-generator">
-        <div className="form-group">
-          <label>Tipo de Reporte:</label>
-          <select
-            value={tipoSeleccionado}
-            onChange={(e) => setTipoSeleccionado(e.target.value as TipoReporte)}
-          >
-            <option value={TipoReporte.INVENTARIO_GENERAL}>Inventario General</option>
-            <option value={TipoReporte.DISPERSION_ACTIVOS}>Dispersión de Activos</option>
-            <option value={TipoReporte.MANTENIMIENTO_CRITICO}>Mantenimiento Crítico</option>
-            <option value={TipoReporte.ACTIVOS_POR_SEDE}>Activos por Sede</option>
-            <option value={TipoReporte.VALOR_ACTIVOS}>Valor de Activos</option>
-            <option value={TipoReporte.MOVIMIENTOS_ACTIVOS}>Movimientos de Activos</option>
-            <option value={TipoReporte.INVENTARIO_MATERIALES}>Inventario de Materiales</option>
-            <option value={TipoReporte.USUARIOS_PERMISOS}>Usuarios y Permisos</option>
-            <option value={TipoReporte.TRANSFERENCIAS}>Transferencias</option>
-            <option value={TipoReporte.AUDITORIA_SISTEMA}>Auditoría del Sistema</option>
-          </select>
-        </div>
-
-        <Button
-          label="Generar Reporte"
-          variant="primary"
-          onClick={handleGenerarReporte}
-          isLoading={generando}
-        />
-      </Card>
-
-      {/* Historial de reportes */}
-      <Card title="Reportes Generados" padding="lg">
-        {loading ? (
-          <LoadingSpinner />
-        ) : reportes.length === 0 ? (
-          <p>No hay reportes generados aún</p>
-        ) : (
-          <div className="reportes-list">
-            {reportes.map((reporte) => (
-              <div key={reporte.id} className="reporte-card">
-                <div className="reporte-info">
-                  <h4>{reporte.nombre}</h4>
-                  <p className="reporte-tipo">{reporte.tipo}</p>
-                  <p className="reporte-fecha">
-                    Generado: {new Date(reporte.fechaGeneracion).toLocaleDateString('es-ES')}
-                  </p>
-                  <span className={`reporte-estado estado-${reporte.estado}`}>
-                    {reporte.estado.toUpperCase()}
-                  </span>
-                </div>
-                <div className="reporte-actions">
-                  {reporte.estado === 'completado' && (
-                    <Button
-                      label="Descargar"
-                      variant="primary"
-                      size="sm"
-                      onClick={() => handleDescargar(reporte.id)}
-                    />
-                  )}
-                </div>
+      {loading ? (
+        <LoadingSpinner />
+      ) : (
+        <>
+          <section className="report-summary-grid">
+            <Card padding="lg" className="report-summary-card">
+              <div className="report-card-icon report-card-icon-assets">
+                <Boxes size={22} />
               </div>
-            ))}
-          </div>
-        )}
-      </Card>
+              <span className="report-card-label">Activos registrados</span>
+              <strong>{report.assets.total}</strong>
+            </Card>
 
-      <style>{` .reporte-generator {
-        margin-bottom: 24px;
-      }
+            <Card padding="lg" className="report-summary-card">
+              <div className="report-card-icon report-card-icon-materials">
+                <Archive size={22} />
+              </div>
+              <span className="report-card-label">Materiales registrados</span>
+              <strong>{report.materials.total}</strong>
+            </Card>
 
-      .reportes-list {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-        gap: 16px;
-      }
+            <Card padding="lg" className="report-summary-card">
+              <div className="report-card-icon report-card-icon-alert">
+                <AlertTriangle size={22} />
+              </div>
+              <span className="report-card-label">Materiales con stock bajo</span>
+              <strong>{report.materials.lowStock}</strong>
+            </Card>
 
-      .reporte-card {
-        border: 1px solid #e0e0e0;
-        border-radius: 6px;
-        padding: 16px;
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-      }
+            <Card padding="lg" className="report-summary-card">
+              <div className="report-card-icon report-card-icon-ready">
+                <CheckCircle2 size={22} />
+              </div>
+              <span className="report-card-label">Respuesta para descarga</span>
+              <strong>{report.downloadReady ? 'Lista' : 'Pendiente'}</strong>
+            </Card>
+          </section>
 
-      .reporte-info h4 {
-        margin: 0 0 8px 0;
-        font-size: 14px;
-      }
+          <Card title="Activos por estado" padding="lg">
+            <div className="report-status-grid">
+              {report.assets.byStatus.map((item) => (
+                <div key={item.status} className="report-status-row">
+                  <span>{item.label}</span>
+                  <strong>{item.quantity}</strong>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </>
+      )}
 
-      .reporte-tipo {
-        color: #0056b3;
-        margin: 4px 0;
-        font-size: 12px;
-      }
+      <style>{`
+        .report-summary-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+          gap: 16px;
+          margin-bottom: 24px;
+        }
 
-      .reporte-fecha {
-        color: #999;
-        margin: 4px 0;
-        font-size: 12px;
-      }
+        .report-summary-card .card-content {
+          display: grid;
+          gap: 10px;
+        }
 
-      .reporte-estado {
-        display: inline-block;
-        padding: 4px 8px;
-        border-radius: 4px;
-        font-size: 11px;
-        font-weight: 600;
-      }
+        .report-card-icon {
+          width: 40px;
+          height: 40px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 8px;
+          color: #fff;
+        }
 
-      .reporte-estado.estado-completado {
-        background-color: #d4edda;
-        color: #155724;
-      }
+        .report-card-icon-assets { background: #2563eb; }
+        .report-card-icon-materials { background: #059669; }
+        .report-card-icon-alert { background: #d97706; }
+        .report-card-icon-ready { background: #475569; }
 
-      .reporte-estado.estado-generando {
-        background-color: #fff3cd;
-        color: #856404;
-      }
+        .report-card-label {
+          color: var(--color-text-secondary);
+          font-size: var(--font-size-sm);
+          font-weight: var(--font-weight-semibold);
+        }
 
-      .reporte-estado.estado-error {
-        background-color: #f8d7da;
-        color: #721c24;
-      }
+        .report-summary-card strong {
+          color: var(--color-text);
+          font-size: var(--font-size-2xl);
+          line-height: 1;
+        }
+
+        .report-status-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+          gap: 12px;
+        }
+
+        .report-status-row {
+          min-height: 56px;
+          padding: 12px 14px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+          border: 1px solid var(--color-border-light);
+          border-radius: 8px;
+          background: var(--color-surface);
+        }
+
+        .report-status-row span {
+          color: var(--color-text-secondary);
+          font-size: var(--font-size-sm);
+          font-weight: var(--font-weight-semibold);
+        }
+
+        .report-status-row strong {
+          color: var(--color-text);
+          font-size: var(--font-size-lg);
+        }
       `}</style>
     </div>
   );

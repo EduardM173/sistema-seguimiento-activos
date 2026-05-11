@@ -17,6 +17,8 @@ export default defineConfig(() => {
     throw new Error("Falta VITE_BACKEND_URL en el entorno")
   }
 
+  const VITE_REPORTS_URL = process.env.VITE_REPORTS_URL || 'http://localhost:3002'
+
   const port = parseInt(process.env.FRONTEND_PORT || '5173', 10)
 
   return {
@@ -32,6 +34,11 @@ export default defineConfig(() => {
         "^\\/api.*$": {
           target: VITE_BACKEND_URL,
           changeOrigin: true
+        },
+        "^\\/reports-api.*$": {
+          target: VITE_REPORTS_URL,
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/reports-api/, '')
         }
       },
 

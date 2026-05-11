@@ -161,3 +161,22 @@ export interface PlantillaReporte {
   createdAt: Date;
   updatedAt: Date;
 }
+
+export interface InventarioEstadoReporte {
+  status: "OPERATIVO" | "MANTENIMIENTO" | "FUERA_DE_SERVICIO" | "DADO_DE_BAJA";
+  label: string;
+  quantity: number;
+}
+
+export interface ReporteInventarioGeneral {
+  generatedAt: string;
+  assets: {
+    total: number;
+    byStatus: InventarioEstadoReporte[];
+  };
+  materials: {
+    total: number;
+    lowStock: number;
+  };
+  downloadReady: boolean;
+}
