@@ -1,9 +1,34 @@
 import { http as apiClient } from './http.client';
-import type { ReporteGenerado, ParametrosReporte, ReporteProgramado } from '../types/reportes.types';
+import type {
+  ReporteGenerado,
+  ParametrosReporte,
+  ReporteProgramado,
+  ReporteInventarioGeneral,
+} from '../types/reportes.types';
 import { tipoReporte } from '../types/reportes.types';
 import type { PaginatedResponse, ApiResponse } from '../types';
 
+const REPORTS_API_URL = import.meta.env.VITE_REPORTS_API_URL || 'http://localhost:3002';
+
+async function requestReports<T>(endpoint: string): Promise<T> {
+  const response = await fetch(`${REPORTS_API_URL}${endpoint}`);
+
+  if (!response.ok) {
+    throw new Error('Error al consultar el microservicio de reportes');
+  }
+
+  return response.json() as Promise<T>;
+}
+
 export const reportesService = {
+  obtenerInventarioGeneral: async () => {
+    return requestReports<ReporteInventarioGeneral>('/reports/inventory/general');
+  },
+
+  verificarMicroservicio: async () => {
+    return requestReports<{ status: string; message: string; timestamp: string }>('/health');
+  },
+
   // Generar reporte
   generar: async (parametros: ParametrosReporte) => {
     try {
