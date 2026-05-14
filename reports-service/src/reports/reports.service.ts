@@ -1,4 +1,5 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { randomUUID } from 'crypto';
 import { DatabaseService } from '../database/database.service';
 
 type CountRow = {
@@ -9,6 +10,12 @@ type AssetStatusRow = {
   estado: string;
   cantidad: string;
 };
+
+type ReportFormat = 'pdf' | 'excel';
+
+type GeneralInventoryReport = Awaited<
+  ReturnType<ReportsService['getGeneralInventoryReport']>
+>;
 
 @Injectable()
 export class ReportsService {
@@ -40,6 +47,39 @@ export class ReportsService {
         lowStock: lowStockMaterials,
       },
       downloadReady: true,
+    };
+  }
+
+  async generateGeneralInventoryFile(format: ReportFormat, generatedById?: string) {
+    if (!['pdf', 'excel'].includes(format)) {
+      throw new BadRequestException('Formato de reporte no soportado');
+    }
+
+    const report = await this.getGeneralInventoryReport();
+
+    if (!this.hasDownloadableData(report)) {
+      throw new NotFoundException('No hay informacion disponible para descargar');
+    }
+
+    const generatedAt = new Date();
+    const filename = this.buildFilename(format, generatedAt);
+
+    if (generatedById) {
+      await this.registerGeneratedReport(format, generatedById, generatedAt);
+    }
+
+    if (format === 'pdf') {
+      return {
+        filename,
+        contentType: 'application/pdf',
+        buffer: this.buildPdf(report, generatedAt),
+      };
+    }
+
+    return {
+      filename,
+      contentType: 'application/vnd.ms-excel; charset=utf-8',
+      buffer: Buffer.from(this.buildExcelHtml(report, generatedAt), 'utf8'),
     };
   }
 
@@ -78,6 +118,362 @@ export class ReportsService {
     `);
 
     return Number(result.rows[0]?.total || 0);
+  }
+
+  private hasDownloadableData(report: GeneralInventoryReport) {
+    return report.assets.total > 0 || report.materials.total > 0;
+  }
+
+  private async registerGeneratedReport(
+    format: ReportFormat,
+    generatedById: string,
+    generatedAt: Date,
+  ) {
+    const userExists = await this.database.query<{ exists: boolean }>(
+      `
+        SELECT EXISTS (
+          SELECT 1
+          FROM usuarios
+          WHERE id = $1
+        ) AS exists
+      `,
+      [generatedById],
+    );
+
+    if (!userExists.rows[0]?.exists) {
+      return;
+    }
+
+    await this.database.query(
+      `
+        INSERT INTO reportes_generados
+          (id, "generadoPorId", nombre, tipo, formato, filtros, "urlArchivo", "creadoEn")
+        VALUES
+          ($1, $2, $3, $4, $5::"FormatoReporte", $6::jsonb, $7, $8)
+      `,
+      [
+        randomUUID(),
+        generatedById,
+        'Reporte general del inventario',
+        'inventario_general',
+        format === 'pdf' ? 'PDF' : 'EXCEL',
+        JSON.stringify({ origen: 'microservicio-reportes', datos: 'consulta_visible' }),
+        null,
+        generatedAt,
+      ],
+    );
+  }
+
+  private buildFilename(format: ReportFormat, generatedAt: Date) {
+    const stamp = generatedAt.toISOString().slice(0, 19).replace(/[-:T]/g, '');
+    return `reporte-general-inventario-${stamp}.${format === 'pdf' ? 'pdf' : 'xls'}`;
+  }
+
+  private buildPdf(report: GeneralInventoryReport, generatedAt: Date) {
+    const generatedAtLabel = this.formatDate(generatedAt);
+    const statusRows = report.assets.byStatus;
+    const content = [
+      this.pdfRect(0, 704, 612, 88, '0.06 0.10 0.18'),
+      this.pdfRect(0, 704, 612, 5, '0.15 0.39 0.92'),
+      this.pdfText('Reporte general del inventario', 48, 754, 22, '1 1 1'),
+      this.pdfText('Sistema de Seguimiento de Activos', 48, 728, 10, '0.82 0.88 0.96'),
+      this.pdfText(`Generado: ${generatedAtLabel}`, 392, 728, 10, '0.82 0.88 0.96'),
+
+      this.pdfText('Resumen ejecutivo', 48, 660, 16, '0.06 0.10 0.18'),
+      this.pdfText(
+        'Vista consolidada de activos, materiales y alertas de inventario.',
+        48,
+        640,
+        10,
+        '0.39 0.45 0.55',
+      ),
+
+      this.pdfMetricCard(48, 548, 150, 'Activos registrados', report.assets.total, '0.15 0.39 0.92'),
+      this.pdfMetricCard(230, 548, 150, 'Materiales registrados', report.materials.total, '0.02 0.59 0.41'),
+      this.pdfMetricCard(412, 548, 150, 'Stock bajo', report.materials.lowStock, '0.92 0.48 0.03'),
+
+      this.pdfText('Activos por estado', 48, 500, 14, '0.06 0.10 0.18'),
+      this.pdfRect(48, 465, 516, 26, '0.09 0.14 0.23'),
+      this.pdfText('Estado', 62, 474, 10, '1 1 1'),
+      this.pdfText('Cantidad', 474, 474, 10, '1 1 1'),
+      ...statusRows.flatMap((item, index) => {
+        const y = 439 - index * 30;
+        const background = index % 2 === 0 ? '0.97 0.98 1' : '1 1 1';
+
+        return [
+          this.pdfRect(48, y, 516, 30, background),
+          this.pdfStrokeRect(48, y, 516, 30, '0.82 0.86 0.91'),
+          this.pdfText(item.label, 62, y + 10, 10, '0.15 0.19 0.27'),
+          this.pdfText(String(item.quantity), 500, y + 10, 10, '0.15 0.19 0.27'),
+        ];
+      }),
+
+      this.pdfRect(48, 72, 516, 1, '0.82 0.86 0.91'),
+      this.pdfText(
+        'Reporte generado automaticamente desde el microservicio de Reportes y Exportacion.',
+        48,
+        50,
+        8,
+        '0.45 0.50 0.58',
+      ),
+    ].join('\n');
+
+    return this.createSimplePdf(content);
+  }
+
+  private buildExcelHtml(report: GeneralInventoryReport, generatedAt: Date) {
+    const generatedAtLabel = this.formatDate(generatedAt);
+    return `<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      body {
+        margin: 0;
+        background: #f5f7fb;
+        color: #111827;
+        font-family: Arial, Helvetica, sans-serif;
+      }
+
+      .sheet {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      .hero {
+        background: #111827;
+        color: #ffffff;
+        font-size: 28px;
+        font-weight: 700;
+        padding: 24px 28px 8px;
+      }
+
+      .subtitle {
+        background: #111827;
+        color: #cbd5e1;
+        padding: 0 28px 24px;
+        font-size: 12px;
+      }
+
+      .section-title {
+        color: #111827;
+        font-size: 16px;
+        font-weight: 700;
+        padding: 22px 28px 10px;
+      }
+
+      .metric {
+        background: #ffffff;
+        border: 1px solid #d9e2ef;
+        padding: 16px;
+      }
+
+      .metric-label {
+        color: #64748b;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+      }
+
+      .metric-value {
+        color: #0f172a;
+        font-size: 26px;
+        font-weight: 700;
+        padding-top: 8px;
+      }
+
+      .table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 0 28px 22px;
+      }
+
+      .table th {
+        background: #1e293b;
+        color: #ffffff;
+        border: 1px solid #1e293b;
+        padding: 10px 12px;
+        text-align: left;
+      }
+
+      .table td {
+        background: #ffffff;
+        border: 1px solid #d9e2ef;
+        padding: 10px 12px;
+      }
+
+      .table .number {
+        text-align: right;
+        font-weight: 700;
+      }
+
+      .footer {
+        color: #64748b;
+        font-size: 11px;
+        padding: 14px 28px 22px;
+      }
+    </style>
+  </head>
+  <body>
+    <table class="sheet">
+      <tr>
+        <td colspan="6" class="hero">Reporte general del inventario</td>
+      </tr>
+      <tr>
+        <td colspan="6" class="subtitle">
+          Sistema de Seguimiento de Activos | Generado: ${this.escapeHtml(generatedAtLabel)}
+        </td>
+      </tr>
+      <tr>
+        <td colspan="6" class="section-title">Resumen ejecutivo</td>
+      </tr>
+      <tr>
+        <td class="metric" colspan="2">
+          <div class="metric-label">Activos registrados</div>
+          <div class="metric-value">${report.assets.total}</div>
+        </td>
+        <td class="metric" colspan="2">
+          <div class="metric-label">Materiales registrados</div>
+          <div class="metric-value">${report.materials.total}</div>
+        </td>
+        <td class="metric" colspan="2">
+          <div class="metric-label">Materiales con stock bajo</div>
+          <div class="metric-value">${report.materials.lowStock}</div>
+        </td>
+      </tr>
+      <tr>
+        <td colspan="6" class="section-title">Activos por estado</td>
+      </tr>
+    </table>
+
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Estado</th>
+          <th>Cantidad</th>
+          <th>Participacion</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${report.assets.byStatus
+          .map((item) => {
+            const percentage = report.assets.total
+              ? `${Math.round((item.quantity / report.assets.total) * 100)}%`
+              : '0%';
+
+            return `
+              <tr>
+                <td>${this.escapeHtml(item.label)}</td>
+                <td class="number">${item.quantity}</td>
+                <td class="number">${percentage}</td>
+              </tr>
+            `;
+          })
+          .join('')}
+      </tbody>
+    </table>
+
+    <table class="sheet">
+      <tr>
+        <td colspan="6" class="footer">
+          Reporte generado automaticamente desde el microservicio de Reportes y Exportacion.
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`;
+  }
+
+  private createSimplePdf(content: string) {
+    const objects = [
+      '1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n',
+      '2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n',
+      '3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>\nendobj\n',
+      '4 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n',
+      `5 0 obj\n<< /Length ${Buffer.byteLength(content, 'latin1')} >>\nstream\n${content}\nendstream\nendobj\n`,
+    ];
+
+    let pdf = '%PDF-1.4\n';
+    const offsets = [0];
+
+    for (const object of objects) {
+      offsets.push(Buffer.byteLength(pdf, 'latin1'));
+      pdf += object;
+    }
+
+    const xrefOffset = Buffer.byteLength(pdf, 'latin1');
+    pdf += `xref\n0 ${objects.length + 1}\n`;
+    pdf += '0000000000 65535 f \n';
+    pdf += offsets
+      .slice(1)
+      .map((offset) => `${String(offset).padStart(10, '0')} 00000 n \n`)
+      .join('');
+    pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
+
+    return Buffer.from(pdf, 'latin1');
+  }
+
+  private formatDate(date: Date) {
+    return new Intl.DateTimeFormat('es-BO', {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+      timeZone: 'America/La_Paz',
+    }).format(date);
+  }
+
+  private escapePdfText(text: string) {
+    return text.replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)');
+  }
+
+  private pdfText(text: string, x: number, y: number, size: number, color: string) {
+    return [
+      'BT',
+      `${color} rg`,
+      '/F1 ' + size + ' Tf',
+      `${x} ${y} Td`,
+      `(${this.escapePdfText(text)}) Tj`,
+      'ET',
+    ].join('\n');
+  }
+
+  private pdfRect(x: number, y: number, width: number, height: number, color: string) {
+    return `q\n${color} rg\n${x} ${y} ${width} ${height} re\nf\nQ`;
+  }
+
+  private pdfStrokeRect(
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    color: string,
+  ) {
+    return `q\n${color} RG\n0.75 w\n${x} ${y} ${width} ${height} re\nS\nQ`;
+  }
+
+  private pdfMetricCard(
+    x: number,
+    y: number,
+    width: number,
+    label: string,
+    value: number,
+    accentColor: string,
+  ) {
+    return [
+      this.pdfRect(x, y, width, 78, '1 1 1'),
+      this.pdfStrokeRect(x, y, width, 78, '0.82 0.86 0.91'),
+      this.pdfRect(x, y + 74, width, 4, accentColor),
+      this.pdfText(label, x + 14, y + 48, 9, '0.39 0.45 0.55'),
+      this.pdfText(String(value), x + 14, y + 18, 24, '0.06 0.10 0.18'),
+    ].join('\n');
+  }
+
+  private escapeHtml(text: string) {
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
   }
 
   private formatStatus(status: string) {
