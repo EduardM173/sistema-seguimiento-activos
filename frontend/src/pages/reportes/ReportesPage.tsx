@@ -1,6 +1,15 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, Archive, Boxes, CheckCircle2, RefreshCw } from 'lucide-react';
+import {
+  AlertTriangle,
+  Archive,
+  Boxes,
+  CheckCircle2,
+  Download,
+  FileSpreadsheet,
+  RefreshCw,
+} from 'lucide-react';
 import { Alert, Button, Card, LoadingSpinner } from '../../components/common';
+import { useAuth } from '../../context/AuthContext';
 import { reportesService } from '../../services/reportes.service';
 import type { ReporteInventarioGeneral } from '../../types/reportes.types';
 import '../../styles/modules.css';
@@ -19,8 +28,10 @@ const emptyReport: ReporteInventarioGeneral = {
 };
 
 export const ReportesPage: React.FC = () => {
+  const { user } = useAuth();
   const [report, setReport] = useState<ReporteInventarioGeneral>(emptyReport);
   const [loading, setLoading] = useState(true);
+  const [downloadingFormat, setDownloadingFormat] = useState<'pdf' | 'excel' | null>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const generatedAt = useMemo(() => {
@@ -43,13 +54,35 @@ export const ReportesPage: React.FC = () => {
       setReport(data);
       setMessage(null);
     } catch (err) {
+      const text =
+        err instanceof Error
+          ? err.message
+          : 'No se pudo consultar el reporte general del inventario';
       setMessage({
         type: 'error',
-        text: 'No se pudo consultar el reporte general del inventario',
+        text,
       });
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const descargarReporte = async (formato: 'pdf' | 'excel') => {
+    try {
+      setDownloadingFormat(formato);
+      await reportesService.descargarInventarioGeneral(formato, user?.id);
+      setMessage({
+        type: 'success',
+        text: 'El archivo quedo disponible para descarga',
+      });
+    } catch (err) {
+      const text =
+        err instanceof Error ? err.message : 'No se pudo descargar el reporte consultado';
+      setMessage({ type: 'error', text });
+      console.error(err);
+    } finally {
+      setDownloadingFormat(null);
     }
   };
 
@@ -60,13 +93,31 @@ export const ReportesPage: React.FC = () => {
           <h1>Reporte general del inventario</h1>
           <p>Consulta actualizada: {generatedAt}</p>
         </div>
-        <Button
-          label="Actualizar"
-          variant="primary"
-          onClick={cargarReporte}
-          isLoading={loading}
-          icon={<RefreshCw size={16} />}
-        />
+        <div className="report-header-actions">
+          <Button
+            label="Actualizar"
+            variant="primary"
+            onClick={cargarReporte}
+            isLoading={loading}
+            icon={<RefreshCw size={16} />}
+          />
+          <Button
+            label="PDF"
+            variant="secondary"
+            onClick={() => descargarReporte('pdf')}
+            disabled={loading}
+            isLoading={downloadingFormat === 'pdf'}
+            icon={<Download size={16} />}
+          />
+          <Button
+            label="Excel"
+            variant="secondary"
+            onClick={() => descargarReporte('excel')}
+            disabled={loading}
+            isLoading={downloadingFormat === 'excel'}
+            icon={<FileSpreadsheet size={16} />}
+          />
+        </div>
       </div>
 
       {message && (
@@ -130,6 +181,13 @@ export const ReportesPage: React.FC = () => {
       )}
 
       <style>{`
+        .report-header-actions {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 10px;
+          justify-content: flex-end;
+        }
+
         .report-summary-grid {
           display: grid;
           grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));

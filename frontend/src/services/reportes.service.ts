@@ -8,21 +8,76 @@ import type {
 import { tipoReporte } from '../types/reportes.types';
 import type { PaginatedResponse, ApiResponse } from '../types';
 
-const REPORTS_API_URL = import.meta.env.VITE_REPORTS_API_URL || 'http://localhost:3002';
+const REPORTS_API_URL = import.meta.env.VITE_REPORTS_API_URL || '/reports-api';
 
-async function requestReports<T>(endpoint: string): Promise<T> {
-  const response = await fetch(`${REPORTS_API_URL}${endpoint}`);
+async function requestReports<T>(endpoint: string, init?: RequestInit): Promise<T> {
+  const url = `${REPORTS_API_URL}${endpoint}`;
+  const response = await fetch(url, init);
 
   if (!response.ok) {
-    throw new Error('Error al consultar el microservicio de reportes');
+    const errorText = await response.text();
+    const error = parseErrorBody(errorText);
+    throw new Error(
+      error?.message ||
+        errorText ||
+        `Error al consultar el microservicio de reportes (${response.status})`,
+    );
   }
 
   return response.json() as Promise<T>;
 }
 
+function parseErrorBody(errorText: string) {
+  try {
+    return JSON.parse(errorText) as { message?: string };
+  } catch {
+    return null;
+  }
+}
+
+function getFilenameFromDisposition(disposition: string | null, fallback: string) {
+  const match = disposition?.match(/filename="?([^"]+)"?/i);
+  return match?.[1] || fallback;
+}
+
+function downloadBlob(blob: Blob, filename: string) {
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
+}
+
 export const reportesService = {
   obtenerInventarioGeneral: async () => {
     return requestReports<ReporteInventarioGeneral>('/reports/inventory/general');
+  },
+
+  descargarInventarioGeneral: async (formato: 'pdf' | 'excel', generatedById?: string) => {
+    const params = new URLSearchParams();
+    if (generatedById) params.set('generatedById', generatedById);
+
+    const suffix = params.toString() ? `?${params.toString()}` : '';
+    const response = await fetch(
+      `${REPORTS_API_URL}/reports/inventory/general/download/${formato}${suffix}`,
+    );
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => null);
+      throw new Error(error?.message || 'No se pudo descargar el reporte');
+    }
+
+    const blob = await response.blob();
+    const fallback = `reporte-general-inventario.${formato === 'pdf' ? 'pdf' : 'xls'}`;
+    const filename = getFilenameFromDisposition(
+      response.headers.get('Content-Disposition'),
+      fallback,
+    );
+
+    downloadBlob(blob, filename);
   },
 
   verificarMicroservicio: async () => {

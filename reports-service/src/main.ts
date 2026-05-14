@@ -18,6 +18,7 @@ async function bootstrap() {
       'http://127.0.0.1:5174',
     ],
     credentials: true,
+    exposedHeaders: ['Content-Disposition'],
   });
 
   const port = process.env.REPORTS_PORT || 3002;

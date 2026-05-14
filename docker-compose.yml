@@ -68,7 +68,7 @@ services:
     volumes:
       - ./reports-service:/app/
       - /app/node_modules
-    command: "npm run start:prod"
+    command: "npm run start:dev"
 
   frontend_local:
     container_name: activos_frontend_local
