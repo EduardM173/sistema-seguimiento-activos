@@ -1,5 +1,12 @@
 import { http as apiClient } from './http.client';
-import type { Auditoria, FiltrosAuditoria, ResumenAuditoria, Notificacion, ConfiguracionAuditoria } from '../types/auditoria.types';
+import type {
+  Auditoria,
+  FiltrosAuditoria,
+  ResumenAuditoria,
+  Notificacion,
+  ConfiguracionAuditoria,
+  TrazabilidadActivo,
+} from '../types/auditoria.types';
 import type { PaginatedResponse, ApiResponse } from '../types';
 
 export const NOTIFICATIONS_REFRESH_EVENT = 'notificaciones:refresh';
@@ -62,6 +69,18 @@ export const auditoriaService = {
         `/auditoria/usuario/${usuarioId}`
       );
       return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // Obtener trazabilidad consolidada de un activo
+  obtenerTrazabilidadActivo: async (activoId: string) => {
+    try {
+      const response = await apiClient.get<ApiResponse<TrazabilidadActivo>>(
+        `/auditoria/activos/${encodeURIComponent(activoId)}/trazabilidad`
+      );
+      return response.data;
     } catch (error) {
       throw error;
     }

@@ -50,6 +50,86 @@
   background: rgba(255, 255, 255, 0.03);
 }
 
+/* ── Auditoría / Trazabilidad ─────────────────────────── */
+.audit-traceability {
+  margin-bottom: var(--space-6);
+}
+
+.audit-traceability__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.audit-traceability__header h2 {
+  margin: 0 0 var(--space-1);
+  color: var(--color-text);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+}
+
+.audit-traceability__header p {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.audit-traceability__filters {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) minmax(260px, 420px);
+  gap: var(--space-4);
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.audit-traceability__select .fr__selectTrigger {
+  width: 100%;
+  min-height: var(--input-height);
+}
+
+.audit-traceability__summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(160px, 1fr));
+  gap: var(--space-3);
+  padding: 0 var(--space-5) var(--space-4);
+}
+
+.audit-traceability__summary > div {
+  padding: var(--space-3);
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-base);
+}
+
+.audit-traceability__summary span,
+.audit-user-cell span {
+  display: block;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+}
+
+.audit-traceability__summary strong,
+.audit-user-cell strong {
+  display: block;
+  margin-top: 2px;
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+}
+
+.audit-user-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+@media (max-width: 900px) {
+  .audit-traceability__filters,
+  .audit-traceability__summary {
+    grid-template-columns: 1fr;
+  }
+}
+
 .error-message {
   display: flex;
   justify-content: space-between;
