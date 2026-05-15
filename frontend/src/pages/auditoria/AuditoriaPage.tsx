@@ -24,7 +24,9 @@ export const AuditoriaPage: React.FC = () => {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
-    cargarRegistros();
+    // El backend actual de Auditoría expone la trazabilidad por activo,
+    // pero no un listado general en GET /auditoria.
+    setLoading(false);
   }, []);
 
   useEffect(() => {
