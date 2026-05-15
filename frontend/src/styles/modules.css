@@ -77,8 +77,9 @@
 
 .audit-traceability__filters {
   display: grid;
-  grid-template-columns: minmax(260px, 1fr) minmax(260px, 420px);
+  grid-template-columns: minmax(240px, 1fr) minmax(240px, 360px) minmax(150px, 180px) minmax(150px, 180px);
   gap: var(--space-4);
+  align-items: end;
   padding: var(--space-4) var(--space-5);
   border-bottom: 1px solid var(--glass-border);
 }
@@ -86,6 +87,30 @@
 .audit-traceability__select .fr__selectTrigger {
   width: 100%;
   min-height: var(--input-height);
+}
+
+.audit-traceability__date {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.audit-traceability__date span {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.audit-traceability__date input {
+  height: var(--input-height);
+  padding: 0 var(--space-3);
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: var(--input-border);
+  border-radius: var(--radius-base);
+  font-family: var(--font-family);
 }
 
 .audit-traceability__summary {

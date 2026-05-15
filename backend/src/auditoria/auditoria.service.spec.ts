@@ -342,4 +342,61 @@ describe('AuditoriaService notification inbox for HU32', () => {
       }),
     );
   });
+
+  it('filters asset traceability by date range', async () => {
+    prisma.usuario.findUnique.mockResolvedValue({
+      rol: {
+        permisos: [{ permiso: { codigo: 'AUDIT_VIEW' } }],
+      },
+    });
+
+    prisma.activo.findUnique.mockResolvedValue({
+      id: 'asset-1',
+      codigo: 'ACT-001',
+      nombre: 'Laptop Dell',
+      descripcion: null,
+      estado: 'OPERATIVO',
+      creadoEn: new Date('2026-05-01T09:00:00.000Z'),
+      actualizadoEn: new Date('2026-05-10T12:00:00.000Z'),
+      dadoDeBajaEn: null,
+      motivoBaja: null,
+      categoria: null,
+      ubicacion: null,
+      areaActual: null,
+      responsableActual: null,
+    });
+
+    prisma.movimientoActivo.findMany.mockResolvedValue([]);
+    prisma.auditoria.findMany.mockResolvedValue([]);
+    prisma.area.findMany.mockResolvedValue([]);
+    prisma.usuario.findMany.mockResolvedValue([]);
+
+    await service.getAssetTraceability('auditor-1', 'asset-1', {
+      fechaDesde: '2026-05-03',
+      fechaHasta: '2026-05-08',
+    });
+
+    expect(prisma.movimientoActivo.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          activoId: 'asset-1',
+          creadoEn: {
+            gte: new Date('2026-05-03T00:00:00.000Z'),
+            lte: new Date('2026-05-08T23:59:59.999Z'),
+          },
+        }),
+      }),
+    );
+    expect(prisma.auditoria.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          entidadId: 'asset-1',
+          creadoEn: {
+            gte: new Date('2026-05-03T00:00:00.000Z'),
+            lte: new Date('2026-05-08T23:59:59.999Z'),
+          },
+        }),
+      }),
+    );
+  });
 });

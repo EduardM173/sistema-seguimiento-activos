@@ -75,10 +75,14 @@ export const auditoriaService = {
   },
 
   // Obtener trazabilidad consolidada de un activo
-  obtenerTrazabilidadActivo: async (activoId: string) => {
+  obtenerTrazabilidadActivo: async (
+    activoId: string,
+    filtros?: { fechaDesde?: string; fechaHasta?: string },
+  ) => {
     try {
       const response = await apiClient.get<ApiResponse<TrazabilidadActivo>>(
-        `/auditoria/activos/${encodeURIComponent(activoId)}/trazabilidad`
+        `/auditoria/activos/${encodeURIComponent(activoId)}/trazabilidad`,
+        { params: filtros },
       );
       return response.data;
     } catch (error) {

@@ -17,6 +17,8 @@ export const AuditoriaPage: React.FC = () => {
   const [activos, setActivos] = useState<AssetListItem[]>([]);
   const [activoSearch, setActivoSearch] = useState('');
   const [selectedAssetId, setSelectedAssetId] = useState('');
+  const [fechaDesde, setFechaDesde] = useState('');
+  const [fechaHasta, setFechaHasta] = useState('');
   const [trazabilidad, setTrazabilidad] = useState<TrazabilidadActivo | null>(null);
   const [loading, setLoading] = useState(true);
   const [assetsLoading, setAssetsLoading] = useState(false);
@@ -44,7 +46,7 @@ export const AuditoriaPage: React.FC = () => {
     }
 
     cargarTrazabilidad(selectedAssetId);
-  }, [selectedAssetId]);
+  }, [selectedAssetId, fechaDesde, fechaHasta]);
 
   const cargarRegistros = async () => {
     try {
@@ -81,7 +83,10 @@ export const AuditoriaPage: React.FC = () => {
   const cargarTrazabilidad = async (activoId: string) => {
     try {
       setTraceabilityLoading(true);
-      const resultado = await auditoriaService.obtenerTrazabilidadActivo(activoId);
+      const resultado = await auditoriaService.obtenerTrazabilidadActivo(activoId, {
+        fechaDesde: fechaDesde || undefined,
+        fechaHasta: fechaHasta || undefined,
+      });
       setTrazabilidad(resultado ?? null);
     } catch (err) {
       setTrazabilidad(null);
@@ -264,6 +269,22 @@ export const AuditoriaPage: React.FC = () => {
               disabled={assetsLoading}
             />
           </div>
+          <label className="audit-traceability__date">
+            <span>Desde</span>
+            <input
+              type="date"
+              value={fechaDesde}
+              onChange={(event) => setFechaDesde(event.target.value)}
+            />
+          </label>
+          <label className="audit-traceability__date">
+            <span>Hasta</span>
+            <input
+              type="date"
+              value={fechaHasta}
+              onChange={(event) => setFechaHasta(event.target.value)}
+            />
+          </label>
         </div>
 
         {trazabilidad ? (

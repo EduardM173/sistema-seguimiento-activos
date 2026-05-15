@@ -10,13 +10,18 @@ import {
   TipoMovimientoActivo,
 } from '../generated/prisma/client';
 import { PrismaService } from '../common/prisma.service';
+import { AssetTraceabilityQueryDto } from './dto/asset-traceability-query.dto';
 import { SearchNotificationsDto } from './dto/search-notifications.dto';
 
 @Injectable()
 export class AuditoriaService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getAssetTraceability(userId: string, assetId: string) {
+  async getAssetTraceability(
+    userId: string,
+    assetId: string,
+    query: AssetTraceabilityQueryDto = {},
+  ) {
     await this.assertUserHasPermission(
       userId,
       'AUDIT_VIEW',
@@ -69,10 +74,13 @@ export class AuditoriaService {
       );
     }
 
+    const dateRange = this.buildTraceabilityDateRange(query);
+
     const [movimientos, auditorias] = await Promise.all([
       this.prisma.movimientoActivo.findMany({
         where: {
           activoId: assetId,
+          ...(dateRange ? { creadoEn: dateRange } : {}),
         },
         select: {
           id: true,
@@ -99,6 +107,7 @@ export class AuditoriaService {
       this.prisma.auditoria.findMany({
         where: {
           entidadId: assetId,
+          ...(dateRange ? { creadoEn: dateRange } : {}),
           OR: [
             { tipoEntidad: 'activo' },
             { tipoEntidad: 'activos' },
@@ -521,6 +530,32 @@ export class AuditoriaService {
       summary[movimiento.tipo] += 1;
       return summary;
     }, initialSummary);
+  }
+
+  private buildTraceabilityDateRange(query: AssetTraceabilityQueryDto) {
+    const range: Prisma.DateTimeFilter = {};
+
+    if (query.fechaDesde) {
+      range.gte = this.parseStartOfDay(query.fechaDesde);
+    }
+
+    if (query.fechaHasta) {
+      range.lte = this.parseEndOfDay(query.fechaHasta);
+    }
+
+    return Object.keys(range).length > 0 ? range : null;
+  }
+
+  private parseStartOfDay(value: string) {
+    const date = new Date(value);
+    date.setUTCHours(0, 0, 0, 0);
+    return date;
+  }
+
+  private parseEndOfDay(value: string) {
+    const date = new Date(value);
+    date.setUTCHours(23, 59, 59, 999);
+    return date;
   }
 
   private async assertUserHasPermission(
