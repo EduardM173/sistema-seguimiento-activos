@@ -98,6 +98,29 @@ export class AuditoriaController {
   }
 
   @ApiOperation({
+    summary: 'Obtener trazabilidad consolidada de un activo',
+    description:
+      'Consulta en Auditoría y Trazabilidad todos los movimientos registrados y auditorías asociadas al activo seleccionado.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Identificador del activo a consultar',
+  })
+  @ApiOkResponse({
+    description: 'Trazabilidad del activo obtenida correctamente',
+  })
+  @ApiNotFoundResponse({ description: 'Activo no encontrado' })
+  @Get('activos/:id/trazabilidad')
+  async getAssetTraceability(@Param('id') id: string, @Req() req: Request) {
+    const userId = (req.user as { id: string }).id;
+    const data = await this.auditoriaService.getAssetTraceability(userId, id);
+    return ApiResponse.success(
+      data,
+      'Trazabilidad del activo obtenida correctamente',
+    );
+  }
+
+  @ApiOperation({
     summary: 'Marcar notificación como leída',
   })
   @ApiParam({ name: 'id', description: 'Identificador de la notificación' })

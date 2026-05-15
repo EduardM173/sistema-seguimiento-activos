@@ -10,6 +10,18 @@ describe('AuditoriaService notification inbox for HU32', () => {
       usuario: {
         findUnique: jest.fn(),
       },
+      activo: {
+        findUnique: jest.fn(),
+      },
+      movimientoActivo: {
+        findMany: jest.fn(),
+      },
+      auditoria: {
+        findMany: jest.fn(),
+      },
+      area: {
+        findMany: jest.fn(),
+      },
       notificacion: {
         findMany: jest.fn(),
         count: jest.fn(),
@@ -22,15 +34,13 @@ describe('AuditoriaService notification inbox for HU32', () => {
   });
 
   it('returns notifications for the authenticated user with asset detail reference', async () => {
-    prisma.usuario.findUnique
-      .mockResolvedValueOnce({
-        rol: {
-          permisos: [{ permiso: { codigo: 'NOTIFICATION_VIEW' } }],
-        },
-      })
-      .mockResolvedValueOnce({
-        areaId: 'area-1',
-      });
+    prisma.area.findMany.mockResolvedValue([]);
+    prisma.usuario.findUnique.mockResolvedValue({
+      areaId: 'area-1',
+      rol: {
+        permisos: [{ permiso: { codigo: 'NOTIFICATION_VIEW' } }],
+      },
+    });
 
     prisma.notificacion.findMany.mockResolvedValue([
       {
@@ -82,23 +92,13 @@ describe('AuditoriaService notification inbox for HU32', () => {
   });
 
   it('keeps notifications available until the user explicitly reviews them', async () => {
-    prisma.usuario.findUnique
-      .mockResolvedValueOnce({
-        rol: {
-          permisos: [{ permiso: { codigo: 'NOTIFICATION_VIEW' } }],
-        },
-      })
-      .mockResolvedValueOnce({
-        areaId: 'area-1',
-      })
-      .mockResolvedValueOnce({
-        rol: {
-          permisos: [{ permiso: { codigo: 'NOTIFICATION_VIEW' } }],
-        },
-      })
-      .mockResolvedValueOnce({
-        areaId: 'area-1',
-      });
+    prisma.area.findMany.mockResolvedValue([]);
+    prisma.usuario.findUnique.mockResolvedValue({
+      areaId: 'area-1',
+      rol: {
+        permisos: [{ permiso: { codigo: 'NOTIFICATION_VIEW' } }],
+      },
+    });
 
     prisma.notificacion.findMany.mockResolvedValue([
       {
@@ -141,5 +141,107 @@ describe('AuditoriaService notification inbox for HU32', () => {
         estado: EstadoNotificacion.LEIDA,
       }),
     });
+  });
+
+  it('returns consolidated traceability for a selected asset', async () => {
+    prisma.usuario.findUnique.mockResolvedValue({
+      rol: {
+        permisos: [{ permiso: { codigo: 'AUDIT_VIEW' } }],
+      },
+    });
+
+    prisma.activo.findUnique.mockResolvedValue({
+      id: 'asset-1',
+      codigo: 'ACT-001',
+      nombre: 'Laptop Dell',
+      descripcion: 'Equipo institucional',
+      estado: 'OPERATIVO',
+      creadoEn: new Date('2026-05-01T09:00:00.000Z'),
+      actualizadoEn: new Date('2026-05-10T12:00:00.000Z'),
+      dadoDeBajaEn: null,
+      motivoBaja: null,
+      categoria: { id: 'cat-1', nombre: 'Laptop' },
+      ubicacion: { id: 'ubi-1', nombre: 'Oficina Central' },
+      areaActual: { id: 'area-2', nombre: 'Sistemas' },
+      responsableActual: {
+        id: 'user-2',
+        nombres: 'Maria',
+        apellidos: 'Responsable',
+      },
+    });
+
+    prisma.movimientoActivo.findMany.mockResolvedValue([
+      {
+        id: 'mov-1',
+        tipo: 'TRANSFERENCIA',
+        areaOrigenId: 'area-1',
+        areaDestinoId: 'area-2',
+        usuarioOrigenId: null,
+        usuarioDestinoId: null,
+        asignacionId: 'asig-1',
+        detalle: 'Transferencia registrada de Administración a Sistemas',
+        creadoEn: new Date('2026-05-05T10:00:00.000Z'),
+        realizadoPor: {
+          id: 'user-1',
+          nombres: 'Juan',
+          apellidos: 'Operativo',
+        },
+      },
+    ]);
+
+    prisma.auditoria.findMany.mockResolvedValue([
+      {
+        id: 'audit-1',
+        accion: 'ACTUALIZACION',
+        valoresAnteriores: { estado: 'OPERATIVO' },
+        valoresNuevos: { estado: 'MANTENIMIENTO' },
+        creadoEn: new Date('2026-05-06T08:30:00.000Z'),
+        direccionIp: '127.0.0.1',
+        userAgent: 'jest',
+        usuario: {
+          id: 'user-3',
+          nombres: 'Ana',
+          apellidos: 'Auditora',
+        },
+      },
+    ]);
+
+    prisma.area.findMany.mockResolvedValue([
+      { id: 'area-1', nombre: 'Administración' },
+      { id: 'area-2', nombre: 'Sistemas' },
+    ]);
+
+    const result = await service.getAssetTraceability('auditor-1', 'asset-1');
+
+    expect(result.activo).toEqual(
+      expect.objectContaining({
+        id: 'asset-1',
+        codigo: 'ACT-001',
+        nombre: 'Laptop Dell',
+      }),
+    );
+    expect(result.resumen).toEqual({
+      totalEventos: 2,
+      totalMovimientos: 1,
+      totalRegistrosAuditoria: 1,
+    });
+    expect(result.timeline).toHaveLength(2);
+    expect(result.timeline[0]).toEqual(
+      expect.objectContaining({
+        fuente: 'MOVIMIENTO',
+        etiqueta: 'Transferencia',
+        areaOrigen: { id: 'area-1', nombre: 'Administración' },
+        areaDestino: { id: 'area-2', nombre: 'Sistemas' },
+      }),
+    );
+    expect(result.timeline[1]).toEqual(
+      expect.objectContaining({
+        fuente: 'AUDITORIA',
+        etiqueta: 'ACTUALIZACION',
+        auditoria: expect.objectContaining({
+          valoresNuevos: { estado: 'MANTENIMIENTO' },
+        }),
+      }),
+    );
   });
 });
