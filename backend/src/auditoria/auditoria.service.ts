@@ -154,33 +154,64 @@ export class AuditoriaService {
 
     const areaMap = Object.fromEntries(areas.map((area) => [area.id, area]));
 
+    const usuarioIds = [
+      ...new Set(
+        movimientos
+          .flatMap((movimiento) => [
+            movimiento.usuarioOrigenId,
+            movimiento.usuarioDestinoId,
+          ])
+          .filter((usuarioId): usuarioId is string => Boolean(usuarioId)),
+      ),
+    ];
+
+    const usuarios =
+      usuarioIds.length > 0
+        ? await this.prisma.usuario.findMany({
+            where: {
+              id: { in: usuarioIds },
+            },
+            select: {
+              id: true,
+              nombres: true,
+              apellidos: true,
+            },
+          })
+        : [];
+
+    const usuarioMap = Object.fromEntries(
+      usuarios.map((usuario) => [usuario.id, usuario]),
+    );
+
+    const movimientosUnificados = movimientos.map((movimiento) => ({
+      id: movimiento.id,
+      fuente: 'MOVIMIENTO' as const,
+      fecha: movimiento.creadoEn,
+      tipo: movimiento.tipo,
+      etiqueta: this.formatMovementType(movimiento.tipo),
+      detalle: movimiento.detalle ?? 'Sin detalle registrado',
+      areaOrigen: movimiento.areaOrigenId
+        ? (areaMap[movimiento.areaOrigenId] ?? null)
+        : null,
+      areaDestino: movimiento.areaDestinoId
+        ? (areaMap[movimiento.areaDestinoId] ?? null)
+        : null,
+      usuarioOrigen: movimiento.usuarioOrigenId
+        ? this.mapUserSummary(usuarioMap[movimiento.usuarioOrigenId])
+        : null,
+      usuarioDestino: movimiento.usuarioDestinoId
+        ? this.mapUserSummary(usuarioMap[movimiento.usuarioDestinoId])
+        : null,
+      usuarioOrigenId: movimiento.usuarioOrigenId,
+      usuarioDestinoId: movimiento.usuarioDestinoId,
+      asignacionId: movimiento.asignacionId,
+      realizadoPor: this.mapUserSummary(movimiento.realizadoPor),
+    }));
+
+    const movimientosPorTipo = this.buildMovementTypeSummary(movimientos);
+
     const timeline = [
-      ...movimientos.map((movimiento) => ({
-        id: movimiento.id,
-        fuente: 'MOVIMIENTO' as const,
-        fecha: movimiento.creadoEn,
-        tipo: movimiento.tipo,
-        etiqueta: this.formatMovementType(movimiento.tipo),
-        detalle: movimiento.detalle ?? 'Sin detalle registrado',
-        areaOrigen: movimiento.areaOrigenId
-          ? (areaMap[movimiento.areaOrigenId] ?? null)
-          : null,
-        areaDestino: movimiento.areaDestinoId
-          ? (areaMap[movimiento.areaDestinoId] ?? null)
-          : null,
-        usuarioOrigenId: movimiento.usuarioOrigenId,
-        usuarioDestinoId: movimiento.usuarioDestinoId,
-        asignacionId: movimiento.asignacionId,
-        realizadoPor: movimiento.realizadoPor
-          ? {
-              id: movimiento.realizadoPor.id,
-              nombreCompleto: this.buildFullName(
-                movimiento.realizadoPor.nombres,
-                movimiento.realizadoPor.apellidos,
-              ),
-            }
-          : null,
-      })),
+      ...movimientosUnificados,
       ...auditorias.map((registro) => ({
         id: registro.id,
         fuente: 'AUDITORIA' as const,
@@ -193,15 +224,7 @@ export class AuditoriaService {
         usuarioOrigenId: null,
         usuarioDestinoId: null,
         asignacionId: null,
-        realizadoPor: registro.usuario
-          ? {
-              id: registro.usuario.id,
-              nombreCompleto: this.buildFullName(
-                registro.usuario.nombres,
-                registro.usuario.apellidos,
-              ),
-            }
-          : null,
+        realizadoPor: this.mapUserSummary(registro.usuario),
         auditoria: {
           accion: registro.accion,
           valoresAnteriores: registro.valoresAnteriores,
@@ -244,7 +267,9 @@ export class AuditoriaService {
         totalEventos: timeline.length,
         totalMovimientos: movimientos.length,
         totalRegistrosAuditoria: auditorias.length,
+        movimientosPorTipo,
       },
+      movimientos: movimientosUnificados,
       timeline,
     };
   }
@@ -468,6 +493,34 @@ export class AuditoriaService {
 
   private buildFullName(nombres?: string | null, apellidos?: string | null) {
     return [nombres, apellidos].filter(Boolean).join(' ').trim();
+  }
+
+  private mapUserSummary(
+    user?: { id: string; nombres: string; apellidos: string } | null,
+  ) {
+    if (!user) return null;
+
+    return {
+      id: user.id,
+      nombreCompleto: this.buildFullName(user.nombres, user.apellidos),
+    };
+  }
+
+  private buildMovementTypeSummary(
+    movimientos: Array<{ tipo: TipoMovimientoActivo }>,
+  ) {
+    const initialSummary = Object.values(TipoMovimientoActivo).reduce(
+      (summary, tipo) => ({
+        ...summary,
+        [tipo]: 0,
+      }),
+      {} as Record<TipoMovimientoActivo, number>,
+    );
+
+    return movimientos.reduce((summary, movimiento) => {
+      summary[movimiento.tipo] += 1;
+      return summary;
+    }, initialSummary);
   }
 
   private async assertUserHasPermission(

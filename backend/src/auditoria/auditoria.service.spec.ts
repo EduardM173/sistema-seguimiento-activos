@@ -1,4 +1,8 @@
-import { EstadoNotificacion, TipoNotificacion } from '../generated/prisma/client';
+import {
+  EstadoNotificacion,
+  TipoMovimientoActivo,
+  TipoNotificacion,
+} from '../generated/prisma/client';
 import { AuditoriaService } from './auditoria.service';
 
 describe('AuditoriaService notification inbox for HU32', () => {
@@ -9,6 +13,7 @@ describe('AuditoriaService notification inbox for HU32', () => {
     prisma = {
       usuario: {
         findUnique: jest.fn(),
+        findMany: jest.fn(),
       },
       activo: {
         findUnique: jest.fn(),
@@ -210,6 +215,7 @@ describe('AuditoriaService notification inbox for HU32', () => {
       { id: 'area-1', nombre: 'Administración' },
       { id: 'area-2', nombre: 'Sistemas' },
     ]);
+    prisma.usuario.findMany.mockResolvedValue([]);
 
     const result = await service.getAssetTraceability('auditor-1', 'asset-1');
 
@@ -224,7 +230,11 @@ describe('AuditoriaService notification inbox for HU32', () => {
       totalEventos: 2,
       totalMovimientos: 1,
       totalRegistrosAuditoria: 1,
+      movimientosPorTipo: expect.objectContaining({
+        [TipoMovimientoActivo.TRANSFERENCIA]: 1,
+      }),
     });
+    expect(result.movimientos).toHaveLength(1);
     expect(result.timeline).toHaveLength(2);
     expect(result.timeline[0]).toEqual(
       expect.objectContaining({
@@ -241,6 +251,94 @@ describe('AuditoriaService notification inbox for HU32', () => {
         auditoria: expect.objectContaining({
           valoresNuevos: { estado: 'MANTENIMIENTO' },
         }),
+      }),
+    );
+  });
+
+  it('unifies every registered asset movement type in the response', async () => {
+    prisma.usuario.findUnique.mockResolvedValue({
+      rol: {
+        permisos: [{ permiso: { codigo: 'AUDIT_VIEW' } }],
+      },
+    });
+
+    prisma.activo.findUnique.mockResolvedValue({
+      id: 'asset-1',
+      codigo: 'ACT-001',
+      nombre: 'Laptop Dell',
+      descripcion: null,
+      estado: 'OPERATIVO',
+      creadoEn: new Date('2026-05-01T09:00:00.000Z'),
+      actualizadoEn: new Date('2026-05-10T12:00:00.000Z'),
+      dadoDeBajaEn: null,
+      motivoBaja: null,
+      categoria: null,
+      ubicacion: null,
+      areaActual: null,
+      responsableActual: null,
+    });
+
+    const movementTypes = [
+      TipoMovimientoActivo.REGISTRO,
+      TipoMovimientoActivo.ASIGNACION,
+      TipoMovimientoActivo.TRANSFERENCIA,
+      TipoMovimientoActivo.DEVOLUCION,
+      TipoMovimientoActivo.BAJA,
+      TipoMovimientoActivo.ACTUALIZACION,
+    ];
+
+    prisma.movimientoActivo.findMany.mockResolvedValue(
+      movementTypes.map((tipo, index) => ({
+        id: `mov-${index + 1}`,
+        tipo,
+        areaOrigenId: index === 2 ? 'area-1' : null,
+        areaDestinoId: index === 2 ? 'area-2' : null,
+        usuarioOrigenId: index === 1 ? 'user-1' : null,
+        usuarioDestinoId: index === 1 ? 'user-2' : null,
+        asignacionId: index === 1 ? 'asig-1' : null,
+        detalle: `Movimiento ${tipo}`,
+        creadoEn: new Date(`2026-05-0${index + 1}T10:00:00.000Z`),
+        realizadoPor: {
+          id: 'auditor-1',
+          nombres: 'Ana',
+          apellidos: 'Auditora',
+        },
+      })),
+    );
+
+    prisma.auditoria.findMany.mockResolvedValue([]);
+    prisma.area.findMany.mockResolvedValue([
+      { id: 'area-1', nombre: 'Administración' },
+      { id: 'area-2', nombre: 'Sistemas' },
+    ]);
+    prisma.usuario.findMany.mockResolvedValue([
+      { id: 'user-1', nombres: 'Carlos', apellidos: 'Origen' },
+      { id: 'user-2', nombres: 'Maria', apellidos: 'Destino' },
+    ]);
+
+    const result = await service.getAssetTraceability('auditor-1', 'asset-1');
+
+    expect(result.movimientos.map((movimiento) => movimiento.tipo)).toEqual(
+      movementTypes,
+    );
+    expect(result.timeline.map((event) => event.tipo)).toEqual(movementTypes);
+    expect(result.resumen.totalMovimientos).toBe(6);
+
+    for (const tipo of movementTypes) {
+      expect(result.resumen.movimientosPorTipo[tipo]).toBe(1);
+    }
+
+    expect(result.movimientos[1]).toEqual(
+      expect.objectContaining({
+        tipo: TipoMovimientoActivo.ASIGNACION,
+        usuarioOrigen: {
+          id: 'user-1',
+          nombreCompleto: 'Carlos Origen',
+        },
+        usuarioDestino: {
+          id: 'user-2',
+          nombreCompleto: 'Maria Destino',
+        },
       }),
     );
   });
