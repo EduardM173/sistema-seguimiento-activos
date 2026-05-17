@@ -333,7 +333,7 @@ export const AuditoriaPage: React.FC = () => {
           loading={traceabilityLoading}
           emptyMessage={
             selectedAssetId
-              ? 'No hay movimientos registrados para este activo'
+              ? 'Este activo no tiene movimientos registrados'
               : 'Seleccione un activo para consultar su trazabilidad'
           }
           striped
