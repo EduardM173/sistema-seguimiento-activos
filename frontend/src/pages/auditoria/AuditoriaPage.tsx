@@ -24,6 +24,7 @@ export const AuditoriaPage: React.FC = () => {
   const [assetsLoading, setAssetsLoading] = useState(false);
   const [traceabilityLoading, setTraceabilityLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const invalidDateRange = Boolean(fechaDesde && fechaHasta && fechaDesde > fechaHasta);
 
   useEffect(() => {
     // El backend actual de Auditoría expone la trazabilidad por activo,
@@ -45,8 +46,18 @@ export const AuditoriaPage: React.FC = () => {
       return;
     }
 
+    if (invalidDateRange) {
+      setTrazabilidad(null);
+      setTraceabilityLoading(false);
+      setMessage({
+        type: 'error',
+        text: 'La fecha desde no puede ser posterior a la fecha hasta.',
+      });
+      return;
+    }
+
     cargarTrazabilidad(selectedAssetId);
-  }, [selectedAssetId, fechaDesde, fechaHasta]);
+  }, [selectedAssetId, fechaDesde, fechaHasta, invalidDateRange]);
 
   const cargarRegistros = async () => {
     try {
@@ -274,7 +285,9 @@ export const AuditoriaPage: React.FC = () => {
             <input
               type="date"
               value={fechaDesde}
+              max={fechaHasta || undefined}
               onChange={(event) => setFechaDesde(event.target.value)}
+              aria-invalid={invalidDateRange}
             />
           </label>
           <label className="audit-traceability__date">
@@ -282,10 +295,18 @@ export const AuditoriaPage: React.FC = () => {
             <input
               type="date"
               value={fechaHasta}
+              min={fechaDesde || undefined}
               onChange={(event) => setFechaHasta(event.target.value)}
+              aria-invalid={invalidDateRange}
             />
           </label>
         </div>
+
+        {invalidDateRange ? (
+          <div className="audit-traceability__validation">
+            La fecha desde no puede ser posterior a la fecha hasta.
+          </div>
+        ) : null}
 
         {trazabilidad ? (
           <div className="audit-traceability__summary">

@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -534,13 +535,23 @@ export class AuditoriaService {
 
   private buildTraceabilityDateRange(query: AssetTraceabilityQueryDto) {
     const range: Prisma.DateTimeFilter = {};
+    const startDate = query.fechaDesde
+      ? this.parseStartOfDay(query.fechaDesde)
+      : null;
+    const endDate = query.fechaHasta ? this.parseEndOfDay(query.fechaHasta) : null;
 
-    if (query.fechaDesde) {
-      range.gte = this.parseStartOfDay(query.fechaDesde);
+    if (startDate && endDate && startDate.getTime() > endDate.getTime()) {
+      throw new BadRequestException(
+        'La fecha desde no puede ser posterior a la fecha hasta',
+      );
     }
 
-    if (query.fechaHasta) {
-      range.lte = this.parseEndOfDay(query.fechaHasta);
+    if (startDate) {
+      range.gte = startDate;
+    }
+
+    if (endDate) {
+      range.lte = endDate;
     }
 
     return Object.keys(range).length > 0 ? range : null;
