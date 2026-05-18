@@ -1,7 +1,8 @@
 // Tipo de reporte
 export const tipoReporte = {
   INVENTARIO_GENERAL: "inventario_general",
-  CATEGORIA_ACTIVOS: "categoria_activos",           // HU28
+  CATEGORIA_ACTIVOS: "categoria_activos",
+  RESPONSABLE_ACTIVOS: "responsable_activos",
   DISPERSION_ACTIVOS: "dispersion_activos",
   MANTENIMIENTO_CRITICO: "mantenimiento_critico",
   ACTIVOS_POR_SEDE: "activos_por_sede",
@@ -163,7 +164,7 @@ export interface PlantillaReporte {
   updatedAt: Date;
 }
 
-// ─── HU27 — Tipos del microservicio ─────────────────────────────────────────
+// ─── HU27 ────────────────────────────────────────────────────────────────────
 
 export interface InventarioEstadoReporte {
   status: "OPERATIVO" | "MANTENIMIENTO" | "FUERA_DE_SERVICIO" | "DADO_DE_BAJA";
@@ -184,9 +185,8 @@ export interface ReporteInventarioGeneral {
   downloadReady: boolean;
 }
 
-// ─── HU28 — Tipos del reporte por categoría ─────────────────────────────────
+// ─── HU28 ────────────────────────────────────────────────────────────────────
 
-/** Resumen de una categoría en el listado general (PA1) */
 export interface CategoriaSummary {
   id: string;
   name: string;
@@ -194,7 +194,6 @@ export interface CategoriaSummary {
   percentage: number;
 }
 
-/** Respuesta del endpoint GET /reports/inventory/category (PA1) */
 export interface ReporteCategoria {
   generatedAt: string;
   totalAssets: number;
@@ -202,7 +201,6 @@ export interface ReporteCategoria {
   downloadReady: boolean;
 }
 
-/** Activo individual dentro del detalle de una categoría (PA3) */
 export interface ActivoDetalleCategoria {
   id: string;
   codigo: string;
@@ -212,10 +210,46 @@ export interface ActivoDetalleCategoria {
   ubicacion: string;
 }
 
-/** Respuesta del endpoint GET /reports/inventory/category/:id/assets (PA2/PA3/PA4/PA5) */
 export interface ReporteCategoriaDetalle {
   categoryId: string;
   categoryName: string;
   assets: ActivoDetalleCategoria[];
+  total: number;
+}
+
+// ─── HU47 ────────────────────────────────────────────────────────────────────
+
+/** Resumen de un responsable en el listado general (PA1) */
+export interface ResponsableSummary {
+  id: string;
+  name: string;
+  total: number;
+  percentage: number;
+}
+
+/** Respuesta GET /reports/inventory/responsable — PA1 */
+export interface ReporteResponsable {
+  generatedAt: string;
+  totalAssets: number;
+  responsables: ResponsableSummary[];
+  downloadReady: boolean;
+}
+
+/** Activo en el detalle de un responsable — PA3: código, nombre, categoría, estado, ubicación */
+export interface ActivoDetalleResponsable {
+  id: string;
+  codigo: string;
+  nombre: string;
+  categoria: string;
+  estado: string;
+  estadoLabel: string;
+  ubicacion: string;
+}
+
+/** Respuesta GET /reports/inventory/responsable/:id/assets — PA2/PA3/PA4/PA5 */
+export interface ReporteResponsableDetalle {
+  responsableId: string;
+  responsableName: string;
+  assets: ActivoDetalleResponsable[];
   total: number;
 }
