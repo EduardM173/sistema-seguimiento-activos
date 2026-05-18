@@ -1,6 +1,7 @@
 // Tipo de reporte
 export const tipoReporte = {
   INVENTARIO_GENERAL: "inventario_general",
+  CATEGORIA_ACTIVOS: "categoria_activos",           // HU28
   DISPERSION_ACTIVOS: "dispersion_activos",
   MANTENIMIENTO_CRITICO: "mantenimiento_critico",
   ACTIVOS_POR_SEDE: "activos_por_sede",
@@ -9,7 +10,7 @@ export const tipoReporte = {
   INVENTARIO_MATERIALES: "inventario_materiales",
   USUARIOS_PERMISOS: "usuarios_permisos",
   TRANSFERENCIAS: "transferencias",
-  AUDITORIA_SISTEMA: "auditoria_sistema"
+  AUDITORIA_SISTEMA: "auditoria_sistema",
 } as const;
 
 export type TipoReporte = typeof tipoReporte[keyof typeof tipoReporte];
@@ -35,7 +36,7 @@ export interface ReporteGenerado {
   estado: "generando" | "completado" | "error" | "descargado";
   cantidadRegistros?: number;
   tamanioArchivo?: number;
-  duracionGeneracion?: number; // en segundos
+  duracionGeneracion?: number;
   errorMensaje?: string;
   programado: boolean;
   proximasEjecuciones?: Date[];
@@ -136,11 +137,11 @@ export interface ReporteProgramado {
   nombre: string;
   tipo: TipoReporte;
   frecuencia: "diaria" | "semanal" | "mensual";
-  horaProgramacion: string; // HH:MM
-  diasSemana?: number[]; // 0-6, si es semanal
-  diaDelMes?: number; // si es mensual
+  horaProgramacion: string;
+  diasSemana?: number[];
+  diaDelMes?: number;
   formatoSalida: "pdf" | "excel" | "csv" | "json";
-  destinatarios?: string[]; // emails
+  destinatarios?: string[];
   activo: boolean;
   ultimaEjecucion?: Date;
   proximaEjecucion?: Date;
@@ -162,6 +163,8 @@ export interface PlantillaReporte {
   updatedAt: Date;
 }
 
+// ─── HU27 — Tipos del microservicio ─────────────────────────────────────────
+
 export interface InventarioEstadoReporte {
   status: "OPERATIVO" | "MANTENIMIENTO" | "FUERA_DE_SERVICIO" | "DADO_DE_BAJA";
   label: string;
@@ -179,4 +182,40 @@ export interface ReporteInventarioGeneral {
     lowStock: number;
   };
   downloadReady: boolean;
+}
+
+// ─── HU28 — Tipos del reporte por categoría ─────────────────────────────────
+
+/** Resumen de una categoría en el listado general (PA1) */
+export interface CategoriaSummary {
+  id: string;
+  name: string;
+  total: number;
+  percentage: number;
+}
+
+/** Respuesta del endpoint GET /reports/inventory/category (PA1) */
+export interface ReporteCategoria {
+  generatedAt: string;
+  totalAssets: number;
+  categories: CategoriaSummary[];
+  downloadReady: boolean;
+}
+
+/** Activo individual dentro del detalle de una categoría (PA3) */
+export interface ActivoDetalleCategoria {
+  id: string;
+  codigo: string;
+  nombre: string;
+  estado: string;
+  estadoLabel: string;
+  ubicacion: string;
+}
+
+/** Respuesta del endpoint GET /reports/inventory/category/:id/assets (PA2/PA3/PA4/PA5) */
+export interface ReporteCategoriaDetalle {
+  categoryId: string;
+  categoryName: string;
+  assets: ActivoDetalleCategoria[];
+  total: number;
 }
