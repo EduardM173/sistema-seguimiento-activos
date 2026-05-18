@@ -4,6 +4,8 @@ import type {
   ParametrosReporte,
   ReporteProgramado,
   ReporteInventarioGeneral,
+  ReporteCategoria,
+  ReporteCategoriaDetalle,
 } from '../types/reportes.types';
 import { tipoReporte } from '../types/reportes.types';
 import type { PaginatedResponse, ApiResponse } from '../types';
@@ -52,6 +54,11 @@ function downloadBlob(blob: Blob, filename: string) {
 }
 
 export const reportesService = {
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // HU27 — Reporte general del inventario (sin cambios)
+  // ═══════════════════════════════════════════════════════════════════════════
+
   obtenerInventarioGeneral: async () => {
     return requestReports<ReporteInventarioGeneral>('/reports/inventory/general');
   },
@@ -80,16 +87,67 @@ export const reportesService = {
     downloadBlob(blob, filename);
   },
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // HU28 — Reporte por categoría de activos
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /**
+   * PA1 — Obtiene el resumen de activos agrupados por categoría.
+   */
+  obtenerReporteCategoria: async () => {
+    return requestReports<ReporteCategoria>('/reports/inventory/category');
+  },
+
+  /**
+   * PA2 / PA3 / PA4 / PA5 — Obtiene el detalle de activos de una categoría.
+   * Devuelve lista vacía cuando no hay activos (el componente muestra PA5).
+   */
+  obtenerActivosPorCategoria: async (categoryId: string) => {
+    return requestReports<ReporteCategoriaDetalle>(
+      `/reports/inventory/category/${categoryId}/assets`,
+    );
+  },
+
+  /**
+   * HU28 + HU30 — Descarga PDF o Excel del resumen de categorías.
+   */
+  descargarReporteCategoria: async (formato: 'pdf' | 'excel', generatedById?: string) => {
+    const params = new URLSearchParams();
+    if (generatedById) params.set('generatedById', generatedById);
+
+    const suffix = params.toString() ? `?${params.toString()}` : '';
+    const response = await fetch(
+      `${REPORTS_API_URL}/reports/inventory/category/download/${formato}${suffix}`,
+    );
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => null);
+      throw new Error(error?.message || 'No se pudo descargar el reporte por categoria');
+    }
+
+    const blob = await response.blob();
+    const fallback = `reporte-por-categoria.${formato === 'pdf' ? 'pdf' : 'xls'}`;
+    const filename = getFilenameFromDisposition(
+      response.headers.get('Content-Disposition'),
+      fallback,
+    );
+
+    downloadBlob(blob, filename);
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Utilidades generales (sin cambios)
+  // ═══════════════════════════════════════════════════════════════════════════
+
   verificarMicroservicio: async () => {
     return requestReports<{ status: string; message: string; timestamp: string }>('/health');
   },
 
-  // Generar reporte
   generar: async (parametros: ParametrosReporte) => {
     try {
       const response = await apiClient.post<ApiResponse<ReporteGenerado>>(
         '/reportes/generar',
-        parametros
+        parametros,
       );
       return response.data;
     } catch (error) {
@@ -97,96 +155,76 @@ export const reportesService = {
     }
   },
 
-  // Obtener reportes generados
   obtenerTodos: async (pagina?: number, limite?: number) => {
     try {
-      const response = await apiClient.get<PaginatedResponse<ReporteGenerado>>(
-        '/reportes',
-        {
-          params: { pagina, limite },
-        }
-      );
+      const response = await apiClient.get<PaginatedResponse<ReporteGenerado>>('/reportes', {
+        params: { pagina, limite },
+      });
       return response;
     } catch (error) {
       throw error;
     }
   },
 
-  // Obtener un reporte específico
   obtenerPorId: async (id: string) => {
     try {
-      const response = await apiClient.get<ApiResponse<ReporteGenerado>>(
-        `/reportes/${id}`
-      );
+      const response = await apiClient.get<ApiResponse<ReporteGenerado>>(`/reportes/${id}`);
       return response.data;
     } catch (error) {
       throw error;
     }
   },
 
-  // Descargar reporte
   descargar: async (reporteId: string) => {
     try {
-      const response = await apiClient.get(
-        `/reportes/${reporteId}/descargar`,
-        {
-          responseType: 'blob',
-        }
-      );
+      const response = await apiClient.get(`/reportes/${reporteId}/descargar`, {
+        responseType: 'blob',
+      });
       return response;
     } catch (error) {
       throw error;
     }
   },
 
-  // Eliminar reporte
   eliminar: async (id: string) => {
     try {
-      const response = await apiClient.delete<ApiResponse<void>>(
-        `/reportes/${id}`
-      );
+      const response = await apiClient.delete<ApiResponse<void>>(`/reportes/${id}`);
       return response;
     } catch (error) {
       throw error;
     }
   },
 
-  // Obtener tipos de reportes disponibles
   obtenerTipos: async () => {
     try {
       const tipos = Object.values(tipoReporte);
       return {
         success: true,
-        data: tipos.map(tipo => ({
+        data: tipos.map((tipo) => ({
           valor: tipo,
-          label: tipo.replace(/_/g, ' ').toUpperCase()
-        }))
+          label: tipo.replace(/_/g, ' ').toUpperCase(),
+        })),
       };
     } catch (error) {
       throw error;
     }
   },
 
-  // ===== REPORTES PROGRAMADOS =====
-
-  // Obtener reportes programados
   obtenerProgramados: async () => {
     try {
-      const response = await apiClient.get<PaginatedResponse<ReporteProgramado>>(
-        '/reportes/programados'
-      );
+      const response =
+        await apiClient.get<PaginatedResponse<ReporteProgramado>>('/reportes/programados');
       return response;
     } catch (error) {
       throw error;
     }
   },
 
-  // Crear reporte programado
   crearProgramado: async (datos: Partial<ReporteProgramado>) => {
     try {
       const response = await apiClient.post<ApiResponse<ReporteProgramado>>(
         '/reportes/programados',
-        datos
+        datos,
       );
       return response.data;
     } catch (error) {
@@ -194,12 +232,11 @@ export const reportesService = {
     }
   },
 
-  // Actualizar reporte programado
   actualizarProgramado: async (id: string, datos: Partial<ReporteProgramado>) => {
     try {
       const response = await apiClient.put<ApiResponse<ReporteProgramado>>(
         `/reportes/programados/${id}`,
-        datos
+        datos,
       );
       return response.data;
     } catch (error) {
@@ -207,11 +244,10 @@ export const reportesService = {
     }
   },
 
-  // Eliminar reporte programado
   eliminarProgramado: async (id: string) => {
     try {
       const response = await apiClient.delete<ApiResponse<void>>(
-        `/reportes/programados/${id}`
+        `/reportes/programados/${id}`,
       );
       return response;
     } catch (error) {
@@ -219,26 +255,20 @@ export const reportesService = {
     }
   },
 
-  // ===== UTILIDADES =====
-
-  // Obtener ejemplos de reportes
   obtenerEjemplos: async () => {
     try {
-      const response = await apiClient.get<ApiResponse<any[]>>(
-        '/reportes/ejemplos'
-      );
+      const response = await apiClient.get<ApiResponse<any[]>>('/reportes/ejemplos');
       return response.data || [];
     } catch (error) {
       throw error;
     }
   },
 
-  // Previsualizar reporte (sin generar archivo)
   previsualizar: async (parametros: ParametrosReporte) => {
     try {
       const response = await apiClient.post<ApiResponse<any>>(
         '/reportes/previsualizar',
-        parametros
+        parametros,
       );
       return response.data;
     } catch (error) {
@@ -246,31 +276,24 @@ export const reportesService = {
     }
   },
 
-  // Generar reporte en formato específico
-  generarFormato: async (parametros: ParametrosReporte, formato: 'excel' | 'pdf' | 'csv' | 'json') => {
+  generarFormato: async (
+    parametros: ParametrosReporte,
+    formato: 'excel' | 'pdf' | 'csv' | 'json',
+  ) => {
     try {
-      // Ajustar parámetros con el formato
       const paramsConFormato = { ...parametros, formato };
-      
-      const response = await apiClient.post(
-        '/reportes/generar-descarga',
-        paramsConFormato,
-        {
-          responseType: 'blob',
-        }
-      );
+      const response = await apiClient.post('/reportes/generar-descarga', paramsConFormato, {
+        responseType: 'blob',
+      });
       return response;
     } catch (error) {
       throw error;
     }
   },
 
-  // Obtener estadísticas de reportes
   obtenerEstadisticas: async () => {
     try {
-      const response = await apiClient.get<ApiResponse<any>>(
-        '/reportes/estadisticas'
-      );
+      const response = await apiClient.get<ApiResponse<any>>('/reportes/estadisticas');
       return response.data;
     } catch (error) {
       throw error;
