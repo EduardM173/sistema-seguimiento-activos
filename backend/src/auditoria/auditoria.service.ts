@@ -22,11 +22,17 @@ export class AuditoriaService {
     userId: string,
     assetId: string,
     query: AssetTraceabilityQueryDto = {},
+    options: {
+      permissionCode?: string;
+      permissionMessage?: string;
+      areaScoped?: boolean;
+    } = {},
   ) {
     await this.assertUserHasPermission(
       userId,
-      'AUDIT_VIEW',
-      'No tienes permisos para consultar la trazabilidad de activos',
+      options.permissionCode ?? 'AUDIT_VIEW',
+      options.permissionMessage ??
+        'No tienes permisos para consultar la trazabilidad de activos',
     );
 
     const asset = await this.prisma.activo.findUnique({
@@ -73,6 +79,17 @@ export class AuditoriaService {
       throw new NotFoundException(
         `No se encontró el activo con ID: ${assetId}`,
       );
+    }
+
+    if (options.areaScoped) {
+      const areaIds = await this.resolveUserAreaIds(userId);
+      const assetAreaId = asset.areaActual?.id ?? null;
+
+      if (!assetAreaId || !areaIds.includes(assetAreaId)) {
+        throw new ForbiddenException(
+          'No tienes permisos para consultar la trazabilidad de este activo',
+        );
+      }
     }
 
     const dateRange = this.buildTraceabilityDateRange(query);
@@ -611,6 +628,27 @@ export class AuditoriaService {
 
   private cleanNotificationMessage(message: string) {
     return message.replace(/\[ASSET_ID:[^\]]+\]\s*/g, '').trim();
+  }
+
+  private async resolveUserAreaIds(userId: string) {
+    const usuario = await this.prisma.usuario.findUnique({
+      where: { id: userId },
+      select: {
+        areaId: true,
+        areasGestionadas: {
+          select: { id: true },
+        },
+      },
+    });
+
+    return Array.from(
+      new Set(
+        [
+          usuario?.areaId ?? null,
+          ...(usuario?.areasGestionadas.map((area) => area.id) ?? []),
+        ].filter((areaId): areaId is string => Boolean(areaId)),
+      ),
+    );
   }
 
   private async resolveNotificationScope(userId: string) {

@@ -144,6 +144,42 @@ export class AuditoriaController {
   }
 
   @ApiOperation({
+    summary: 'Obtener trazabilidad departamental de un activo',
+    description:
+      'Permite al Responsable de Área consultar la trazabilidad de un activo vinculado a su departamento.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Identificador del activo vinculado al departamento',
+  })
+  @ApiOkResponse({
+    description: 'Trazabilidad departamental obtenida correctamente',
+  })
+  @ApiNotFoundResponse({ description: 'Activo no encontrado' })
+  @Get('departamental/activos/:id/trazabilidad')
+  async getDepartmentAssetTraceability(
+    @Param('id') id: string,
+    @Req() req: Request,
+  ) {
+    const userId = (req.user as { id: string }).id;
+    const data = await this.auditoriaService.getAssetTraceability(
+      userId,
+      id,
+      {},
+      {
+        permissionCode: 'ASSET_VIEW',
+        permissionMessage:
+          'No tienes permisos para consultar la trazabilidad departamental',
+        areaScoped: true,
+      },
+    );
+    return ApiResponse.success(
+      data,
+      'Trazabilidad departamental obtenida correctamente',
+    );
+  }
+
+  @ApiOperation({
     summary: 'Marcar notificación como leída',
   })
   @ApiParam({ name: 'id', description: 'Identificador de la notificación' })

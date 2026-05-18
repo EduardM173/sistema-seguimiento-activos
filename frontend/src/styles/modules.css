@@ -164,9 +164,125 @@
   gap: 2px;
 }
 
+/* ── HU26 / Trazabilidad departamental ────────────────── */
+.department-traceability__layout {
+  display: grid;
+  grid-template-columns: minmax(280px, 380px) minmax(0, 1fr);
+  gap: var(--space-5);
+  align-items: start;
+}
+
+.department-traceability__sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.department-traceability__sectionHeader h2 {
+  margin: 0 0 var(--space-1);
+  color: var(--color-text);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+}
+
+.department-traceability__sectionHeader p {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.department-traceability__search {
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.department-traceability__assetList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-height: 620px;
+  overflow-y: auto;
+  padding: var(--space-4) var(--space-5);
+}
+
+.department-traceability__assetCard {
+  width: 100%;
+  padding: var(--space-3);
+  text-align: left;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-base);
+  cursor: pointer;
+  transition: border-color var(--transition-fast), background var(--transition-fast), transform var(--transition-fast);
+}
+
+.department-traceability__assetCard:hover {
+  background: var(--color-surface-2);
+  border-color: var(--color-primary);
+  transform: translateY(-1px);
+}
+
+.department-traceability__assetCard--selected {
+  background: var(--color-primary-muted);
+  border-color: var(--color-primary);
+}
+
+.department-traceability__assetCard span,
+.department-traceability__summary span {
+  display: block;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.department-traceability__assetCard strong,
+.department-traceability__summary strong {
+  display: block;
+  margin-top: 3px;
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+}
+
+.department-traceability__assetCard small {
+  display: block;
+  margin-top: var(--space-1);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+}
+
+.department-traceability__empty {
+  margin: 0;
+  padding: var(--space-4);
+  color: var(--color-text-secondary);
+  text-align: center;
+  background: var(--color-surface-2);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-base);
+}
+
+.department-traceability__summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(140px, 1fr));
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.department-traceability__summary > div {
+  padding: var(--space-3);
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-base);
+}
+
 @media (max-width: 900px) {
   .audit-traceability__filters,
-  .audit-traceability__summary {
+  .audit-traceability__summary,
+  .department-traceability__layout,
+  .department-traceability__summary {
     grid-template-columns: 1fr;
   }
 }

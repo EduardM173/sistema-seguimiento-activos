@@ -433,4 +433,55 @@ describe('AuditoriaService notification inbox for HU32', () => {
     expect(prisma.movimientoActivo.findMany).not.toHaveBeenCalled();
     expect(prisma.auditoria.findMany).not.toHaveBeenCalled();
   });
+
+  it('allows department traceability only for assets in the user area scope', async () => {
+    prisma.usuario.findUnique
+      .mockResolvedValueOnce({
+        rol: {
+          permisos: [{ permiso: { codigo: 'ASSET_VIEW' } }],
+        },
+      })
+      .mockResolvedValueOnce({
+        areaId: 'area-2',
+        areasGestionadas: [],
+      });
+
+    prisma.activo.findUnique.mockResolvedValue({
+      id: 'asset-1',
+      codigo: 'ACT-001',
+      nombre: 'Laptop Dell',
+      descripcion: null,
+      estado: 'OPERATIVO',
+      creadoEn: new Date('2026-05-01T09:00:00.000Z'),
+      actualizadoEn: new Date('2026-05-10T12:00:00.000Z'),
+      dadoDeBajaEn: null,
+      motivoBaja: null,
+      categoria: null,
+      ubicacion: null,
+      areaActual: { id: 'area-2', nombre: 'Sistemas' },
+      responsableActual: null,
+    });
+
+    prisma.movimientoActivo.findMany.mockResolvedValue([]);
+    prisma.auditoria.findMany.mockResolvedValue([]);
+    prisma.area.findMany.mockResolvedValue([]);
+    prisma.usuario.findMany.mockResolvedValue([]);
+
+    const result = await service.getAssetTraceability(
+      'responsable-1',
+      'asset-1',
+      {},
+      {
+        permissionCode: 'ASSET_VIEW',
+        areaScoped: true,
+      },
+    );
+
+    expect(result.activo.areaActual).toEqual({ id: 'area-2', nombre: 'Sistemas' });
+    expect(prisma.movimientoActivo.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ activoId: 'asset-1' }),
+      }),
+    );
+  });
 });

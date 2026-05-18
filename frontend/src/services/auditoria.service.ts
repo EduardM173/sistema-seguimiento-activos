@@ -90,6 +90,18 @@ export const auditoriaService = {
     }
   },
 
+  // Obtener trazabilidad de un activo vinculado al departamento del responsable
+  obtenerTrazabilidadDepartamentalActivo: async (activoId: string) => {
+    try {
+      const response = await apiClient.get<ApiResponse<TrazabilidadActivo>>(
+        `/auditoria/departamental/activos/${encodeURIComponent(activoId)}/trazabilidad`,
+      );
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
   // Exportar auditoría
   exportar: async (formato: 'excel' | 'csv' | 'pdf', filtros?: FiltrosAuditoria) => {
     try {
