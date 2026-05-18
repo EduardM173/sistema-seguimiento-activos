@@ -24,6 +24,64 @@ export interface Auditoria {
   createdAt: Date;
 }
 
+export type TipoMovimientoTrazabilidad =
+  | "REGISTRO"
+  | "ASIGNACION"
+  | "TRANSFERENCIA"
+  | "DEVOLUCION"
+  | "BAJA"
+  | "ACTUALIZACION"
+  | "INCIDENTE";
+
+export interface TrazabilidadResumenPersona {
+  id: string;
+  nombreCompleto: string;
+}
+
+export interface TrazabilidadResumenArea {
+  id: string;
+  nombre: string;
+}
+
+export interface TrazabilidadMovimiento {
+  id: string;
+  fuente: "MOVIMIENTO";
+  fecha: string;
+  tipo: TipoMovimientoTrazabilidad;
+  etiqueta: string;
+  detalle: string;
+  areaOrigen: TrazabilidadResumenArea | null;
+  areaDestino: TrazabilidadResumenArea | null;
+  usuarioOrigen: TrazabilidadResumenPersona | null;
+  usuarioDestino: TrazabilidadResumenPersona | null;
+  usuarioOrigenId: string | null;
+  usuarioDestinoId: string | null;
+  asignacionId: string | null;
+  realizadoPor: TrazabilidadResumenPersona | null;
+}
+
+export interface TrazabilidadActivo {
+  activo: {
+    id: string;
+    codigo: string;
+    nombre: string;
+    descripcion: string | null;
+    estado: string;
+    categoria: TrazabilidadResumenArea | null;
+    ubicacion: TrazabilidadResumenArea | null;
+    areaActual: TrazabilidadResumenArea | null;
+    responsableActual: TrazabilidadResumenPersona | null;
+  };
+  resumen: {
+    totalEventos: number;
+    totalMovimientos: number;
+    totalRegistrosAuditoria: number;
+    movimientosPorTipo: Record<TipoMovimientoTrazabilidad, number>;
+  };
+  movimientos: TrazabilidadMovimiento[];
+  timeline: Array<TrazabilidadMovimiento | Record<string, unknown>>;
+}
+
 // Notificación del sistema
 export interface Notificacion {
   id: string;
