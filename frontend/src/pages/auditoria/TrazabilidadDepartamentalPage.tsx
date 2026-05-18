@@ -7,6 +7,7 @@ import { auditoriaService } from '../../services/auditoria.service';
 import type { AssetListItem } from '../../types/assets.types';
 import type {
   TrazabilidadActivo,
+  TrazabilidadDepartamental,
   TrazabilidadMovimiento,
   TipoMovimientoTrazabilidad,
 } from '../../types/auditoria.types';
@@ -19,10 +20,17 @@ export default function TrazabilidadDepartamentalPage() {
   const [assets, setAssets] = useState<AssetListItem[]>([]);
   const [searchText, setSearchText] = useState('');
   const [selectedAssetId, setSelectedAssetId] = useState('');
+  const [departmentTraceability, setDepartmentTraceability] =
+    useState<TrazabilidadDepartamental | null>(null);
   const [traceability, setTraceability] = useState<TrazabilidadActivo | null>(null);
   const [assetsLoading, setAssetsLoading] = useState(true);
+  const [departmentLoading, setDepartmentLoading] = useState(true);
   const [traceabilityLoading, setTraceabilityLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'error' | 'info'; text: string } | null>(null);
+
+  useEffect(() => {
+    void loadDepartmentTraceability();
+  }, []);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -65,6 +73,23 @@ export default function TrazabilidadDepartamentalPage() {
       console.error(error);
     } finally {
       setAssetsLoading(false);
+    }
+  }
+
+  async function loadDepartmentTraceability() {
+    try {
+      setDepartmentLoading(true);
+      const response = await auditoriaService.obtenerTrazabilidadDepartamental();
+      setDepartmentTraceability(response ?? null);
+    } catch (error) {
+      setDepartmentTraceability(null);
+      setMessage({
+        type: 'error',
+        text: 'No se pudo cargar la lista consolidada de movimientos del departamento.',
+      });
+      console.error(error);
+    } finally {
+      setDepartmentLoading(false);
     }
   }
 
@@ -143,6 +168,49 @@ export default function TrazabilidadDepartamentalPage() {
     },
   ];
 
+  const consolidatedColumns: Column<TrazabilidadMovimiento>[] = [
+    {
+      header: 'Activo',
+      accessor: (row) =>
+        row.activo ? `${row.activo.codigo} - ${row.activo.nombre}` : 'No registrado',
+      render: (_value: string, row) => (
+        <button
+          type="button"
+          className="department-traceability__assetLink"
+          onClick={() => row.activo?.id && setSelectedAssetId(row.activo.id)}
+          disabled={!row.activo?.id}
+        >
+          <strong>{row.activo?.codigo ?? 'N/A'}</strong>
+          <span>{row.activo?.nombre ?? 'Activo no registrado'}</span>
+        </button>
+      ),
+    },
+    {
+      header: 'Movimiento',
+      accessor: 'tipo',
+      render: (value: TipoMovimientoTrazabilidad, row) => (
+        <Badge label={row.etiqueta || value} variant={getMovimientoColor(value)} size="sm" />
+      ),
+    },
+    {
+      header: 'Fecha',
+      accessor: 'fecha',
+      render: (value: string) => formatDateTime(value),
+    },
+    {
+      header: 'Origen',
+      accessor: (row) => row.areaOrigen?.nombre ?? 'No aplica',
+    },
+    {
+      header: 'Destino',
+      accessor: (row) => row.areaDestino?.nombre ?? 'No aplica',
+    },
+    {
+      header: 'Usuario',
+      accessor: (row) => row.realizadoPor?.nombreCompleto ?? 'No registrado',
+    },
+  ];
+
   return (
     <div className="module-page department-traceability">
       <div className="module-header">
@@ -179,6 +247,51 @@ export default function TrazabilidadDepartamentalPage() {
       ) : null}
 
       <div className="department-traceability__layout">
+        <section className="module-list department-traceability__consolidated">
+          <div className="list-header department-traceability__sectionHeader">
+            <div>
+              <h2>Movimientos consolidados del departamento</h2>
+              <p>
+                Lista única de movimientos registrados en los activos vinculados a su
+                departamento.
+              </p>
+            </div>
+            <Badge
+              label={`${departmentTraceability?.resumen.totalMovimientos ?? 0} movimiento(s)`}
+              variant="info"
+              size="sm"
+            />
+          </div>
+
+          {departmentTraceability ? (
+            <div className="department-traceability__summary">
+              <div>
+                <span>Activos con movimiento</span>
+                <strong>{departmentTraceability.resumen.totalActivos}</strong>
+              </div>
+              <div>
+                <span>Total movimientos</span>
+                <strong>{departmentTraceability.resumen.totalMovimientos}</strong>
+              </div>
+              <div>
+                <span>Área</span>
+                <strong>{user?.area?.nombre ?? 'No asignada'}</strong>
+              </div>
+            </div>
+          ) : null}
+
+          <DataTable<TrazabilidadMovimiento>
+            columns={consolidatedColumns}
+            data={departmentTraceability?.movimientos ?? []}
+            loading={departmentLoading}
+            emptyMessage="No hay movimientos registrados para los activos del departamento"
+            striped
+            hover
+            paginated
+            pageSize={8}
+          />
+        </section>
+
         <section className="module-list department-traceability__assets">
           <div className="list-header department-traceability__sectionHeader">
             <div>

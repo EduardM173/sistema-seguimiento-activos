@@ -484,4 +484,77 @@ describe('AuditoriaService notification inbox for HU32', () => {
       }),
     );
   });
+
+  it('returns consolidated movements for assets linked to the user department', async () => {
+    prisma.usuario.findUnique
+      .mockResolvedValueOnce({
+        rol: {
+          permisos: [{ permiso: { codigo: 'ASSET_VIEW' } }],
+        },
+      })
+      .mockResolvedValueOnce({
+        areaId: 'area-2',
+        areasGestionadas: [],
+      });
+
+    prisma.movimientoActivo.findMany.mockResolvedValue([
+      {
+        id: 'mov-1',
+        tipo: TipoMovimientoActivo.TRANSFERENCIA,
+        areaOrigenId: 'area-1',
+        areaDestinoId: 'area-2',
+        usuarioOrigenId: null,
+        usuarioDestinoId: null,
+        asignacionId: 'asig-1',
+        detalle: 'Transferencia registrada',
+        creadoEn: new Date('2026-05-05T10:00:00.000Z'),
+        activo: {
+          id: 'asset-1',
+          codigo: 'ACT-001',
+          nombre: 'Laptop Dell',
+          estado: 'OPERATIVO',
+          areaActual: { id: 'area-2', nombre: 'Sistemas' },
+        },
+        realizadoPor: {
+          id: 'user-1',
+          nombres: 'Juan',
+          apellidos: 'Operativo',
+        },
+      },
+    ]);
+    prisma.area.findMany.mockResolvedValue([
+      { id: 'area-1', nombre: 'Administración' },
+      { id: 'area-2', nombre: 'Sistemas' },
+    ]);
+
+    const result = await service.getDepartmentTraceability('responsable-1');
+
+    expect(prisma.movimientoActivo.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          activo: {
+            areaActualId: { in: ['area-2'] },
+          },
+        },
+      }),
+    );
+    expect(result.resumen).toEqual(
+      expect.objectContaining({
+        totalMovimientos: 1,
+        totalActivos: 1,
+      }),
+    );
+    expect(result.movimientos[0]).toEqual(
+      expect.objectContaining({
+        tipo: TipoMovimientoActivo.TRANSFERENCIA,
+        activo: expect.objectContaining({
+          id: 'asset-1',
+          codigo: 'ACT-001',
+          nombre: 'Laptop Dell',
+        }),
+        areaOrigen: { id: 'area-1', nombre: 'Administración' },
+        areaDestino: { id: 'area-2', nombre: 'Sistemas' },
+      }),
+    );
+  });
 });

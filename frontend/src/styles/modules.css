@@ -172,6 +172,10 @@
   align-items: start;
 }
 
+.department-traceability__consolidated {
+  grid-column: 1 / -1;
+}
+
 .department-traceability__sectionHeader {
   display: flex;
   justify-content: space-between;
@@ -251,6 +255,42 @@
   margin-top: var(--space-1);
   color: var(--color-text-secondary);
   font-size: var(--font-size-xs);
+}
+
+.department-traceability__assetLink {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0;
+  color: var(--color-primary);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--font-family);
+}
+
+.department-traceability__assetLink:hover {
+  color: var(--color-primary-light);
+  text-decoration: underline;
+}
+
+.department-traceability__assetLink:disabled {
+  color: var(--color-text-muted);
+  cursor: default;
+  text-decoration: none;
+}
+
+.department-traceability__assetLink strong {
+  color: inherit;
+  font-size: var(--font-size-sm);
+}
+
+.department-traceability__assetLink span {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  text-transform: none;
+  letter-spacing: normal;
 }
 
 .department-traceability__empty {

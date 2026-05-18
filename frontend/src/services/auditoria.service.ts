@@ -6,6 +6,7 @@ import type {
   Notificacion,
   ConfiguracionAuditoria,
   TrazabilidadActivo,
+  TrazabilidadDepartamental,
 } from '../types/auditoria.types';
 import type { PaginatedResponse, ApiResponse } from '../types';
 
@@ -95,6 +96,18 @@ export const auditoriaService = {
     try {
       const response = await apiClient.get<ApiResponse<TrazabilidadActivo>>(
         `/auditoria/departamental/activos/${encodeURIComponent(activoId)}/trazabilidad`,
+      );
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // Obtener lista consolidada de movimientos departamentales
+  obtenerTrazabilidadDepartamental: async () => {
+    try {
+      const response = await apiClient.get<ApiResponse<TrazabilidadDepartamental>>(
+        '/auditoria/departamental/trazabilidad',
       );
       return response.data;
     } catch (error) {

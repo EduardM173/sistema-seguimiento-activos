@@ -395,6 +395,131 @@ export class AuditoriaService {
     };
   }
 
+  async getDepartmentTraceability(userId: string) {
+    await this.assertUserHasPermission(
+      userId,
+      'ASSET_VIEW',
+      'No tienes permisos para consultar la trazabilidad departamental',
+    );
+
+    const areaIds = await this.resolveUserAreaIds(userId);
+
+    if (areaIds.length === 0) {
+      return {
+        areaIds,
+        resumen: {
+          totalMovimientos: 0,
+          totalActivos: 0,
+          movimientosPorTipo: this.buildMovementTypeSummary([]),
+        },
+        movimientos: [],
+      };
+    }
+
+    const movimientos = await this.prisma.movimientoActivo.findMany({
+      where: {
+        activo: {
+          areaActualId: { in: areaIds },
+        },
+      },
+      select: {
+        id: true,
+        tipo: true,
+        areaOrigenId: true,
+        areaDestinoId: true,
+        usuarioOrigenId: true,
+        usuarioDestinoId: true,
+        asignacionId: true,
+        detalle: true,
+        creadoEn: true,
+        activo: {
+          select: {
+            id: true,
+            codigo: true,
+            nombre: true,
+            estado: true,
+            areaActual: {
+              select: { id: true, nombre: true },
+            },
+          },
+        },
+        realizadoPor: {
+          select: {
+            id: true,
+            nombres: true,
+            apellidos: true,
+          },
+        },
+      },
+      orderBy: {
+        creadoEn: 'desc',
+      },
+    });
+
+    const areaIdsInMovements = [
+      ...new Set(
+        movimientos
+          .flatMap((movimiento) => [
+            movimiento.areaOrigenId,
+            movimiento.areaDestinoId,
+          ])
+          .filter((areaId): areaId is string => Boolean(areaId)),
+      ),
+    ];
+
+    const areas =
+      areaIdsInMovements.length > 0
+        ? await this.prisma.area.findMany({
+            where: { id: { in: areaIdsInMovements } },
+            select: { id: true, nombre: true },
+          })
+        : [];
+
+    const areaMap = Object.fromEntries(areas.map((area) => [area.id, area]));
+
+    const movimientosUnificados = movimientos.map((movimiento) => ({
+      id: movimiento.id,
+      fuente: 'MOVIMIENTO' as const,
+      fecha: movimiento.creadoEn,
+      tipo: movimiento.tipo,
+      etiqueta: this.formatMovementType(movimiento.tipo),
+      detalle: movimiento.detalle ?? 'Sin detalle registrado',
+      activo: {
+        id: movimiento.activo.id,
+        codigo: movimiento.activo.codigo,
+        nombre: movimiento.activo.nombre,
+        estado: movimiento.activo.estado,
+        areaActual: movimiento.activo.areaActual,
+      },
+      areaOrigen: movimiento.areaOrigenId
+        ? (areaMap[movimiento.areaOrigenId] ?? null)
+        : null,
+      areaDestino: movimiento.areaDestinoId
+        ? (areaMap[movimiento.areaDestinoId] ?? null)
+        : null,
+      usuarioOrigen: null,
+      usuarioDestino: null,
+      usuarioOrigenId: movimiento.usuarioOrigenId,
+      usuarioDestinoId: movimiento.usuarioDestinoId,
+      asignacionId: movimiento.asignacionId,
+      realizadoPor: this.mapUserSummary(movimiento.realizadoPor),
+    }));
+
+    const uniqueAssetIds = new Set(
+      movimientos.map((movimiento) => movimiento.activo.id),
+    );
+
+    return {
+      areaIds,
+      resumen: {
+        totalMovimientos: movimientos.length,
+        totalActivos: uniqueAssetIds.size,
+        movimientosPorTipo: this.buildMovementTypeSummary(movimientos),
+      },
+      movimientos: movimientosUnificados,
+    };
+  }
+
   async markAsRead(userId: string, notificationId: string) {
     const scope = await this.resolveNotificationScope(userId);
 

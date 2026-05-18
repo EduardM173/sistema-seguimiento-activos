@@ -180,6 +180,24 @@ export class AuditoriaController {
   }
 
   @ApiOperation({
+    summary: 'Listar trazabilidad departamental consolidada',
+    description:
+      'Devuelve los movimientos registrados de activos vinculados al departamento del usuario autenticado.',
+  })
+  @ApiOkResponse({
+    description: 'Trazabilidad departamental consolidada obtenida correctamente',
+  })
+  @Get('departamental/trazabilidad')
+  async getDepartmentTraceability(@Req() req: Request) {
+    const userId = (req.user as { id: string }).id;
+    const data = await this.auditoriaService.getDepartmentTraceability(userId);
+    return ApiResponse.success(
+      data,
+      'Trazabilidad departamental consolidada obtenida correctamente',
+    );
+  }
+
+  @ApiOperation({
     summary: 'Marcar notificación como leída',
   })
   @ApiParam({ name: 'id', description: 'Identificador de la notificación' })
