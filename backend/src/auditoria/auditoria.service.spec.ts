@@ -557,4 +557,41 @@ describe('AuditoriaService notification inbox for HU32', () => {
       }),
     );
   });
+
+  it('filters department traceability by movement type and date range', async () => {
+    prisma.usuario.findUnique
+      .mockResolvedValueOnce({
+        rol: {
+          permisos: [{ permiso: { codigo: 'ASSET_VIEW' } }],
+        },
+      })
+      .mockResolvedValueOnce({
+        areaId: 'area-2',
+        areasGestionadas: [],
+      });
+
+    prisma.movimientoActivo.findMany.mockResolvedValue([]);
+    prisma.area.findMany.mockResolvedValue([]);
+
+    await service.getDepartmentTraceability('responsable-1', {
+      tipoMovimiento: TipoMovimientoActivo.TRANSFERENCIA,
+      fechaDesde: '2026-05-01',
+      fechaHasta: '2026-05-31',
+    });
+
+    expect(prisma.movimientoActivo.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          tipo: TipoMovimientoActivo.TRANSFERENCIA,
+          creadoEn: {
+            gte: new Date('2026-05-01T00:00:00.000Z'),
+            lte: new Date('2026-05-31T23:59:59.999Z'),
+          },
+          activo: {
+            areaActualId: { in: ['area-2'] },
+          },
+        },
+      }),
+    );
+  });
 });

@@ -15,11 +15,25 @@ import '../../styles/modules.css';
 
 const PAGE_SIZE = 12;
 
+const MOVEMENT_OPTIONS: { value: TipoMovimientoTrazabilidad | ''; label: string }[] = [
+  { value: '', label: 'Todos los movimientos' },
+  { value: 'REGISTRO', label: 'Registro' },
+  { value: 'ASIGNACION', label: 'Asignación' },
+  { value: 'TRANSFERENCIA', label: 'Transferencia' },
+  { value: 'DEVOLUCION', label: 'Devolución' },
+  { value: 'BAJA', label: 'Baja' },
+  { value: 'ACTUALIZACION', label: 'Actualización' },
+  { value: 'INCIDENTE', label: 'Incidente' },
+];
+
 export default function TrazabilidadDepartamentalPage() {
   const { user } = useAuth();
   const [assets, setAssets] = useState<AssetListItem[]>([]);
   const [searchText, setSearchText] = useState('');
   const [selectedAssetId, setSelectedAssetId] = useState('');
+  const [tipoMovimiento, setTipoMovimiento] = useState<TipoMovimientoTrazabilidad | ''>('');
+  const [fechaDesde, setFechaDesde] = useState('');
+  const [fechaHasta, setFechaHasta] = useState('');
   const [departmentTraceability, setDepartmentTraceability] =
     useState<TrazabilidadDepartamental | null>(null);
   const [traceability, setTraceability] = useState<TrazabilidadActivo | null>(null);
@@ -27,10 +41,21 @@ export default function TrazabilidadDepartamentalPage() {
   const [departmentLoading, setDepartmentLoading] = useState(true);
   const [traceabilityLoading, setTraceabilityLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'error' | 'info'; text: string } | null>(null);
+  const invalidDateRange = Boolean(fechaDesde && fechaHasta && fechaDesde > fechaHasta);
 
   useEffect(() => {
+    if (invalidDateRange) {
+      setDepartmentTraceability(null);
+      setDepartmentLoading(false);
+      setMessage({
+        type: 'error',
+        text: 'La fecha desde no puede ser posterior a la fecha hasta.',
+      });
+      return;
+    }
+
     void loadDepartmentTraceability();
-  }, []);
+  }, [tipoMovimiento, fechaDesde, fechaHasta, invalidDateRange]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -79,7 +104,11 @@ export default function TrazabilidadDepartamentalPage() {
   async function loadDepartmentTraceability() {
     try {
       setDepartmentLoading(true);
-      const response = await auditoriaService.obtenerTrazabilidadDepartamental();
+      const response = await auditoriaService.obtenerTrazabilidadDepartamental({
+        tipoMovimiento: tipoMovimiento || undefined,
+        fechaDesde: fechaDesde || undefined,
+        fechaHasta: fechaHasta || undefined,
+      });
       setDepartmentTraceability(response ?? null);
     } catch (error) {
       setDepartmentTraceability(null);
@@ -262,6 +291,52 @@ export default function TrazabilidadDepartamentalPage() {
               size="sm"
             />
           </div>
+
+          <div className="department-traceability__filters">
+            <label>
+              <span>Tipo de movimiento</span>
+              <select
+                value={tipoMovimiento}
+                onChange={(event) =>
+                  setTipoMovimiento(event.target.value as TipoMovimientoTrazabilidad | '')
+                }
+              >
+                {MOVEMENT_OPTIONS.map((option) => (
+                  <option key={option.value || 'ALL'} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label>
+              <span>Desde</span>
+              <input
+                type="date"
+                value={fechaDesde}
+                max={fechaHasta || undefined}
+                onChange={(event) => setFechaDesde(event.target.value)}
+                aria-invalid={invalidDateRange}
+              />
+            </label>
+
+            <label>
+              <span>Hasta</span>
+              <input
+                type="date"
+                value={fechaHasta}
+                min={fechaDesde || undefined}
+                onChange={(event) => setFechaHasta(event.target.value)}
+                aria-invalid={invalidDateRange}
+              />
+            </label>
+          </div>
+
+          {invalidDateRange ? (
+            <div className="department-traceability__validation">
+              La fecha desde no puede ser posterior a la fecha hasta.
+            </div>
+          ) : null}
 
           {departmentTraceability ? (
             <div className="department-traceability__summary">

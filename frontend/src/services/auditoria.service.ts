@@ -104,10 +104,15 @@ export const auditoriaService = {
   },
 
   // Obtener lista consolidada de movimientos departamentales
-  obtenerTrazabilidadDepartamental: async () => {
+  obtenerTrazabilidadDepartamental: async (filtros?: {
+    tipoMovimiento?: string;
+    fechaDesde?: string;
+    fechaHasta?: string;
+  }) => {
     try {
       const response = await apiClient.get<ApiResponse<TrazabilidadDepartamental>>(
         '/auditoria/departamental/trazabilidad',
+        { params: filtros },
       );
       return response.data;
     } catch (error) {

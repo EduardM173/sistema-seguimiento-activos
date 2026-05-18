@@ -395,7 +395,10 @@ export class AuditoriaService {
     };
   }
 
-  async getDepartmentTraceability(userId: string) {
+  async getDepartmentTraceability(
+    userId: string,
+    query: AssetTraceabilityQueryDto = {},
+  ) {
     await this.assertUserHasPermission(
       userId,
       'ASSET_VIEW',
@@ -416,8 +419,12 @@ export class AuditoriaService {
       };
     }
 
+    const dateRange = this.buildTraceabilityDateRange(query);
+
     const movimientos = await this.prisma.movimientoActivo.findMany({
       where: {
+        ...(query.tipoMovimiento ? { tipo: query.tipoMovimiento } : {}),
+        ...(dateRange ? { creadoEn: dateRange } : {}),
         activo: {
           areaActualId: { in: areaIds },
         },

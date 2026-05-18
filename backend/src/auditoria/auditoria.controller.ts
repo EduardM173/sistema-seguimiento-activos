@@ -184,13 +184,47 @@ export class AuditoriaController {
     description:
       'Devuelve los movimientos registrados de activos vinculados al departamento del usuario autenticado.',
   })
+  @ApiQuery({
+    name: 'tipoMovimiento',
+    required: false,
+    enum: [
+      'REGISTRO',
+      'ASIGNACION',
+      'TRANSFERENCIA',
+      'DEVOLUCION',
+      'BAJA',
+      'ACTUALIZACION',
+      'INCIDENTE',
+    ],
+    description: 'Filtra la lista consolidada por tipo de movimiento',
+  })
+  @ApiQuery({
+    name: 'fechaDesde',
+    required: false,
+    type: String,
+    example: '2026-05-01',
+    description: 'Fecha inicial del rango de movimientos',
+  })
+  @ApiQuery({
+    name: 'fechaHasta',
+    required: false,
+    type: String,
+    example: '2026-05-31',
+    description: 'Fecha final del rango de movimientos',
+  })
   @ApiOkResponse({
     description: 'Trazabilidad departamental consolidada obtenida correctamente',
   })
   @Get('departamental/trazabilidad')
-  async getDepartmentTraceability(@Req() req: Request) {
+  async getDepartmentTraceability(
+    @Query() query: AssetTraceabilityQueryDto,
+    @Req() req: Request,
+  ) {
     const userId = (req.user as { id: string }).id;
-    const data = await this.auditoriaService.getDepartmentTraceability(userId);
+    const data = await this.auditoriaService.getDepartmentTraceability(
+      userId,
+      query,
+    );
     return ApiResponse.success(
       data,
       'Trazabilidad departamental consolidada obtenida correctamente',
