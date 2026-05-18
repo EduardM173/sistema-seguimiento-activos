@@ -136,7 +136,7 @@ export const ReportesPage: React.FC = () => {
     () =>
       responsableReport.responsables.map((r) => ({
         value: r.id,
-        label: `${r.nombreCompleto} (${r.total})`,
+        label: `${r.name} (${r.total})`,
       })),
     [responsableReport.responsables],
   );
@@ -656,7 +656,7 @@ export const ReportesPage: React.FC = () => {
                       <User size={18} />
                     </div>
                     <div className="rp__category-card-body">
-                      <span className="rp__category-card-name">{resp.nombreCompleto}</span>
+                      <span className="rp__category-card-name">{resp.name}</span>
                       <strong className="rp__category-card-count">{resp.total}</strong>
                       <span className="rp__category-card-pct">{resp.percentage}%</span>
                     </div>
@@ -674,7 +674,7 @@ export const ReportesPage: React.FC = () => {
           <Card
             title={
               selectedResponsableId
-                ? `Activos de: ${responsableReport.responsables.find((r) => r.id === selectedResponsableId)?.nombreCompleto ?? ''}`
+                ? `Activos de: ${responsableReport.responsables.find((r) => r.id === selectedResponsableId)?.name ?? ''}`
                 : 'Detalle de activos por responsable'
             }
             padding="lg"
@@ -837,7 +837,7 @@ export const ReportesPage: React.FC = () => {
         /* ── Grid de tarjetas (HU28 / PA1 y HU47 / PA1) ────────────────── */
         .rp__category-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+          grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
           gap: 12px;
         }
 
@@ -889,9 +889,9 @@ export const ReportesPage: React.FC = () => {
           font-size: var(--font-size-sm);
           font-weight: var(--font-weight-semibold);
           color: var(--color-text);
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
+          white-space: normal;
+          word-break: break-word;
+          line-height: 1.3;
         }
 
         .rp__category-card-count {
