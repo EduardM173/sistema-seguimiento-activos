@@ -343,6 +343,31 @@
   letter-spacing: normal;
 }
 
+.department-traceability__detailButton {
+  padding: 6px 10px;
+  color: var(--color-primary-light);
+  background: var(--color-primary-muted);
+  border: 1px solid rgba(26, 95, 173, 0.28);
+  border-radius: var(--radius-base);
+  cursor: pointer;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  font-family: var(--font-family);
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.department-traceability__detailButton:hover {
+  background: rgba(26, 95, 173, 0.2);
+  border-color: var(--color-primary);
+}
+
+.department-traceability__detailButton:disabled {
+  color: var(--color-text-muted);
+  background: var(--color-surface-2);
+  border-color: var(--color-border-light);
+  cursor: not-allowed;
+}
+
 .department-traceability__empty {
   margin: 0;
   padding: var(--space-4);

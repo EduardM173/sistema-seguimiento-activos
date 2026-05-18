@@ -4,6 +4,7 @@ import type { Column } from '../../components/common/DataTable';
 import { useAuth } from '../../context/AuthContext';
 import { searchAssets } from '../../services/assets.service';
 import { auditoriaService } from '../../services/auditoria.service';
+import ViewAssetModal from '../../components/activos/ViewAssetModal';
 import type { AssetListItem } from '../../types/assets.types';
 import type {
   TrazabilidadActivo,
@@ -34,6 +35,7 @@ export default function TrazabilidadDepartamentalPage() {
   const [tipoMovimiento, setTipoMovimiento] = useState<TipoMovimientoTrazabilidad | ''>('');
   const [fechaDesde, setFechaDesde] = useState('');
   const [fechaHasta, setFechaHasta] = useState('');
+  const [viewingAssetId, setViewingAssetId] = useState<string | null>(null);
   const [departmentTraceability, setDepartmentTraceability] =
     useState<TrazabilidadDepartamental | null>(null);
   const [traceability, setTraceability] = useState<TrazabilidadActivo | null>(null);
@@ -195,6 +197,20 @@ export default function TrazabilidadDepartamentalPage() {
         row.usuarioOrigen?.nombreCompleto ||
         'No registrado',
     },
+    {
+      header: 'Detalle',
+      accessor: (row) => row.activo?.id ?? '',
+      render: (_value: string, row) => (
+        <button
+          type="button"
+          className="department-traceability__detailButton"
+          onClick={() => row.activo?.id && setViewingAssetId(row.activo.id)}
+          disabled={!row.activo?.id}
+        >
+          Ver detalle
+        </button>
+      ),
+    },
   ];
 
   const consolidatedColumns: Column<TrazabilidadMovimiento>[] = [
@@ -237,6 +253,20 @@ export default function TrazabilidadDepartamentalPage() {
     {
       header: 'Usuario',
       accessor: (row) => row.realizadoPor?.nombreCompleto ?? 'No registrado',
+    },
+    {
+      header: 'Detalle',
+      accessor: (row) => row.activo?.id ?? '',
+      render: (_value: string, row) => (
+        <button
+          type="button"
+          className="department-traceability__detailButton"
+          onClick={() => row.activo?.id && setViewingAssetId(row.activo.id)}
+          disabled={!row.activo?.id}
+        >
+          Ver detalle
+        </button>
+      ),
     },
   ];
 
@@ -463,6 +493,14 @@ export default function TrazabilidadDepartamentalPage() {
           />
         </section>
       </div>
+
+      {viewingAssetId ? (
+        <ViewAssetModal
+          assetId={viewingAssetId}
+          open={Boolean(viewingAssetId)}
+          onClose={() => setViewingAssetId(null)}
+        />
+      ) : null}
     </div>
   );
 }
