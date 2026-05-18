@@ -51,13 +51,6 @@ export class AssetsService {
 
     const where: Prisma.ActivoWhereInput = {};
 
-    // PA4: ocultar activos con asignaciones pendientes
-      where.asignaciones = {
-        none: {
-          estado: EstadoAsignacion.PENDIENTE,
-        },
-      };
-
     const isAreaManager = this.isAreaManagerRole(user?.rol);
 
     if (isAreaManager && user?.id) {
