@@ -48,6 +48,29 @@ services:
       sh -c "npx prisma migrate deploy && 
       npm run start:dev"
 
+  auditoria:
+    container_name: activos_auditoria
+    image: ${DOCKER_REGISTRY:-local_activos}/auditoria:${TAG:-latest}
+    build:
+      dockerfile: dockerfile
+      context: ./auditoria
+    user: ${UID:-1000}:${GID:-1000}
+    env_file:
+      - ./.env
+
+    environment:
+      POSTGRES_HOST: app-db
+      AUDIT_MS_PORT: 3002
+
+    ports:
+      - 3002:3002
+
+    depends_on:
+      app-db:
+        condition: service_healthy
+
+    command: "npm run dev"
+
   frontend:
     container_name: activos_frontend
     image: ${DOCKER_REGISTRY:-local_activos}/frontend:${TAG:-latest}
@@ -63,12 +86,15 @@ services:
     environment:
       FRONTEND_PORT: 8084
       VITE_BACKEND_URL: http://backend:3000
+      VITE_AUDIT_API_URL: http://localhost:3002/api
 
     ports:
       - 8084:8084
 
     depends_on:
       backend:
+        condition: service_started
+      auditoria:
         condition: service_started
 
 volumes:
