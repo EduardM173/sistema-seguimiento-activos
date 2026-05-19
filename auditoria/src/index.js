@@ -4,6 +4,7 @@ const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
 const { Pool } = require('pg');
+const jwt = require('jsonwebtoken');
 
 const app = express();
 
@@ -25,6 +26,149 @@ function parsePositiveInt(value, fallback) {
     return fallback;
   }
   return parsed;
+}
+
+function createHttpError(status, message) {
+  const error = new Error(message);
+  error.status = status;
+  return error;
+}
+
+function getAuthenticatedUserId(req) {
+  const authorization = req.headers.authorization || '';
+  const token = authorization.startsWith('Bearer ')
+    ? authorization.slice('Bearer '.length)
+    : null;
+
+  if (!token) {
+    throw createHttpError(401, 'Token de autenticación requerido');
+  }
+
+  try {
+    const payload = jwt.verify(token, process.env.JWT_SECRET || 'dev-secret-key');
+    if (!payload?.sub) {
+      throw createHttpError(401, 'Token inválido');
+    }
+    return payload.sub;
+  } catch (error) {
+    if (error.status) throw error;
+    throw createHttpError(401, 'Token inválido o expirado');
+  }
+}
+
+function parseDateRange(query) {
+  const range = {};
+  const fechaDesde = query.fechaDesde ? new Date(String(query.fechaDesde)) : null;
+  const fechaHasta = query.fechaHasta ? new Date(String(query.fechaHasta)) : null;
+
+  if (fechaDesde && Number.isNaN(fechaDesde.getTime())) {
+    throw createHttpError(400, 'La fecha desde no es válida');
+  }
+
+  if (fechaHasta && Number.isNaN(fechaHasta.getTime())) {
+    throw createHttpError(400, 'La fecha hasta no es válida');
+  }
+
+  if (fechaDesde) {
+    fechaDesde.setUTCHours(0, 0, 0, 0);
+    range.fechaDesde = fechaDesde;
+  }
+
+  if (fechaHasta) {
+    fechaHasta.setUTCHours(23, 59, 59, 999);
+    range.fechaHasta = fechaHasta;
+  }
+
+  if (
+    range.fechaDesde &&
+    range.fechaHasta &&
+    range.fechaDesde.getTime() > range.fechaHasta.getTime()
+  ) {
+    throw createHttpError(400, 'La fecha desde no puede ser posterior a la fecha hasta');
+  }
+
+  return range;
+}
+
+function formatMovementType(type) {
+  const labels = {
+    REGISTRO: 'Registro',
+    ASIGNACION: 'Asignación',
+    TRANSFERENCIA: 'Transferencia',
+    DEVOLUCION: 'Devolución',
+    BAJA: 'Baja',
+    ACTUALIZACION: 'Actualización',
+    INCIDENTE: 'Incidente',
+  };
+
+  return labels[type] || type;
+}
+
+function buildMovementTypeSummary(rows) {
+  const summary = {
+    REGISTRO: 0,
+    ASIGNACION: 0,
+    TRANSFERENCIA: 0,
+    DEVOLUCION: 0,
+    BAJA: 0,
+    ACTUALIZACION: 0,
+    INCIDENTE: 0,
+  };
+
+  rows.forEach((row) => {
+    if (summary[row.tipo] !== undefined) {
+      summary[row.tipo] += 1;
+    }
+  });
+
+  return summary;
+}
+
+function buildFullName(row, prefix = '') {
+  return [row[`${prefix}Nombres`], row[`${prefix}Apellidos`]]
+    .filter(Boolean)
+    .join(' ')
+    .trim();
+}
+
+async function assertUserHasPermission(userId, permissionCode) {
+  const result = await pool.query(
+    `
+    SELECT 1
+    FROM usuarios u
+    JOIN roles r ON r.id = u."rolId"
+    JOIN roles_permisos rp ON rp."rolId" = r.id
+    JOIN permisos p ON p.id = rp."permisoId"
+    WHERE u.id = $1 AND p.codigo = $2
+    LIMIT 1
+    `,
+    [userId, permissionCode],
+  );
+
+  if (!result.rows.length) {
+    throw createHttpError(403, 'No tienes permisos para consultar la trazabilidad departamental');
+  }
+}
+
+async function resolveUserAreaIds(userId) {
+  const result = await pool.query(
+    `
+    SELECT DISTINCT area_id
+    FROM (
+      SELECT u."areaId" AS area_id
+      FROM usuarios u
+      WHERE u.id = $1
+      UNION
+      SELECT a.id AS area_id
+      FROM areas a
+      WHERE a."encargadoId" = $1
+    ) scope
+    WHERE area_id IS NOT NULL
+    `,
+    [userId],
+  );
+
+  return result.rows.map((row) => row.area_id);
 }
 
 app.get('/health', async (_req, res) => {
@@ -274,11 +418,145 @@ app.get('/api/auditoria/registros/:id', async (req, res, next) => {
   }
 });
 
+app.get('/api/auditoria/departamental/trazabilidad', async (req, res, next) => {
+  try {
+    const userId = getAuthenticatedUserId(req);
+    await assertUserHasPermission(userId, 'ASSET_VIEW');
+
+    const areaIds = await resolveUserAreaIds(userId);
+    if (!areaIds.length) {
+      return res.json({
+        ok: true,
+        data: {
+          areaIds,
+          resumen: {
+            totalMovimientos: 0,
+            totalActivos: 0,
+            movimientosPorTipo: buildMovementTypeSummary([]),
+          },
+          movimientos: [],
+        },
+      });
+    }
+
+    const { fechaDesde, fechaHasta } = parseDateRange(req.query);
+    const { tipoMovimiento } = req.query;
+
+    const whereClauses = ['ac."areaActualId" = ANY($1::text[])'];
+    const params = [areaIds];
+    const pushParam = (value) => {
+      params.push(value);
+      return `$${params.length}`;
+    };
+
+    if (tipoMovimiento) {
+      whereClauses.push(`m.tipo = ${pushParam(String(tipoMovimiento))}`);
+    }
+
+    if (fechaDesde) {
+      whereClauses.push(`m."creadoEn" >= ${pushParam(fechaDesde)}`);
+    }
+
+    if (fechaHasta) {
+      whereClauses.push(`m."creadoEn" <= ${pushParam(fechaHasta)}`);
+    }
+
+    const result = await pool.query(
+      `
+      SELECT
+        m.id,
+        m.tipo,
+        m."areaOrigenId",
+        m."areaDestinoId",
+        m."usuarioOrigenId",
+        m."usuarioDestinoId",
+        m."asignacionId",
+        m.detalle,
+        m."creadoEn",
+        ac.id AS "activoId",
+        ac.codigo AS "activoCodigo",
+        ac.nombre AS "activoNombre",
+        ac.estado AS "activoEstado",
+        area_actual.id AS "areaActualId",
+        area_actual.nombre AS "areaActualNombre",
+        area_origen.id AS "areaOrigenDbId",
+        area_origen.nombre AS "areaOrigenNombre",
+        area_destino.id AS "areaDestinoDbId",
+        area_destino.nombre AS "areaDestinoNombre",
+        realizado_por.id AS "realizadoPorId",
+        realizado_por.nombres AS "realizadoPorNombres",
+        realizado_por.apellidos AS "realizadoPorApellidos"
+      FROM movimientos_activos m
+      JOIN activos ac ON ac.id = m."activoId"
+      LEFT JOIN areas area_actual ON area_actual.id = ac."areaActualId"
+      LEFT JOIN areas area_origen ON area_origen.id = m."areaOrigenId"
+      LEFT JOIN areas area_destino ON area_destino.id = m."areaDestinoId"
+      LEFT JOIN usuarios realizado_por ON realizado_por.id = m."realizadoPorId"
+      WHERE ${whereClauses.join(' AND ')}
+      ORDER BY m."creadoEn" DESC
+      `,
+      params,
+    );
+
+    const movimientos = result.rows.map((row) => ({
+      id: row.id,
+      fuente: 'MOVIMIENTO',
+      fecha: row.creadoEn,
+      tipo: row.tipo,
+      etiqueta: formatMovementType(row.tipo),
+      detalle: row.detalle || 'Sin detalle registrado',
+      activo: {
+        id: row.activoId,
+        codigo: row.activoCodigo,
+        nombre: row.activoNombre,
+        estado: row.activoEstado,
+        areaActual: row.areaActualId
+          ? { id: row.areaActualId, nombre: row.areaActualNombre }
+          : null,
+      },
+      areaOrigen: row.areaOrigenDbId
+        ? { id: row.areaOrigenDbId, nombre: row.areaOrigenNombre }
+        : null,
+      areaDestino: row.areaDestinoDbId
+        ? { id: row.areaDestinoDbId, nombre: row.areaDestinoNombre }
+        : null,
+      usuarioOrigen: null,
+      usuarioDestino: null,
+      usuarioOrigenId: row.usuarioOrigenId,
+      usuarioDestinoId: row.usuarioDestinoId,
+      asignacionId: row.asignacionId,
+      realizadoPor: row.realizadoPorId
+        ? {
+            id: row.realizadoPorId,
+            nombreCompleto: buildFullName(row, 'realizadoPor'),
+          }
+        : null,
+    }));
+
+    return res.json({
+      ok: true,
+      data: {
+        areaIds,
+        resumen: {
+          totalMovimientos: movimientos.length,
+          totalActivos: new Set(movimientos.map((movimiento) => movimiento.activo.id)).size,
+          movimientosPorTipo: buildMovementTypeSummary(movimientos),
+        },
+        movimientos,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 app.use((error, _req, res, _next) => {
   console.error('[auditoria-ms] error:', error);
-  res.status(500).json({
+  res.status(error.status || 500).json({
     ok: false,
-    message: 'Error interno del microservicio de auditoría',
+    message: error.status
+      ? error.message
+      : 'Error interno del microservicio de auditoría',
   });
 });
 
