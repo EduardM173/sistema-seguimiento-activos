@@ -50,6 +50,13 @@ export interface TrazabilidadMovimiento {
   tipo: TipoMovimientoTrazabilidad;
   etiqueta: string;
   detalle: string;
+  activo?: {
+    id: string;
+    codigo: string;
+    nombre: string;
+    estado: string;
+    areaActual: TrazabilidadResumenArea | null;
+  };
   areaOrigen: TrazabilidadResumenArea | null;
   areaDestino: TrazabilidadResumenArea | null;
   usuarioOrigen: TrazabilidadResumenPersona | null;
@@ -57,6 +64,7 @@ export interface TrazabilidadMovimiento {
   usuarioOrigenId: string | null;
   usuarioDestinoId: string | null;
   asignacionId: string | null;
+  usuarioRelacionado: TrazabilidadResumenPersona | null;
   realizadoPor: TrazabilidadResumenPersona | null;
 }
 
@@ -80,6 +88,16 @@ export interface TrazabilidadActivo {
   };
   movimientos: TrazabilidadMovimiento[];
   timeline: Array<TrazabilidadMovimiento | Record<string, unknown>>;
+}
+
+export interface TrazabilidadDepartamental {
+  areaIds: string[];
+  resumen: {
+    totalMovimientos: number;
+    totalActivos: number;
+    movimientosPorTipo: Record<TipoMovimientoTrazabilidad, number>;
+  };
+  movimientos: TrazabilidadMovimiento[];
 }
 
 // Notificación del sistema

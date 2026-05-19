@@ -20,6 +20,7 @@ describe('AuditoriaService notification inbox for HU32', () => {
       },
       movimientoActivo: {
         findMany: jest.fn(),
+        count: jest.fn(),
       },
       auditoria: {
         findMany: jest.fn(),
@@ -367,6 +368,7 @@ describe('AuditoriaService notification inbox for HU32', () => {
     });
 
     prisma.movimientoActivo.findMany.mockResolvedValue([]);
+    prisma.movimientoActivo.count.mockResolvedValue(0);
     prisma.auditoria.findMany.mockResolvedValue([]);
     prisma.area.findMany.mockResolvedValue([]);
     prisma.usuario.findMany.mockResolvedValue([]);
@@ -397,6 +399,106 @@ describe('AuditoriaService notification inbox for HU32', () => {
           },
         }),
       }),
+    );
+  });
+
+  it('allows department traceability for assets that had movements in the user area scope', async () => {
+    prisma.usuario.findUnique
+      .mockResolvedValueOnce({
+        rol: {
+          permisos: [{ permiso: { codigo: 'ASSET_VIEW' } }],
+        },
+      })
+      .mockResolvedValueOnce({
+        areaId: 'area-2',
+        areasGestionadas: [],
+      });
+
+    prisma.activo.findUnique.mockResolvedValue({
+      id: 'asset-1',
+      codigo: 'ACT-001',
+      nombre: 'Laptop Dell',
+      descripcion: null,
+      estado: 'OPERATIVO',
+      creadoEn: new Date('2026-05-01T09:00:00.000Z'),
+      actualizadoEn: new Date('2026-05-10T12:00:00.000Z'),
+      dadoDeBajaEn: null,
+      motivoBaja: null,
+      categoria: null,
+      ubicacion: null,
+      areaActual: { id: 'area-3', nombre: 'Administración' },
+      responsableActual: null,
+    });
+
+    prisma.movimientoActivo.count.mockResolvedValue(1);
+    prisma.movimientoActivo.findMany.mockResolvedValue([]);
+    prisma.auditoria.findMany.mockResolvedValue([]);
+    prisma.area.findMany.mockResolvedValue([]);
+    prisma.usuario.findMany.mockResolvedValue([]);
+
+    const result = await service.getAssetTraceability(
+      'responsable-1',
+      'asset-1',
+      {},
+      {
+        permissionCode: 'ASSET_VIEW',
+        areaScoped: true,
+      },
+    );
+
+    expect(result.activo.id).toBe('asset-1');
+    expect(prisma.movimientoActivo.count).toHaveBeenCalledWith({
+      where: {
+        activoId: 'asset-1',
+        OR: [
+          { areaOrigenId: { in: ['area-2'] } },
+          { areaDestinoId: { in: ['area-2'] } },
+        ],
+      },
+    });
+  });
+
+  it('rejects department traceability for assets unrelated to the user area scope', async () => {
+    prisma.usuario.findUnique
+      .mockResolvedValueOnce({
+        rol: {
+          permisos: [{ permiso: { codigo: 'ASSET_VIEW' } }],
+        },
+      })
+      .mockResolvedValueOnce({
+        areaId: 'area-2',
+        areasGestionadas: [],
+      });
+
+    prisma.activo.findUnique.mockResolvedValue({
+      id: 'asset-9',
+      codigo: 'ACT-009',
+      nombre: 'Proyector',
+      descripcion: null,
+      estado: 'OPERATIVO',
+      creadoEn: new Date('2026-05-01T09:00:00.000Z'),
+      actualizadoEn: new Date('2026-05-10T12:00:00.000Z'),
+      dadoDeBajaEn: null,
+      motivoBaja: null,
+      categoria: null,
+      ubicacion: null,
+      areaActual: { id: 'area-3', nombre: 'Administración' },
+      responsableActual: null,
+    });
+    prisma.movimientoActivo.count.mockResolvedValue(0);
+
+    await expect(
+      service.getAssetTraceability(
+        'responsable-1',
+        'asset-9',
+        {},
+        {
+          permissionCode: 'ASSET_VIEW',
+          areaScoped: true,
+        },
+      ),
+    ).rejects.toThrow(
+      'No tienes permisos para consultar la trazabilidad de este activo',
     );
   });
 
@@ -432,5 +534,194 @@ describe('AuditoriaService notification inbox for HU32', () => {
 
     expect(prisma.movimientoActivo.findMany).not.toHaveBeenCalled();
     expect(prisma.auditoria.findMany).not.toHaveBeenCalled();
+  });
+
+  it('rejects nonexistent dates for department traceability', async () => {
+    prisma.usuario.findUnique
+      .mockResolvedValueOnce({
+        rol: {
+          permisos: [{ permiso: { codigo: 'ASSET_VIEW' } }],
+        },
+      })
+      .mockResolvedValueOnce({
+        areaId: 'area-2',
+        areasGestionadas: [],
+      });
+
+    await expect(
+      service.getDepartmentTraceability('responsable-1', {
+        fechaDesde: '2026-02-31',
+      }),
+    ).rejects.toThrow('La fecha ingresada no existe');
+
+    expect(prisma.movimientoActivo.findMany).not.toHaveBeenCalled();
+  });
+
+  it('allows department traceability only for assets in the user area scope', async () => {
+    prisma.usuario.findUnique
+      .mockResolvedValueOnce({
+        rol: {
+          permisos: [{ permiso: { codigo: 'ASSET_VIEW' } }],
+        },
+      })
+      .mockResolvedValueOnce({
+        areaId: 'area-2',
+        areasGestionadas: [],
+      });
+
+    prisma.activo.findUnique.mockResolvedValue({
+      id: 'asset-1',
+      codigo: 'ACT-001',
+      nombre: 'Laptop Dell',
+      descripcion: null,
+      estado: 'OPERATIVO',
+      creadoEn: new Date('2026-05-01T09:00:00.000Z'),
+      actualizadoEn: new Date('2026-05-10T12:00:00.000Z'),
+      dadoDeBajaEn: null,
+      motivoBaja: null,
+      categoria: null,
+      ubicacion: null,
+      areaActual: { id: 'area-2', nombre: 'Sistemas' },
+      responsableActual: null,
+    });
+
+    prisma.movimientoActivo.count.mockResolvedValue(0);
+    prisma.movimientoActivo.findMany.mockResolvedValue([]);
+    prisma.auditoria.findMany.mockResolvedValue([]);
+    prisma.area.findMany.mockResolvedValue([]);
+    prisma.usuario.findMany.mockResolvedValue([]);
+
+    const result = await service.getAssetTraceability(
+      'responsable-1',
+      'asset-1',
+      {},
+      {
+        permissionCode: 'ASSET_VIEW',
+        areaScoped: true,
+      },
+    );
+
+    expect(result.activo.areaActual).toEqual({ id: 'area-2', nombre: 'Sistemas' });
+    expect(prisma.movimientoActivo.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ activoId: 'asset-1' }),
+      }),
+    );
+  });
+
+  it('returns consolidated movements for assets linked to the user department', async () => {
+    prisma.usuario.findUnique
+      .mockResolvedValueOnce({
+        rol: {
+          permisos: [{ permiso: { codigo: 'ASSET_VIEW' } }],
+        },
+      })
+      .mockResolvedValueOnce({
+        areaId: 'area-2',
+        areasGestionadas: [],
+      });
+
+    prisma.movimientoActivo.findMany.mockResolvedValue([
+      {
+        id: 'mov-1',
+        tipo: TipoMovimientoActivo.TRANSFERENCIA,
+        areaOrigenId: 'area-1',
+        areaDestinoId: 'area-2',
+        usuarioOrigenId: null,
+        usuarioDestinoId: null,
+        asignacionId: 'asig-1',
+        detalle: 'Transferencia registrada',
+        creadoEn: new Date('2026-05-05T10:00:00.000Z'),
+        activo: {
+          id: 'asset-1',
+          codigo: 'ACT-001',
+          nombre: 'Laptop Dell',
+          estado: 'OPERATIVO',
+          areaActual: { id: 'area-2', nombre: 'Sistemas' },
+        },
+        realizadoPor: {
+          id: 'user-1',
+          nombres: 'Juan',
+          apellidos: 'Operativo',
+        },
+      },
+    ]);
+    prisma.area.findMany.mockResolvedValue([
+      { id: 'area-1', nombre: 'Administración' },
+      { id: 'area-2', nombre: 'Sistemas' },
+    ]);
+
+    const result = await service.getDepartmentTraceability('responsable-1');
+
+    expect(prisma.movimientoActivo.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          OR: [
+            { areaOrigenId: { in: ['area-2'] } },
+            { areaDestinoId: { in: ['area-2'] } },
+          ],
+        },
+      }),
+    );
+    expect(result.resumen).toEqual(
+      expect.objectContaining({
+        totalMovimientos: 1,
+        totalActivos: 1,
+      }),
+    );
+    expect(result.movimientos[0]).toEqual(
+      expect.objectContaining({
+        tipo: TipoMovimientoActivo.TRANSFERENCIA,
+        activo: expect.objectContaining({
+          id: 'asset-1',
+          codigo: 'ACT-001',
+          nombre: 'Laptop Dell',
+        }),
+        areaOrigen: { id: 'area-1', nombre: 'Administración' },
+        areaDestino: { id: 'area-2', nombre: 'Sistemas' },
+        usuarioRelacionado: {
+          id: 'user-1',
+          nombreCompleto: 'Juan Operativo',
+        },
+      }),
+    );
+  });
+
+  it('filters department traceability by movement type and date range', async () => {
+    prisma.usuario.findUnique
+      .mockResolvedValueOnce({
+        rol: {
+          permisos: [{ permiso: { codigo: 'ASSET_VIEW' } }],
+        },
+      })
+      .mockResolvedValueOnce({
+        areaId: 'area-2',
+        areasGestionadas: [],
+      });
+
+    prisma.movimientoActivo.findMany.mockResolvedValue([]);
+    prisma.area.findMany.mockResolvedValue([]);
+
+    await service.getDepartmentTraceability('responsable-1', {
+      tipoMovimiento: TipoMovimientoActivo.TRANSFERENCIA,
+      fechaDesde: '2026-05-01',
+      fechaHasta: '2026-05-31',
+    });
+
+    expect(prisma.movimientoActivo.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          tipo: TipoMovimientoActivo.TRANSFERENCIA,
+          creadoEn: {
+            gte: new Date('2026-05-01T00:00:00.000Z'),
+            lte: new Date('2026-05-31T23:59:59.999Z'),
+          },
+          OR: [
+            { areaOrigenId: { in: ['area-2'] } },
+            { areaDestinoId: { in: ['area-2'] } },
+          ],
+        },
+      }),
+    );
   });
 });
