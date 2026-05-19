@@ -84,10 +84,10 @@ services:
 
     environment:
       POSTGRES_HOST: app_db_local
-      AUDIT_MS_PORT: 3002
+      AUDIT_MS_PORT: 3003
 
     ports:
-      - 3002:3002
+      - 3003:3003
 
     depends_on:
       app_db_local:
@@ -109,7 +109,7 @@ services:
 
     environment:
       VITE_API_URL: "http://localhost:8085/api"
-      VITE_AUDIT_API_URL: "http://localhost:3002/api"
+      VITE_AUDIT_API_URL: "http://localhost:3003/api"
       VITE_REPORTS_API_URL: "http://localhost:8085/reports-api"
       VITE_HOST: "localhost"
       VITE_BACKEND_URL: "http://backend_local:3001"
@@ -127,6 +127,7 @@ services:
       backend_local:
         condition: service_started
       auditoria_local:
+        condition: service_started
       reports_service:
         condition: service_started
 
