@@ -8,6 +8,7 @@ import {
   Download,
   FileSpreadsheet,
   Layers,
+  MapPin,
   RefreshCw,
   User,
 } from 'lucide-react';
@@ -26,6 +27,9 @@ import type {
   ReporteArea,
   ReporteAreaDetalle,
   ActivoDetalleArea,
+  ReporteUbicacion,
+  ReporteUbicacionDetalle,
+  ActivoDetalleUbicacion,
 } from '../../types/reportes.types';
 import '../../styles/modules.css';
 
@@ -56,6 +60,13 @@ const emptyAreaReport: ReporteArea = {
   generatedAt: '',
   totalAssets: 0,
   areas: [],
+  downloadReady: false,
+};
+
+const emptyUbicacionReport: ReporteUbicacion = {
+  generatedAt: '',
+  totalAssets: 0,
+  ubicaciones: [],
   downloadReady: false,
 };
 
@@ -115,6 +126,17 @@ export const ReportesPage: React.FC = () => {
   const [downloadingAreaFormat, setDownloadingAreaFormat] = useState<'pdf' | 'excel' | null>(null);
   const [areaMessage, setAreaMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+  // ── Reporte por ubicación (HU-UBICACION) ────────────────────────────────────
+  const [ubicacionReport, setUbicacionReport] = useState<ReporteUbicacion>(emptyUbicacionReport);
+  const [loadingUbicaciones, setLoadingUbicaciones] = useState(true);
+
+  const [selectedUbicacionId, setSelectedUbicacionId] = useState('');
+  const [ubicacionDetail, setUbicacionDetail] = useState<ReporteUbicacionDetalle | null>(null);
+  const [loadingUbicacionDetail, setLoadingUbicacionDetail] = useState(false);
+
+  const [downloadingUbicacionFormat, setDownloadingUbicacionFormat] = useState<'pdf' | 'excel' | null>(null);
+  const [ubicacionMessage, setUbicacionMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
   // ── Fechas formateadas ────────────────────────────────────────────────────
 
   const generatedAt = useMemo(() => {
@@ -149,6 +171,14 @@ export const ReportesPage: React.FC = () => {
     }).format(new Date(areaReport.generatedAt));
   }, [areaReport.generatedAt]);
 
+  const generatedAtUbicacion = useMemo(() => {
+    if (!ubicacionReport.generatedAt) return 'Sin consulta';
+    return new Intl.DateTimeFormat('es-BO', {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    }).format(new Date(ubicacionReport.generatedAt));
+  }, [ubicacionReport.generatedAt]);
+
   // ── Opciones del selector de categoría ───────────────────────────────────
 
   const categoryOptions: SelectOption[] = useMemo(
@@ -182,6 +212,17 @@ export const ReportesPage: React.FC = () => {
     [areaReport.areas],
   );
 
+  // ── Opciones del selector de ubicación ──────────────────────────────────
+
+  const ubicacionOptions: SelectOption[] = useMemo(
+    () =>
+      ubicacionReport.ubicaciones.map((u) => ({
+        value: u.id,
+        label: `${u.name} (${u.total})`,
+      })),
+    [ubicacionReport.ubicaciones],
+  );
+
   // ── Carga inicial ─────────────────────────────────────────────────────────
 
   useEffect(() => {
@@ -190,9 +231,11 @@ export const ReportesPage: React.FC = () => {
     if (isAdminGeneral) {
       cargarReporteResponsable();
       cargarReporteArea();
+      cargarReporteUbicacion();
     } else {
       setLoadingResponsables(false);
       setLoadingAreas(false);
+      setLoadingUbicaciones(false);
     }
   }, [isAdminGeneral]);
 
@@ -225,6 +268,16 @@ export const ReportesPage: React.FC = () => {
     }
     cargarDetalleArea(selectedAreaId);
   }, [isAdminGeneral, selectedAreaId]);
+
+  // ── Al cambiar la ubicación seleccionada, carga el detalle ───────────────
+
+  useEffect(() => {
+    if (!isAdminGeneral || !selectedUbicacionId) {
+      setUbicacionDetail(null);
+      return;
+    }
+    cargarDetalleUbicacion(selectedUbicacionId);
+  }, [isAdminGeneral, selectedUbicacionId]);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // Acciones — Reporte general (HU27)
@@ -434,6 +487,67 @@ export const ReportesPage: React.FC = () => {
       });
     } finally {
       setDownloadingAreaFormat(null);
+    }
+  };
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Acciones — Reporte por ubicación (HU-UBICACION)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  const cargarReporteUbicacion = async () => {
+    try {
+      setLoadingUbicaciones(true);
+      const data = await reportesService.obtenerReporteUbicacion();
+      setUbicacionReport(data);
+      setUbicacionMessage(null);
+    } catch (err) {
+      setUbicacionMessage({
+        type: 'error',
+        text: err instanceof Error
+          ? err.message
+          : 'No se pudo consultar el reporte por ubicacion',
+      });
+    } finally {
+      setLoadingUbicaciones(false);
+    }
+  };
+
+  const cargarDetalleUbicacion = async (ubicacionId: string) => {
+    try {
+      setLoadingUbicacionDetail(true);
+      setUbicacionDetail(null);
+      const data = await reportesService.obtenerActivosPorUbicacion(ubicacionId);
+      setUbicacionDetail(data);
+    } catch (err) {
+      setUbicacionMessage({
+        type: 'error',
+        text: err instanceof Error
+          ? err.message
+          : 'No se pudo consultar el detalle de la ubicacion',
+      });
+    } finally {
+      setLoadingUbicacionDetail(false);
+    }
+  };
+
+  const descargarReporteUbicacion = async (formato: 'pdf' | 'excel') => {
+    try {
+      setDownloadingUbicacionFormat(formato);
+      await reportesService.descargarReporteUbicacion(
+        formato,
+        user?.id,
+        selectedUbicacionId || undefined,
+      );
+      setUbicacionMessage({ type: 'success', text: 'El archivo quedo disponible para descarga' });
+    } catch (err) {
+      setUbicacionMessage({
+        type: 'error',
+        text: err instanceof Error
+          ? err.message
+          : 'No se pudo descargar el reporte por ubicacion',
+      });
+    } finally {
+      setDownloadingUbicacionFormat(null);
     }
   };
 
@@ -1019,6 +1133,167 @@ export const ReportesPage: React.FC = () => {
                     <p className="rp__detail-total">
                       Total: <strong>{areaDetail.total}</strong>{' '}
                       {areaDetail.total === 1 ? 'activo' : 'activos'}
+                    </p>
+                  </div>
+                )}
+              </Card>
+            </>
+          )}
+
+          {/* ════════════════════════════════════════════════════════════════════
+              HU-UBICACION — Reporte por ubicación
+          ════════════════════════════════════════════════════════════════════ */}
+
+          <div className="module-header rp__section-header">
+            <div>
+              <h1>Reporte por ubicacion</h1>
+              <p>Consulta actualizada: {generatedAtUbicacion}</p>
+            </div>
+            <div className="report-header-actions">
+              <Button
+                label="Actualizar"
+                variant="primary"
+                onClick={cargarReporteUbicacion}
+                isLoading={loadingUbicaciones}
+                icon={<RefreshCw size={16} />}
+              />
+              <Button
+                label="PDF"
+                variant="secondary"
+                onClick={() => descargarReporteUbicacion('pdf')}
+                disabled={loadingUbicaciones || !ubicacionReport.downloadReady}
+                isLoading={downloadingUbicacionFormat === 'pdf'}
+                icon={<Download size={16} />}
+              />
+              <Button
+                label="Excel"
+                variant="secondary"
+                onClick={() => descargarReporteUbicacion('excel')}
+                disabled={loadingUbicaciones || !ubicacionReport.downloadReady}
+                isLoading={downloadingUbicacionFormat === 'excel'}
+                icon={<FileSpreadsheet size={16} />}
+              />
+            </div>
+          </div>
+
+          {ubicacionMessage && (
+            <Alert
+              type={ubicacionMessage.type}
+              message={ubicacionMessage.text}
+              dismissible
+              onClose={() => setUbicacionMessage(null)}
+            />
+          )}
+
+          {loadingUbicaciones ? (
+            <LoadingSpinner />
+          ) : (
+            <>
+              {/* PA1 — Cantidad de activos por ubicación registrada */}
+              <Card title="Activos por ubicacion" padding="lg">
+                {ubicacionReport.ubicaciones.length === 0 ? (
+                  <p className="rp__empty-state">
+                    No existen ubicaciones registradas en el sistema
+                  </p>
+                ) : (
+                  <div className="rp__category-grid">
+                    {ubicacionReport.ubicaciones.map((ubic) => (
+                      <button
+                        key={ubic.id}
+                        className={`rp__category-card ${selectedUbicacionId === ubic.id ? 'rp__category-card--active' : ''}`}
+                        onClick={() =>
+                          setSelectedUbicacionId(selectedUbicacionId === ubic.id ? '' : ubic.id)
+                        }
+                      >
+                        <div className="rp__category-card-icon">
+                          <MapPin size={18} />
+                        </div>
+                        <div className="rp__category-card-body">
+                          <span className="rp__category-card-name">{ubic.name}</span>
+                          <strong className="rp__category-card-count">{ubic.total}</strong>
+                          <span className="rp__category-card-pct">{ubic.percentage}%</span>
+                        </div>
+                        <ChevronRight
+                          size={14}
+                          className={`rp__category-card-arrow ${selectedUbicacionId === ubic.id ? 'rp__category-card-arrow--active' : ''}`}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </Card>
+
+              {/* Selector de ubicación + detalle */}
+              <Card
+                title={
+                  selectedUbicacionId
+                    ? `Activos de: ${ubicacionReport.ubicaciones.find((u) => u.id === selectedUbicacionId)?.name ?? ''}`
+                    : 'Detalle de activos por ubicacion'
+                }
+                padding="lg"
+              >
+                <div className="rp__selector-row">
+                  <span className="rp__selector-label">Seleccionar ubicacion:</span>
+                  <Select
+                    value={selectedUbicacionId}
+                    onChange={setSelectedUbicacionId}
+                    options={ubicacionOptions}
+                    placeholder="Selecciona una ubicacion"
+                    className="rp__category-select"
+                  />
+                </div>
+
+                {/* Sin selección */}
+                {!selectedUbicacionId && (
+                  <p className="rp__empty-state">
+                    Selecciona una ubicacion para ver los activos vinculados
+                  </p>
+                )}
+
+                {/* Cargando detalle */}
+                {selectedUbicacionId && loadingUbicacionDetail && <LoadingSpinner />}
+
+                {/* PA5 — Ubicación sin activos */}
+                {selectedUbicacionId && !loadingUbicacionDetail && ubicacionDetail && ubicacionDetail.total === 0 && (
+                  <p className="rp__empty-state rp__empty-state--category">
+                    No existen activos vinculados a esta ubicacion
+                  </p>
+                )}
+
+                {/* PA2 / PA3 / PA4 — Tabla de activos de la ubicación seleccionada */}
+                {selectedUbicacionId && !loadingUbicacionDetail && ubicacionDetail && ubicacionDetail.total > 0 && (
+                  <div className="rp__detail-table-wrap">
+                    <table className="rp__detail-table">
+                      <thead>
+                        <tr>
+                          <th>Codigo</th>
+                          <th>Nombre</th>
+                          <th>Estado</th>
+                          <th>Area</th>
+                          <th>Responsable</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {ubicacionDetail.assets.map((activo: ActivoDetalleUbicacion) => (
+                          <tr key={activo.id}>
+                            <td className="rp__td-code">{activo.codigo}</td>
+                            <td>{activo.nombre}</td>
+                            <td>
+                              <Badge
+                                label={activo.estadoLabel}
+                                variant={estadoVariant(activo.estado)}
+                                size="sm"
+                              />
+                            </td>
+                            <td className="rp__td-location">{activo.area}</td>
+                            <td className="rp__td-location">{activo.responsable}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    <p className="rp__detail-total">
+                      Total: <strong>{ubicacionDetail.total}</strong>{' '}
+                      {ubicacionDetail.total === 1 ? 'activo' : 'activos'}
                     </p>
                   </div>
                 )}

@@ -290,3 +290,40 @@ export interface ReporteAreaDetalle {
   assets: ActivoDetalleArea[];
   total: number;
 }
+
+// ─── HU-UBICACION ────────────────────────────────────────────────────────────
+
+/** Resumen de una ubicación en el listado general (PA1) */
+export interface UbicacionSummary {
+  id: string;
+  name: string;
+  total: number;
+  percentage: number;
+}
+
+/** Respuesta GET /reports/inventory/ubicacion — PA1 */
+export interface ReporteUbicacion {
+  generatedAt: string;
+  totalAssets: number;
+  ubicaciones: UbicacionSummary[];
+  downloadReady: boolean;
+}
+
+/** Activo en el detalle de una ubicación — código, nombre, estado, área, responsable */
+export interface ActivoDetalleUbicacion {
+  id: string;
+  codigo: string;
+  nombre: string;
+  estado: string;
+  estadoLabel: string;
+  area: string;
+  responsable: string;
+}
+
+/** Respuesta GET /reports/inventory/ubicacion/:id/assets — PA2/PA3/PA4/PA5 */
+export interface ReporteUbicacionDetalle {
+  ubicacionId: string;
+  ubicacionName: string;
+  assets: ActivoDetalleUbicacion[];
+  total: number;
+}

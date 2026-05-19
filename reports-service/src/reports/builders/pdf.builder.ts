@@ -61,6 +61,24 @@ export interface PdfAreaReportOptions {
   }>;
 }
 
+/** Opciones para el reporte multi-página por ubicación */
+export interface PdfUbicacionReportOptions {
+  generatedAt: Date;
+  totalUbicaciones: number;
+  totalAssets: number;
+  ubicaciones: Array<{ name: string; total: number; percentage: number }>;
+  ubicacionDetails: Array<{
+    ubicacionName: string;
+    assets: Array<{
+      codigo: string;
+      nombre: string;
+      estadoLabel: string;
+      area: string;
+      responsable: string;
+    }>;
+  }>;
+}
+
 // ─── Constantes de marca ──────────────────────────────────────────────────────
 
 const BRAND = {
@@ -311,8 +329,126 @@ export class PdfBuilder {
     return Buffer.from(pdf, 'latin1');
   }
 
-  // ── API pública — Reporte multi-página por área ─────────────────────────────
+  // ── API pública — Reporte multi-página por ubicación ───────────────────────
 
+  buildUbicacionReport(options: PdfUbicacionReportOptions): Buffer {
+    const dateLabel = this.formatDate(options.generatedAt);
+    const pages: string[][] = [];
+
+    pages.push(this.buildUbicacionSummaryPage(options, dateLabel));
+
+    for (const ubic of options.ubicacionDetails) {
+      if (ubic.assets.length > 0) {
+        pages.push(this.buildUbicacionDetailPage(ubic, dateLabel));
+      }
+    }
+
+    return this.assembleMultiPage(pages.map((p) => p.join('\n')));
+  }
+
+  private buildUbicacionSummaryPage(
+    options: PdfUbicacionReportOptions,
+    dateLabel: string,
+  ): string[] {
+    const { marginX, contentWidth, rowHeight, tableHeaderHeight } = LAYOUT;
+    const parts: string[] = [];
+
+    parts.push(...this.buildHeader('Reporte por ubicacion', dateLabel));
+
+    const cardWidth = Math.floor((contentWidth - 18) / 2);
+    parts.push(
+      ...this.buildMetricCard(marginX, 548, cardWidth, {
+        label: 'Total de ubicaciones',
+        value: options.totalUbicaciones,
+        accentColor: BRAND.accentLine,
+      }),
+      ...this.buildMetricCard(marginX + cardWidth + 18, 548, cardWidth, {
+        label: 'Total de activos',
+        value: options.totalAssets,
+        accentColor: '0.02 0.59 0.41',
+      }),
+    );
+
+    const tableSectionY = 500;
+    parts.push(this.text('Resumen por ubicacion', marginX, tableSectionY, 14, BRAND.textSection));
+
+    const columns: PdfColumn[] = [
+      { label: 'Ubicacion / Espacio', x: 62  },
+      { label: 'Total activos',       x: 430 },
+      { label: 'Participacion',       x: 505 },
+    ];
+
+    const tableHeaderY = tableSectionY - 36;
+    parts.push(...this.buildTableHeader(tableHeaderY, columns));
+
+    let y = tableHeaderY - tableHeaderHeight;
+    for (let i = 0; i < options.ubicaciones.length; i++) {
+      const rowY = y - i * rowHeight;
+      if (rowY < 80) break;
+      const ubic = options.ubicaciones[i];
+      parts.push(
+        ...this.buildTableRow(rowY, i, [
+          this.trunc(ubic.name, 52),
+          String(ubic.total),
+          `${ubic.percentage}%`,
+        ], columns),
+      );
+    }
+
+    parts.push(...this.buildFooter());
+    return parts;
+  }
+
+  private buildUbicacionDetailPage(
+    ubic: PdfUbicacionReportOptions['ubicacionDetails'][number],
+    dateLabel: string,
+  ): string[] {
+    const { marginX, pageWidth, headerTop, headerHeight, accentLineHeight, rowHeight, tableHeaderHeight } = LAYOUT;
+    const parts: string[] = [];
+
+    parts.push(
+      this.rect(0, headerTop, pageWidth, headerHeight, BRAND.headerBg),
+      this.rect(0, headerTop, pageWidth, accentLineHeight, BRAND.accentLine),
+      this.text(this.trunc(ubic.ubicacionName, 44), marginX, 754, 18, BRAND.textLight),
+      this.text('Reporte por ubicacion', marginX, 728, 10, BRAND.textMuted),
+      this.text(`Generado: ${dateLabel}`, 392, 728, 10, BRAND.textMuted),
+    );
+
+    const tableSectionY = 660;
+    parts.push(this.text('Activos en esta ubicacion', marginX, tableSectionY, 14, BRAND.textSection));
+
+    const columns: PdfColumn[] = [
+      { label: 'Codigo',      x: 62  },
+      { label: 'Nombre',      x: 132 },
+      { label: 'Estado',      x: 262 },
+      { label: 'Area',        x: 362 },
+      { label: 'Responsable', x: 447 },
+    ];
+
+    const tableHeaderY = tableSectionY - 36;
+    parts.push(...this.buildTableHeader(tableHeaderY, columns));
+
+    let y = tableHeaderY - tableHeaderHeight;
+    for (let i = 0; i < ubic.assets.length; i++) {
+      const rowY = y - i * rowHeight;
+      if (rowY < 80) break;
+      const a = ubic.assets[i];
+      parts.push(
+        ...this.buildTableRow(rowY, i, [
+          this.trunc(a.codigo,      10),
+          this.trunc(a.nombre,      19),
+          this.trunc(a.estadoLabel, 15),
+          this.trunc(a.area,        12),
+          this.trunc(a.responsable, 15),
+        ], columns),
+      );
+    }
+
+    parts.push(...this.buildFooter());
+    return parts;
+  }
+
+  // ── API pública — Reporte multi-página por área ─────────────────────────────
   /**
    * Genera un PDF con múltiples páginas:
    *  - Página 1: resumen con métricas y tabla de áreas

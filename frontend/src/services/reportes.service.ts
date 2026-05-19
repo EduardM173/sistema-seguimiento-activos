@@ -10,6 +10,8 @@ import type {
   ReporteResponsableDetalle,
   ReporteArea,
   ReporteAreaDetalle,
+  ReporteUbicacion,
+  ReporteUbicacionDetalle,
 } from '../types/reportes.types';
 import { tipoReporte } from '../types/reportes.types';
 import type { PaginatedResponse, ApiResponse } from '../types';
@@ -208,6 +210,52 @@ export const reportesService = {
 
     const blob = await response.blob();
     const fallback = `reporte-por-area.${formato === 'pdf' ? 'pdf' : 'xls'}`;
+    const filename = getFilenameFromDisposition(
+      response.headers.get('Content-Disposition'),
+      fallback,
+    );
+
+    downloadBlob(blob, filename);
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // HU-UBICACION — Reporte por ubicación
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /** PA1 — Cantidad de activos agrupados por ubicación */
+  obtenerReporteUbicacion: async () => {
+    return requestReports<ReporteUbicacion>('/reports/inventory/ubicacion');
+  },
+
+  /** PA2/PA3/PA4/PA5 — Activos de la ubicación seleccionada */
+  obtenerActivosPorUbicacion: async (ubicacionId: string) => {
+    return requestReports<ReporteUbicacionDetalle>(
+      `/reports/inventory/ubicacion/${ubicacionId}/assets`,
+    );
+  },
+
+  /** Descarga PDF o Excel del resumen por ubicación */
+  descargarReporteUbicacion: async (
+    formato: 'pdf' | 'excel',
+    generatedById?: string,
+    ubicacionId?: string,
+  ) => {
+    const params = new URLSearchParams();
+    if (generatedById) params.set('generatedById', generatedById);
+    if (ubicacionId) params.set('ubicacionId', ubicacionId);
+
+    const suffix = params.toString() ? `?${params.toString()}` : '';
+    const response = await fetch(
+      `${REPORTS_API_URL}/reports/inventory/ubicacion/download/${formato}${suffix}`,
+    );
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => null);
+      throw new Error(error?.message || 'No se pudo descargar el reporte por ubicacion');
+    }
+
+    const blob = await response.blob();
+    const fallback = `reporte-por-ubicacion.${formato === 'pdf' ? 'pdf' : 'xls'}`;
     const filename = getFilenameFromDisposition(
       response.headers.get('Content-Disposition'),
       fallback,

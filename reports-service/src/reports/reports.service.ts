@@ -74,6 +74,33 @@ type AreaAllAssetsRow = {
   responsable: string | null;
 };
 
+// HU-UBICACION — Resumen agrupado por ubicación
+type UbicacionSummaryRow = {
+  ubicacion_id: string;
+  ubicacion_nombre: string;
+  cantidad: string;
+};
+
+// HU-UBICACION — Detalle activos de ubicación seleccionada
+type UbicacionAssetDetailRow = {
+  id: string;
+  codigo: string;
+  nombre: string;
+  estado: string;
+  area: string | null;
+  responsable: string | null;
+};
+
+// HU-UBICACION — Todos los activos con su ubicación (para PDF/Excel completo)
+type UbicacionAllAssetsRow = {
+  ubicacion_nombre: string;
+  codigo: string;
+  nombre: string;
+  estado: string;
+  area: string | null;
+  responsable: string | null;
+};
+
 type ReportFormat = 'pdf' | 'excel';
 
 type GeneralInventoryReport = Awaited<
@@ -85,6 +112,8 @@ type CategoryReport = Awaited<ReturnType<ReportsService['getCategoryReport']>>;
 type ResponsableReport = Awaited<ReturnType<ReportsService['getResponsableReport']>>;
 
 type AreaReport = Awaited<ReturnType<ReportsService['getAreaReport']>>;
+
+type UbicacionReport = Awaited<ReturnType<ReportsService['getUbicacionReport']>>;
 
 // ─── Service ─────────────────────────────────────────────────────────────────
 
@@ -1030,8 +1059,363 @@ export class ReportsService {
 </body></html>`;
   }
 
-  private formatStatus(status: string) {
-    const labels: Record<string, string> = {
+  // ═══════════════════════════════════════════════════════════════════════════
+  // HU-UBICACION — Reporte por ubicación
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /** PA1 — Cantidad de activos agrupados por ubicación */
+  async getUbicacionReport() {
+    const summaries = await this.getUbicacionSummaries();
+
+    const totalAssets = summaries.reduce((sum, r) => sum + Number(r.cantidad), 0);
+
+    const ubicaciones = summaries.map((r) => ({
+      id: r.ubicacion_id,
+      name: r.ubicacion_nombre,
+      total: Number(r.cantidad),
+      percentage:
+        totalAssets > 0 ? Math.round((Number(r.cantidad) / totalAssets) * 100) : 0,
+    }));
+
+    return {
+      generatedAt: new Date().toISOString(),
+      totalAssets,
+      ubicaciones,
+      downloadReady: totalAssets > 0,
+    };
+  }
+
+  /** PA2/PA3/PA4/PA5 — Activos de una ubicación seleccionada */
+  async getUbicacionAssets(ubicacionId: string) {
+    const ubicResult = await this.database.query<{ id: string; nombre: string }>(
+      `SELECT id, nombre FROM ubicaciones WHERE id = $1`,
+      [ubicacionId],
+    );
+
+    if (!ubicResult.rows.length) {
+      throw new NotFoundException('Ubicacion no encontrada');
+    }
+
+    const ubicacion = ubicResult.rows[0];
+
+    const result = await this.database.query<UbicacionAssetDetailRow>(
+      `
+      SELECT
+        a.id,
+        a.codigo,
+        a.nombre,
+        a.estado,
+        ar.nombre                                  AS area,
+        CONCAT(usr.nombres, ' ', usr.apellidos)    AS responsable
+      FROM activos a
+      LEFT JOIN areas       ar  ON ar.id  = a."areaActualId"
+      LEFT JOIN usuarios    usr ON usr.id = a."responsableActualId"
+      WHERE a."ubicacionId" = $1
+      ORDER BY a.nombre ASC
+      `,
+      [ubicacionId],
+    );
+
+    return {
+      ubicacionId: ubicacion.id,
+      ubicacionName: ubicacion.nombre,
+      assets: result.rows.map((row) => ({
+        id: row.id,
+        codigo: row.codigo,
+        nombre: row.nombre,
+        estado: row.estado,
+        estadoLabel: this.formatStatus(row.estado),
+        area: row.area ?? 'Sin area',
+        responsable: row.responsable ?? 'Sin responsable',
+      })),
+      total: result.rows.length,
+    };
+  }
+
+  /** Genera PDF o Excel del resumen por ubicación para descarga */
+  async generateUbicacionReportFile(
+    format: ReportFormat,
+    generatedById?: string,
+    ubicacionId?: string,
+  ) {
+    if (!['pdf', 'excel'].includes(format)) {
+      throw new BadRequestException('Formato de reporte no soportado');
+    }
+
+    const [report, allAssetsRaw] = await Promise.all([
+      this.getUbicacionReport(),
+      this.getAllUbicacionAssetsForReport(),
+    ]);
+
+    if (!report.downloadReady) {
+      throw new NotFoundException('No hay informacion disponible para descargar');
+    }
+
+    // Si se especifica una ubicación, filtrar el reporte a esa ubicación solamente
+    if (ubicacionId) {
+      const matched = report.ubicaciones.find((u) => u.id === ubicacionId);
+      if (!matched) {
+        throw new NotFoundException('Ubicacion no encontrada');
+      }
+      report.ubicaciones = [matched];
+      report.totalAssets = matched.total;
+      matched.percentage = 100;
+    }
+
+    const allAssets = allAssetsRaw
+      .map((row) => ({
+        ubicacionNombre: row.ubicacion_nombre,
+        codigo: row.codigo,
+        nombre: row.nombre,
+        estado: row.estado,
+        estadoLabel: this.formatStatus(row.estado),
+        area: row.area ?? 'Sin area',
+        responsable: row.responsable ?? 'Sin responsable',
+      }))
+      .filter((a) =>
+        ubicacionId
+          ? report.ubicaciones.some((u) => u.name === a.ubicacionNombre)
+          : true,
+      );
+
+    const generatedAt = new Date();
+    const filename = this.buildFilename('reporte-por-ubicacion', format, generatedAt);
+
+    if (generatedById) {
+      await this.registerGeneratedReport(
+        format,
+        generatedById,
+        generatedAt,
+        'Reporte por ubicacion',
+        'dispersion_activos',
+      );
+    }
+
+    if (format === 'pdf') {
+      return {
+        filename,
+        contentType: 'application/pdf',
+        buffer: this.buildUbicacionPdf(report, allAssets, generatedAt),
+      };
+    }
+
+    return {
+      filename,
+      contentType: 'application/vnd.ms-excel; charset=utf-8',
+      buffer: Buffer.from(
+        this.buildUbicacionExcelHtml(report, allAssets, generatedAt),
+        'utf8',
+      ),
+    };
+  }
+
+  private async getUbicacionSummaries() {
+    const result = await this.database.query<UbicacionSummaryRow>(`
+      SELECT
+        u.id               AS ubicacion_id,
+        u.nombre           AS ubicacion_nombre,
+        COUNT(a.id)::text  AS cantidad
+      FROM ubicaciones u
+      LEFT JOIN activos a ON a."ubicacionId" = u.id
+      GROUP BY u.id, u.nombre
+      ORDER BY u.nombre ASC
+    `);
+    return result.rows;
+  }
+
+  private async getAllUbicacionAssetsForReport() {
+    const result = await this.database.query<UbicacionAllAssetsRow>(`
+      SELECT
+        u.nombre                                   AS ubicacion_nombre,
+        a.codigo,
+        a.nombre,
+        a.estado,
+        ar.nombre                                  AS area,
+        CONCAT(usr.nombres, ' ', usr.apellidos)    AS responsable
+      FROM activos a
+      JOIN  ubicaciones u   ON u.id   = a."ubicacionId"
+      LEFT JOIN areas       ar  ON ar.id  = a."areaActualId"
+      LEFT JOIN usuarios    usr ON usr.id = a."responsableActualId"
+      ORDER BY u.nombre ASC, a.nombre ASC
+    `);
+    return result.rows;
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PDF — Ubicación (HU-UBICACION)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  private buildUbicacionPdf(
+    report: UbicacionReport,
+    assets: Array<{
+      ubicacionNombre: string;
+      codigo: string;
+      nombre: string;
+      estadoLabel: string;
+      area: string;
+      responsable: string;
+    }>,
+    generatedAt: Date,
+  ) {
+    const ubicOrder = report.ubicaciones.map((u) => u.name);
+    const byUbic = new Map<string, typeof assets>();
+    for (const asset of assets) {
+      const list = byUbic.get(asset.ubicacionNombre) ?? [];
+      list.push(asset);
+      byUbic.set(asset.ubicacionNombre, list);
+    }
+
+    const ubicDetails = ubicOrder
+      .filter((name) => (byUbic.get(name)?.length ?? 0) > 0)
+      .map((name) => ({
+        ubicacionName: name,
+        assets: (byUbic.get(name) ?? []).map((a) => ({
+          codigo: a.codigo,
+          nombre: a.nombre,
+          estadoLabel: a.estadoLabel,
+          area: a.area,
+          responsable: a.responsable,
+        })),
+      }));
+
+    return this.pdf.buildUbicacionReport({
+      generatedAt,
+      totalUbicaciones: report.ubicaciones.length,
+      totalAssets: report.totalAssets,
+      ubicaciones: report.ubicaciones,
+      ubicacionDetails: ubicDetails,
+    });
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Excel — Ubicación (HU-UBICACION)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  private buildUbicacionExcelHtml(
+    report: UbicacionReport,
+    assets: Array<{
+      ubicacionNombre: string;
+      codigo: string;
+      nombre: string;
+      estadoLabel: string;
+      area: string;
+      responsable: string;
+    }>,
+    generatedAt: Date,
+  ) {
+    const dateLabel = new Intl.DateTimeFormat('es-BO', {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    }).format(generatedAt);
+
+    const esc = (s: string | number) =>
+      String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+
+    const TH =
+      'background:#1e293b; color:#fff; border:1px solid #1e293b; padding:9px 12px; text-align:left; font-size:12px;';
+    const TD = 'background:#fff; border:1px solid #d9e2ef; padding:9px 12px; font-size:12px;';
+
+    const summaryRows = report.ubicaciones
+      .map(
+        (u) =>
+          `<tr>
+            <td style="${TD}">${esc(u.name)}</td>
+            <td style="${TD} text-align:right; font-weight:700">${u.total}</td>
+            <td style="${TD} text-align:right">${u.percentage}%</td>
+          </tr>`,
+      )
+      .join('');
+
+    const ubicNames = [...new Set(assets.map((a) => a.ubicacionNombre))];
+
+    const detailSections = ubicNames
+      .map((ubicName) => {
+        const ubicAssets = assets.filter((a) => a.ubicacionNombre === ubicName);
+        const assetRows = ubicAssets
+          .map(
+            (a) =>
+              `<tr>
+                <td style="${TD} font-family:monospace; font-size:11px; color:#64748b">${esc(a.codigo)}</td>
+                <td style="${TD}">${esc(a.nombre)}</td>
+                <td style="${TD}">${esc(a.estadoLabel)}</td>
+                <td style="${TD} color:#64748b">${esc(a.area)}</td>
+                <td style="${TD} color:#64748b">${esc(a.responsable)}</td>
+              </tr>`,
+          )
+          .join('');
+        return `
+          <tr><td colspan="5" style="background:#1e293b; color:#fff; font-size:13px; font-weight:700; padding:10px 12px">${esc(ubicName)}</td></tr>
+          <tr style="background:#334155">
+            <th style="${TH}">Codigo</th>
+            <th style="${TH}">Nombre</th>
+            <th style="${TH}">Estado</th>
+            <th style="${TH}">Area</th>
+            <th style="${TH}">Responsable</th>
+          </tr>
+          ${assetRows}
+          <tr><td colspan="5" style="padding:6px"></td></tr>`;
+      })
+      .join('');
+
+    return `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head><meta charset="UTF-8" /><title>Reporte por ubicacion</title></head>
+<body style="margin:0; background:#f5f7fb; font-family:Arial,Helvetica,sans-serif; color:#111827">
+
+  <!-- Header -->
+  <table width="100%" cellspacing="0" cellpadding="0">
+    <tr><td style="background:#111827; color:#fff; font-size:22px; font-weight:700; padding:22px 28px 6px">Reporte por ubicacion</td></tr>
+    <tr><td style="background:#111827; color:#cbd5e1; font-size:12px; padding:0 28px 20px">Sistema de Seguimiento de Activos | Generado: ${esc(dateLabel)}</td></tr>
+  </table>
+
+  <!-- Metricas -->
+  <table width="100%" cellspacing="0" cellpadding="0" style="margin:16px 0">
+    <tr>
+      <td width="28"></td>
+      <td style="background:#fff; border:1px solid #d9e2ef; padding:16px; width:200px">
+        <div style="color:#64748b; font-size:11px; font-weight:700; text-transform:uppercase">Total de ubicaciones</div>
+        <div style="color:#0f172a; font-size:26px; font-weight:700; padding-top:6px">${report.ubicaciones.length}</div>
+      </td>
+      <td width="16"></td>
+      <td style="background:#fff; border:1px solid #d9e2ef; padding:16px; width:200px">
+        <div style="color:#64748b; font-size:11px; font-weight:700; text-transform:uppercase">Total de activos</div>
+        <div style="color:#0f172a; font-size:26px; font-weight:700; padding-top:6px">${report.totalAssets}</div>
+      </td>
+      <td></td>
+    </tr>
+  </table>
+
+  <!-- Resumen por ubicacion -->
+  <p style="color:#111827; font-size:14px; font-weight:700; padding:12px 28px 8px; margin:0">Resumen por ubicacion</p>
+  <table width="calc(100% - 56px)" cellspacing="0" cellpadding="0" style="margin:0 28px 24px; border-collapse:collapse">
+    <tr style="background:#1e293b">
+      <th style="${TH}">Ubicacion / Espacio</th>
+      <th style="${TH} text-align:right">Total activos</th>
+      <th style="${TH} text-align:right">Participacion</th>
+    </tr>
+    ${summaryRows}
+  </table>
+
+  <!-- Detalle por ubicacion -->
+  <p style="color:#111827; font-size:14px; font-weight:700; padding:12px 28px 8px; margin:0">Detalle de activos por ubicacion</p>
+  <table width="calc(100% - 56px)" cellspacing="0" cellpadding="0" style="margin:0 28px 28px; border-collapse:collapse">
+    ${detailSections}
+  </table>
+
+  <!-- Footer -->
+  <p style="color:#64748b; font-size:11px; padding:12px 28px 22px; margin:0">
+    Reporte generado automaticamente desde el microservicio de Reportes y Exportacion.
+  </p>
+
+</body></html>`;
+  }
+
+  private formatStatus(status: string) {    const labels: Record<string, string> = {
       OPERATIVO: 'Operativo',
       MANTENIMIENTO: 'Mantenimiento',
       FUERA_DE_SERVICIO: 'Fuera de servicio',
