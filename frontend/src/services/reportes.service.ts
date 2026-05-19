@@ -109,9 +109,14 @@ export const reportesService = {
     );
   },
 
-  descargarReporteCategoria: async (formato: 'pdf' | 'excel', generatedById?: string) => {
+  descargarReporteCategoria: async (
+    formato: 'pdf' | 'excel',
+    generatedById?: string,
+    categoryId?: string,
+  ) => {
     const params = new URLSearchParams();
     if (generatedById) params.set('generatedById', generatedById);
+    if (categoryId) params.set('categoryId', categoryId);
 
     const suffix = params.toString() ? `?${params.toString()}` : '';
     const response = await fetch(
@@ -170,9 +175,14 @@ export const reportesService = {
   },
 
   /** HU47 + HU30 — Descarga PDF o Excel del resumen por responsable */
-  descargarReporteResponsable: async (formato: 'pdf' | 'excel', generatedById?: string) => {
+  descargarReporteResponsable: async (
+    formato: 'pdf' | 'excel',
+    generatedById?: string,
+    responsableId?: string,
+  ) => {
     const params = new URLSearchParams();
     if (generatedById) params.set('generatedById', generatedById);
+    if (responsableId) params.set('responsableId', responsableId);
 
     const suffix = params.toString() ? `?${params.toString()}` : '';
     const response = await fetch(
