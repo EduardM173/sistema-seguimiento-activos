@@ -145,6 +145,98 @@ export class ReportsController {
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
+  // HU-AREA — Reporte por área o departamento
+  // IMPORTANTE: /area/download/:format debe ir ANTES de /area/:id/assets
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /** GET /reports/inventory/area — PA1 */
+  @Get('inventory/area')
+  async getAreaReport() {
+    try {
+      return await this.reportsService.getAreaReport();
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException(this.getErrorMessage(error));
+    }
+  }
+
+  /** GET /reports/inventory/area/download/:format */
+  @Get('inventory/area/download/:format')
+  async downloadAreaReport(
+    @Param('format') format: 'pdf' | 'excel',
+    @Query('generatedById') generatedById: string | undefined,
+    @Query('areaId') areaId: string | undefined,
+    @Res() response: Response,
+  ) {
+    const file = await this.reportsService
+      .generateAreaReportFile(format, generatedById, areaId)
+      .catch((error) => {
+        if (error instanceof HttpException) throw error;
+        throw new InternalServerErrorException(this.getErrorMessage(error));
+      });
+    response.setHeader('Content-Type', file.contentType);
+    response.setHeader('Content-Disposition', `attachment; filename="${file.filename}"`);
+    response.send(file.buffer);
+  }
+
+  /** GET /reports/inventory/area/:areaId/assets — PA2/PA3/PA4/PA5 */
+  @Get('inventory/area/:areaId/assets')
+  async getAreaAssets(@Param('areaId') areaId: string) {
+    try {
+      return await this.reportsService.getAreaAssets(areaId);
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException(this.getErrorMessage(error));
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // HU-UBICACION — Reporte por ubicación
+  // IMPORTANTE: /ubicacion/download/:format debe ir ANTES de /ubicacion/:id/assets
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /** GET /reports/inventory/ubicacion — PA1 */
+  @Get('inventory/ubicacion')
+  async getUbicacionReport() {
+    try {
+      return await this.reportsService.getUbicacionReport();
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException(this.getErrorMessage(error));
+    }
+  }
+
+  /** GET /reports/inventory/ubicacion/download/:format */
+  @Get('inventory/ubicacion/download/:format')
+  async downloadUbicacionReport(
+    @Param('format') format: 'pdf' | 'excel',
+    @Query('generatedById') generatedById: string | undefined,
+    @Query('ubicacionId') ubicacionId: string | undefined,
+    @Res() response: Response,
+  ) {
+    const file = await this.reportsService
+      .generateUbicacionReportFile(format, generatedById, ubicacionId)
+      .catch((error) => {
+        if (error instanceof HttpException) throw error;
+        throw new InternalServerErrorException(this.getErrorMessage(error));
+      });
+    response.setHeader('Content-Type', file.contentType);
+    response.setHeader('Content-Disposition', `attachment; filename="${file.filename}"`);
+    response.send(file.buffer);
+  }
+
+  /** GET /reports/inventory/ubicacion/:ubicacionId/assets — PA2/PA3/PA4/PA5 */
+  @Get('inventory/ubicacion/:ubicacionId/assets')
+  async getUbicacionAssets(@Param('ubicacionId') ubicacionId: string) {
+    try {
+      return await this.reportsService.getUbicacionAssets(ubicacionId);
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException(this.getErrorMessage(error));
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
   // Helpers
   // ═══════════════════════════════════════════════════════════════════════════
 

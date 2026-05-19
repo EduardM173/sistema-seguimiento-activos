@@ -44,7 +44,7 @@ services:
     command: "npm run start:dev"
 
   reports_service:
-    container_name: activos_reports_service
+    container_name: activos_reports_service_local
     image: ${DOCKER_REGISTRY:-local_activos}/reports-service:${TAG:-latest}
     env_file:
       - ./.env
