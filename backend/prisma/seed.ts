@@ -115,6 +115,17 @@ async function main() {
     },
   });
 
+  const rolAuditor = await prisma.rol.upsert({
+    where: { nombre: 'AUDITOR' },
+    update: {
+      descripcion: 'Auditor de trazabilidad y cambios del sistema',
+    },
+    create: {
+      nombre: 'AUDITOR',
+      descripcion: 'Auditor de trazabilidad y cambios del sistema',
+    },
+  });
+
   const permisos = await prisma.permiso.findMany();
 
   const codigosPermisosAdmin = [
@@ -138,6 +149,7 @@ async function main() {
   ];
 
   const codigosPermisosResponsable = ['ASSET_VIEW', 'REPORT_VIEW'];
+  const codigosPermisosAuditor = ['AUDIT_VIEW'];
 
   for (const permiso of permisos) {
     if (codigosPermisosAdmin.includes(permiso.codigo)) {
@@ -183,6 +195,22 @@ async function main() {
         update: {},
         create: {
           rolId: rolResponsable.id,
+          permisoId: permiso.id,
+        },
+      });
+    }
+
+    if (codigosPermisosAuditor.includes(permiso.codigo)) {
+      await prisma.rolPermiso.upsert({
+        where: {
+          rolId_permisoId: {
+            rolId: rolAuditor.id,
+            permisoId: permiso.id,
+          },
+        },
+        update: {},
+        create: {
+          rolId: rolAuditor.id,
           permisoId: permiso.id,
         },
       });
@@ -269,6 +297,7 @@ async function main() {
   const passwordAdmin = await bcrypt.hash('Admin123*', 10);
   const passwordOperativo = await bcrypt.hash('Operativo123*', 10);
   const passwordResponsable = await bcrypt.hash('Responsable123*', 10);
+  const passwordAuditor = await bcrypt.hash('Auditor123*', 10);
 
   const usuarioAdmin = await prisma.usuario.upsert({
     where: { correo: 'admin@activos.bo' },
@@ -337,6 +366,29 @@ async function main() {
       areaId: areaAdministracion.id,
       estado: 'ACTIVO',
       telefono: '70000003',
+    },
+  });
+
+  await prisma.usuario.upsert({
+    where: { correo: 'auditor@activos.bo' },
+    update: {
+      nombres: 'Vladimir Douglas',
+      apellidos: 'Gutierrez Oropeza',
+      nombreUsuario: 'auditor@activos.bo',
+      hashContrasena: passwordAuditor,
+      rolId: rolAuditor.id,
+      estado: 'ACTIVO',
+      telefono: '70687568',
+    },
+    create: {
+      nombres: 'Vladimir Douglas',
+      apellidos: 'Gutierrez Oropeza',
+      correo: 'auditor@activos.bo',
+      nombreUsuario: 'auditor@activos.bo',
+      hashContrasena: passwordAuditor,
+      rolId: rolAuditor.id,
+      estado: 'ACTIVO',
+      telefono: '70687568',
     },
   });
 
@@ -824,6 +876,7 @@ async function main() {
   console.log('Admin -> admin@activos.bo / Admin123*');
   console.log('Operativo -> operativo@activos.bo / Operativo123*');
   console.log('Responsable -> responsable@activos.bo / Responsable123*');
+  console.log('Auditor -> auditor@activos.bo / Auditor123*');
 }
 
 main()

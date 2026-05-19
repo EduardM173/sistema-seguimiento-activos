@@ -82,7 +82,7 @@ export const CORE_ACCESS_PERMISSIONS = [
     codigo: 'AUDIT_VIEW',
     nombre: 'Ver auditoría',
     descripcion: 'Permite consultar el módulo de auditoría.',
-    defaultRoleNames: ['ADMIN_GENERAL', 'ADMIN'],
+    defaultRoleNames: ['ADMIN_GENERAL', 'ADMIN', 'AUDITOR'],
   },
   {
     codigo: 'TRANSFER_MANAGE',

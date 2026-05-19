@@ -1,14 +1,18 @@
-FROM node:lts-alpine3.22
+﻿FROM node:lts-alpine3.22
+
+RUN apk add --no-cache python3 make g++
 
 RUN mkdir -p /app && chown -R node:node /app
 
 WORKDIR /app
 
-COPY --chown=node:node ./ /app/
+COPY --chown=node:node package.json package-lock.json* /app/
 
 USER node
 
 RUN npm install
+
+COPY --chown=node:node ./ /app/
 
 EXPOSE 5173
 
