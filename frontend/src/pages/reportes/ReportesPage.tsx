@@ -105,7 +105,7 @@ export const ReportesPage: React.FC = () => {
             label="PDF"
             variant="secondary"
             onClick={() => descargarReporte('pdf')}
-            disabled={loading}
+            disabled={loading || !user?.id}
             isLoading={downloadingFormat === 'pdf'}
             icon={<Download size={16} />}
           />
@@ -113,7 +113,7 @@ export const ReportesPage: React.FC = () => {
             label="Excel"
             variant="secondary"
             onClick={() => descargarReporte('excel')}
-            disabled={loading}
+            disabled={loading || !user?.id}
             isLoading={downloadingFormat === 'excel'}
             icon={<FileSpreadsheet size={16} />}
           />

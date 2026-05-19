@@ -55,6 +55,10 @@ export class ReportsService {
       throw new BadRequestException('Formato de reporte no soportado');
     }
 
+    if (!generatedById) {
+      throw new BadRequestException('Usuario generador requerido para registrar el reporte');
+    }
+
     const report = await this.getGeneralInventoryReport();
 
     if (!this.hasDownloadableData(report)) {
@@ -64,9 +68,7 @@ export class ReportsService {
     const generatedAt = new Date();
     const filename = this.buildFilename(format, generatedAt);
 
-    if (generatedById) {
-      await this.registerGeneratedReport(format, generatedById, generatedAt);
-    }
+    await this.registerGeneratedReport(format, generatedById, generatedAt);
 
     if (format === 'pdf') {
       return {
@@ -141,7 +143,7 @@ export class ReportsService {
     );
 
     if (!userExists.rows[0]?.exists) {
-      return;
+      throw new BadRequestException('Usuario generador no encontrado');
     }
 
     await this.database.query(
