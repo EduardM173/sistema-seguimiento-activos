@@ -442,7 +442,13 @@ app.get('/api/auditoria/departamental/trazabilidad', async (req, res, next) => {
     const { fechaDesde, fechaHasta } = parseDateRange(req.query);
     const { tipoMovimiento } = req.query;
 
-    const whereClauses = ['ac."areaActualId" = ANY($1::text[])'];
+    const whereClauses = [
+      `(
+        ac."areaActualId" = ANY($1::text[]) OR
+        m."areaOrigenId" = ANY($1::text[]) OR
+        m."areaDestinoId" = ANY($1::text[])
+      )`,
+    ];
     const params = [areaIds];
     const pushParam = (value) => {
       params.push(value);

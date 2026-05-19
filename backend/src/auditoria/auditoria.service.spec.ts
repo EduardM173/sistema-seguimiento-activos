@@ -532,9 +532,15 @@ describe('AuditoriaService notification inbox for HU32', () => {
     expect(prisma.movimientoActivo.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: {
-          activo: {
-            areaActualId: { in: ['area-2'] },
-          },
+          OR: [
+            { areaOrigenId: { in: ['area-2'] } },
+            { areaDestinoId: { in: ['area-2'] } },
+            {
+              activo: {
+                areaActualId: { in: ['area-2'] },
+              },
+            },
+          ],
         },
       }),
     );
@@ -587,9 +593,15 @@ describe('AuditoriaService notification inbox for HU32', () => {
             gte: new Date('2026-05-01T00:00:00.000Z'),
             lte: new Date('2026-05-31T23:59:59.999Z'),
           },
-          activo: {
-            areaActualId: { in: ['area-2'] },
-          },
+          OR: [
+            { areaOrigenId: { in: ['area-2'] } },
+            { areaDestinoId: { in: ['area-2'] } },
+            {
+              activo: {
+                areaActualId: { in: ['area-2'] },
+              },
+            },
+          ],
         },
       }),
     );

@@ -425,9 +425,15 @@ export class AuditoriaService {
       where: {
         ...(query.tipoMovimiento ? { tipo: query.tipoMovimiento } : {}),
         ...(dateRange ? { creadoEn: dateRange } : {}),
-        activo: {
-          areaActualId: { in: areaIds },
-        },
+        OR: [
+          { areaOrigenId: { in: areaIds } },
+          { areaDestinoId: { in: areaIds } },
+          {
+            activo: {
+              areaActualId: { in: areaIds },
+            },
+          },
+        ],
       },
       select: {
         id: true,
