@@ -64,6 +64,7 @@ function estadoVariant(
 
 export const ReportesPage: React.FC = () => {
   const { user } = useAuth();
+  const isAdminGeneral = user?.rol?.nombre === 'ADMIN_GENERAL';
 
   // ── Reporte general (HU27) ────────────────────────────────────────────────
   const [report, setReport] = useState<ReporteInventarioGeneral>(emptyReport);
@@ -146,8 +147,12 @@ export const ReportesPage: React.FC = () => {
   useEffect(() => {
     cargarReporte();
     cargarReporteCategoria();
-    cargarReporteResponsable();
-  }, []);
+    if (isAdminGeneral) {
+      cargarReporteResponsable();
+    } else {
+      setLoadingResponsables(false);
+    }
+  }, [isAdminGeneral]);
 
   // ── Al cambiar la categoría seleccionada, carga el detalle ────────────────
 
@@ -162,12 +167,12 @@ export const ReportesPage: React.FC = () => {
   // ── Al cambiar el responsable seleccionado, carga el detalle (PA2) ────────
 
   useEffect(() => {
-    if (!selectedResponsableId) {
+    if (!isAdminGeneral || !selectedResponsableId) {
       setResponsableDetail(null);
       return;
     }
     cargarDetalleResponsable(selectedResponsableId);
-  }, [selectedResponsableId]);
+  }, [isAdminGeneral, selectedResponsableId]);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // Acciones — Reporte general (HU27)
@@ -584,170 +589,174 @@ export const ReportesPage: React.FC = () => {
         </>
       )}
 
-      {/* ════════════════════════════════════════════════════════════════════
-          HU47 — Reporte por responsable de activos
-          PROSIN-486 — Vista de reporte por responsable actual
-      ════════════════════════════════════════════════════════════════════ */}
-
-      <div className="module-header rp__section-header">
-        <div>
-          <h1>Reporte por responsable de activos</h1>
-          <p>Consulta actualizada: {generatedAtResponsable}</p>
-        </div>
-        <div className="report-header-actions">
-          <Button
-            label="Actualizar"
-            variant="primary"
-            onClick={cargarReporteResponsable}
-            isLoading={loadingResponsables}
-            icon={<RefreshCw size={16} />}
-          />
-          <Button
-            label="PDF"
-            variant="secondary"
-            onClick={() => descargarReporteResponsable('pdf')}
-            disabled={loadingResponsables || !responsableReport.downloadReady}
-            isLoading={downloadingResponsableFormat === 'pdf'}
-            icon={<Download size={16} />}
-          />
-          <Button
-            label="Excel"
-            variant="secondary"
-            onClick={() => descargarReporteResponsable('excel')}
-            disabled={loadingResponsables || !responsableReport.downloadReady}
-            isLoading={downloadingResponsableFormat === 'excel'}
-            icon={<FileSpreadsheet size={16} />}
-          />
-        </div>
-      </div>
-
-      {responsableMessage && (
-        <Alert
-          type={responsableMessage.type}
-          message={responsableMessage.text}
-          dismissible
-          onClose={() => setResponsableMessage(null)}
-        />
-      )}
-
-      {loadingResponsables ? (
-        <LoadingSpinner />
-      ) : (
+      {isAdminGeneral ? (
         <>
-          {/* PROSIN-488 / PA1 — Cantidad de activos por cada responsable registrado */}
-          <Card title="Activos por responsable" padding="lg">
-            {responsableReport.responsables.length === 0 ? (
-              <p className="rp__empty-state">
-                No existen responsables con activos asignados en el sistema
-              </p>
-            ) : (
-              <div className="rp__category-grid">
-                {responsableReport.responsables.map((resp) => (
-                  <button
-                    key={resp.id}
-                    className={`rp__category-card ${selectedResponsableId === resp.id ? 'rp__category-card--active' : ''}`}
-                    onClick={() =>
-                      setSelectedResponsableId(
-                        selectedResponsableId === resp.id ? '' : resp.id,
-                      )
-                    }
-                  >
-                    <div className="rp__category-card-icon">
-                      <User size={18} />
-                    </div>
-                    <div className="rp__category-card-body">
-                      <span className="rp__category-card-name">{resp.name}</span>
-                      <strong className="rp__category-card-count">{resp.total}</strong>
-                      <span className="rp__category-card-pct">{resp.percentage}%</span>
-                    </div>
-                    <ChevronRight
-                      size={14}
-                      className={`rp__category-card-arrow ${selectedResponsableId === resp.id ? 'rp__category-card-arrow--active' : ''}`}
-                    />
-                  </button>
-                ))}
-              </div>
-            )}
-          </Card>
+          {/* ════════════════════════════════════════════════════════════════════
+              HU47 — Reporte por responsable de activos
+              PROSIN-486 — Vista de reporte por responsable actual
+          ════════════════════════════════════════════════════════════════════ */}
 
-          {/* PROSIN-487 / PROSIN-489 / PA2 / PA3 / PA4 / PA5 — Selector + detalle */}
-          <Card
-            title={
-              selectedResponsableId
-                ? `Activos de: ${responsableReport.responsables.find((r) => r.id === selectedResponsableId)?.name ?? ''}`
-                : 'Detalle de activos por responsable'
-            }
-            padding="lg"
-          >
-            <div className="rp__selector-row">
-              <span className="rp__selector-label">Seleccionar responsable:</span>
-              {/* PROSIN-487 — Selector de responsable */}
-              <Select
-                value={selectedResponsableId}
-                onChange={setSelectedResponsableId}
-                options={responsableOptions}
-                placeholder="Selecciona un responsable"
-                className="rp__category-select"
+          <div className="module-header rp__section-header">
+            <div>
+              <h1>Reporte por responsable de activos</h1>
+              <p>Consulta actualizada: {generatedAtResponsable}</p>
+            </div>
+            <div className="report-header-actions">
+              <Button
+                label="Actualizar"
+                variant="primary"
+                onClick={cargarReporteResponsable}
+                isLoading={loadingResponsables}
+                icon={<RefreshCw size={16} />}
+              />
+              <Button
+                label="PDF"
+                variant="secondary"
+                onClick={() => descargarReporteResponsable('pdf')}
+                disabled={loadingResponsables || !responsableReport.downloadReady}
+                isLoading={downloadingResponsableFormat === 'pdf'}
+                icon={<Download size={16} />}
+              />
+              <Button
+                label="Excel"
+                variant="secondary"
+                onClick={() => descargarReporteResponsable('excel')}
+                disabled={loadingResponsables || !responsableReport.downloadReady}
+                isLoading={downloadingResponsableFormat === 'excel'}
+                icon={<FileSpreadsheet size={16} />}
               />
             </div>
+          </div>
 
-            {/* Sin selección */}
-            {!selectedResponsableId && (
-              <p className="rp__empty-state">
-                Selecciona un responsable para ver los activos que tiene asignados
-              </p>
-            )}
+          {responsableMessage && (
+            <Alert
+              type={responsableMessage.type}
+              message={responsableMessage.text}
+              dismissible
+              onClose={() => setResponsableMessage(null)}
+            />
+          )}
 
-            {/* Cargando detalle */}
-            {selectedResponsableId && loadingResponsableDetail && <LoadingSpinner />}
-
-            {/* PA5 — Responsable sin activos asignados */}
-            {selectedResponsableId && !loadingResponsableDetail && responsableDetail && responsableDetail.total === 0 && (
-              <p className="rp__empty-state rp__empty-state--category">
-                No existen activos asignados a este responsable
-              </p>
-            )}
-
-            {/* PA2 / PA3 / PA4 — Tabla de activos del responsable seleccionado */}
-            {selectedResponsableId && !loadingResponsableDetail && responsableDetail && responsableDetail.total > 0 && (
-              <div className="rp__detail-table-wrap">
-                <table className="rp__detail-table">
-                  <thead>
-                    <tr>
-                      <th>Codigo</th>
-                      <th>Nombre</th>
-                      <th>Categoria</th>
-                      <th>Estado</th>
-                      <th>Ubicacion</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {responsableDetail.assets.map((activo: ActivoDetalleResponsable) => (
-                      <tr key={activo.id}>
-                        <td className="rp__td-code">{activo.codigo}</td>
-                        <td>{activo.nombre}</td>
-                        <td className="rp__td-location">{activo.categoria}</td>
-                        <td>
-                          <Badge
-                            label={activo.estadoLabel}
-                            variant={estadoVariant(activo.estado)}
-                            size="sm"
-                          />
-                        </td>
-                        <td className="rp__td-location">{activo.ubicacion}</td>
-                      </tr>
+          {loadingResponsables ? (
+            <LoadingSpinner />
+          ) : (
+            <>
+              {/* PROSIN-488 / PA1 — Cantidad de activos por cada responsable registrado */}
+              <Card title="Activos por responsable" padding="lg">
+                {responsableReport.responsables.length === 0 ? (
+                  <p className="rp__empty-state">
+                    No existen responsables con activos asignados en el sistema
+                  </p>
+                ) : (
+                  <div className="rp__category-grid">
+                    {responsableReport.responsables.map((resp) => (
+                      <button
+                        key={resp.id}
+                        className={`rp__category-card ${selectedResponsableId === resp.id ? 'rp__category-card--active' : ''}`}
+                        onClick={() =>
+                          setSelectedResponsableId(
+                            selectedResponsableId === resp.id ? '' : resp.id,
+                          )
+                        }
+                      >
+                        <div className="rp__category-card-icon">
+                          <User size={18} />
+                        </div>
+                        <div className="rp__category-card-body">
+                          <span className="rp__category-card-name">{resp.name}</span>
+                          <strong className="rp__category-card-count">{resp.total}</strong>
+                          <span className="rp__category-card-pct">{resp.percentage}%</span>
+                        </div>
+                        <ChevronRight
+                          size={14}
+                          className={`rp__category-card-arrow ${selectedResponsableId === resp.id ? 'rp__category-card-arrow--active' : ''}`}
+                        />
+                      </button>
                     ))}
-                  </tbody>
-                </table>
-                <p className="rp__detail-total">
-                  Total: <strong>{responsableDetail.total}</strong>{' '}
-                  {responsableDetail.total === 1 ? 'activo' : 'activos'}
-                </p>
-              </div>
-            )}
-          </Card>
+                  </div>
+                )}
+              </Card>
+
+              {/* PROSIN-487 / PROSIN-489 / PA2 / PA3 / PA4 / PA5 — Selector + detalle */}
+              <Card
+                title={
+                  selectedResponsableId
+                    ? `Activos de: ${responsableReport.responsables.find((r) => r.id === selectedResponsableId)?.name ?? ''}`
+                    : 'Detalle de activos por responsable'
+                }
+                padding="lg"
+              >
+                <div className="rp__selector-row">
+                  <span className="rp__selector-label">Seleccionar responsable:</span>
+                  {/* PROSIN-487 — Selector de responsable */}
+                  <Select
+                    value={selectedResponsableId}
+                    onChange={setSelectedResponsableId}
+                    options={responsableOptions}
+                    placeholder="Selecciona un responsable"
+                    className="rp__category-select"
+                  />
+                </div>
+
+                {/* Sin selección */}
+                {!selectedResponsableId && (
+                  <p className="rp__empty-state">
+                    Selecciona un responsable para ver los activos que tiene asignados
+                  </p>
+                )}
+
+                {/* Cargando detalle */}
+                {selectedResponsableId && loadingResponsableDetail && <LoadingSpinner />}
+
+                {/* PA5 — Responsable sin activos asignados */}
+                {selectedResponsableId && !loadingResponsableDetail && responsableDetail && responsableDetail.total === 0 && (
+                  <p className="rp__empty-state rp__empty-state--category">
+                    No existen activos asignados a este responsable
+                  </p>
+                )}
+
+                {/* PA2 / PA3 / PA4 — Tabla de activos del responsable seleccionado */}
+                {selectedResponsableId && !loadingResponsableDetail && responsableDetail && responsableDetail.total > 0 && (
+                  <div className="rp__detail-table-wrap">
+                    <table className="rp__detail-table">
+                      <thead>
+                        <tr>
+                          <th>Codigo</th>
+                          <th>Nombre</th>
+                          <th>Categoria</th>
+                          <th>Estado</th>
+                          <th>Ubicacion</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {responsableDetail.assets.map((activo: ActivoDetalleResponsable) => (
+                          <tr key={activo.id}>
+                            <td className="rp__td-code">{activo.codigo}</td>
+                            <td>{activo.nombre}</td>
+                            <td className="rp__td-location">{activo.categoria}</td>
+                            <td>
+                              <Badge
+                                label={activo.estadoLabel}
+                                variant={estadoVariant(activo.estado)}
+                                size="sm"
+                              />
+                            </td>
+                            <td className="rp__td-location">{activo.ubicacion}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    <p className="rp__detail-total">
+                      Total: <strong>{responsableDetail.total}</strong>{' '}
+                      {responsableDetail.total === 1 ? 'activo' : 'activos'}
+                    </p>
+                  </div>
+                )}
+              </Card>
+            </>
+          )}
         </>
-      )}
+      ) : null}
 
       {/* ─── Estilos inline ────────────────────────────────────────────────── */}
       <style>{`
