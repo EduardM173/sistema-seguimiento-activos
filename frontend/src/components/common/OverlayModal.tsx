@@ -9,6 +9,7 @@ type OverlayModalProps = {
   children: ReactNode;
   width?: string;
   disabled?: boolean;
+  className?: string;
 };
 
 export default function OverlayModal({
@@ -19,6 +20,7 @@ export default function OverlayModal({
   children,
   width = '560px',
   disabled = false,
+  className = '',
 }: OverlayModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
 
@@ -51,7 +53,7 @@ export default function OverlayModal({
     >
       <div
         ref={dialogRef}
-        className="overlayModal__dialog"
+        className={`overlayModal__dialog ${className}`.trim()}
         role="dialog"
         aria-modal="true"
         aria-labelledby="overlay-modal-title"
