@@ -248,7 +248,8 @@ export class ReportsService {
   /**
    * PROSIN-491 / PA1
    * Retorna la cantidad de activos agrupados por responsable actual.
-   * Solo incluye usuarios que tienen al menos 1 activo asignado.
+   * Incluye TODOS los usuarios activos del sistema, incluso si tienen 0 activos
+   * asignados — así el frontend puede mostrar el mensaje PA5.
    */
   async getResponsableReport() {
     const summaries = await this.getResponsableSummaries();
@@ -267,7 +268,7 @@ export class ReportsService {
       generatedAt: new Date().toISOString(),
       totalAssets,
       responsables,
-      downloadReady: responsables.length > 0,
+      downloadReady: totalAssets > 0,
     };
   }
 
@@ -396,7 +397,8 @@ export class ReportsService {
         CONCAT(u.nombres, ' ', u.apellidos)  AS responsable_nombre,
         COUNT(a.id)::text                    AS cantidad
       FROM usuarios u
-      INNER JOIN activos a ON a."responsableActualId" = u.id
+      LEFT JOIN activos a ON a."responsableActualId" = u.id
+      WHERE u.estado = 'ACTIVO'
       GROUP BY u.id, u.nombres, u.apellidos
       ORDER BY u.nombres ASC, u.apellidos ASC
     `);
