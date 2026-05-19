@@ -146,6 +146,14 @@ export const reportesService = {
     queryParams.set('fechaHasta', params.fechaHasta);
 
     if (params.tipo) {
+      queryParams.set('tipo', params.tipo);
+    }
+
+    return requestReports<ReporteMovimientosActivos>(
+      `/reports/movements?${queryParams.toString()}`,
+    );
+  },
+
   // HU47 — Reporte por responsable actual
   // ═══════════════════════════════════════════════════════════════════════════
 
@@ -280,17 +288,6 @@ export const reportesService = {
 
   // ═══════════════════════════════════════════════════════════════════════════
   // Utilidades generales
-
-      response.headers.get('Content-Disposition'),
-      fallback,
-    );
-
-    downloadBlob(blob, filename);
-  },
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // Utilidades generales
->>>>>>> origin/Sprint4_DEV
   // ═══════════════════════════════════════════════════════════════════════════
 
   verificarMicroservicio: async () => {
