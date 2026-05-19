@@ -87,7 +87,7 @@ services:
       AUDIT_MS_PORT: 3002
 
     ports:
-      - 3002:3002
+      - 3003:3002
 
     depends_on:
       app_db_local:
