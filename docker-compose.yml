@@ -31,8 +31,8 @@ services:
     environment:
       POSTGRES_HOST: app_db_local
       BACKEND_PORT: 3001
-    # ports:
-    #   - 3000:3000
+    ports:
+      - 3001:3001
 
     depends_on:
       app_db_local:
@@ -70,6 +70,47 @@ services:
       - /app/node_modules
     command: "npm run start:dev"
 
+  auditoria_local:
+    container_name: activos_auditoria_local
+    image: ${DOCKER_REGISTRY:-local_activos}/auditoria:${TAG:-latest}
+
+    build:
+      dockerfile: dockerfile
+      context: ./auditoria
+
+    user: ${UID:-1000}:${GID:-1000}
+    env_file:
+      - ./.env
+
+    environment:
+      POSTGRES_HOST: app_db_local
+      AUDIT_MS_PORT: 3003
+
+    ports:
+      - 3003:3003
+
+    depends_on:
+      app_db_local:
+        condition: service_started
+
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3003/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+    volumes:
+      - ./auditoria:/app/
+      - /app/node_modules
+    command: "npm run dev"
+
   frontend_local:
     container_name: activos_frontend_local
     image: ${DOCKER_REGISTRY:-local_activos}/frontend:${TAG:-latest}
@@ -81,6 +122,7 @@ services:
 
     environment:
       VITE_API_URL: "http://localhost:8085/api"
+      VITE_AUDIT_API_URL: "http://localhost:3003/api"
       VITE_REPORTS_API_URL: "http://localhost:8085/reports-api"
       VITE_HOST: "localhost"
       VITE_BACKEND_URL: "http://backend_local:3001"
@@ -96,6 +138,8 @@ services:
 
     depends_on:
       backend_local:
+        condition: service_started
+      auditoria_local:
         condition: service_started
       reports_service:
         condition: service_started

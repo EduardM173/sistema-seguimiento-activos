@@ -21,6 +21,7 @@ import { Request } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ApiResponse } from '../common/api-response';
 import { AuditoriaService } from './auditoria.service';
+import { AssetTraceabilityQueryDto } from './dto/asset-traceability-query.dto';
 import { SearchNotificationsDto } from './dto/search-notifications.dto';
 
 @ApiTags('auditoria')
@@ -95,6 +96,139 @@ export class AuditoriaController {
   ) {
     const userId = (req.user as { id: string }).id;
     return this.auditoriaService.getNotifications(userId, query);
+  }
+
+  @ApiOperation({
+    summary: 'Obtener trazabilidad consolidada de un activo',
+    description:
+      'Consulta en Auditoría y Trazabilidad todos los movimientos registrados y auditorías asociadas al activo seleccionado.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Identificador del activo a consultar',
+  })
+  @ApiQuery({
+    name: 'fechaDesde',
+    required: false,
+    type: String,
+    example: '2026-05-01',
+    description: 'Fecha inicial del rango de trazabilidad',
+  })
+  @ApiQuery({
+    name: 'fechaHasta',
+    required: false,
+    type: String,
+    example: '2026-05-31',
+    description: 'Fecha final del rango de trazabilidad',
+  })
+  @ApiOkResponse({
+    description: 'Trazabilidad del activo obtenida correctamente',
+  })
+  @ApiNotFoundResponse({ description: 'Activo no encontrado' })
+  @Get('activos/:id/trazabilidad')
+  async getAssetTraceability(
+    @Param('id') id: string,
+    @Query() query: AssetTraceabilityQueryDto,
+    @Req() req: Request,
+  ) {
+    const userId = (req.user as { id: string }).id;
+    const data = await this.auditoriaService.getAssetTraceability(
+      userId,
+      id,
+      query,
+    );
+    return ApiResponse.success(
+      data,
+      'Trazabilidad del activo obtenida correctamente',
+    );
+  }
+
+  @ApiOperation({
+    summary: 'Obtener trazabilidad departamental de un activo',
+    description:
+      'Permite al Responsable de Área consultar la trazabilidad de un activo vinculado a su departamento.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Identificador del activo vinculado al departamento',
+  })
+  @ApiOkResponse({
+    description: 'Trazabilidad departamental obtenida correctamente',
+  })
+  @ApiNotFoundResponse({ description: 'Activo no encontrado' })
+  @Get('departamental/activos/:id/trazabilidad')
+  async getDepartmentAssetTraceability(
+    @Param('id') id: string,
+    @Req() req: Request,
+  ) {
+    const userId = (req.user as { id: string }).id;
+    const data = await this.auditoriaService.getAssetTraceability(
+      userId,
+      id,
+      {},
+      {
+        permissionCode: 'ASSET_VIEW',
+        permissionMessage:
+          'No tienes permisos para consultar la trazabilidad departamental',
+        areaScoped: true,
+      },
+    );
+    return ApiResponse.success(
+      data,
+      'Trazabilidad departamental obtenida correctamente',
+    );
+  }
+
+  @ApiOperation({
+    summary: 'Listar trazabilidad departamental consolidada',
+    description:
+      'Devuelve los movimientos registrados de activos vinculados al departamento del usuario autenticado.',
+  })
+  @ApiQuery({
+    name: 'tipoMovimiento',
+    required: false,
+    enum: [
+      'REGISTRO',
+      'ASIGNACION',
+      'TRANSFERENCIA',
+      'DEVOLUCION',
+      'BAJA',
+      'ACTUALIZACION',
+      'INCIDENTE',
+    ],
+    description: 'Filtra la lista consolidada por tipo de movimiento',
+  })
+  @ApiQuery({
+    name: 'fechaDesde',
+    required: false,
+    type: String,
+    example: '2026-05-01',
+    description: 'Fecha inicial del rango de movimientos',
+  })
+  @ApiQuery({
+    name: 'fechaHasta',
+    required: false,
+    type: String,
+    example: '2026-05-31',
+    description: 'Fecha final del rango de movimientos',
+  })
+  @ApiOkResponse({
+    description: 'Trazabilidad departamental consolidada obtenida correctamente',
+  })
+  @Get('departamental/trazabilidad')
+  async getDepartmentTraceability(
+    @Query() query: AssetTraceabilityQueryDto,
+    @Req() req: Request,
+  ) {
+    const userId = (req.user as { id: string }).id;
+    const data = await this.auditoriaService.getDepartmentTraceability(
+      userId,
+      query,
+    );
+    return ApiResponse.success(
+      data,
+      'Trazabilidad departamental consolidada obtenida correctamente',
+    );
   }
 
   @ApiOperation({
