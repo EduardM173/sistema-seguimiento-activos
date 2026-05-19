@@ -47,6 +47,33 @@ type ResponsableAssetDetailRow = {
   ubicacion: string | null;
 };
 
+// HU-AREA — Resumen agrupado por área
+type AreaSummaryRow = {
+  area_id: string;
+  area_nombre: string;
+  cantidad: string;
+};
+
+// HU-AREA — Detalle activos de área seleccionada
+type AreaAssetDetailRow = {
+  id: string;
+  codigo: string;
+  nombre: string;
+  estado: string;
+  ubicacion: string | null;
+  responsable: string | null;
+};
+
+// HU-AREA — Todos los activos con su área (para PDF/Excel completo)
+type AreaAllAssetsRow = {
+  area_nombre: string;
+  codigo: string;
+  nombre: string;
+  estado: string;
+  ubicacion: string | null;
+  responsable: string | null;
+};
+
 type ReportFormat = 'pdf' | 'excel';
 
 type GeneralInventoryReport = Awaited<
@@ -56,6 +83,8 @@ type GeneralInventoryReport = Awaited<
 type CategoryReport = Awaited<ReturnType<ReportsService['getCategoryReport']>>;
 
 type ResponsableReport = Awaited<ReturnType<ReportsService['getResponsableReport']>>;
+
+type AreaReport = Awaited<ReturnType<ReportsService['getAreaReport']>>;
 
 // ─── Service ─────────────────────────────────────────────────────────────────
 
@@ -644,6 +673,361 @@ export class ReportsService {
         cells: [resp.name, resp.total, `${resp.percentage}%`],
       })),
     });
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // HU-AREA — Reporte por área o departamento
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /** PA1 — Cantidad de activos agrupados por área */
+  async getAreaReport() {
+    const summaries = await this.getAreaSummaries();
+
+    const totalAssets = summaries.reduce((sum, r) => sum + Number(r.cantidad), 0);
+
+    const areas = summaries.map((r) => ({
+      id: r.area_id,
+      name: r.area_nombre,
+      total: Number(r.cantidad),
+      percentage:
+        totalAssets > 0 ? Math.round((Number(r.cantidad) / totalAssets) * 100) : 0,
+    }));
+
+    return {
+      generatedAt: new Date().toISOString(),
+      totalAssets,
+      areas,
+      downloadReady: totalAssets > 0,
+    };
+  }
+
+  /** PA2/PA3/PA4/PA5 — Activos de un área seleccionada */
+  async getAreaAssets(areaId: string) {
+    const areaResult = await this.database.query<{ id: string; nombre: string }>(
+      `SELECT id, nombre FROM areas WHERE id = $1`,
+      [areaId],
+    );
+
+    if (!areaResult.rows.length) {
+      throw new NotFoundException('Area no encontrada');
+    }
+
+    const area = areaResult.rows[0];
+
+    const result = await this.database.query<AreaAssetDetailRow>(
+      `
+      SELECT
+        a.id,
+        a.codigo,
+        a.nombre,
+        a.estado,
+        u.nombre                                   AS ubicacion,
+        CONCAT(usr.nombres, ' ', usr.apellidos)    AS responsable
+      FROM activos a
+      LEFT JOIN ubicaciones u   ON u.id   = a."ubicacionId"
+      LEFT JOIN usuarios    usr ON usr.id = a."responsableActualId"
+      WHERE a."areaActualId" = $1
+      ORDER BY a.nombre ASC
+      `,
+      [areaId],
+    );
+
+    return {
+      areaId: area.id,
+      areaName: area.nombre,
+      assets: result.rows.map((row) => ({
+        id: row.id,
+        codigo: row.codigo,
+        nombre: row.nombre,
+        estado: row.estado,
+        estadoLabel: this.formatStatus(row.estado),
+        ubicacion: row.ubicacion ?? 'Sin ubicacion',
+        responsable: row.responsable ?? 'Sin responsable',
+      })),
+      total: result.rows.length,
+    };
+  }
+
+  /** Genera PDF o Excel del resumen por área para descarga */
+  async generateAreaReportFile(
+    format: ReportFormat,
+    generatedById?: string,
+    areaId?: string,
+  ) {
+    if (!['pdf', 'excel'].includes(format)) {
+      throw new BadRequestException('Formato de reporte no soportado');
+    }
+
+    const [report, allAssetsRaw] = await Promise.all([
+      this.getAreaReport(),
+      this.getAllAreaAssetsForReport(),
+    ]);
+
+    if (!report.downloadReady) {
+      throw new NotFoundException('No hay informacion disponible para descargar');
+    }
+
+    // Si se especifica un área, filtrar el reporte a esa área solamente
+    if (areaId) {
+      const matchedArea = report.areas.find((a) => a.id === areaId);
+      if (!matchedArea) {
+        throw new NotFoundException('Area no encontrada');
+      }
+      report.areas = [matchedArea];
+      report.totalAssets = matchedArea.total;
+      // Normalizar participación a 100 % cuando es solo un área
+      matchedArea.percentage = 100;
+    }
+
+    const allAssets = allAssetsRaw
+      .map((row) => ({
+        areaNombre: row.area_nombre,
+        codigo: row.codigo,
+        nombre: row.nombre,
+        estado: row.estado,
+        estadoLabel: this.formatStatus(row.estado),
+        ubicacion: row.ubicacion ?? 'Sin ubicacion',
+        responsable: row.responsable ?? 'Sin responsable',
+      }))
+      // Si hay filtro de área, conservar solo los activos de esa área
+      .filter((a) =>
+        areaId ? report.areas.some((ra) => ra.name === a.areaNombre) : true,
+      );
+
+    const generatedAt = new Date();
+    const filename = this.buildFilename('reporte-por-area', format, generatedAt);
+
+    if (generatedById) {
+      await this.registerGeneratedReport(
+        format,
+        generatedById,
+        generatedAt,
+        'Reporte por area o departamento',
+        'dispersion_activos',
+      );
+    }
+
+    if (format === 'pdf') {
+      return {
+        filename,
+        contentType: 'application/pdf',
+        buffer: this.buildAreaPdf(report, allAssets, generatedAt),
+      };
+    }
+
+    return {
+      filename,
+      contentType: 'application/vnd.ms-excel; charset=utf-8',
+      buffer: Buffer.from(this.buildAreaExcelHtml(report, allAssets, generatedAt), 'utf8'),
+    };
+  }
+
+  private async getAreaSummaries() {
+    const result = await this.database.query<AreaSummaryRow>(`
+      SELECT
+        ar.id              AS area_id,
+        ar.nombre          AS area_nombre,
+        COUNT(a.id)::text  AS cantidad
+      FROM areas ar
+      LEFT JOIN activos a ON a."areaActualId" = ar.id
+      GROUP BY ar.id, ar.nombre
+      ORDER BY ar.nombre ASC
+    `);
+    return result.rows;
+  }
+
+  private async getAllAreaAssetsForReport() {
+    const result = await this.database.query<AreaAllAssetsRow>(`
+      SELECT
+        ar.nombre                                  AS area_nombre,
+        a.codigo,
+        a.nombre,
+        a.estado,
+        u.nombre                                   AS ubicacion,
+        CONCAT(usr.nombres, ' ', usr.apellidos)    AS responsable
+      FROM activos a
+      JOIN  areas       ar  ON ar.id  = a."areaActualId"
+      LEFT JOIN ubicaciones u   ON u.id   = a."ubicacionId"
+      LEFT JOIN usuarios    usr ON usr.id = a."responsableActualId"
+      ORDER BY ar.nombre ASC, a.nombre ASC
+    `);
+    return result.rows;
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PDF — Área (HU-AREA)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  private buildAreaPdf(
+    report: AreaReport,
+    assets: Array<{
+      areaNombre: string;
+      codigo: string;
+      nombre: string;
+      estadoLabel: string;
+      ubicacion: string;
+      responsable: string;
+    }>,
+    generatedAt: Date,
+  ) {
+    // Agrupar activos por área, manteniendo el orden de las áreas del resumen
+    const areaOrder = report.areas.map((a) => a.name);
+    const byArea = new Map<string, typeof assets>();
+    for (const asset of assets) {
+      const list = byArea.get(asset.areaNombre) ?? [];
+      list.push(asset);
+      byArea.set(asset.areaNombre, list);
+    }
+
+    const areaDetails = areaOrder
+      .filter((name) => (byArea.get(name)?.length ?? 0) > 0)
+      .map((name) => ({
+        areaName: name,
+        assets: (byArea.get(name) ?? []).map((a) => ({
+          codigo: a.codigo,
+          nombre: a.nombre,
+          estadoLabel: a.estadoLabel,
+          ubicacion: a.ubicacion,
+          responsable: a.responsable,
+        })),
+      }));
+
+    return this.pdf.buildAreaReport({
+      generatedAt,
+      totalAreas: report.areas.length,
+      totalAssets: report.totalAssets,
+      areas: report.areas,
+      areaDetails,
+    });
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Excel — Área (HU-AREA)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  private buildAreaExcelHtml(
+    report: AreaReport,
+    assets: Array<{
+      areaNombre: string;
+      codigo: string;
+      nombre: string;
+      estadoLabel: string;
+      ubicacion: string;
+      responsable: string;
+    }>,
+    generatedAt: Date,
+  ) {
+    const dateLabel = new Intl.DateTimeFormat('es-BO', {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    }).format(generatedAt);
+
+    const esc = (s: string | number) =>
+      String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+
+    const TH = 'background:#1e293b; color:#fff; border:1px solid #1e293b; padding:9px 12px; text-align:left; font-size:12px;';
+    const TD = 'background:#fff; border:1px solid #d9e2ef; padding:9px 12px; font-size:12px;';
+
+    // ── Resumen por área ────────────────────────────────────────────────────
+    const summaryRows = report.areas
+      .map(
+        (a) =>
+          `<tr>
+            <td style="${TD}">${esc(a.name)}</td>
+            <td style="${TD} text-align:right; font-weight:700">${a.total}</td>
+            <td style="${TD} text-align:right">${a.percentage}%</td>
+          </tr>`,
+      )
+      .join('');
+
+    // ── Detalle agrupado por área ───────────────────────────────────────────
+    const areaNames = [...new Set(assets.map((a) => a.areaNombre))];
+
+    const detailSections = areaNames
+      .map((areaName) => {
+        const areaAssets = assets.filter((a) => a.areaNombre === areaName);
+        const assetRows = areaAssets
+          .map(
+            (a) =>
+              `<tr>
+                <td style="${TD} font-family:monospace; font-size:11px; color:#64748b">${esc(a.codigo)}</td>
+                <td style="${TD}">${esc(a.nombre)}</td>
+                <td style="${TD}">${esc(a.estadoLabel)}</td>
+                <td style="${TD} color:#64748b">${esc(a.ubicacion)}</td>
+                <td style="${TD} color:#64748b">${esc(a.responsable)}</td>
+              </tr>`,
+          )
+          .join('');
+        return `
+          <tr><td colspan="5" style="background:#1e293b; color:#fff; font-size:13px; font-weight:700; padding:10px 12px">${esc(areaName)}</td></tr>
+          <tr style="background:#334155">
+            <th style="${TH}">Codigo</th>
+            <th style="${TH}">Nombre</th>
+            <th style="${TH}">Estado</th>
+            <th style="${TH}">Ubicacion</th>
+            <th style="${TH}">Responsable</th>
+          </tr>
+          ${assetRows}
+          <tr><td colspan="5" style="padding:6px"></td></tr>`;
+      })
+      .join('');
+
+    return `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head><meta charset="UTF-8" /><title>Reporte por area</title></head>
+<body style="margin:0; background:#f5f7fb; font-family:Arial,Helvetica,sans-serif; color:#111827">
+
+  <!-- Header -->
+  <table width="100%" cellspacing="0" cellpadding="0">
+    <tr><td style="background:#111827; color:#fff; font-size:22px; font-weight:700; padding:22px 28px 6px">Reporte por area o departamento</td></tr>
+    <tr><td style="background:#111827; color:#cbd5e1; font-size:12px; padding:0 28px 20px">Sistema de Seguimiento de Activos | Generado: ${esc(dateLabel)}</td></tr>
+  </table>
+
+  <!-- Metricas -->
+  <table width="100%" cellspacing="0" cellpadding="0" style="margin:16px 0">
+    <tr>
+      <td width="28"></td>
+      <td style="background:#fff; border:1px solid #d9e2ef; padding:16px; width:200px">
+        <div style="color:#64748b; font-size:11px; font-weight:700; text-transform:uppercase">Total de areas</div>
+        <div style="color:#0f172a; font-size:26px; font-weight:700; padding-top:6px">${report.areas.length}</div>
+      </td>
+      <td width="16"></td>
+      <td style="background:#fff; border:1px solid #d9e2ef; padding:16px; width:200px">
+        <div style="color:#64748b; font-size:11px; font-weight:700; text-transform:uppercase">Total de activos</div>
+        <div style="color:#0f172a; font-size:26px; font-weight:700; padding-top:6px">${report.totalAssets}</div>
+      </td>
+      <td></td>
+    </tr>
+  </table>
+
+  <!-- Resumen por area -->
+  <p style="color:#111827; font-size:14px; font-weight:700; padding:12px 28px 8px; margin:0">Resumen por area</p>
+  <table width="calc(100% - 56px)" cellspacing="0" cellpadding="0" style="margin:0 28px 24px; border-collapse:collapse">
+    <tr style="background:#1e293b">
+      <th style="${TH}">Area / Departamento</th>
+      <th style="${TH} text-align:right">Total activos</th>
+      <th style="${TH} text-align:right">Participacion</th>
+    </tr>
+    ${summaryRows}
+  </table>
+
+  <!-- Detalle por area -->
+  <p style="color:#111827; font-size:14px; font-weight:700; padding:12px 28px 8px; margin:0">Detalle de activos por area</p>
+  <table width="calc(100% - 56px)" cellspacing="0" cellpadding="0" style="margin:0 28px 28px; border-collapse:collapse">
+    ${detailSections}
+  </table>
+
+  <!-- Footer -->
+  <p style="color:#64748b; font-size:11px; padding:12px 28px 22px; margin:0">
+    Reporte generado automaticamente desde el microservicio de Reportes y Exportacion.
+  </p>
+
+</body></html>`;
   }
 
   private formatStatus(status: string) {

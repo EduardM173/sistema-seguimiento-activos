@@ -253,3 +253,40 @@ export interface ReporteResponsableDetalle {
   assets: ActivoDetalleResponsable[];
   total: number;
 }
+
+// ─── HU-AREA ─────────────────────────────────────────────────────────────────
+
+/** Resumen de un área en el listado general (PA1) */
+export interface AreaSummary {
+  id: string;
+  name: string;
+  total: number;
+  percentage: number;
+}
+
+/** Respuesta GET /reports/inventory/area — PA1 */
+export interface ReporteArea {
+  generatedAt: string;
+  totalAssets: number;
+  areas: AreaSummary[];
+  downloadReady: boolean;
+}
+
+/** Activo en el detalle de un área — código, nombre, estado, ubicación, responsable */
+export interface ActivoDetalleArea {
+  id: string;
+  codigo: string;
+  nombre: string;
+  estado: string;
+  estadoLabel: string;
+  ubicacion: string;
+  responsable: string;
+}
+
+/** Respuesta GET /reports/inventory/area/:id/assets — PA2/PA3/PA4/PA5 */
+export interface ReporteAreaDetalle {
+  areaId: string;
+  areaName: string;
+  assets: ActivoDetalleArea[];
+  total: number;
+}

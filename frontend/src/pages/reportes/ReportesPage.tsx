@@ -23,6 +23,9 @@ import type {
   ReporteResponsable,
   ReporteResponsableDetalle,
   ActivoDetalleResponsable,
+  ReporteArea,
+  ReporteAreaDetalle,
+  ActivoDetalleArea,
 } from '../../types/reportes.types';
 import '../../styles/modules.css';
 
@@ -46,6 +49,13 @@ const emptyResponsableReport: ReporteResponsable = {
   generatedAt: '',
   totalAssets: 0,
   responsables: [],
+  downloadReady: false,
+};
+
+const emptyAreaReport: ReporteArea = {
+  generatedAt: '',
+  totalAssets: 0,
+  areas: [],
   downloadReady: false,
 };
 
@@ -94,6 +104,17 @@ export const ReportesPage: React.FC = () => {
   const [downloadingResponsableFormat, setDownloadingResponsableFormat] = useState<'pdf' | 'excel' | null>(null);
   const [responsableMessage, setResponsableMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+  // ── Reporte por área (HU-AREA) ────────────────────────────────────────────
+  const [areaReport, setAreaReport] = useState<ReporteArea>(emptyAreaReport);
+  const [loadingAreas, setLoadingAreas] = useState(true);
+
+  const [selectedAreaId, setSelectedAreaId] = useState('');
+  const [areaDetail, setAreaDetail] = useState<ReporteAreaDetalle | null>(null);
+  const [loadingAreaDetail, setLoadingAreaDetail] = useState(false);
+
+  const [downloadingAreaFormat, setDownloadingAreaFormat] = useState<'pdf' | 'excel' | null>(null);
+  const [areaMessage, setAreaMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
   // ── Fechas formateadas ────────────────────────────────────────────────────
 
   const generatedAt = useMemo(() => {
@@ -120,6 +141,14 @@ export const ReportesPage: React.FC = () => {
     }).format(new Date(responsableReport.generatedAt));
   }, [responsableReport.generatedAt]);
 
+  const generatedAtArea = useMemo(() => {
+    if (!areaReport.generatedAt) return 'Sin consulta';
+    return new Intl.DateTimeFormat('es-BO', {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    }).format(new Date(areaReport.generatedAt));
+  }, [areaReport.generatedAt]);
+
   // ── Opciones del selector de categoría ───────────────────────────────────
 
   const categoryOptions: SelectOption[] = useMemo(
@@ -142,6 +171,17 @@ export const ReportesPage: React.FC = () => {
     [responsableReport.responsables],
   );
 
+  // ── Opciones del selector de área ────────────────────────────────────────
+
+  const areaOptions: SelectOption[] = useMemo(
+    () =>
+      areaReport.areas.map((a) => ({
+        value: a.id,
+        label: `${a.name} (${a.total})`,
+      })),
+    [areaReport.areas],
+  );
+
   // ── Carga inicial ─────────────────────────────────────────────────────────
 
   useEffect(() => {
@@ -149,8 +189,10 @@ export const ReportesPage: React.FC = () => {
     cargarReporteCategoria();
     if (isAdminGeneral) {
       cargarReporteResponsable();
+      cargarReporteArea();
     } else {
       setLoadingResponsables(false);
+      setLoadingAreas(false);
     }
   }, [isAdminGeneral]);
 
@@ -173,6 +215,16 @@ export const ReportesPage: React.FC = () => {
     }
     cargarDetalleResponsable(selectedResponsableId);
   }, [isAdminGeneral, selectedResponsableId]);
+
+  // ── Al cambiar el área seleccionada, carga el detalle ────────────────────
+
+  useEffect(() => {
+    if (!isAdminGeneral || !selectedAreaId) {
+      setAreaDetail(null);
+      return;
+    }
+    cargarDetalleArea(selectedAreaId);
+  }, [isAdminGeneral, selectedAreaId]);
 
   // ═══════════════════════════════════════════════════════════════════════════
   // Acciones — Reporte general (HU27)
@@ -325,6 +377,63 @@ export const ReportesPage: React.FC = () => {
       });
     } finally {
       setDownloadingResponsableFormat(null);
+    }
+  };
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Acciones — Reporte por área (HU-AREA)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  const cargarReporteArea = async () => {
+    try {
+      setLoadingAreas(true);
+      const data = await reportesService.obtenerReporteArea();
+      setAreaReport(data);
+      setAreaMessage(null);
+    } catch (err) {
+      setAreaMessage({
+        type: 'error',
+        text: err instanceof Error
+          ? err.message
+          : 'No se pudo consultar el reporte por area',
+      });
+    } finally {
+      setLoadingAreas(false);
+    }
+  };
+
+  const cargarDetalleArea = async (areaId: string) => {
+    try {
+      setLoadingAreaDetail(true);
+      setAreaDetail(null);
+      const data = await reportesService.obtenerActivosPorArea(areaId);
+      setAreaDetail(data);
+    } catch (err) {
+      setAreaMessage({
+        type: 'error',
+        text: err instanceof Error
+          ? err.message
+          : 'No se pudo consultar el detalle del area',
+      });
+    } finally {
+      setLoadingAreaDetail(false);
+    }
+  };
+
+  const descargarReporteArea = async (formato: 'pdf' | 'excel') => {
+    try {
+      setDownloadingAreaFormat(formato);
+      await reportesService.descargarReporteArea(formato, user?.id, selectedAreaId || undefined);
+      setAreaMessage({ type: 'success', text: 'El archivo quedo disponible para descarga' });
+    } catch (err) {
+      setAreaMessage({
+        type: 'error',
+        text: err instanceof Error
+          ? err.message
+          : 'No se pudo descargar el reporte por area',
+      });
+    } finally {
+      setDownloadingAreaFormat(null);
     }
   };
 
@@ -749,6 +858,167 @@ export const ReportesPage: React.FC = () => {
                     <p className="rp__detail-total">
                       Total: <strong>{responsableDetail.total}</strong>{' '}
                       {responsableDetail.total === 1 ? 'activo' : 'activos'}
+                    </p>
+                  </div>
+                )}
+              </Card>
+            </>
+          )}
+
+          {/* ════════════════════════════════════════════════════════════════════
+              HU-AREA — Reporte por área o departamento
+          ════════════════════════════════════════════════════════════════════ */}
+
+          <div className="module-header rp__section-header">
+            <div>
+              <h1>Reporte por area</h1>
+              <p>Consulta actualizada: {generatedAtArea}</p>
+            </div>
+            <div className="report-header-actions">
+              <Button
+                label="Actualizar"
+                variant="primary"
+                onClick={cargarReporteArea}
+                isLoading={loadingAreas}
+                icon={<RefreshCw size={16} />}
+              />
+              <Button
+                label="PDF"
+                variant="secondary"
+                onClick={() => descargarReporteArea('pdf')}
+                disabled={loadingAreas || !areaReport.downloadReady}
+                isLoading={downloadingAreaFormat === 'pdf'}
+                icon={<Download size={16} />}
+              />
+              <Button
+                label="Excel"
+                variant="secondary"
+                onClick={() => descargarReporteArea('excel')}
+                disabled={loadingAreas || !areaReport.downloadReady}
+                isLoading={downloadingAreaFormat === 'excel'}
+                icon={<FileSpreadsheet size={16} />}
+              />
+            </div>
+          </div>
+
+          {areaMessage && (
+            <Alert
+              type={areaMessage.type}
+              message={areaMessage.text}
+              dismissible
+              onClose={() => setAreaMessage(null)}
+            />
+          )}
+
+          {loadingAreas ? (
+            <LoadingSpinner />
+          ) : (
+            <>
+              {/* PA1 — Cantidad de activos por área registrada */}
+              <Card title="Activos por area" padding="lg">
+                {areaReport.areas.length === 0 ? (
+                  <p className="rp__empty-state">
+                    No existen areas registradas en el sistema
+                  </p>
+                ) : (
+                  <div className="rp__category-grid">
+                    {areaReport.areas.map((area) => (
+                      <button
+                        key={area.id}
+                        className={`rp__category-card ${selectedAreaId === area.id ? 'rp__category-card--active' : ''}`}
+                        onClick={() =>
+                          setSelectedAreaId(selectedAreaId === area.id ? '' : area.id)
+                        }
+                      >
+                        <div className="rp__category-card-icon">
+                          <Layers size={18} />
+                        </div>
+                        <div className="rp__category-card-body">
+                          <span className="rp__category-card-name">{area.name}</span>
+                          <strong className="rp__category-card-count">{area.total}</strong>
+                          <span className="rp__category-card-pct">{area.percentage}%</span>
+                        </div>
+                        <ChevronRight
+                          size={14}
+                          className={`rp__category-card-arrow ${selectedAreaId === area.id ? 'rp__category-card-arrow--active' : ''}`}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </Card>
+
+              {/* Selector de área + detalle */}
+              <Card
+                title={
+                  selectedAreaId
+                    ? `Activos de: ${areaReport.areas.find((a) => a.id === selectedAreaId)?.name ?? ''}`
+                    : 'Detalle de activos por area'
+                }
+                padding="lg"
+              >
+                <div className="rp__selector-row">
+                  <span className="rp__selector-label">Seleccionar area:</span>
+                  <Select
+                    value={selectedAreaId}
+                    onChange={setSelectedAreaId}
+                    options={areaOptions}
+                    placeholder="Selecciona un area"
+                    className="rp__category-select"
+                  />
+                </div>
+
+                {/* Sin selección */}
+                {!selectedAreaId && (
+                  <p className="rp__empty-state">
+                    Selecciona un area para ver los activos vinculados
+                  </p>
+                )}
+
+                {/* Cargando detalle */}
+                {selectedAreaId && loadingAreaDetail && <LoadingSpinner />}
+
+                {/* PA5 — Área sin activos */}
+                {selectedAreaId && !loadingAreaDetail && areaDetail && areaDetail.total === 0 && (
+                  <p className="rp__empty-state rp__empty-state--category">
+                    No existen activos vinculados a esta area
+                  </p>
+                )}
+
+                {/* PA2 / PA3 / PA4 — Tabla de activos del área seleccionada */}
+                {selectedAreaId && !loadingAreaDetail && areaDetail && areaDetail.total > 0 && (
+                  <div className="rp__detail-table-wrap">
+                    <table className="rp__detail-table">
+                      <thead>
+                        <tr>
+                          <th>Codigo</th>
+                          <th>Nombre</th>
+                          <th>Estado</th>
+                          <th>Ubicacion</th>
+                          <th>Responsable</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {areaDetail.assets.map((activo: ActivoDetalleArea) => (
+                          <tr key={activo.id}>
+                            <td className="rp__td-code">{activo.codigo}</td>
+                            <td>{activo.nombre}</td>
+                            <td>
+                              <Badge
+                                label={activo.estadoLabel}
+                                variant={estadoVariant(activo.estado)}
+                                size="sm"
+                              />
+                            </td>
+                            <td className="rp__td-location">{activo.ubicacion}</td>
+                            <td className="rp__td-location">{activo.responsable}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    <p className="rp__detail-total">
+                      Total: <strong>{areaDetail.total}</strong>{' '}
+                      {areaDetail.total === 1 ? 'activo' : 'activos'}
                     </p>
                   </div>
                 )}

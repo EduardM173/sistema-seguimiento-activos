@@ -43,6 +43,24 @@ export interface PdfReportOptions {
   rows: PdfRow[];
 }
 
+/** Opciones para el reporte multi-página por área */
+export interface PdfAreaReportOptions {
+  generatedAt: Date;
+  totalAreas: number;
+  totalAssets: number;
+  areas: Array<{ name: string; total: number; percentage: number }>;
+  areaDetails: Array<{
+    areaName: string;
+    assets: Array<{
+      codigo: string;
+      nombre: string;
+      estadoLabel: string;
+      ubicacion: string;
+      responsable: string;
+    }>;
+  }>;
+}
+
 // ─── Constantes de marca ──────────────────────────────────────────────────────
 
 const BRAND = {
@@ -272,7 +290,7 @@ export class PdfBuilder {
       '1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n',
       '2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n',
       `3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${LAYOUT.pageWidth} ${LAYOUT.pageHeight}] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>\nendobj\n`,
-      '4 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n',
+      '4 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>\nendobj\n',
       `5 0 obj\n<< /Length ${Buffer.byteLength(content, 'latin1')} >>\nstream\n${content}\nendstream\nendobj\n`,
     ];
 
@@ -293,7 +311,209 @@ export class PdfBuilder {
     return Buffer.from(pdf, 'latin1');
   }
 
+  // ── API pública — Reporte multi-página por área ─────────────────────────────
+
+  /**
+   * Genera un PDF con múltiples páginas:
+   *  - Página 1: resumen con métricas y tabla de áreas
+   *  - Páginas 2-N: una página por cada área con el detalle de sus activos
+   */
+  buildAreaReport(options: PdfAreaReportOptions): Buffer {
+    const dateLabel = this.formatDate(options.generatedAt);
+    const pages: string[][] = [];
+
+    // Página 1 — resumen
+    pages.push(this.buildAreaSummaryPage(options, dateLabel));
+
+    // Una página por área
+    for (const area of options.areaDetails) {
+      if (area.assets.length > 0) {
+        pages.push(this.buildAreaDetailPage(area, dateLabel));
+      }
+    }
+
+    return this.assembleMultiPage(pages.map((p) => p.join('\n')));
+  }
+
+  // ── Página resumen (primera página del reporte por área) ────────────────────
+
+  private buildAreaSummaryPage(
+    options: PdfAreaReportOptions,
+    dateLabel: string,
+  ): string[] {
+    const { marginX, contentWidth, rowHeight, tableHeaderHeight } = LAYOUT;
+    const parts: string[] = [];
+
+    parts.push(...this.buildHeader('Reporte por area o departamento', dateLabel));
+
+    // Métricas
+    const cardWidth = Math.floor((contentWidth - 18) / 2);
+    parts.push(
+      ...this.buildMetricCard(marginX, 548, cardWidth, {
+        label: 'Total de areas',
+        value: options.totalAreas,
+        accentColor: BRAND.accentLine,
+      }),
+      ...this.buildMetricCard(marginX + cardWidth + 18, 548, cardWidth, {
+        label: 'Total de activos',
+        value: options.totalAssets,
+        accentColor: '0.02 0.59 0.41',
+      }),
+    );
+
+    // Tabla de resumen
+    const tableSectionY = 500;
+    parts.push(this.text('Resumen por area', marginX, tableSectionY, 14, BRAND.textSection));
+
+    const columns: PdfColumn[] = [
+      { label: 'Area / Departamento', x: 62  },
+      { label: 'Total activos',       x: 430 },
+      { label: 'Participacion',       x: 505 },
+    ];
+
+    const tableHeaderY = tableSectionY - 36;
+    parts.push(...this.buildTableHeader(tableHeaderY, columns));
+
+    let y = tableHeaderY - tableHeaderHeight;
+    for (let i = 0; i < options.areas.length; i++) {
+      const rowY = y - i * rowHeight;
+      if (rowY < 80) break;
+      const area = options.areas[i];
+      parts.push(
+        ...this.buildTableRow(rowY, i, [
+          this.trunc(area.name, 52),
+          String(area.total),
+          `${area.percentage}%`,
+        ], columns),
+      );
+    }
+
+    parts.push(...this.buildFooter());
+    return parts;
+  }
+
+  // ── Página de detalle (una por cada área con activos) ───────────────────────
+
+  private buildAreaDetailPage(
+    area: PdfAreaReportOptions['areaDetails'][number],
+    dateLabel: string,
+  ): string[] {
+    const { marginX, pageWidth, headerTop, headerHeight, accentLineHeight, rowHeight, tableHeaderHeight } = LAYOUT;
+    const parts: string[] = [];
+
+    // Header con el nombre del área
+    parts.push(
+      this.rect(0, headerTop, pageWidth, headerHeight, BRAND.headerBg),
+      this.rect(0, headerTop, pageWidth, accentLineHeight, BRAND.accentLine),
+      this.text(this.trunc(area.areaName, 44), marginX, 754, 18, BRAND.textLight),
+      this.text('Reporte por area o departamento', marginX, 728, 10, BRAND.textMuted),
+      this.text(`Generado: ${dateLabel}`, 392, 728, 10, BRAND.textMuted),
+    );
+
+    // Tabla de activos
+    const tableSectionY = 660;
+    parts.push(this.text('Activos asignados al area', marginX, tableSectionY, 14, BRAND.textSection));
+
+    const columns: PdfColumn[] = [
+      { label: 'Codigo',      x: 62  },
+      { label: 'Nombre',      x: 132 },
+      { label: 'Estado',      x: 262 },
+      { label: 'Ubicacion',   x: 362 },
+      { label: 'Responsable', x: 447 },
+    ];
+
+    const tableHeaderY = tableSectionY - 36;
+    parts.push(...this.buildTableHeader(tableHeaderY, columns));
+
+    let y = tableHeaderY - tableHeaderHeight;
+    for (let i = 0; i < area.assets.length; i++) {
+      const rowY = y - i * rowHeight;
+      if (rowY < 80) break;
+      const a = area.assets[i];
+      parts.push(
+        ...this.buildTableRow(rowY, i, [
+          this.trunc(a.codigo,      10),
+          this.trunc(a.nombre,      19),
+          this.trunc(a.estadoLabel, 15),
+          this.trunc(a.ubicacion,   12),
+          this.trunc(a.responsable, 15),
+        ], columns),
+      );
+    }
+
+    parts.push(...this.buildFooter());
+    return parts;
+  }
+
+  // ── Ensamblado multi-página ──────────────────────────────────────────────────
+
+  /**
+   * Genera un PDF con N páginas a partir de N content streams.
+   *
+   * Numeración de objetos:
+   *  1         — Catalog
+   *  2         — Pages
+   *  3..N+2    — Page objects
+   *  N+3       — Font
+   *  N+4..2N+3 — Content streams
+   */
+  private assembleMultiPage(contents: string[]): Buffer {
+    const N = contents.length;
+    const fontNum = N + 3;
+    const contentBase = N + 4;
+
+    const kids = Array.from({ length: N }, (_, i) => `${i + 3} 0 R`).join(' ');
+
+    const objects: string[] = [
+      `1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n`,
+      `2 0 obj\n<< /Type /Pages /Kids [${kids}] /Count ${N} >>\nendobj\n`,
+    ];
+
+    // Page objects
+    for (let i = 0; i < N; i++) {
+      const pageNum = i + 3;
+      const contentNum = contentBase + i;
+      objects.push(
+        `${pageNum} 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${LAYOUT.pageWidth} ${LAYOUT.pageHeight}] /Resources << /Font << /F1 ${fontNum} 0 R >> >> /Contents ${contentNum} 0 R >>\nendobj\n`,
+      );
+    }
+
+    // Font
+    objects.push(
+      `${fontNum} 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>\nendobj\n`,
+    );
+
+    // Content streams
+    for (let i = 0; i < N; i++) {
+      const content = contents[i];
+      objects.push(
+        `${contentBase + i} 0 obj\n<< /Length ${Buffer.byteLength(content, 'latin1')} >>\nstream\n${content}\nendstream\nendobj\n`,
+      );
+    }
+
+    let pdf = '%PDF-1.4\n';
+    const offsets: number[] = [];
+    for (const obj of objects) {
+      offsets.push(Buffer.byteLength(pdf, 'latin1'));
+      pdf += obj;
+    }
+
+    const xrefOffset = Buffer.byteLength(pdf, 'latin1');
+    const total = objects.length + 1;
+    pdf += `xref\n0 ${total}\n`;
+    pdf += '0000000000 65535 f \n';
+    pdf += offsets.map((o) => `${String(o).padStart(10, '0')} 00000 n \n`).join('');
+    pdf += `trailer\n<< /Size ${total} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
+
+    return Buffer.from(pdf, 'latin1');
+  }
+
   // ── Utilidades ──────────────────────────────────────────────────────────────
+
+  /** Trunca una cadena a max caracteres añadiendo '.' al final si se recorta */
+  private trunc(s: string, max: number): string {
+    return s.length > max ? s.slice(0, max - 1) + '.' : s;
+  }
 
   private formatDate(date: Date): string {
     return new Intl.DateTimeFormat('es-BO', {

@@ -8,6 +8,8 @@ import type {
   ReporteCategoriaDetalle,
   ReporteResponsable,
   ReporteResponsableDetalle,
+  ReporteArea,
+  ReporteAreaDetalle,
 } from '../types/reportes.types';
 import { tipoReporte } from '../types/reportes.types';
 import type { PaginatedResponse, ApiResponse } from '../types';
@@ -160,6 +162,52 @@ export const reportesService = {
 
     const blob = await response.blob();
     const fallback = `reporte-por-responsable.${formato === 'pdf' ? 'pdf' : 'xls'}`;
+    const filename = getFilenameFromDisposition(
+      response.headers.get('Content-Disposition'),
+      fallback,
+    );
+
+    downloadBlob(blob, filename);
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // HU-AREA — Reporte por área o departamento
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /** PA1 — Cantidad de activos agrupados por área */
+  obtenerReporteArea: async () => {
+    return requestReports<ReporteArea>('/reports/inventory/area');
+  },
+
+  /** PA2/PA3/PA4/PA5 — Activos del área seleccionada */
+  obtenerActivosPorArea: async (areaId: string) => {
+    return requestReports<ReporteAreaDetalle>(
+      `/reports/inventory/area/${areaId}/assets`,
+    );
+  },
+
+  /** Descarga PDF o Excel del resumen por área */
+  descargarReporteArea: async (
+    formato: 'pdf' | 'excel',
+    generatedById?: string,
+    areaId?: string,
+  ) => {
+    const params = new URLSearchParams();
+    if (generatedById) params.set('generatedById', generatedById);
+    if (areaId) params.set('areaId', areaId);
+
+    const suffix = params.toString() ? `?${params.toString()}` : '';
+    const response = await fetch(
+      `${REPORTS_API_URL}/reports/inventory/area/download/${formato}${suffix}`,
+    );
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => null);
+      throw new Error(error?.message || 'No se pudo descargar el reporte por area');
+    }
+
+    const blob = await response.blob();
+    const fallback = `reporte-por-area.${formato === 'pdf' ? 'pdf' : 'xls'}`;
     const filename = getFilenameFromDisposition(
       response.headers.get('Content-Disposition'),
       fallback,
