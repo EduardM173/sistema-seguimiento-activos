@@ -21,6 +21,7 @@ import { Request } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ApiResponse } from '../common/api-response';
 import { AuditoriaService } from './auditoria.service';
+import { AssetTraceabilityQueryDto } from './dto/asset-traceability-query.dto';
 import { SearchNotificationsDto } from './dto/search-notifications.dto';
 
 @ApiTags('auditoria')
@@ -95,6 +96,51 @@ export class AuditoriaController {
   ) {
     const userId = (req.user as { id: string }).id;
     return this.auditoriaService.getNotifications(userId, query);
+  }
+
+  @ApiOperation({
+    summary: 'Obtener trazabilidad consolidada de un activo',
+    description:
+      'Consulta en Auditoría y Trazabilidad todos los movimientos registrados y auditorías asociadas al activo seleccionado.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'Identificador del activo a consultar',
+  })
+  @ApiQuery({
+    name: 'fechaDesde',
+    required: false,
+    type: String,
+    example: '2026-05-01',
+    description: 'Fecha inicial del rango de trazabilidad',
+  })
+  @ApiQuery({
+    name: 'fechaHasta',
+    required: false,
+    type: String,
+    example: '2026-05-31',
+    description: 'Fecha final del rango de trazabilidad',
+  })
+  @ApiOkResponse({
+    description: 'Trazabilidad del activo obtenida correctamente',
+  })
+  @ApiNotFoundResponse({ description: 'Activo no encontrado' })
+  @Get('activos/:id/trazabilidad')
+  async getAssetTraceability(
+    @Param('id') id: string,
+    @Query() query: AssetTraceabilityQueryDto,
+    @Req() req: Request,
+  ) {
+    const userId = (req.user as { id: string }).id;
+    const data = await this.auditoriaService.getAssetTraceability(
+      userId,
+      id,
+      query,
+    );
+    return ApiResponse.success(
+      data,
+      'Trazabilidad del activo obtenida correctamente',
+    );
   }
 
   @ApiOperation({

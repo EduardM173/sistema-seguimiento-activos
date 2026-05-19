@@ -19,6 +19,8 @@ services:
   backend_local:
     container_name: activos_backend_local
     image: ${DOCKER_REGISTRY:-local_activos}/backend:${TAG:-latest}
+    env_file:
+      - ./.env
 
     build:
       dockerfile: dockerfile
@@ -29,8 +31,8 @@ services:
     environment:
       POSTGRES_HOST: app_db_local
       BACKEND_PORT: 3001
-    # ports:
-    #   - 3000:3000
+    ports:
+      - 3001:3001
 
     depends_on:
       app_db_local:
@@ -38,6 +40,34 @@ services:
 
     volumes:
       - ./backend:/app/
+      - /app/node_modules
+    command: "npm run start:dev"
+
+  reports_service:
+    container_name: activos_reports_service
+    image: ${DOCKER_REGISTRY:-local_activos}/reports-service:${TAG:-latest}
+    env_file:
+      - ./.env
+    build:
+      dockerfile: dockerfile
+      context: ./reports-service
+
+    user: ${UID:-1000}:${GID:-1000}
+
+    environment:
+      POSTGRES_HOST: app_db_local
+      REPORTS_PORT: 3002
+
+    ports:
+      - 3002:3002
+
+    depends_on:
+      app_db_local:
+        condition: service_started
+
+    volumes:
+      - ./reports-service:/app/
+      - /app/node_modules
     command: "npm run start:dev"
 
   auditoria_local:
@@ -80,8 +110,10 @@ services:
     environment:
       VITE_API_URL: "http://localhost:8085/api"
       VITE_AUDIT_API_URL: "http://localhost:3002/api"
+      VITE_REPORTS_API_URL: "http://localhost:8085/reports-api"
       VITE_HOST: "localhost"
       VITE_BACKEND_URL: "http://backend_local:3001"
+      VITE_REPORTS_URL: "http://reports_service:3002"
       FRONTEND_PORT: "8084"
 
     ports:
@@ -95,6 +127,7 @@ services:
       backend_local:
         condition: service_started
       auditoria_local:
+      reports_service:
         condition: service_started
 
 volumes:

@@ -51,13 +51,6 @@ export class AssetsService {
 
     const where: Prisma.ActivoWhereInput = {};
 
-    // PA4: ocultar activos con asignaciones pendientes
-      where.asignaciones = {
-        none: {
-          estado: EstadoAsignacion.PENDIENTE,
-        },
-      };
-
     const isAreaManager = this.isAreaManagerRole(user?.rol);
 
     if (isAreaManager && user?.id) {
@@ -266,10 +259,29 @@ export class AssetsService {
   async findOne(id: string) {
     const activo = await this.prisma.activo.findUnique({
       where: { id },
-      include: {
-        categoria: true,
-        ubicacion: true,
-        areaActual: true,
+      select: {
+        id: true,
+        codigo: true,
+        nombre: true,
+        descripcion: true,
+        marca: true,
+        modelo: true,
+        numeroSerie: true,
+        fechaAdquisicion: true,
+        costoAdquisicion: true,
+        vencimientoGarantia: true,
+        estado: true,
+        creadoEn: true,
+        actualizadoEn: true,
+        categoria: {
+          select: { id: true, nombre: true },
+        },
+        ubicacion: {
+          select: { id: true, nombre: true },
+        },
+        areaActual: {
+          select: { id: true, nombre: true },
+        },
         responsableActual: {
           select: {
             id: true,
@@ -356,8 +368,9 @@ export class AssetsService {
     return {
       ...activo,
       estadoLabel: this.formatEstado(activo.estado),
-      fechaBaja: activo.dadoDeBajaEn,      // ← AGREGAR ESTA LÍNEA
-      motivoBaja: activo.motivoBaja,        // ← AGREGAR ESTA LÍNEA
+      fechaBaja: null,
+      dadoDeBajaEn: null,
+      motivoBaja: null,
       area: activo.areaActual
         ? {
             id: activo.areaActual.id,
@@ -1838,13 +1851,13 @@ async disable(id: string, motivo: string, userId: string) {
     const fakeAssetIds = fakeAssets.map((asset) => asset.id);
 
     await this.prisma.$transaction(async (tx) => {
-      await tx.asignacionActivo.deleteMany({
+      await tx.movimientoActivo.deleteMany({
         where: {
           activoId: { in: fakeAssetIds },
         },
       });
 
-      await tx.movimientoActivo.deleteMany({
+      await tx.asignacionActivo.deleteMany({
         where: {
           activoId: { in: fakeAssetIds },
         },
