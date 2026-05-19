@@ -192,6 +192,7 @@ export default function TrazabilidadDepartamentalPage() {
     {
       header: 'Usuario relacionado',
       accessor: (row) =>
+        row.usuarioRelacionado?.nombreCompleto ||
         row.realizadoPor?.nombreCompleto ||
         row.usuarioDestino?.nombreCompleto ||
         row.usuarioOrigen?.nombreCompleto ||
@@ -252,7 +253,10 @@ export default function TrazabilidadDepartamentalPage() {
     },
     {
       header: 'Usuario',
-      accessor: (row) => row.realizadoPor?.nombreCompleto ?? 'No registrado',
+      accessor: (row) =>
+        row.usuarioRelacionado?.nombreCompleto ||
+        row.realizadoPor?.nombreCompleto ||
+        'No registrado',
     },
     {
       header: 'Detalle',

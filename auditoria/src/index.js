@@ -531,6 +531,12 @@ app.get('/api/auditoria/departamental/trazabilidad', async (req, res, next) => {
       usuarioOrigenId: row.usuarioOrigenId,
       usuarioDestinoId: row.usuarioDestinoId,
       asignacionId: row.asignacionId,
+      usuarioRelacionado: row.realizadoPorId
+        ? {
+            id: row.realizadoPorId,
+            nombreCompleto: buildFullName(row, 'realizadoPor'),
+          }
+        : null,
       realizadoPor: row.realizadoPorId
         ? {
             id: row.realizadoPorId,

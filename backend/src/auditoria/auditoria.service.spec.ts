@@ -560,6 +560,10 @@ describe('AuditoriaService notification inbox for HU32', () => {
         }),
         areaOrigen: { id: 'area-1', nombre: 'Administración' },
         areaDestino: { id: 'area-2', nombre: 'Sistemas' },
+        usuarioRelacionado: {
+          id: 'user-1',
+          nombreCompleto: 'Juan Operativo',
+        },
       }),
     );
   });

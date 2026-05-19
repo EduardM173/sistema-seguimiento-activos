@@ -232,6 +232,7 @@ export class AuditoriaService {
       usuarioOrigenId: movimiento.usuarioOrigenId,
       usuarioDestinoId: movimiento.usuarioDestinoId,
       asignacionId: movimiento.asignacionId,
+      usuarioRelacionado: this.mapUserSummary(movimiento.realizadoPor),
       realizadoPor: this.mapUserSummary(movimiento.realizadoPor),
     }));
 
@@ -515,6 +516,7 @@ export class AuditoriaService {
       usuarioOrigenId: movimiento.usuarioOrigenId,
       usuarioDestinoId: movimiento.usuarioDestinoId,
       asignacionId: movimiento.asignacionId,
+      usuarioRelacionado: this.mapUserSummary(movimiento.realizadoPor),
       realizadoPor: this.mapUserSummary(movimiento.realizadoPor),
     }));
 

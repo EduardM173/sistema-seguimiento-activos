@@ -64,6 +64,7 @@ export interface TrazabilidadMovimiento {
   usuarioOrigenId: string | null;
   usuarioDestinoId: string | null;
   asignacionId: string | null;
+  usuarioRelacionado: TrazabilidadResumenPersona | null;
   realizadoPor: TrazabilidadResumenPersona | null;
 }
 
