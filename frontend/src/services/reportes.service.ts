@@ -6,6 +6,8 @@ import type {
   ReporteInventarioGeneral,
   ReporteCategoria,
   ReporteCategoriaDetalle,
+  ReporteMovimientosActivos,
+  TipoMovimientoActivo,
   ReporteResponsable,
   ReporteResponsableDetalle,
   ReporteArea,
@@ -131,7 +133,19 @@ export const reportesService = {
     downloadBlob(blob, filename);
   },
 
+  // HU45 — Reporte de movimientos de activos
   // ═══════════════════════════════════════════════════════════════════════════
+
+  obtenerMovimientosActivos: async (params: {
+    fechaDesde: string;
+    fechaHasta: string;
+    tipo?: TipoMovimientoActivo | '';
+  }) => {
+    const queryParams = new URLSearchParams();
+    queryParams.set('fechaDesde', params.fechaDesde);
+    queryParams.set('fechaHasta', params.fechaHasta);
+
+    if (params.tipo) {
   // HU47 — Reporte por responsable actual
   // ═══════════════════════════════════════════════════════════════════════════
 
@@ -266,6 +280,17 @@ export const reportesService = {
 
   // ═══════════════════════════════════════════════════════════════════════════
   // Utilidades generales
+
+      response.headers.get('Content-Disposition'),
+      fallback,
+    );
+
+    downloadBlob(blob, filename);
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Utilidades generales
+>>>>>>> origin/Sprint4_DEV
   // ═══════════════════════════════════════════════════════════════════════════
 
   verificarMicroservicio: async () => {

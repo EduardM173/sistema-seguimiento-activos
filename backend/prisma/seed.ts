@@ -62,6 +62,11 @@ async function main() {
       descripcion: 'Generar y descargar reportes',
     },
     {
+      codigo: 'REPORT_GENERATE',
+      nombre: 'Generar consultas de reportes',
+      descripcion: 'Consultar y filtrar reportes del sistema',
+    },
+    {
       codigo: 'AUDIT_VIEW',
       nombre: 'Ver auditoría',
       descripcion: 'Consultar historial y bitácora',
@@ -137,6 +142,7 @@ async function main() {
     'ASSET_ASSIGN',
     'INVENTORY_MANAGE',
     'REPORT_VIEW',
+    'REPORT_GENERATE',
     'AUDIT_VIEW',
   ];
 

@@ -4,23 +4,31 @@ import {
   Archive,
   Boxes,
   CheckCircle2,
+  CalendarRange,
   ChevronRight,
   Download,
   FileSpreadsheet,
+  Filter,
+  History,
   Layers,
   MapPin,
   RefreshCw,
+  Search,
   User,
 } from 'lucide-react';
 import { Alert, Badge, Button, Card, LoadingSpinner, Select } from '../../components/common';
 import type { SelectOption } from '../../components/common';
 import { useAuth } from '../../context/AuthContext';
 import { reportesService } from '../../services/reportes.service';
+import { tipoMovimientoActivo } from '../../types/reportes.types';
 import type {
   ReporteInventarioGeneral,
   ReporteCategoria,
   ReporteCategoriaDetalle,
   ActivoDetalleCategoria,
+  ReporteMovimientosActivos,
+  MovimientoActivoReporte,
+  TipoMovimientoActivo,
   ReporteResponsable,
   ReporteResponsableDetalle,
   ActivoDetalleResponsable,
@@ -50,6 +58,42 @@ const emptyCategoryReport: ReporteCategoria = {
   categories: [],
   downloadReady: false,
 };
+
+const emptyMovementsReport: ReporteMovimientosActivos = {
+  generatedAt: '',
+  filters: {
+    fechaDesde: '',
+    fechaHasta: '',
+    tipo: null,
+  },
+  totalMovimientos: 0,
+  movements: [],
+  downloadReady: false,
+};
+
+const movementTypeOptions: SelectOption[] = [
+  { value: '', label: 'Todos los tipos' },
+  ...Object.values(tipoMovimientoActivo).map((tipo) => ({
+    value: tipo,
+    label: tipo.replace(/_/g, ' ').toUpperCase(),
+  })),
+];
+
+function formatDateInput(date: Date) {
+  const offset = date.getTimezoneOffset();
+  const local = new Date(date.getTime() - offset * 60000);
+  return local.toISOString().slice(0, 10);
+}
+
+function getDefaultMovementDateRange() {
+  const today = new Date();
+  const start = new Date(today.getFullYear(), today.getMonth(), 1);
+
+  return {
+    fechaDesde: formatDateInput(start),
+    fechaHasta: formatDateInput(today),
+  };
+}
 
 const emptyResponsableReport: ReporteResponsable = {
   generatedAt: '',
@@ -105,6 +149,14 @@ export const ReportesPage: React.FC = () => {
   const [downloadingCategoryFormat, setDownloadingCategoryFormat] = useState<'pdf' | 'excel' | null>(null);
   const [categoryMessage, setCategoryMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+  // ── Reporte de movimientos (HU45) ───────────────────────────────────────
+  const [movementsReport, setMovementsReport] = useState<ReporteMovimientosActivos>(emptyMovementsReport);
+  const [loadingMovements, setLoadingMovements] = useState(true);
+  const [movementMessage, setMovementMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [fechaDesde, setFechaDesde] = useState(getDefaultMovementDateRange().fechaDesde);
+  const [fechaHasta, setFechaHasta] = useState(getDefaultMovementDateRange().fechaHasta);
+  const [tipoMovimiento, setTipoMovimiento] = useState<TipoMovimientoActivo | ''>('');
+
   // ── Reporte por responsable (HU47) ────────────────────────────────────────
   const [responsableReport, setResponsableReport] = useState<ReporteResponsable>(emptyResponsableReport);
   const [loadingResponsables, setLoadingResponsables] = useState(true);
@@ -155,6 +207,37 @@ export const ReportesPage: React.FC = () => {
       timeStyle: 'short',
     }).format(new Date(categoryReport.generatedAt));
   }, [categoryReport.generatedAt]);
+
+  const generatedAtMovements = useMemo(() => {
+    if (!movementsReport.generatedAt) return 'Sin consulta';
+    return new Intl.DateTimeFormat('es-BO', {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    }).format(new Date(movementsReport.generatedAt));
+  }, [movementsReport.generatedAt]);
+
+  const movementPeriodLabel = useMemo(() => {
+    if (!movementsReport.filters.fechaDesde || !movementsReport.filters.fechaHasta) {
+      return 'Sin periodo';
+    }
+
+    const since = new Intl.DateTimeFormat('es-BO', { dateStyle: 'medium' }).format(
+      new Date(`${movementsReport.filters.fechaDesde}T00:00:00`),
+    );
+    const until = new Intl.DateTimeFormat('es-BO', { dateStyle: 'medium' }).format(
+      new Date(`${movementsReport.filters.fechaHasta}T00:00:00`),
+    );
+
+    return `${since} al ${until}`;
+  }, [movementsReport.filters.fechaDesde, movementsReport.filters.fechaHasta]);
+
+  const movementTypeLabel = useMemo(() => {
+    if (!movementsReport.filters.tipo) {
+      return 'Todos los tipos';
+    }
+
+    return movementsReport.filters.tipo.replace(/_/g, ' ').toUpperCase();
+  }, [movementsReport.filters.tipo]);
 
   const generatedAtResponsable = useMemo(() => {
     if (!responsableReport.generatedAt) return 'Sin consulta';
@@ -229,6 +312,8 @@ export const ReportesPage: React.FC = () => {
   useEffect(() => {
     cargarReporte();
     cargarReporteCategoria();
+    cargarReporteMovimientos();
+
     if (isAdminGeneral) {
       cargarReporteResponsable();
       cargarReporteArea();
@@ -396,6 +481,43 @@ export const ReportesPage: React.FC = () => {
     } finally {
       setDownloadingCategoryFormat(null);
     }
+  };
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Acciones — Reporte de movimientos (HU45)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  const cargarReporteMovimientos = async () => {
+    try {
+      setLoadingMovements(true);
+      const data = await reportesService.obtenerMovimientosActivos({
+        fechaDesde,
+        fechaHasta,
+        tipo: tipoMovimiento,
+      });
+      setMovementsReport(data);
+      setMovementMessage(null);
+    } catch (err) {
+      setMovementMessage({
+        type: 'error',
+        text: err instanceof Error
+          ? err.message
+          : 'No se pudo consultar el reporte de movimientos',
+      });
+    } finally {
+      setLoadingMovements(false);
+    }
+  };
+
+  const handleConsultarMovimientos = () => {
+    void cargarReporteMovimientos();
+  };
+
+  const formatMovementDate = (value: string) => {
+    return new Intl.DateTimeFormat('es-BO', {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    }).format(new Date(value));
   };
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -841,6 +963,161 @@ export const ReportesPage: React.FC = () => {
               </div>
             )}
           </Card>
+
+          {/* ════════════════════════════════════════════════════════════════
+              HU45 — Reporte de movimientos de activos
+          ════════════════════════════════════════════════════════════════ */}
+
+          <div className="module-header rp__section-header">
+            <div>
+              <h1>Reporte de movimientos de activos</h1>
+              <p>Consulta actualizada: {generatedAtMovements}</p>
+            </div>
+            <div className="report-header-actions">
+              <Button
+                label="Consultar"
+                variant="primary"
+                onClick={handleConsultarMovimientos}
+                isLoading={loadingMovements}
+                icon={<Search size={16} />}
+              />
+            </div>
+          </div>
+
+          {movementMessage && (
+            <Alert
+              type={movementMessage.type}
+              message={movementMessage.text}
+              dismissible
+              onClose={() => setMovementMessage(null)}
+            />
+          )}
+
+          <Card title="Filtros del reporte" padding="lg">
+            <div className="rp__movement-filters">
+              <label className="rp__field">
+                <span className="rp__field-label">
+                  <CalendarRange size={14} />
+                  Fecha desde
+                </span>
+                <input
+                  type="date"
+                  value={fechaDesde}
+                  onChange={(event) => setFechaDesde(event.target.value)}
+                  className="rp__input"
+                />
+              </label>
+
+              <label className="rp__field">
+                <span className="rp__field-label">
+                  <CalendarRange size={14} />
+                  Fecha hasta
+                </span>
+                <input
+                  type="date"
+                  value={fechaHasta}
+                  onChange={(event) => setFechaHasta(event.target.value)}
+                  className="rp__input"
+                />
+              </label>
+
+              <label className="rp__field rp__field--wide">
+                <span className="rp__field-label">
+                  <Filter size={14} />
+                  Tipo de movimiento
+                </span>
+                <Select
+                  value={tipoMovimiento}
+                  onChange={(value) => setTipoMovimiento(value as TipoMovimientoActivo | '')}
+                  options={movementTypeOptions}
+                  placeholder="Todos los tipos"
+                  className="rp__movement-select"
+                />
+              </label>
+            </div>
+          </Card>
+
+          {loadingMovements ? (
+            <LoadingSpinner />
+          ) : (
+            <>
+              <section className="report-summary-grid rp__movement-summary-grid">
+                <Card padding="lg" className="report-summary-card">
+                  <div className="report-card-icon rp__movement-icon--total">
+                    <History size={22} />
+                  </div>
+                  <span className="report-card-label">Movimientos encontrados</span>
+                  <strong>{movementsReport.totalMovimientos}</strong>
+                </Card>
+
+                <Card padding="lg" className="report-summary-card">
+                  <div className="report-card-icon rp__movement-icon--period">
+                    <CalendarRange size={22} />
+                  </div>
+                  <span className="report-card-label">Periodo consultado</span>
+                  <strong>{movementPeriodLabel}</strong>
+                </Card>
+
+                <Card padding="lg" className="report-summary-card">
+                  <div className="report-card-icon rp__movement-icon--type">
+                    <Filter size={22} />
+                  </div>
+                  <span className="report-card-label">Tipo aplicado</span>
+                  <strong>{movementTypeLabel}</strong>
+                </Card>
+              </section>
+
+              <Card title="Resultados del reporte" padding="lg">
+                {movementsReport.movements.length === 0 ? (
+                  <p className="rp__empty-state">No existen movimientos de activos en el periodo seleccionado</p>
+                ) : (
+                  <div className="rp__detail-table-wrap">
+                    <table className="rp__detail-table rp__movement-table">
+                      <thead>
+                        <tr>
+                          <th>Fecha</th>
+                          <th>Activo</th>
+                          <th>Movimiento</th>
+                          <th>Area origen</th>
+                          <th>Area destino</th>
+                          <th>Usuario relacionado</th>
+                          <th>Detalle</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {movementsReport.movements.map((movimiento: MovimientoActivoReporte) => (
+                          <tr key={movimiento.id}>
+                            <td className="rp__td-date">{formatMovementDate(movimiento.fecha)}</td>
+                            <td>
+                              <div className="rp__movement-asset">
+                                <strong>{movimiento.activo.codigo}</strong>
+                                <span>{movimiento.activo.nombre}</span>
+                              </div>
+                            </td>
+                            <td>
+                              <Badge
+                                label={movimiento.tipoLabel}
+                                variant="secondary"
+                                size="sm"
+                              />
+                            </td>
+                            <td className="rp__td-location">{movimiento.areaOrigen ?? 'Sin area'}</td>
+                            <td className="rp__td-location">{movimiento.areaDestino ?? 'Sin area'}</td>
+                            <td>{movimiento.realizadoPor}</td>
+                            <td className="rp__td-detail">{movimiento.detalle ?? 'Sin detalle'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    <p className="rp__detail-total">
+                      Total: <strong>{movementsReport.totalMovimientos}</strong>{' '}
+                      {movementsReport.totalMovimientos === 1 ? 'movimiento' : 'movimientos'}
+                    </p>
+                  </div>
+                )}
+              </Card>
+            </>
+          )}
         </>
       )}
 
@@ -1602,6 +1879,89 @@ export const ReportesPage: React.FC = () => {
 
         .rp__detail-total strong {
           color: var(--color-text);
+        }
+
+        /* ── Filtros y tabla de movimientos (HU45) ─────────────────────── */
+        .rp__movement-filters {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+          gap: 16px;
+        }
+
+        .rp__field {
+          display: grid;
+          gap: 8px;
+        }
+
+        .rp__field--wide {
+          min-width: 240px;
+        }
+
+        .rp__field-label {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          font-size: var(--font-size-sm);
+          font-weight: var(--font-weight-semibold);
+          color: var(--color-text-secondary);
+        }
+
+        .rp__input,
+        .rp__movement-select {
+          width: 100%;
+        }
+
+        .rp__input {
+          min-height: 42px;
+          padding: 10px 12px;
+          border-radius: 8px;
+          border: 1px solid var(--glass-border);
+          background: var(--glass-bg);
+          color: var(--color-text);
+          font: inherit;
+        }
+
+        .rp__input:focus {
+          outline: none;
+          border-color: var(--color-primary);
+          box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
+        }
+
+        .rp__movement-summary-grid {
+          margin: 22px 0 24px;
+        }
+
+        .rp__movement-icon--total { background: #0f766e; }
+        .rp__movement-icon--period { background: #2563eb; }
+        .rp__movement-icon--type { background: #7c3aed; }
+
+        .rp__movement-summary-grid .report-summary-card strong {
+          line-height: 1.2;
+          word-break: break-word;
+        }
+
+        .rp__movement-table {
+          min-width: 1000px;
+        }
+
+        .rp__movement-asset {
+          display: grid;
+          gap: 2px;
+        }
+
+        .rp__movement-asset strong {
+          font-size: var(--font-size-sm);
+        }
+
+        .rp__movement-asset span,
+        .rp__td-date,
+        .rp__td-detail {
+          color: var(--color-text-secondary);
+        }
+
+        .rp__td-detail {
+          max-width: 280px;
+          white-space: normal;
         }
       `}</style>
     </div>

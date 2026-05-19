@@ -15,6 +15,34 @@ export class ReportsController {
   constructor(private readonly reportsService: ReportsService) {}
 
   // ═══════════════════════════════════════════════════════════════════════════
+  // HU45 — Reporte de movimientos de activos
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /**
+   * GET /reports/movements
+   * Retorna movimientos de activos filtrados por rango de fechas y tipo.
+   */
+  @Get('movements')
+  async getMovementsReport(
+    @Query('fechaDesde') fechaDesde: string | undefined,
+    @Query('fechaHasta') fechaHasta: string | undefined,
+    @Query('tipo') tipo: string | undefined,
+  ) {
+    try {
+      return await this.reportsService.getMovementsReport({
+        fechaDesde,
+        fechaHasta,
+        tipo,
+      });
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(this.getErrorMessage(error));
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
   // HU27 — Reporte general del inventario
   // ═══════════════════════════════════════════════════════════════════════════
 
