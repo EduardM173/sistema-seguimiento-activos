@@ -34,6 +34,12 @@
   overflow-y: auto;
 }
 
+.overlayModal__dialog--dark {
+  background: linear-gradient(180deg, #172033 0%, #101827 100%);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  box-shadow: 0 24px 60px rgba(2, 6, 23, 0.55);
+}
+
 @keyframes overlaySlideUp {
   from { opacity: 0; transform: translateY(12px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -53,10 +59,18 @@
   color: #111827;
 }
 
+.overlayModal__dialog--dark .overlayModal__title {
+  color: #e5eefc;
+}
+
 .overlayModal__subtitle {
   margin: 6px 0 0;
   color: #6b7280;
   font-size: 0.9rem;
+}
+
+.overlayModal__dialog--dark .overlayModal__subtitle {
+  color: #97a6ba;
 }
 
 .overlayModal__closeBtn {
@@ -78,6 +92,15 @@
 .overlayModal__closeBtn:hover {
   background: #f1f5f9;
   color: #111827;
+}
+
+.overlayModal__dialog--dark .overlayModal__closeBtn {
+  color: #a8b6ca;
+}
+
+.overlayModal__dialog--dark .overlayModal__closeBtn:hover {
+  background: rgba(148, 163, 184, 0.12);
+  color: #f8fbff;
 }
 
 .overlayModal__closeBtn:disabled {

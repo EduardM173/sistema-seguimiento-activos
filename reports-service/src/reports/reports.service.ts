@@ -2,6 +2,8 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { randomUUID } from 'crypto';
 import { DatabaseService } from '../database/database.service';
 
+// ─── Row types ───────────────────────────────────────────────────────────────
+
 type CountRow = {
   total: string;
 };
@@ -11,11 +13,31 @@ type AssetStatusRow = {
   cantidad: string;
 };
 
+// HU28 — Resumen agrupado por categoría (PROSIN-443)
+type CategorySummaryRow = {
+  categoria_id: string;
+  categoria_nombre: string;
+  cantidad: string;
+};
+
+// HU28 — Detalle activos de categoría seleccionada (PROSIN-444 / PA3)
+type CategoryAssetDetailRow = {
+  id: string;
+  codigo: string;
+  nombre: string;
+  estado: string;
+  ubicacion: string | null;
+};
+
 type ReportFormat = 'pdf' | 'excel';
 
 type GeneralInventoryReport = Awaited<
   ReturnType<ReportsService['getGeneralInventoryReport']>
 >;
+
+type CategoryReport = Awaited<ReturnType<ReportsService['getCategoryReport']>>;
+
+// ─── Service ─────────────────────────────────────────────────────────────────
 
 @Injectable()
 export class ReportsService {
@@ -27,6 +49,10 @@ export class ReportsService {
   ];
 
   constructor(private readonly database: DatabaseService) {}
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // HU27 — Reporte general del inventario (sin cambios)
+  // ═══════════════════════════════════════════════════════════════════════════
 
   async getGeneralInventoryReport() {
     const [assetsByStatus, totalMaterials, lowStockMaterials] =
@@ -62,25 +88,173 @@ export class ReportsService {
     }
 
     const generatedAt = new Date();
-    const filename = this.buildFilename(format, generatedAt);
+    const filename = this.buildFilename('reporte-general-inventario', format, generatedAt);
 
     if (generatedById) {
-      await this.registerGeneratedReport(format, generatedById, generatedAt);
+      await this.registerGeneratedReport(
+        format,
+        generatedById,
+        generatedAt,
+        'Reporte general del inventario',
+        'inventario_general',
+      );
     }
 
     if (format === 'pdf') {
       return {
         filename,
         contentType: 'application/pdf',
-        buffer: this.buildPdf(report, generatedAt),
+        buffer: this.buildGeneralPdf(report, generatedAt),
       };
     }
 
     return {
       filename,
       contentType: 'application/vnd.ms-excel; charset=utf-8',
-      buffer: Buffer.from(this.buildExcelHtml(report, generatedAt), 'utf8'),
+      buffer: Buffer.from(this.buildGeneralExcelHtml(report, generatedAt), 'utf8'),
     };
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // HU28 — Reporte por categoría de activos
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /**
+   * PROSIN-443 / PA1
+   * Agrupa todos los activos por categoría y retorna el conteo.
+   * Usa LEFT JOIN para que categorías con 0 activos también aparezcan.
+   */
+  async getCategoryReport() {
+    const summaries = await this.getCategorySummaries();
+
+    const totalAssets = summaries.reduce((sum, r) => sum + Number(r.cantidad), 0);
+
+    const categories = summaries.map((r) => ({
+      id: r.categoria_id,
+      name: r.categoria_nombre,
+      total: Number(r.cantidad),
+      percentage:
+        totalAssets > 0 ? Math.round((Number(r.cantidad) / totalAssets) * 100) : 0,
+    }));
+
+    return {
+      generatedAt: new Date().toISOString(),
+      totalAssets,
+      categories,
+      downloadReady: categories.some((c) => c.total > 0),
+    };
+  }
+
+  /**
+   * PROSIN-444 / PA2 / PA3 / PA4 / PA5
+   * Retorna los activos de UNA categoría seleccionada.
+   * - Filtra estrictamente por categoriaId (PA4: no aparecen activos de otras categorías)
+   * - Devuelve código, nombre, estado y ubicación (PA3)
+   * - Lista vacía cuando no hay activos → el frontend muestra el mensaje de PA5
+   */
+  async getCategoryAssets(categoryId: string) {
+    // Verificar que la categoría exista
+    const catResult = await this.database.query<{ id: string; nombre: string }>(
+      `SELECT id, nombre FROM categorias_activos WHERE id = $1`,
+      [categoryId],
+    );
+
+    if (!catResult.rows.length) {
+      throw new NotFoundException('Categoria no encontrada');
+    }
+
+    const category = catResult.rows[0];
+
+    const result = await this.database.query<CategoryAssetDetailRow>(
+      `
+      SELECT
+        a.id,
+        a.codigo,
+        a.nombre,
+        a.estado,
+        u.nombre AS ubicacion
+      FROM activos a
+      LEFT JOIN ubicaciones u ON u.id = a."ubicacionId"
+      WHERE a."categoriaId" = $1
+      ORDER BY a.nombre ASC
+      `,
+      [categoryId],
+    );
+
+    return {
+      categoryId: category.id,
+      categoryName: category.nombre,
+      assets: result.rows.map((row) => ({
+        id: row.id,
+        codigo: row.codigo,
+        nombre: row.nombre,
+        estado: row.estado,
+        estadoLabel: this.formatStatus(row.estado),
+        ubicacion: row.ubicacion ?? 'Sin ubicacion',
+      })),
+      total: result.rows.length,
+    };
+  }
+
+  /**
+   * HU28 + HU30
+   * Genera el archivo PDF o Excel del resumen de categorías para descarga.
+   */
+  async generateCategoryReportFile(format: ReportFormat, generatedById?: string) {
+    if (!['pdf', 'excel'].includes(format)) {
+      throw new BadRequestException('Formato de reporte no soportado');
+    }
+
+    const report = await this.getCategoryReport();
+
+    if (!report.downloadReady) {
+      throw new NotFoundException('No hay informacion disponible para descargar');
+    }
+
+    const generatedAt = new Date();
+    const filename = this.buildFilename('reporte-por-categoria', format, generatedAt);
+
+    if (generatedById) {
+      await this.registerGeneratedReport(
+        format,
+        generatedById,
+        generatedAt,
+        'Reporte por categoria de activos',
+        'categoria_activos',
+      );
+    }
+
+    if (format === 'pdf') {
+      return {
+        filename,
+        contentType: 'application/pdf',
+        buffer: this.buildCategoryPdf(report, generatedAt),
+      };
+    }
+
+    return {
+      filename,
+      contentType: 'application/vnd.ms-excel; charset=utf-8',
+      buffer: Buffer.from(this.buildCategoryExcelHtml(report, generatedAt), 'utf8'),
+    };
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Queries privadas
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  private async getCategorySummaries() {
+    const result = await this.database.query<CategorySummaryRow>(`
+      SELECT
+        ca.id              AS categoria_id,
+        ca.nombre          AS categoria_nombre,
+        COUNT(a.id)::text  AS cantidad
+      FROM categorias_activos ca
+      LEFT JOIN activos a ON a."categoriaId" = ca.id
+      GROUP BY ca.id, ca.nombre
+      ORDER BY ca.nombre ASC
+    `);
+    return result.rows;
   }
 
   private async getAssetsByStatus() {
@@ -106,7 +280,6 @@ export class ReportsService {
       SELECT COUNT(*)::text AS total
       FROM materiales
     `);
-
     return Number(result.rows[0]?.total || 0);
   }
 
@@ -116,7 +289,6 @@ export class ReportsService {
       FROM materiales
       WHERE "stockActual" <= "stockMinimo"
     `);
-
     return Number(result.rows[0]?.total || 0);
   }
 
@@ -128,6 +300,8 @@ export class ReportsService {
     format: ReportFormat,
     generatedById: string,
     generatedAt: Date,
+    nombre: string,
+    tipo: string,
   ) {
     const userExists = await this.database.query<{ exists: boolean }>(
       `
@@ -154,8 +328,8 @@ export class ReportsService {
       [
         randomUUID(),
         generatedById,
-        'Reporte general del inventario',
-        'inventario_general',
+        nombre,
+        tipo,
         format === 'pdf' ? 'PDF' : 'EXCEL',
         JSON.stringify({ origen: 'microservicio-reportes', datos: 'consulta_visible' }),
         null,
@@ -164,42 +338,38 @@ export class ReportsService {
     );
   }
 
-  private buildFilename(format: ReportFormat, generatedAt: Date) {
-    const stamp = generatedAt.toISOString().slice(0, 19).replace(/[-:T]/g, '');
-    return `reporte-general-inventario-${stamp}.${format === 'pdf' ? 'pdf' : 'xls'}`;
+  private buildFilename(prefix: string, format: ReportFormat, at: Date) {
+    const stamp = at.toISOString().slice(0, 19).replace(/[-:T]/g, '');
+    return `${prefix}-${stamp}.${format === 'pdf' ? 'pdf' : 'xls'}`;
   }
 
-  private buildPdf(report: GeneralInventoryReport, generatedAt: Date) {
-    const generatedAtLabel = this.formatDate(generatedAt);
-    const statusRows = report.assets.byStatus;
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PDF — General (HU27)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  private buildGeneralPdf(report: GeneralInventoryReport, generatedAt: Date) {
+    const label = this.formatDate(generatedAt);
     const content = [
       this.pdfRect(0, 704, 612, 88, '0.06 0.10 0.18'),
       this.pdfRect(0, 704, 612, 5, '0.15 0.39 0.92'),
       this.pdfText('Reporte general del inventario', 48, 754, 22, '1 1 1'),
       this.pdfText('Sistema de Seguimiento de Activos', 48, 728, 10, '0.82 0.88 0.96'),
-      this.pdfText(`Generado: ${generatedAtLabel}`, 392, 728, 10, '0.82 0.88 0.96'),
-
+      this.pdfText(`Generado: ${label}`, 392, 728, 10, '0.82 0.88 0.96'),
       this.pdfText('Resumen ejecutivo', 48, 660, 16, '0.06 0.10 0.18'),
       this.pdfText(
         'Vista consolidada de activos, materiales y alertas de inventario.',
-        48,
-        640,
-        10,
-        '0.39 0.45 0.55',
+        48, 640, 10, '0.39 0.45 0.55',
       ),
-
       this.pdfMetricCard(48, 548, 150, 'Activos registrados', report.assets.total, '0.15 0.39 0.92'),
       this.pdfMetricCard(230, 548, 150, 'Materiales registrados', report.materials.total, '0.02 0.59 0.41'),
       this.pdfMetricCard(412, 548, 150, 'Stock bajo', report.materials.lowStock, '0.92 0.48 0.03'),
-
       this.pdfText('Activos por estado', 48, 500, 14, '0.06 0.10 0.18'),
       this.pdfRect(48, 465, 516, 26, '0.09 0.14 0.23'),
       this.pdfText('Estado', 62, 474, 10, '1 1 1'),
       this.pdfText('Cantidad', 474, 474, 10, '1 1 1'),
-      ...statusRows.flatMap((item, index) => {
+      ...report.assets.byStatus.flatMap((item, index) => {
         const y = 439 - index * 30;
         const background = index % 2 === 0 ? '0.97 0.98 1' : '1 1 1';
-
         return [
           this.pdfRect(48, y, 516, 30, background),
           this.pdfStrokeRect(48, y, 516, 30, '0.82 0.86 0.91'),
@@ -207,182 +377,182 @@ export class ReportsService {
           this.pdfText(String(item.quantity), 500, y + 10, 10, '0.15 0.19 0.27'),
         ];
       }),
-
       this.pdfRect(48, 72, 516, 1, '0.82 0.86 0.91'),
       this.pdfText(
         'Reporte generado automaticamente desde el microservicio de Reportes y Exportacion.',
-        48,
-        50,
-        8,
-        '0.45 0.50 0.58',
+        48, 50, 8, '0.45 0.50 0.58',
       ),
     ].join('\n');
 
     return this.createSimplePdf(content);
   }
 
-  private buildExcelHtml(report: GeneralInventoryReport, generatedAt: Date) {
-    const generatedAtLabel = this.formatDate(generatedAt);
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PDF — Categoría (HU28)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  private buildCategoryPdf(report: CategoryReport, generatedAt: Date) {
+    const label = this.formatDate(generatedAt);
+    const cats = report.categories;
+
+    const header = [
+      this.pdfRect(0, 704, 612, 88, '0.06 0.10 0.18'),
+      this.pdfRect(0, 704, 612, 5, '0.15 0.39 0.92'),
+      this.pdfText('Reporte por categoria de activos', 48, 754, 20, '1 1 1'),
+      this.pdfText('Sistema de Seguimiento de Activos', 48, 728, 10, '0.82 0.88 0.96'),
+      this.pdfText(`Generado: ${label}`, 392, 728, 10, '0.82 0.88 0.96'),
+      this.pdfText('Distribucion de activos por categoria', 48, 660, 14, '0.06 0.10 0.18'),
+      this.pdfText(
+        `Total categorias: ${cats.length}  |  Total activos: ${report.totalAssets}`,
+        48, 640, 10, '0.39 0.45 0.55',
+      ),
+      this.pdfRect(48, 610, 516, 24, '0.09 0.14 0.23'),
+      this.pdfText('Categoria', 62, 618, 9, '1 1 1'),
+      this.pdfText('Total activos', 360, 618, 9, '1 1 1'),
+      this.pdfText('Participacion', 460, 618, 9, '1 1 1'),
+    ];
+
+    const rows = cats.flatMap((cat, i) => {
+      const y = 586 - i * 24;
+      if (y < 80) return [];
+      const bg = i % 2 === 0 ? '0.97 0.98 1' : '1 1 1';
+      const nombre = cat.name.length > 40 ? cat.name.slice(0, 40) + '...' : cat.name;
+      return [
+        this.pdfRect(48, y, 516, 24, bg),
+        this.pdfStrokeRect(48, y, 516, 24, '0.82 0.86 0.91'),
+        this.pdfText(nombre, 62, y + 7, 9, '0.15 0.19 0.27'),
+        this.pdfText(String(cat.total), 385, y + 7, 9, '0.15 0.19 0.27'),
+        this.pdfText(`${cat.percentage}%`, 474, y + 7, 9, '0.15 0.39 0.92'),
+      ];
+    });
+
+    const footer = [
+      this.pdfRect(48, 72, 516, 1, '0.82 0.86 0.91'),
+      this.pdfText(
+        'Reporte generado automaticamente desde el microservicio de Reportes y Exportacion.',
+        48, 50, 8, '0.45 0.50 0.58',
+      ),
+    ];
+
+    return this.createSimplePdf([...header, ...rows, ...footer].join('\n'));
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Excel — General (HU27)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  private buildGeneralExcelHtml(report: GeneralInventoryReport, generatedAt: Date) {
+    const label = this.formatDate(generatedAt);
     return `<!doctype html>
 <html>
   <head>
     <meta charset="utf-8" />
     <style>
-      body {
-        margin: 0;
-        background: #f5f7fb;
-        color: #111827;
-        font-family: Arial, Helvetica, sans-serif;
-      }
-
-      .sheet {
-        width: 100%;
-        border-collapse: collapse;
-      }
-
-      .hero {
-        background: #111827;
-        color: #ffffff;
-        font-size: 28px;
-        font-weight: 700;
-        padding: 24px 28px 8px;
-      }
-
-      .subtitle {
-        background: #111827;
-        color: #cbd5e1;
-        padding: 0 28px 24px;
-        font-size: 12px;
-      }
-
-      .section-title {
-        color: #111827;
-        font-size: 16px;
-        font-weight: 700;
-        padding: 22px 28px 10px;
-      }
-
-      .metric {
-        background: #ffffff;
-        border: 1px solid #d9e2ef;
-        padding: 16px;
-      }
-
-      .metric-label {
-        color: #64748b;
-        font-size: 11px;
-        font-weight: 700;
-        text-transform: uppercase;
-      }
-
-      .metric-value {
-        color: #0f172a;
-        font-size: 26px;
-        font-weight: 700;
-        padding-top: 8px;
-      }
-
-      .table {
-        width: 100%;
-        border-collapse: collapse;
-        margin: 0 28px 22px;
-      }
-
-      .table th {
-        background: #1e293b;
-        color: #ffffff;
-        border: 1px solid #1e293b;
-        padding: 10px 12px;
-        text-align: left;
-      }
-
-      .table td {
-        background: #ffffff;
-        border: 1px solid #d9e2ef;
-        padding: 10px 12px;
-      }
-
-      .table .number {
-        text-align: right;
-        font-weight: 700;
-      }
-
-      .footer {
-        color: #64748b;
-        font-size: 11px;
-        padding: 14px 28px 22px;
-      }
+      body { margin: 0; background: #f5f7fb; color: #111827; font-family: Arial, Helvetica, sans-serif; }
+      .sheet { width: 100%; border-collapse: collapse; }
+      .hero { background: #111827; color: #ffffff; font-size: 28px; font-weight: 700; padding: 24px 28px 8px; }
+      .subtitle { background: #111827; color: #cbd5e1; padding: 0 28px 24px; font-size: 12px; }
+      .section-title { color: #111827; font-size: 16px; font-weight: 700; padding: 22px 28px 10px; }
+      .metric { background: #ffffff; border: 1px solid #d9e2ef; padding: 16px; }
+      .metric-label { color: #64748b; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+      .metric-value { color: #0f172a; font-size: 26px; font-weight: 700; padding-top: 8px; }
+      .table { width: 100%; border-collapse: collapse; margin: 0 28px 22px; }
+      .table th { background: #1e293b; color: #ffffff; border: 1px solid #1e293b; padding: 10px 12px; text-align: left; }
+      .table td { background: #ffffff; border: 1px solid #d9e2ef; padding: 10px 12px; }
+      .table .number { text-align: right; font-weight: 700; }
+      .footer { color: #64748b; font-size: 11px; padding: 14px 28px 22px; }
     </style>
   </head>
   <body>
     <table class="sheet">
+      <tr><td colspan="6" class="hero">Reporte general del inventario</td></tr>
+      <tr><td colspan="6" class="subtitle">Sistema de Seguimiento de Activos | Generado: ${this.escapeHtml(label)}</td></tr>
+      <tr><td colspan="6" class="section-title">Resumen ejecutivo</td></tr>
       <tr>
-        <td colspan="6" class="hero">Reporte general del inventario</td>
+        <td class="metric" colspan="2"><div class="metric-label">Activos registrados</div><div class="metric-value">${report.assets.total}</div></td>
+        <td class="metric" colspan="2"><div class="metric-label">Materiales registrados</div><div class="metric-value">${report.materials.total}</div></td>
+        <td class="metric" colspan="2"><div class="metric-label">Materiales con stock bajo</div><div class="metric-value">${report.materials.lowStock}</div></td>
       </tr>
-      <tr>
-        <td colspan="6" class="subtitle">
-          Sistema de Seguimiento de Activos | Generado: ${this.escapeHtml(generatedAtLabel)}
-        </td>
-      </tr>
-      <tr>
-        <td colspan="6" class="section-title">Resumen ejecutivo</td>
-      </tr>
-      <tr>
-        <td class="metric" colspan="2">
-          <div class="metric-label">Activos registrados</div>
-          <div class="metric-value">${report.assets.total}</div>
-        </td>
-        <td class="metric" colspan="2">
-          <div class="metric-label">Materiales registrados</div>
-          <div class="metric-value">${report.materials.total}</div>
-        </td>
-        <td class="metric" colspan="2">
-          <div class="metric-label">Materiales con stock bajo</div>
-          <div class="metric-value">${report.materials.lowStock}</div>
-        </td>
-      </tr>
-      <tr>
-        <td colspan="6" class="section-title">Activos por estado</td>
-      </tr>
+      <tr><td colspan="6" class="section-title">Activos por estado</td></tr>
     </table>
-
     <table class="table">
-      <thead>
-        <tr>
-          <th>Estado</th>
-          <th>Cantidad</th>
-          <th>Participacion</th>
-        </tr>
-      </thead>
+      <thead><tr><th>Estado</th><th>Cantidad</th><th>Participacion</th></tr></thead>
       <tbody>
-        ${report.assets.byStatus
-          .map((item) => {
-            const percentage = report.assets.total
-              ? `${Math.round((item.quantity / report.assets.total) * 100)}%`
-              : '0%';
-
-            return `
-              <tr>
-                <td>${this.escapeHtml(item.label)}</td>
-                <td class="number">${item.quantity}</td>
-                <td class="number">${percentage}</td>
-              </tr>
-            `;
-          })
-          .join('')}
+        ${report.assets.byStatus.map((item) => {
+          const pct = report.assets.total
+            ? `${Math.round((item.quantity / report.assets.total) * 100)}%`
+            : '0%';
+          return `<tr><td>${this.escapeHtml(item.label)}</td><td class="number">${item.quantity}</td><td class="number">${pct}</td></tr>`;
+        }).join('')}
       </tbody>
     </table>
-
     <table class="sheet">
-      <tr>
-        <td colspan="6" class="footer">
-          Reporte generado automaticamente desde el microservicio de Reportes y Exportacion.
-        </td>
-      </tr>
+      <tr><td colspan="6" class="footer">Reporte generado automaticamente desde el microservicio de Reportes y Exportacion.</td></tr>
     </table>
   </body>
 </html>`;
   }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Excel — Categoría (HU28)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  private buildCategoryExcelHtml(report: CategoryReport, generatedAt: Date) {
+    const label = this.formatDate(generatedAt);
+    const rows = report.categories
+      .map((cat) =>
+        `<tr>
+          <td>${this.escapeHtml(cat.name)}</td>
+          <td class="number">${cat.total}</td>
+          <td class="number">${cat.percentage}%</td>
+        </tr>`,
+      )
+      .join('');
+
+    return `<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      body { margin: 0; background: #f5f7fb; color: #111827; font-family: Arial, Helvetica, sans-serif; }
+      .sheet { width: 100%; border-collapse: collapse; }
+      .hero { background: #111827; color: #ffffff; font-size: 24px; font-weight: 700; padding: 24px 28px 8px; }
+      .subtitle { background: #111827; color: #cbd5e1; padding: 0 28px 24px; font-size: 12px; }
+      .section-title { color: #111827; font-size: 15px; font-weight: 700; padding: 20px 28px 10px; }
+      .metric { background: #ffffff; border: 1px solid #d9e2ef; padding: 16px; }
+      .metric-label { color: #64748b; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+      .metric-value { color: #0f172a; font-size: 26px; font-weight: 700; padding-top: 6px; }
+      .table { width: calc(100% - 56px); border-collapse: collapse; margin: 0 28px 22px; }
+      .table th { background: #1e293b; color: #ffffff; border: 1px solid #1e293b; padding: 10px 12px; text-align: left; font-size: 12px; }
+      .table td { background: #ffffff; border: 1px solid #d9e2ef; padding: 10px 12px; font-size: 12px; }
+      .number { text-align: right; font-weight: 700; }
+      .footer { color: #64748b; font-size: 11px; padding: 14px 28px 22px; }
+    </style>
+  </head>
+  <body>
+    <table class="sheet">
+      <tr><td colspan="3" class="hero">Reporte por categoria de activos</td></tr>
+      <tr><td colspan="3" class="subtitle">Sistema de Seguimiento de Activos | Generado: ${this.escapeHtml(label)}</td></tr>
+      <tr>
+        <td class="metric"><div class="metric-label">Total de categorias</div><div class="metric-value">${report.categories.length}</div></td>
+        <td class="metric" colspan="2"><div class="metric-label">Total de activos</div><div class="metric-value">${report.totalAssets}</div></td>
+      </tr>
+      <tr><td colspan="3" class="section-title">Distribucion por categoria</td></tr>
+    </table>
+    <table class="table">
+      <thead><tr><th>Categoria</th><th>Total activos</th><th>Participacion</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <table class="sheet">
+      <tr><td colspan="3" class="footer">Reporte generado automaticamente desde el microservicio de Reportes y Exportacion.</td></tr>
+    </table>
+  </body>
+</html>`;
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // PDF helpers (iguales a HU27)
+  // ═══════════════════════════════════════════════════════════════════════════
 
   private createSimplePdf(content: string) {
     const objects = [
@@ -440,23 +610,13 @@ export class ReportsService {
     return `q\n${color} rg\n${x} ${y} ${width} ${height} re\nf\nQ`;
   }
 
-  private pdfStrokeRect(
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-    color: string,
-  ) {
+  private pdfStrokeRect(x: number, y: number, width: number, height: number, color: string) {
     return `q\n${color} RG\n0.75 w\n${x} ${y} ${width} ${height} re\nS\nQ`;
   }
 
   private pdfMetricCard(
-    x: number,
-    y: number,
-    width: number,
-    label: string,
-    value: number,
-    accentColor: string,
+    x: number, y: number, width: number,
+    label: string, value: number, accentColor: string,
   ) {
     return [
       this.pdfRect(x, y, width, 78, '1 1 1'),
@@ -483,7 +643,6 @@ export class ReportsService {
       FUERA_DE_SERVICIO: 'Fuera de servicio',
       DADO_DE_BAJA: 'Dado de baja',
     };
-
     return labels[status] || status;
   }
 }
