@@ -7,7 +7,14 @@ import {
   SearchBar,
 } from '../../components/common';
 import OverlayModal from '../../components/common/OverlayModal';
+import { searchAssets } from '../../services/assets.service';
+import { auditoriaService } from '../../services/auditoria.service';
 import { auditoriaMsService } from '../../services/auditoria-ms.service';
+import type { AssetListItem } from '../../types/assets.types';
+import type {
+  TrazabilidadActivo,
+  TrazabilidadMovimiento,
+} from '../../types/auditoria.types';
 import type {
   AuditoriaMsFiltros,
   AuditoriaMsRegistro,
@@ -31,13 +38,37 @@ function accionVariant(accion: string) {
   return 'info';
 }
 
+function formatDateTime(value: string | Date) {
+  return new Date(value).toLocaleString('es-BO', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+  });
+}
+
+function isMovementEvent(event: unknown): event is TrazabilidadMovimiento {
+  return Boolean(
+    event &&
+      typeof event === 'object' &&
+      'fuente' in event &&
+      (event as { fuente?: unknown }).fuente === 'MOVIMIENTO',
+  );
+}
+
 export const AuditoriaPage: React.FC = () => {
   const [usuarios, setUsuarios] = useState<AuditoriaMsUsuario[]>([]);
   const [registros, setRegistros] = useState<AuditoriaMsRegistro[]>([]);
+  const [assets, setAssets] = useState<AssetListItem[]>([]);
+  const [assetSearch, setAssetSearch] = useState('');
+  const [selectedAssetId, setSelectedAssetId] = useState('');
+  const [traceability, setTraceability] = useState<TrazabilidadActivo | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadingDetalle, setLoadingDetalle] = useState(false);
+  const [assetsLoading, setAssetsLoading] = useState(false);
+  const [traceabilityLoading, setTraceabilityLoading] = useState(false);
   const [selected, setSelected] = useState<AuditoriaMsRegistro | null>(null);
   const [message, setMessage] = useState<{ type: 'info' | 'error'; text: string } | null>(null);
+  const [traceabilityMessage, setTraceabilityMessage] =
+    useState<{ type: 'info' | 'error'; text: string } | null>(null);
 
   const [search, setSearch] = useState('');
   const [filtros, setFiltros] = useState<AuditoriaMsFiltros>({
@@ -49,6 +80,69 @@ export const AuditoriaPage: React.FC = () => {
   const [tipoEntidad, setTipoEntidad] = useState('');
   const [fechaDesde, setFechaDesde] = useState('');
   const [fechaHasta, setFechaHasta] = useState('');
+  const [traceFechaDesde, setTraceFechaDesde] = useState('');
+  const [traceFechaHasta, setTraceFechaHasta] = useState('');
+  const invalidTraceDateRange = Boolean(
+    traceFechaDesde && traceFechaHasta && traceFechaDesde > traceFechaHasta,
+  );
+
+  async function loadAssets(q = '') {
+    try {
+      setAssetsLoading(true);
+      const response = await searchAssets({
+        q,
+        page: 1,
+        pageSize: 20,
+        sortBy: 'codigo',
+        sortType: 'ASC',
+      });
+      setAssets(response.data ?? []);
+    } catch (error) {
+      console.error(error);
+      setAssets([]);
+      setTraceabilityMessage({
+        type: 'error',
+        text: 'No se pudieron cargar los activos para consultar trazabilidad.',
+      });
+    } finally {
+      setAssetsLoading(false);
+    }
+  }
+
+  async function loadTraceability(assetId = selectedAssetId) {
+    if (!assetId) {
+      setTraceability(null);
+      return;
+    }
+
+    if (invalidTraceDateRange) {
+      setTraceability(null);
+      setTraceabilityMessage({
+        type: 'error',
+        text: 'La fecha desde no puede ser posterior a la fecha hasta.',
+      });
+      return;
+    }
+
+    try {
+      setTraceabilityLoading(true);
+      setTraceabilityMessage(null);
+      const response = await auditoriaService.obtenerTrazabilidadActivo(assetId, {
+        fechaDesde: traceFechaDesde || undefined,
+        fechaHasta: traceFechaHasta || undefined,
+      });
+      setTraceability(response ?? null);
+    } catch (error) {
+      console.error(error);
+      setTraceability(null);
+      setTraceabilityMessage({
+        type: 'error',
+        text: 'No se pudo cargar la trazabilidad consolidada del activo.',
+      });
+    } finally {
+      setTraceabilityLoading(false);
+    }
+  }
 
   async function loadUsuarios() {
     try {
@@ -86,15 +180,73 @@ export const AuditoriaPage: React.FC = () => {
   }
 
   useEffect(() => {
+    void loadAssets();
     void loadUsuarios();
     void loadRegistros();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      void loadAssets(assetSearch);
+    }, 300);
+
+    return () => window.clearTimeout(timer);
+  }, [assetSearch]);
+
   const entityOptions = useMemo(() => {
     const unique = Array.from(new Set(registros.map((item) => item.tipoEntidad))).filter(Boolean);
     return unique.sort((a, b) => a.localeCompare(b));
   }, [registros]);
+
+  const selectedAsset = useMemo(
+    () => assets.find((asset) => asset.id === selectedAssetId) ?? null,
+    [assets, selectedAssetId],
+  );
+
+  const traceabilityRows = useMemo(
+    () =>
+      (traceability?.timeline ?? []).map((event) => {
+        if (isMovementEvent(event)) {
+          return {
+            id: event.id,
+            fuente: 'Movimiento',
+            fecha: event.fecha,
+            tipo: event.etiqueta || event.tipo,
+            detalle: event.detalle,
+            areaOrigen: event.areaOrigen?.nombre ?? 'No aplica',
+            areaDestino: event.areaDestino?.nombre ?? 'No aplica',
+            usuario:
+              event.usuarioRelacionado?.nombreCompleto ||
+              event.realizadoPor?.nombreCompleto ||
+              event.usuarioDestino?.nombreCompleto ||
+              event.usuarioOrigen?.nombreCompleto ||
+              'No registrado',
+          };
+        }
+
+        const auditEvent = event as {
+          id?: string;
+          fecha?: string;
+          tipo?: string;
+          etiqueta?: string;
+          detalle?: string;
+          realizadoPor?: { nombreCompleto?: string } | null;
+        };
+
+        return {
+          id: auditEvent.id ?? `${auditEvent.tipo ?? 'evento'}-${auditEvent.fecha ?? ''}`,
+          fuente: 'Auditoría',
+          fecha: auditEvent.fecha ?? '',
+          tipo: auditEvent.etiqueta ?? auditEvent.tipo ?? 'Auditoría',
+          detalle: auditEvent.detalle ?? 'Registro de auditoría',
+          areaOrigen: 'No aplica',
+          areaDestino: 'No aplica',
+          usuario: auditEvent.realizadoPor?.nombreCompleto ?? 'No registrado',
+        };
+      }),
+    [traceability],
+  );
 
   async function applyFilters() {
     await loadRegistros({
@@ -191,6 +343,38 @@ export const AuditoriaPage: React.FC = () => {
     },
   ];
 
+  const traceabilityColumns = [
+    {
+      header: 'Fuente',
+      accessor: 'fuente' as const,
+    },
+    {
+      header: 'Tipo',
+      accessor: 'tipo' as const,
+    },
+    {
+      header: 'Fecha',
+      accessor: 'fecha' as const,
+      render: (value: string) => (value ? formatDateTime(value) : 'Sin fecha'),
+    },
+    {
+      header: 'Área origen',
+      accessor: 'areaOrigen' as const,
+    },
+    {
+      header: 'Área destino',
+      accessor: 'areaDestino' as const,
+    },
+    {
+      header: 'Usuario',
+      accessor: 'usuario' as const,
+    },
+    {
+      header: 'Detalle',
+      accessor: 'detalle' as const,
+    },
+  ];
+
   return (
     <div className="module-page">
       <div className="module-header">
@@ -206,6 +390,151 @@ export const AuditoriaPage: React.FC = () => {
           onClose={() => setMessage(null)}
         />
       )}
+
+      <section className="module-list audit-traceability">
+        <div className="list-header audit-traceability__header">
+          <div>
+            <h2>Trazabilidad consolidada de activo</h2>
+            <p>
+              Seleccione un activo para consultar sus movimientos, auditorías y cambios
+              registrados en el sistema.
+            </p>
+          </div>
+          <Badge
+            label={traceability ? `${traceability.resumen.totalEventos} evento(s)` : 'HU24'}
+            variant="info"
+            size="sm"
+          />
+        </div>
+
+        {traceabilityMessage ? (
+          <div className="audit-traceability__message">
+            <Alert
+              type={traceabilityMessage.type}
+              message={traceabilityMessage.text}
+              dismissible
+              onClose={() => setTraceabilityMessage(null)}
+            />
+          </div>
+        ) : null}
+
+        <div className="audit-traceability__filters">
+          <div className="audit-traceability__assetSearch">
+            <span>Activo</span>
+            <SearchBar
+              onSearch={setAssetSearch}
+              placeholder="Buscar activo por código o nombre..."
+            />
+            <select
+              value={selectedAssetId}
+              onChange={(event) => {
+                setSelectedAssetId(event.target.value);
+                setTraceability(null);
+              }}
+              disabled={assetsLoading}
+            >
+              <option value="">
+                {assetsLoading ? 'Cargando activos...' : 'Seleccione un activo'}
+              </option>
+              {assets.map((asset) => (
+                <option key={asset.id} value={asset.id}>
+                  {asset.codigo} - {asset.nombre}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <label className="audit-traceability__date">
+            <span>Desde</span>
+            <input
+              type="date"
+              value={traceFechaDesde}
+              max={traceFechaHasta || undefined}
+              aria-invalid={invalidTraceDateRange}
+              onChange={(event) => setTraceFechaDesde(event.target.value)}
+            />
+          </label>
+
+          <label className="audit-traceability__date">
+            <span>Hasta</span>
+            <input
+              type="date"
+              value={traceFechaHasta}
+              min={traceFechaDesde || undefined}
+              aria-invalid={invalidTraceDateRange}
+              onChange={(event) => setTraceFechaHasta(event.target.value)}
+            />
+          </label>
+
+          <div className="audit-actions">
+            <Button
+              label="Consultar trazabilidad"
+              variant="primary"
+              disabled={!selectedAssetId || invalidTraceDateRange || traceabilityLoading}
+              onClick={() => {
+                void loadTraceability();
+              }}
+            />
+          </div>
+        </div>
+
+        {invalidTraceDateRange ? (
+          <div className="audit-traceability__validation">
+            La fecha desde no puede ser posterior a la fecha hasta.
+          </div>
+        ) : null}
+
+        {traceability ? (
+          <div className="audit-traceability__summary">
+            <div>
+              <span>Activo seleccionado</span>
+              <strong>
+                {traceability.activo.codigo} - {traceability.activo.nombre}
+              </strong>
+            </div>
+            <div>
+              <span>Movimientos</span>
+              <strong>{traceability.resumen.totalMovimientos}</strong>
+            </div>
+            <div>
+              <span>Auditorías</span>
+              <strong>{traceability.resumen.totalRegistrosAuditoria}</strong>
+            </div>
+          </div>
+        ) : selectedAsset ? (
+          <div className="audit-traceability__summary">
+            <div>
+              <span>Activo seleccionado</span>
+              <strong>
+                {selectedAsset.codigo} - {selectedAsset.nombre}
+              </strong>
+            </div>
+            <div>
+              <span>Estado</span>
+              <strong>{selectedAsset.estadoLabel}</strong>
+            </div>
+            <div>
+              <span>Área</span>
+              <strong>{selectedAsset.area?.nombre ?? 'No asignada'}</strong>
+            </div>
+          </div>
+        ) : null}
+
+        <DataTable
+          columns={traceabilityColumns}
+          data={traceabilityRows}
+          loading={traceabilityLoading}
+          emptyMessage={
+            selectedAssetId
+              ? 'Este activo no tiene movimientos registrados'
+              : 'Seleccione un activo para consultar su trazabilidad'
+          }
+          striped
+          hover
+          paginated
+          pageSize={8}
+        />
+      </section>
 
       <div className="module-list">
         <div className="list-header audit-filters-wrap">

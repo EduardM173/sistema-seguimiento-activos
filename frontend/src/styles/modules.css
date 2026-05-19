@@ -89,6 +89,34 @@
   min-height: var(--input-height);
 }
 
+.audit-traceability__assetSearch {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.audit-traceability__assetSearch > span {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.audit-traceability__assetSearch select {
+  height: var(--input-height);
+  padding: 0 var(--space-3);
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: var(--input-border);
+  border-radius: var(--radius-base);
+  font-family: var(--font-family);
+}
+
+.audit-traceability__message {
+  padding: var(--space-4) var(--space-5) 0;
+}
+
 .audit-traceability__date {
   display: flex;
   flex-direction: column;
