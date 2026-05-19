@@ -46,6 +46,7 @@ export const AuditoriaPage: React.FC = () => {
   const [registros, setRegistros] = useState<AuditoriaMsRegistro[]>([]);
   const [assets, setAssets] = useState<AssetListItem[]>([]);
   const [assetSearch, setAssetSearch] = useState('');
+  const [traceSearchKey, setTraceSearchKey] = useState(0);
   const [selectedAssetId, setSelectedAssetId] = useState('');
   const [traceability, setTraceability] = useState<TrazabilidadActivo | null>(null);
   const [loading, setLoading] = useState(false);
@@ -181,6 +182,17 @@ export const AuditoriaPage: React.FC = () => {
     return () => window.clearTimeout(timer);
   }, [assetSearch]);
 
+  useEffect(() => {
+    if (!selectedAssetId) return;
+
+    const timer = window.setTimeout(() => {
+      void loadTraceability(selectedAssetId);
+    }, 250);
+
+    return () => window.clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedAssetId, traceFechaDesde, traceFechaHasta]);
+
   const entityOptions = useMemo(() => {
     const unique = Array.from(new Set(registros.map((item) => item.tipoEntidad))).filter(Boolean);
     return unique.sort((a, b) => a.localeCompare(b));
@@ -193,23 +205,44 @@ export const AuditoriaPage: React.FC = () => {
 
   const traceabilityRows = useMemo(
     () =>
-      (traceability?.movimientos ?? []).map((event) => ({
-        id: event.id,
-        fuente: 'Movimiento',
-        fecha: event.fecha,
-        tipo: event.etiqueta || event.tipo,
-        detalle: event.detalle,
-        areaOrigen: event.areaOrigen?.nombre ?? 'No aplica',
-        areaDestino: event.areaDestino?.nombre ?? 'No aplica',
-        usuario:
-          event.usuarioRelacionado?.nombreCompleto ||
-          event.realizadoPor?.nombreCompleto ||
-          event.usuarioDestino?.nombreCompleto ||
-          event.usuarioOrigen?.nombreCompleto ||
-          'No registrado',
-      })),
+      [...(traceability?.movimientos ?? [])]
+        .sort(
+          (left, right) =>
+            new Date(right.fecha).getTime() - new Date(left.fecha).getTime(),
+        )
+        .map((event) => ({
+          id: event.id,
+          fuente: 'Movimiento',
+          fecha: event.fecha,
+          tipo: event.etiqueta || event.tipo,
+          detalle: event.detalle,
+          areaOrigen: event.areaOrigen?.nombre ?? 'No aplica',
+          areaDestino: event.areaDestino?.nombre ?? 'No aplica',
+          usuario:
+            event.usuarioRelacionado?.nombreCompleto ||
+            event.realizadoPor?.nombreCompleto ||
+            event.usuarioDestino?.nombreCompleto ||
+            event.usuarioOrigen?.nombreCompleto ||
+            'No registrado',
+        })),
     [traceability],
   );
+
+  function selectTraceabilityAsset(asset: AssetListItem) {
+    setSelectedAssetId(asset.id);
+    setTraceability(null);
+  }
+
+  function clearTraceabilityFilters() {
+    setAssetSearch('');
+    setTraceSearchKey((key) => key + 1);
+    setSelectedAssetId('');
+    setTraceFechaDesde('');
+    setTraceFechaHasta('');
+    setTraceability(null);
+    setTraceabilityMessage(null);
+    void loadAssets('');
+  }
 
   async function applyFilters() {
     await loadRegistros({
@@ -363,11 +396,6 @@ export const AuditoriaPage: React.FC = () => {
               de auditoría asociado.
             </p>
           </div>
-          <Badge
-            label={traceability ? `${traceability.resumen.totalEventos} evento(s)` : 'HU24'}
-            variant="info"
-            size="sm"
-          />
         </div>
 
         {traceabilityMessage ? (
@@ -385,26 +413,34 @@ export const AuditoriaPage: React.FC = () => {
           <div className="audit-traceability__assetSearch">
             <span>Activo</span>
             <SearchBar
+              key={traceSearchKey}
               onSearch={setAssetSearch}
               placeholder="Buscar activo por código o nombre..."
             />
-            <select
-              value={selectedAssetId}
-              onChange={(event) => {
-                setSelectedAssetId(event.target.value);
-                setTraceability(null);
-              }}
-              disabled={assetsLoading}
-            >
-              <option value="">
-                {assetsLoading ? 'Cargando activos...' : 'Seleccione un activo'}
-              </option>
-              {assets.map((asset) => (
-                <option key={asset.id} value={asset.id}>
-                  {asset.codigo} - {asset.nombre}
-                </option>
-              ))}
-            </select>
+            <div className="audit-traceability__assetResults" aria-busy={assetsLoading}>
+              {assetsLoading ? (
+                <p>Cargando activos...</p>
+              ) : assets.length === 0 ? (
+                <p>No se encontraron activos con ese criterio.</p>
+              ) : (
+                assets.map((asset) => (
+                  <button
+                    key={asset.id}
+                    type="button"
+                    className={
+                      selectedAssetId === asset.id
+                        ? 'audit-traceability__assetResult audit-traceability__assetResult--selected'
+                        : 'audit-traceability__assetResult'
+                    }
+                    onClick={() => selectTraceabilityAsset(asset)}
+                  >
+                    <strong>{asset.codigo}</strong>
+                    <span>{asset.nombre}</span>
+                    <small>{asset.area?.nombre ?? 'Sin área asignada'}</small>
+                  </button>
+                ))
+              )}
+            </div>
           </div>
 
           <label className="audit-traceability__date">
@@ -431,12 +467,13 @@ export const AuditoriaPage: React.FC = () => {
 
           <div className="audit-actions">
             <Button
-              label="Consultar trazabilidad"
-              variant="primary"
-              disabled={!selectedAssetId || invalidTraceDateRange || traceabilityLoading}
-              onClick={() => {
-                void loadTraceability();
-              }}
+              label="Limpiar filtros"
+              variant="secondary"
+              disabled={
+                traceabilityLoading ||
+                (!selectedAssetId && !assetSearch && !traceFechaDesde && !traceFechaHasta && !traceability)
+              }
+              onClick={clearTraceabilityFilters}
             />
           </div>
         </div>
