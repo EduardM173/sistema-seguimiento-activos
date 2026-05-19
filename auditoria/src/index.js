@@ -146,7 +146,11 @@ function buildFullName(row, prefix = '') {
     .trim();
 }
 
-async function assertUserHasPermission(userId, permissionCode) {
+async function assertUserHasPermission(
+  userId,
+  permissionCode,
+  message = 'No tienes permisos para consultar la trazabilidad departamental',
+) {
   const result = await pool.query(
     `
     SELECT 1
@@ -161,7 +165,7 @@ async function assertUserHasPermission(userId, permissionCode) {
   );
 
   if (!result.rows.length) {
-    throw createHttpError(403, 'No tienes permisos para consultar la trazabilidad departamental');
+    throw createHttpError(403, message);
   }
 }
 
@@ -426,6 +430,258 @@ app.get('/api/auditoria/registros/:id', async (req, res, next) => {
               nombreUsuario: row.nombreUsuario,
             }
           : null,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.get('/api/auditoria/activos/:id/trazabilidad', async (req, res, next) => {
+  try {
+    const userId = getAuthenticatedUserId(req);
+    await assertUserHasPermission(
+      userId,
+      'AUDIT_VIEW',
+      'No tienes permisos para consultar la trazabilidad de activos',
+    );
+
+    const { id } = req.params;
+    const { fechaDesde, fechaHasta } = parseDateRange(req.query);
+
+    const assetResult = await pool.query(
+      `
+      SELECT
+        ac.id,
+        ac.codigo,
+        ac.nombre,
+        ac.descripcion,
+        ac.estado,
+        ac."creadoEn",
+        ac."actualizadoEn",
+        ac."dadoDeBajaEn",
+        ac."motivoBaja",
+        cat.id AS "categoriaId",
+        cat.nombre AS "categoriaNombre",
+        ubi.id AS "ubicacionId",
+        ubi.nombre AS "ubicacionNombre",
+        area_actual.id AS "areaActualId",
+        area_actual.nombre AS "areaActualNombre",
+        responsable.id AS "responsableActualId",
+        responsable.nombres AS "responsableNombres",
+        responsable.apellidos AS "responsableApellidos"
+      FROM activos ac
+      LEFT JOIN categorias_activos cat ON cat.id = ac."categoriaId"
+      LEFT JOIN ubicaciones ubi ON ubi.id = ac."ubicacionId"
+      LEFT JOIN areas area_actual ON area_actual.id = ac."areaActualId"
+      LEFT JOIN usuarios responsable ON responsable.id = ac."responsableActualId"
+      WHERE ac.id = $1
+      LIMIT 1
+      `,
+      [id],
+    );
+
+    if (!assetResult.rows.length) {
+      throw createHttpError(404, `No se encontró el activo con ID: ${id}`);
+    }
+
+    const whereDateClauses = [];
+    const movementParams = [id];
+    const auditParams = [id];
+
+    if (fechaDesde) {
+      movementParams.push(fechaDesde);
+      auditParams.push(fechaDesde);
+      whereDateClauses.push({
+        movement: `m."creadoEn" >= $${movementParams.length}`,
+        audit: `a."creadoEn" >= $${auditParams.length}`,
+      });
+    }
+
+    if (fechaHasta) {
+      movementParams.push(fechaHasta);
+      auditParams.push(fechaHasta);
+      whereDateClauses.push({
+        movement: `m."creadoEn" <= $${movementParams.length}`,
+        audit: `a."creadoEn" <= $${auditParams.length}`,
+      });
+    }
+
+    const movementDateSql = whereDateClauses.map((clause) => clause.movement).join(' AND ');
+    const auditDateSql = whereDateClauses.map((clause) => clause.audit).join(' AND ');
+
+    const [movementResult, auditResult] = await Promise.all([
+      pool.query(
+        `
+        SELECT
+          m.id,
+          m.tipo,
+          m."areaOrigenId",
+          m."areaDestinoId",
+          m."usuarioOrigenId",
+          m."usuarioDestinoId",
+          m."asignacionId",
+          m.detalle,
+          m."creadoEn",
+          area_origen.id AS "areaOrigenDbId",
+          area_origen.nombre AS "areaOrigenNombre",
+          area_destino.id AS "areaDestinoDbId",
+          area_destino.nombre AS "areaDestinoNombre",
+          usuario_origen.id AS "usuarioOrigenDbId",
+          usuario_origen.nombres AS "usuarioOrigenNombres",
+          usuario_origen.apellidos AS "usuarioOrigenApellidos",
+          usuario_destino.id AS "usuarioDestinoDbId",
+          usuario_destino.nombres AS "usuarioDestinoNombres",
+          usuario_destino.apellidos AS "usuarioDestinoApellidos",
+          realizado_por.id AS "realizadoPorId",
+          realizado_por.nombres AS "realizadoPorNombres",
+          realizado_por.apellidos AS "realizadoPorApellidos"
+        FROM movimientos_activos m
+        LEFT JOIN areas area_origen ON area_origen.id = m."areaOrigenId"
+        LEFT JOIN areas area_destino ON area_destino.id = m."areaDestinoId"
+        LEFT JOIN usuarios usuario_origen ON usuario_origen.id = m."usuarioOrigenId"
+        LEFT JOIN usuarios usuario_destino ON usuario_destino.id = m."usuarioDestinoId"
+        LEFT JOIN usuarios realizado_por ON realizado_por.id = m."realizadoPorId"
+        WHERE m."activoId" = $1
+        ${movementDateSql ? `AND ${movementDateSql}` : ''}
+        ORDER BY m."creadoEn" ASC
+        `,
+        movementParams,
+      ),
+      pool.query(
+        `
+        SELECT
+          a.id,
+          a.accion,
+          a."valoresAnteriores",
+          a."valoresNuevos",
+          a."direccionIp",
+          a."userAgent",
+          a."creadoEn",
+          u.id AS "usuarioDbId",
+          u.nombres,
+          u.apellidos
+        FROM auditorias a
+        LEFT JOIN usuarios u ON u.id = a."usuarioId"
+        WHERE a."entidadId" = $1
+          AND a."tipoEntidad" IN ('activo', 'activos', 'Activo', 'ACTIVO')
+        ${auditDateSql ? `AND ${auditDateSql}` : ''}
+        ORDER BY a."creadoEn" ASC
+        `,
+        auditParams,
+      ),
+    ]);
+
+    const asset = assetResult.rows[0];
+    const movimientos = movementResult.rows.map((row) => ({
+      id: row.id,
+      fuente: 'MOVIMIENTO',
+      fecha: row.creadoEn,
+      tipo: row.tipo,
+      etiqueta: formatMovementType(row.tipo),
+      detalle: row.detalle || 'Sin detalle registrado',
+      areaOrigen: row.areaOrigenDbId
+        ? { id: row.areaOrigenDbId, nombre: row.areaOrigenNombre }
+        : null,
+      areaDestino: row.areaDestinoDbId
+        ? { id: row.areaDestinoDbId, nombre: row.areaDestinoNombre }
+        : null,
+      usuarioOrigen: row.usuarioOrigenDbId
+        ? {
+            id: row.usuarioOrigenDbId,
+            nombreCompleto: buildFullName(row, 'usuarioOrigen'),
+          }
+        : null,
+      usuarioDestino: row.usuarioDestinoDbId
+        ? {
+            id: row.usuarioDestinoDbId,
+            nombreCompleto: buildFullName(row, 'usuarioDestino'),
+          }
+        : null,
+      usuarioOrigenId: row.usuarioOrigenId,
+      usuarioDestinoId: row.usuarioDestinoId,
+      asignacionId: row.asignacionId,
+      usuarioRelacionado: row.realizadoPorId
+        ? {
+            id: row.realizadoPorId,
+            nombreCompleto: buildFullName(row, 'realizadoPor'),
+          }
+        : null,
+      realizadoPor: row.realizadoPorId
+        ? {
+            id: row.realizadoPorId,
+            nombreCompleto: buildFullName(row, 'realizadoPor'),
+          }
+        : null,
+    }));
+
+    const timeline = [
+      ...movimientos,
+      ...auditResult.rows.map((row) => ({
+        id: row.id,
+        fuente: 'AUDITORIA',
+        fecha: row.creadoEn,
+        tipo: 'AUDITORIA',
+        etiqueta: row.accion,
+        detalle: `Registro de auditoría: ${row.accion}`,
+        areaOrigen: null,
+        areaDestino: null,
+        usuarioOrigenId: null,
+        usuarioDestinoId: null,
+        asignacionId: null,
+        realizadoPor: row.usuarioDbId
+          ? {
+              id: row.usuarioDbId,
+              nombreCompleto: buildFullName(row),
+            }
+          : null,
+        auditoria: {
+          accion: row.accion,
+          valoresAnteriores: row.valoresAnteriores,
+          valoresNuevos: row.valoresNuevos,
+          direccionIp: row.direccionIp,
+          userAgent: row.userAgent,
+        },
+      })),
+    ].sort((left, right) => new Date(left.fecha).getTime() - new Date(right.fecha).getTime());
+
+    return res.json({
+      ok: true,
+      data: {
+        activo: {
+          id: asset.id,
+          codigo: asset.codigo,
+          nombre: asset.nombre,
+          descripcion: asset.descripcion,
+          estado: asset.estado,
+          creadoEn: asset.creadoEn,
+          actualizadoEn: asset.actualizadoEn,
+          dadoDeBajaEn: asset.dadoDeBajaEn,
+          motivoBaja: asset.motivoBaja,
+          categoria: asset.categoriaId
+            ? { id: asset.categoriaId, nombre: asset.categoriaNombre }
+            : null,
+          ubicacion: asset.ubicacionId
+            ? { id: asset.ubicacionId, nombre: asset.ubicacionNombre }
+            : null,
+          areaActual: asset.areaActualId
+            ? { id: asset.areaActualId, nombre: asset.areaActualNombre }
+            : null,
+          responsableActual: asset.responsableActualId
+            ? {
+                id: asset.responsableActualId,
+                nombreCompleto: buildFullName(asset, 'responsable'),
+              }
+            : null,
+        },
+        resumen: {
+          totalEventos: timeline.length,
+          totalMovimientos: movimientos.length,
+          totalRegistrosAuditoria: auditResult.rows.length,
+          movimientosPorTipo: buildMovementTypeSummary(movimientos),
+        },
+        movimientos,
+        timeline,
       },
     });
   } catch (error) {

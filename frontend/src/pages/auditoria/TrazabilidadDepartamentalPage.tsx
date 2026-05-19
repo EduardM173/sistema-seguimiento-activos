@@ -4,6 +4,7 @@ import type { Column } from '../../components/common/DataTable';
 import { useAuth } from '../../context/AuthContext';
 import { searchAssets } from '../../services/assets.service';
 import { auditoriaService } from '../../services/auditoria.service';
+import { auditoriaMsService } from '../../services/auditoria-ms.service';
 import ViewAssetModal from '../../components/activos/ViewAssetModal';
 import type { AssetListItem } from '../../types/assets.types';
 import type {
@@ -138,12 +139,12 @@ export default function TrazabilidadDepartamentalPage() {
   async function loadDepartmentTraceability() {
     try {
       setDepartmentLoading(true);
-      const response = await auditoriaService.obtenerTrazabilidadDepartamental({
+      const response = await auditoriaMsService.obtenerTrazabilidadDepartamental({
         tipoMovimiento: tipoMovimiento || undefined,
         fechaDesde: fechaDesde || undefined,
         fechaHasta: fechaHasta || undefined,
       });
-      setDepartmentTraceability(response ?? null);
+      setDepartmentTraceability(response.data ?? null);
     } catch (error) {
       setDepartmentTraceability(null);
       setMessage({

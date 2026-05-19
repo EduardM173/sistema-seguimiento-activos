@@ -84,8 +84,23 @@ export class AuditoriaService {
     if (options.areaScoped) {
       const areaIds = await this.resolveUserAreaIds(userId);
       const assetAreaId = asset.areaActual?.id ?? null;
+      const isCurrentAreaAsset = Boolean(
+        assetAreaId && areaIds.includes(assetAreaId),
+      );
 
-      if (!assetAreaId || !areaIds.includes(assetAreaId)) {
+      const hasDepartmentMovement = areaIds.length
+        ? await this.prisma.movimientoActivo.count({
+            where: {
+              activoId: assetId,
+              OR: [
+                { areaOrigenId: { in: areaIds } },
+                { areaDestinoId: { in: areaIds } },
+              ],
+            },
+          })
+        : 0;
+
+      if (!isCurrentAreaAsset && hasDepartmentMovement === 0) {
         throw new ForbiddenException(
           'No tienes permisos para consultar la trazabilidad de este activo',
         );

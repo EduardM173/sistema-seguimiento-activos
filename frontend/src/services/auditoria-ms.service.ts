@@ -6,7 +6,10 @@ import type {
   AuditoriaMsResponse,
   AuditoriaMsUsuario,
 } from '../types/auditoria-ms.types';
-import type { TrazabilidadDepartamental } from '../types/auditoria.types';
+import type {
+  TrazabilidadActivo,
+  TrazabilidadDepartamental,
+} from '../types/auditoria.types';
 
 const DEFAULT_AUDIT_API_URL = 'http://localhost:3003/api';
 const AUDIT_API_URL = import.meta.env.VITE_AUDIT_API_URL || DEFAULT_AUDIT_API_URL;
@@ -70,6 +73,19 @@ export const auditoriaMsService = {
 
   obtenerRegistroPorId: async (id: string) => {
     return request<AuditoriaMsResponse<AuditoriaMsRegistro>>(`/auditoria/registros/${id}`);
+  },
+
+  obtenerTrazabilidadActivo: async (
+    activoId: string,
+    filtros?: {
+      fechaDesde?: string;
+      fechaHasta?: string;
+    },
+  ) => {
+    return request<AuditoriaMsResponse<TrazabilidadActivo>>(
+      `/auditoria/activos/${encodeURIComponent(activoId)}/trazabilidad`,
+      filtros,
+    );
   },
 
   obtenerTrazabilidadDepartamental: async (filtros?: {

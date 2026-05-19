@@ -8,13 +8,9 @@ import {
 } from '../../components/common';
 import OverlayModal from '../../components/common/OverlayModal';
 import { searchAssets } from '../../services/assets.service';
-import { auditoriaService } from '../../services/auditoria.service';
 import { auditoriaMsService } from '../../services/auditoria-ms.service';
 import type { AssetListItem } from '../../types/assets.types';
-import type {
-  TrazabilidadActivo,
-  TrazabilidadMovimiento,
-} from '../../types/auditoria.types';
+import type { TrazabilidadActivo } from '../../types/auditoria.types';
 import type {
   AuditoriaMsFiltros,
   AuditoriaMsRegistro,
@@ -43,15 +39,6 @@ function formatDateTime(value: string | Date) {
     dateStyle: 'short',
     timeStyle: 'short',
   });
-}
-
-function isMovementEvent(event: unknown): event is TrazabilidadMovimiento {
-  return Boolean(
-    event &&
-      typeof event === 'object' &&
-      'fuente' in event &&
-      (event as { fuente?: unknown }).fuente === 'MOVIMIENTO',
-  );
 }
 
 export const AuditoriaPage: React.FC = () => {
@@ -127,11 +114,11 @@ export const AuditoriaPage: React.FC = () => {
     try {
       setTraceabilityLoading(true);
       setTraceabilityMessage(null);
-      const response = await auditoriaService.obtenerTrazabilidadActivo(assetId, {
+      const response = await auditoriaMsService.obtenerTrazabilidadActivo(assetId, {
         fechaDesde: traceFechaDesde || undefined,
         fechaHasta: traceFechaHasta || undefined,
       });
-      setTraceability(response ?? null);
+      setTraceability(response.data ?? null);
     } catch (error) {
       console.error(error);
       setTraceability(null);
@@ -206,45 +193,21 @@ export const AuditoriaPage: React.FC = () => {
 
   const traceabilityRows = useMemo(
     () =>
-      (traceability?.timeline ?? []).map((event) => {
-        if (isMovementEvent(event)) {
-          return {
-            id: event.id,
-            fuente: 'Movimiento',
-            fecha: event.fecha,
-            tipo: event.etiqueta || event.tipo,
-            detalle: event.detalle,
-            areaOrigen: event.areaOrigen?.nombre ?? 'No aplica',
-            areaDestino: event.areaDestino?.nombre ?? 'No aplica',
-            usuario:
-              event.usuarioRelacionado?.nombreCompleto ||
-              event.realizadoPor?.nombreCompleto ||
-              event.usuarioDestino?.nombreCompleto ||
-              event.usuarioOrigen?.nombreCompleto ||
-              'No registrado',
-          };
-        }
-
-        const auditEvent = event as {
-          id?: string;
-          fecha?: string;
-          tipo?: string;
-          etiqueta?: string;
-          detalle?: string;
-          realizadoPor?: { nombreCompleto?: string } | null;
-        };
-
-        return {
-          id: auditEvent.id ?? `${auditEvent.tipo ?? 'evento'}-${auditEvent.fecha ?? ''}`,
-          fuente: 'Auditoría',
-          fecha: auditEvent.fecha ?? '',
-          tipo: auditEvent.etiqueta ?? auditEvent.tipo ?? 'Auditoría',
-          detalle: auditEvent.detalle ?? 'Registro de auditoría',
-          areaOrigen: 'No aplica',
-          areaDestino: 'No aplica',
-          usuario: auditEvent.realizadoPor?.nombreCompleto ?? 'No registrado',
-        };
-      }),
+      (traceability?.movimientos ?? []).map((event) => ({
+        id: event.id,
+        fuente: 'Movimiento',
+        fecha: event.fecha,
+        tipo: event.etiqueta || event.tipo,
+        detalle: event.detalle,
+        areaOrigen: event.areaOrigen?.nombre ?? 'No aplica',
+        areaDestino: event.areaDestino?.nombre ?? 'No aplica',
+        usuario:
+          event.usuarioRelacionado?.nombreCompleto ||
+          event.realizadoPor?.nombreCompleto ||
+          event.usuarioDestino?.nombreCompleto ||
+          event.usuarioOrigen?.nombreCompleto ||
+          'No registrado',
+      })),
     [traceability],
   );
 
@@ -396,8 +359,8 @@ export const AuditoriaPage: React.FC = () => {
           <div>
             <h2>Trazabilidad consolidada de activo</h2>
             <p>
-              Seleccione un activo para consultar sus movimientos, auditorías y cambios
-              registrados en el sistema.
+              Seleccione un activo para consultar sus movimientos registrados y el resumen
+              de auditoría asociado.
             </p>
           </div>
           <Badge
