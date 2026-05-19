@@ -36,17 +36,19 @@ export class ReportsService {
         this.getLowStockMaterials(),
       ]);
 
+    const assetsTotal = assetsByStatus.reduce((sum, item) => sum + item.quantity, 0);
+
     return {
       generatedAt: new Date().toISOString(),
       assets: {
         byStatus: assetsByStatus,
-        total: assetsByStatus.reduce((sum, item) => sum + item.quantity, 0),
+        total: assetsTotal,
       },
       materials: {
         total: totalMaterials,
         lowStock: lowStockMaterials,
       },
-      downloadReady: true,
+      downloadReady: assetsTotal > 0 || totalMaterials > 0,
     };
   }
 

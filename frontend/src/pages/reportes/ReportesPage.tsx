@@ -27,6 +27,8 @@ const emptyReport: ReporteInventarioGeneral = {
   downloadReady: false,
 };
 
+const noDownloadDataMessage = 'No hay informacion disponible para descargar';
+
 export const ReportesPage: React.FC = () => {
   const { user } = useAuth();
   const [report, setReport] = useState<ReporteInventarioGeneral>(emptyReport);
@@ -52,7 +54,14 @@ export const ReportesPage: React.FC = () => {
       setLoading(true);
       const data = await reportesService.obtenerInventarioGeneral();
       setReport(data);
-      setMessage(null);
+      setMessage(
+        data.downloadReady
+          ? null
+          : {
+              type: 'error',
+              text: noDownloadDataMessage,
+            },
+      );
     } catch (err) {
       const text =
         err instanceof Error
@@ -69,6 +78,14 @@ export const ReportesPage: React.FC = () => {
   };
 
   const descargarReporte = async (formato: 'pdf' | 'excel') => {
+    if (!report.downloadReady) {
+      setMessage({
+        type: 'error',
+        text: noDownloadDataMessage,
+      });
+      return;
+    }
+
     try {
       setDownloadingFormat(formato);
       await reportesService.descargarInventarioGeneral(formato, user?.id);
@@ -105,7 +122,7 @@ export const ReportesPage: React.FC = () => {
             label="PDF"
             variant="secondary"
             onClick={() => descargarReporte('pdf')}
-            disabled={loading || !user?.id}
+            disabled={loading || !user?.id || !report.downloadReady}
             isLoading={downloadingFormat === 'pdf'}
             icon={<Download size={16} />}
           />
@@ -113,7 +130,7 @@ export const ReportesPage: React.FC = () => {
             label="Excel"
             variant="secondary"
             onClick={() => descargarReporte('excel')}
-            disabled={loading || !user?.id}
+            disabled={loading || !user?.id || !report.downloadReady}
             isLoading={downloadingFormat === 'excel'}
             icon={<FileSpreadsheet size={16} />}
           />
