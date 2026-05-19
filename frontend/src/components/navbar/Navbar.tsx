@@ -157,7 +157,9 @@ export default function Navbar() {
     });
   }
 
-  if (hasPermission('REPORT_VIEW')) {
+  const canViewReports = hasPermission('REPORT_VIEW') || hasPermission('REPORT_GENERATE');
+
+  if (canViewReports) {
     mainItems.push({
       label: 'Reportes',
       icon: <IconBarChart size={16} />,

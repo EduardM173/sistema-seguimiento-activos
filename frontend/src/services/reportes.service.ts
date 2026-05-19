@@ -6,6 +6,8 @@ import type {
   ReporteInventarioGeneral,
   ReporteCategoria,
   ReporteCategoriaDetalle,
+  ReporteMovimientosActivos,
+  TipoMovimientoActivo,
 } from '../types/reportes.types';
 import { tipoReporte } from '../types/reportes.types';
 import type { PaginatedResponse, ApiResponse } from '../types';
@@ -133,6 +135,28 @@ export const reportesService = {
     );
 
     downloadBlob(blob, filename);
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // HU45 — Reporte de movimientos de activos
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  obtenerMovimientosActivos: async (params: {
+    fechaDesde: string;
+    fechaHasta: string;
+    tipo?: TipoMovimientoActivo | '';
+  }) => {
+    const queryParams = new URLSearchParams();
+    queryParams.set('fechaDesde', params.fechaDesde);
+    queryParams.set('fechaHasta', params.fechaHasta);
+
+    if (params.tipo) {
+      queryParams.set('tipo', params.tipo);
+    }
+
+    return requestReports<ReporteMovimientosActivos>(
+      `/reports/movements?${queryParams.toString()}`,
+    );
   },
 
   // ═══════════════════════════════════════════════════════════════════════════

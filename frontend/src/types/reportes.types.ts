@@ -15,6 +15,18 @@ export const tipoReporte = {
 
 export type TipoReporte = typeof tipoReporte[keyof typeof tipoReporte];
 
+export const tipoMovimientoActivo = {
+  REGISTRO: 'REGISTRO',
+  ASIGNACION: 'ASIGNACION',
+  TRANSFERENCIA: 'TRANSFERENCIA',
+  DEVOLUCION: 'DEVOLUCION',
+  BAJA: 'BAJA',
+  ACTUALIZACION: 'ACTUALIZACION',
+  INCIDENTE: 'INCIDENTE',
+} as const;
+
+export type TipoMovimientoActivo = typeof tipoMovimientoActivo[keyof typeof tipoMovimientoActivo];
+
 // Reporte generado
 export interface ReporteGenerado {
   id: string;
@@ -218,4 +230,33 @@ export interface ReporteCategoriaDetalle {
   categoryName: string;
   assets: ActivoDetalleCategoria[];
   total: number;
+}
+
+// ─── HU45 — Reporte de movimientos de activos ─────────────────────────────
+
+export interface MovimientoActivoReporte {
+  id: string;
+  tipo: TipoMovimientoActivo;
+  tipoLabel: string;
+  fecha: string;
+  activo: {
+    codigo: string;
+    nombre: string;
+  };
+  areaOrigen: string | null;
+  areaDestino: string | null;
+  realizadoPor: string;
+  detalle: string | null;
+}
+
+export interface ReporteMovimientosActivos {
+  generatedAt: string;
+  filters: {
+    fechaDesde: string;
+    fechaHasta: string;
+    tipo: TipoMovimientoActivo | null;
+  };
+  totalMovimientos: number;
+  movements: MovimientoActivoReporte[];
+  downloadReady: boolean;
 }

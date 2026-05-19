@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 
 type ProtectedRouteProps = {
   requiredPermission?: string;
+  requiredPermissions?: string[];
   allowedRoleNames?: string[];
 };
 
@@ -10,6 +11,7 @@ const DEV_BYPASS_AUTH = false;
 
 export default function ProtectedRoute({
   requiredPermission,
+  requiredPermissions,
   allowedRoleNames,
 }: ProtectedRouteProps) {
   const { isAuthenticated, user } = useAuth();
@@ -24,6 +26,16 @@ export default function ProtectedRoute({
     );
 
     if (!userPermissions.has(requiredPermission)) {
+      return <Navigate to="/dashboard" replace />;
+    }
+  }
+
+  if (requiredPermissions?.length) {
+    const userPermissions = new Set(
+      user?.permisos?.map((permission) => permission.codigo) ?? [],
+    );
+
+    if (!requiredPermissions.some((permission) => userPermissions.has(permission))) {
       return <Navigate to="/dashboard" replace />;
     }
   }

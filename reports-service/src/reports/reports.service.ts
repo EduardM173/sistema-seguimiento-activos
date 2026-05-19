@@ -37,6 +37,50 @@ type GeneralInventoryReport = Awaited<
 
 type CategoryReport = Awaited<ReturnType<ReportsService['getCategoryReport']>>;
 
+type MovementReportRow = {
+  id: string;
+  tipo: string;
+  creado_en: Date;
+  detalle: string | null;
+  activo_codigo: string;
+  activo_nombre: string;
+  area_origen_nombre: string | null;
+  area_destino_nombre: string | null;
+  realizado_por_nombres: string;
+  realizado_por_apellidos: string;
+};
+
+type MovementReportParams = {
+  fechaDesde?: string;
+  fechaHasta?: string;
+  tipo?: string;
+};
+
+type MovementReportResponse = {
+  generatedAt: string;
+  filters: {
+    fechaDesde: string;
+    fechaHasta: string;
+    tipo: string | null;
+  };
+  totalMovimientos: number;
+  movements: Array<{
+    id: string;
+    tipo: string;
+    tipoLabel: string;
+    fecha: string;
+    activo: {
+      codigo: string;
+      nombre: string;
+    };
+    areaOrigen: string | null;
+    areaDestino: string | null;
+    realizadoPor: string;
+    detalle: string | null;
+  }>;
+  downloadReady: boolean;
+};
+
 // ─── Service ─────────────────────────────────────────────────────────────────
 
 @Injectable()
@@ -48,7 +92,93 @@ export class ReportsService {
     'DADO_DE_BAJA',
   ];
 
+  private readonly movementTypes = [
+    'REGISTRO',
+    'ASIGNACION',
+    'TRANSFERENCIA',
+    'DEVOLUCION',
+    'BAJA',
+    'ACTUALIZACION',
+    'INCIDENTE',
+  ] as const;
+
   constructor(private readonly database: DatabaseService) {}
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // HU45 — Reporte de movimientos de activos
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  async getMovementsReport(params: MovementReportParams): Promise<MovementReportResponse> {
+    const fechaHasta = this.normalizeDateParam(params.fechaHasta) ?? this.endOfToday();
+    const fechaDesde = this.normalizeDateParam(params.fechaDesde) ?? this.startOfMonth(fechaHasta);
+
+    if (fechaDesde > fechaHasta) {
+      throw new BadRequestException('La fecha inicial no puede ser mayor que la fecha final');
+    }
+
+    const tipoFilter = params.tipo?.trim() || null;
+
+    if (tipoFilter && !this.movementTypes.includes(tipoFilter as (typeof this.movementTypes)[number])) {
+      throw new BadRequestException('Tipo de movimiento no soportado');
+    }
+
+    const queryParams: unknown[] = [fechaDesde, fechaHasta];
+    let tipoClause = '';
+
+    if (tipoFilter) {
+      queryParams.push(tipoFilter);
+      tipoClause = 'AND m.tipo = $3::"TipoMovimientoActivo"';
+    }
+
+    const result = await this.database.query<MovementReportRow>(`
+      SELECT
+        m.id,
+        m.tipo,
+        m."creadoEn" AS creado_en,
+        m.detalle,
+        a.codigo AS activo_codigo,
+        a.nombre AS activo_nombre,
+        ao.nombre AS area_origen_nombre,
+        ad.nombre AS area_destino_nombre,
+        rp.nombres AS realizado_por_nombres,
+        rp.apellidos AS realizado_por_apellidos
+      FROM movimientos_activos m
+      INNER JOIN activos a ON a.id = m."activoId"
+      LEFT JOIN areas ao ON ao.id = m."areaOrigenId"
+      LEFT JOIN areas ad ON ad.id = m."areaDestinoId"
+      INNER JOIN usuarios rp ON rp.id = m."realizadoPorId"
+      WHERE m."creadoEn"::date BETWEEN $1::date AND $2::date
+      ${tipoClause}
+      ORDER BY m."creadoEn" DESC, m.id DESC
+    `, queryParams);
+
+    const movements = result.rows.map((row) => ({
+      id: row.id,
+      tipo: row.tipo,
+      tipoLabel: this.formatMovementType(row.tipo),
+      fecha: row.creado_en.toISOString(),
+      activo: {
+        codigo: row.activo_codigo,
+        nombre: row.activo_nombre,
+      },
+      areaOrigen: row.area_origen_nombre,
+      areaDestino: row.area_destino_nombre,
+      realizadoPor: `${row.realizado_por_nombres} ${row.realizado_por_apellidos}`,
+      detalle: row.detalle,
+    }));
+
+    return {
+      generatedAt: new Date().toISOString(),
+      filters: {
+        fechaDesde: this.formatDateOnly(fechaDesde),
+        fechaHasta: this.formatDateOnly(fechaHasta),
+        tipo: tipoFilter,
+      },
+      totalMovimientos: movements.length,
+      movements,
+      downloadReady: movements.length > 0,
+    };
+  }
 
   // ═══════════════════════════════════════════════════════════════════════════
   // HU27 — Reporte general del inventario (sin cambios)
@@ -644,5 +774,49 @@ export class ReportsService {
       DADO_DE_BAJA: 'Dado de baja',
     };
     return labels[status] || status;
+  }
+
+  private formatMovementType(type: string) {
+    const labels: Record<string, string> = {
+      REGISTRO: 'Registro',
+      ASIGNACION: 'Asignación',
+      TRANSFERENCIA: 'Transferencia',
+      DEVOLUCION: 'Devolución',
+      BAJA: 'Baja',
+      ACTUALIZACION: 'Actualización',
+      INCIDENTE: 'Incidente',
+    };
+
+    return labels[type] || type;
+  }
+
+  private normalizeDateParam(value?: string) {
+    if (!value) {
+      return null;
+    }
+
+    const parsed = new Date(value);
+
+    if (Number.isNaN(parsed.getTime())) {
+      throw new BadRequestException(`Fecha inválida: ${value}`);
+    }
+
+    return parsed;
+  }
+
+  private startOfMonth(reference: Date) {
+    return new Date(reference.getFullYear(), reference.getMonth(), 1);
+  }
+
+  private endOfToday() {
+    const today = new Date();
+    return new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
+  }
+
+  private formatDateOnly(date: Date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 }
