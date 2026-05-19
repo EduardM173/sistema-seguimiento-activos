@@ -1,6 +1,8 @@
 // Tipo de reporte
 export const tipoReporte = {
   INVENTARIO_GENERAL: "inventario_general",
+  CATEGORIA_ACTIVOS: "categoria_activos",
+  RESPONSABLE_ACTIVOS: "responsable_activos",
   DISPERSION_ACTIVOS: "dispersion_activos",
   MANTENIMIENTO_CRITICO: "mantenimiento_critico",
   ACTIVOS_POR_SEDE: "activos_por_sede",
@@ -9,10 +11,22 @@ export const tipoReporte = {
   INVENTARIO_MATERIALES: "inventario_materiales",
   USUARIOS_PERMISOS: "usuarios_permisos",
   TRANSFERENCIAS: "transferencias",
-  AUDITORIA_SISTEMA: "auditoria_sistema"
+  AUDITORIA_SISTEMA: "auditoria_sistema",
 } as const;
 
 export type TipoReporte = typeof tipoReporte[keyof typeof tipoReporte];
+
+export const tipoMovimientoActivo = {
+  REGISTRO: 'REGISTRO',
+  ASIGNACION: 'ASIGNACION',
+  TRANSFERENCIA: 'TRANSFERENCIA',
+  DEVOLUCION: 'DEVOLUCION',
+  BAJA: 'BAJA',
+  ACTUALIZACION: 'ACTUALIZACION',
+  INCIDENTE: 'INCIDENTE',
+} as const;
+
+export type TipoMovimientoActivo = typeof tipoMovimientoActivo[keyof typeof tipoMovimientoActivo];
 
 // Reporte generado
 export interface ReporteGenerado {
@@ -35,7 +49,7 @@ export interface ReporteGenerado {
   estado: "generando" | "completado" | "error" | "descargado";
   cantidadRegistros?: number;
   tamanioArchivo?: number;
-  duracionGeneracion?: number; // en segundos
+  duracionGeneracion?: number;
   errorMensaje?: string;
   programado: boolean;
   proximasEjecuciones?: Date[];
@@ -136,11 +150,11 @@ export interface ReporteProgramado {
   nombre: string;
   tipo: TipoReporte;
   frecuencia: "diaria" | "semanal" | "mensual";
-  horaProgramacion: string; // HH:MM
-  diasSemana?: number[]; // 0-6, si es semanal
-  diaDelMes?: number; // si es mensual
+  horaProgramacion: string;
+  diasSemana?: number[];
+  diaDelMes?: number;
   formatoSalida: "pdf" | "excel" | "csv" | "json";
-  destinatarios?: string[]; // emails
+  destinatarios?: string[];
   activo: boolean;
   ultimaEjecucion?: Date;
   proximaEjecucion?: Date;
@@ -160,4 +174,197 @@ export interface PlantillaReporte {
   creadorId?: string;
   createdAt: Date;
   updatedAt: Date;
+}
+
+// ─── HU27 ────────────────────────────────────────────────────────────────────
+
+export interface InventarioEstadoReporte {
+  status: "OPERATIVO" | "MANTENIMIENTO" | "FUERA_DE_SERVICIO" | "DADO_DE_BAJA";
+  label: string;
+  quantity: number;
+}
+
+export interface ReporteInventarioGeneral {
+  generatedAt: string;
+  assets: {
+    total: number;
+    byStatus: InventarioEstadoReporte[];
+  };
+  materials: {
+    total: number;
+    lowStock: number;
+  };
+  downloadReady: boolean;
+}
+
+// ─── HU28 ────────────────────────────────────────────────────────────────────
+
+export interface CategoriaSummary {
+  id: string;
+  name: string;
+  total: number;
+  percentage: number;
+}
+
+export interface ReporteCategoria {
+  generatedAt: string;
+  totalAssets: number;
+  categories: CategoriaSummary[];
+  downloadReady: boolean;
+}
+
+export interface ActivoDetalleCategoria {
+  id: string;
+  codigo: string;
+  nombre: string;
+  estado: string;
+  estadoLabel: string;
+  ubicacion: string;
+}
+
+export interface ReporteCategoriaDetalle {
+  categoryId: string;
+  categoryName: string;
+  assets: ActivoDetalleCategoria[];
+  total: number;
+}
+
+// ─── HU45 — Reporte de movimientos de activos ─────────────────────────────
+
+export interface MovimientoActivoReporte {
+  id: string;
+  tipo: TipoMovimientoActivo;
+  tipoLabel: string;
+  fecha: string;
+  activo: {
+    codigo: string;
+    nombre: string;
+  };
+  areaOrigen: string | null;
+  areaDestino: string | null;
+  realizadoPor: string;
+  detalle: string | null;
+}
+
+export interface ReporteMovimientosActivos {
+  generatedAt: string;
+  filters: {
+    fechaDesde: string;
+    fechaHasta: string;
+    tipo: TipoMovimientoActivo | null;
+  };
+  totalMovimientos: number;
+  movements: MovimientoActivoReporte[];
+  downloadReady: boolean;
+}
+
+// ─── HU47 ────────────────────────────────────────────────────────────────────
+
+/** Resumen de un responsable en el listado general (PA1) */
+export interface ResponsableSummary {
+  id: string;
+  name: string;
+  total: number;
+  percentage: number;
+}
+
+/** Respuesta GET /reports/inventory/responsable — PA1 */
+export interface ReporteResponsable {
+  generatedAt: string;
+  totalAssets: number;
+  responsables: ResponsableSummary[];
+  downloadReady: boolean;
+}
+
+/** Activo en el detalle de un responsable — PA3: código, nombre, categoría, estado, ubicación */
+export interface ActivoDetalleResponsable {
+  id: string;
+  codigo: string;
+  nombre: string;
+  categoria: string;
+  estado: string;
+  estadoLabel: string;
+  ubicacion: string;
+}
+
+/** Respuesta GET /reports/inventory/responsable/:id/assets — PA2/PA3/PA4/PA5 */
+export interface ReporteResponsableDetalle {
+  responsableId: string;
+  responsableName: string;
+  assets: ActivoDetalleResponsable[];
+  total: number;
+}
+
+// ─── HU-AREA ─────────────────────────────────────────────────────────────────
+
+/** Resumen de un área en el listado general (PA1) */
+export interface AreaSummary {
+  id: string;
+  name: string;
+  total: number;
+  percentage: number;
+}
+
+/** Respuesta GET /reports/inventory/area — PA1 */
+export interface ReporteArea {
+  generatedAt: string;
+  totalAssets: number;
+  areas: AreaSummary[];
+  downloadReady: boolean;
+}
+
+/** Activo en el detalle de un área — código, nombre, estado, ubicación, responsable */
+export interface ActivoDetalleArea {
+  id: string;
+  codigo: string;
+  nombre: string;
+  estado: string;
+  estadoLabel: string;
+  ubicacion: string;
+  responsable: string;
+}
+
+/** Respuesta GET /reports/inventory/area/:id/assets — PA2/PA3/PA4/PA5 */
+export interface ReporteAreaDetalle {
+  areaId: string;
+  areaName: string;
+  assets: ActivoDetalleArea[];
+  total: number;
+}
+
+// ─── HU-UBICACION ────────────────────────────────────────────────────────────
+
+/** Resumen de una ubicación en el listado general (PA1) */
+export interface UbicacionSummary {
+  id: string;
+  name: string;
+  total: number;
+  percentage: number;
+}
+
+/** Respuesta GET /reports/inventory/ubicacion — PA1 */
+export interface ReporteUbicacion {
+  generatedAt: string;
+  totalAssets: number;
+  ubicaciones: UbicacionSummary[];
+  downloadReady: boolean;
+}
+
+/** Activo en el detalle de una ubicación — código, nombre, estado, área, responsable */
+export interface ActivoDetalleUbicacion {
+  id: string;
+  codigo: string;
+  nombre: string;
+  estado: string;
+  estadoLabel: string;
+  area: string;
+  responsable: string;
+}
+
+/** Respuesta GET /reports/inventory/ubicacion/:id/assets — PA2/PA3/PA4/PA5 */
+export interface ReporteUbicacionDetalle {
+  ubicacionId: string;
+  ubicacionName: string;
+  assets: ActivoDetalleUbicacion[];
+  total: number;
 }

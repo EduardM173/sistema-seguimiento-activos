@@ -79,10 +79,16 @@ export const CORE_ACCESS_PERMISSIONS = [
     ],
   },
   {
+    codigo: 'REPORT_GENERATE',
+    nombre: 'Generar reportes',
+    descripcion: 'Permite generar consultas y exportaciones de reportes.',
+    defaultRoleNames: ['ADMIN_GENERAL', 'ADMIN'],
+  },
+  {
     codigo: 'AUDIT_VIEW',
     nombre: 'Ver auditoría',
     descripcion: 'Permite consultar el módulo de auditoría.',
-    defaultRoleNames: ['ADMIN_GENERAL', 'ADMIN'],
+    defaultRoleNames: ['ADMIN_GENERAL', 'ADMIN', 'AUDITOR'],
   },
   {
     codigo: 'TRANSFER_MANAGE',

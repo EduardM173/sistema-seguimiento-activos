@@ -50,6 +50,483 @@
   background: rgba(255, 255, 255, 0.03);
 }
 
+/* ── Inventario ───────────────────────────────────────── */
+.inventory-actions {
+  position: relative;
+  z-index: 20;
+}
+
+.inventory-actions__menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + var(--space-2));
+  width: min(280px, calc(100vw - 48px));
+  padding: var(--space-2);
+  background: #111827;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.35);
+}
+
+.inventory-actions__menu button {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-3);
+  color: #f8fafc;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-base);
+  cursor: pointer;
+  font-family: var(--font-family);
+}
+
+.inventory-actions__menu button:hover {
+  background: rgba(37, 99, 235, 0.22);
+}
+
+.inventory-actions__menu strong {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+  color: #ffffff;
+}
+
+.inventory-actions__menu span {
+  color: #cbd5e1;
+  font-size: var(--font-size-xs);
+}
+
+/* ── Auditoría / Trazabilidad ─────────────────────────── */
+.audit-traceability {
+  margin-bottom: var(--space-6);
+}
+
+.audit-traceability__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.audit-traceability__header h2 {
+  margin: 0 0 var(--space-1);
+  color: var(--color-text);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+}
+
+.audit-traceability__header p {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.audit-traceability__filters {
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) minmax(240px, 360px) minmax(150px, 180px) minmax(150px, 180px);
+  gap: var(--space-4);
+  align-items: end;
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.audit-traceability__select .fr__selectTrigger {
+  width: 100%;
+  min-height: var(--input-height);
+}
+
+.audit-traceability__assetSearch {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.audit-traceability__assetSearch > span {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.audit-traceability__message {
+  padding: var(--space-4) var(--space-5) 0;
+}
+
+.audit-traceability__assetResults {
+  display: grid;
+  gap: var(--space-2);
+  max-height: 184px;
+  padding-right: 2px;
+  overflow-y: auto;
+}
+
+.audit-traceability__assetResults > p {
+  margin: 0;
+  padding: var(--space-3);
+  color: var(--color-text-secondary);
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-base);
+  font-size: var(--font-size-sm);
+}
+
+.audit-traceability__assetResult {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px var(--space-2);
+  width: 100%;
+  padding: var(--space-3);
+  color: var(--color-text);
+  text-align: left;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-base);
+  cursor: pointer;
+  font-family: var(--font-family);
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.audit-traceability__assetResult:hover,
+.audit-traceability__assetResult--selected {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
+  transform: translateY(-1px);
+}
+
+.audit-traceability__assetResult strong {
+  color: var(--color-primary);
+  font-size: var(--font-size-sm);
+}
+
+.audit-traceability__assetResult span {
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+.audit-traceability__assetResult small {
+  grid-column: 1 / -1;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+}
+
+.audit-traceability__date {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.audit-traceability__date span {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.audit-traceability__date input {
+  height: var(--input-height);
+  padding: 0 var(--space-3);
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: var(--input-border);
+  border-radius: var(--radius-base);
+  font-family: var(--font-family);
+}
+
+.audit-traceability__date input[aria-invalid='true'] {
+  border-color: var(--color-danger);
+  box-shadow: 0 0 0 3px var(--color-danger-light);
+}
+
+.audit-traceability__validation {
+  margin: 0 var(--space-5) var(--space-4);
+  padding: var(--space-3);
+  color: var(--color-danger);
+  background: var(--color-danger-light);
+  border: 1px solid var(--color-danger-border);
+  border-radius: var(--radius-base);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+.audit-traceability__summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(160px, 1fr));
+  gap: var(--space-3);
+  padding: 0 var(--space-5) var(--space-4);
+}
+
+.audit-traceability__summary > div {
+  padding: var(--space-3);
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-base);
+}
+
+.audit-traceability__summary span,
+.audit-user-cell span {
+  display: block;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+}
+
+.audit-traceability__summary strong,
+.audit-user-cell strong {
+  display: block;
+  margin-top: 2px;
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+}
+
+.audit-user-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* ── HU26 / Trazabilidad departamental ────────────────── */
+.department-traceability__layout {
+  display: grid;
+  grid-template-columns: minmax(280px, 380px) minmax(0, 1fr);
+  gap: var(--space-5);
+  align-items: start;
+}
+
+.department-traceability__consolidated {
+  grid-column: 1 / -1;
+}
+
+.department-traceability__sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.department-traceability__sectionHeader h2 {
+  margin: 0 0 var(--space-1);
+  color: var(--color-text);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+}
+
+.department-traceability__sectionHeader p {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.department-traceability__search {
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.department-traceability__filters {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(150px, 180px) minmax(150px, 180px);
+  gap: var(--space-4);
+  align-items: end;
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.department-traceability__filters label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.department-traceability__filters span {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.department-traceability__filters select,
+.department-traceability__filters input {
+  height: var(--input-height);
+  padding: 0 var(--space-3);
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: var(--input-border);
+  border-radius: var(--radius-base);
+  font-family: var(--font-family);
+}
+
+.department-traceability__filters input[aria-invalid='true'] {
+  border-color: var(--color-danger);
+  box-shadow: 0 0 0 3px var(--color-danger-light);
+}
+
+.department-traceability__validation {
+  margin: 0 var(--space-5) var(--space-4);
+  padding: var(--space-3);
+  color: var(--color-danger);
+  background: var(--color-danger-light);
+  border: 1px solid var(--color-danger-border);
+  border-radius: var(--radius-base);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+.department-traceability__assetList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-height: 620px;
+  overflow-y: auto;
+  padding: var(--space-4) var(--space-5);
+}
+
+.department-traceability__assetCard {
+  width: 100%;
+  padding: var(--space-3);
+  text-align: left;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-base);
+  cursor: pointer;
+  transition: border-color var(--transition-fast), background var(--transition-fast), transform var(--transition-fast);
+}
+
+.department-traceability__assetCard:hover {
+  background: var(--color-surface-2);
+  border-color: var(--color-primary);
+  transform: translateY(-1px);
+}
+
+.department-traceability__assetCard--selected {
+  background: var(--color-primary-muted);
+  border-color: var(--color-primary);
+}
+
+.department-traceability__assetCard span,
+.department-traceability__summary span {
+  display: block;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.department-traceability__assetCard strong,
+.department-traceability__summary strong {
+  display: block;
+  margin-top: 3px;
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+}
+
+.department-traceability__assetCard small {
+  display: block;
+  margin-top: var(--space-1);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+}
+
+.department-traceability__assetLink {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0;
+  color: var(--color-primary);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--font-family);
+}
+
+.department-traceability__assetLink:hover {
+  color: var(--color-primary-light);
+  text-decoration: underline;
+}
+
+.department-traceability__assetLink:disabled {
+  color: var(--color-text-muted);
+  cursor: default;
+  text-decoration: none;
+}
+
+.department-traceability__assetLink strong {
+  color: inherit;
+  font-size: var(--font-size-sm);
+}
+
+.department-traceability__assetLink span {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.department-traceability__detailButton {
+  padding: 6px 10px;
+  color: var(--color-primary-light);
+  background: var(--color-primary-muted);
+  border: 1px solid rgba(26, 95, 173, 0.28);
+  border-radius: var(--radius-base);
+  cursor: pointer;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  font-family: var(--font-family);
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.department-traceability__detailButton:hover {
+  background: rgba(26, 95, 173, 0.2);
+  border-color: var(--color-primary);
+}
+
+.department-traceability__detailButton:disabled {
+  color: var(--color-text-muted);
+  background: var(--color-surface-2);
+  border-color: var(--color-border-light);
+  cursor: not-allowed;
+}
+
+.department-traceability__empty {
+  margin: 0;
+  padding: var(--space-4);
+  color: var(--color-text-secondary);
+  text-align: center;
+  background: var(--color-surface-2);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-base);
+}
+
+.department-traceability__summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(140px, 1fr));
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.department-traceability__summary > div {
+  padding: var(--space-3);
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-base);
+}
+
+@media (max-width: 900px) {
+  .audit-traceability__filters,
+  .audit-traceability__summary,
+  .department-traceability__layout,
+  .department-traceability__summary,
+  .department-traceability__filters {
+    grid-template-columns: 1fr;
+  }
+}
+
 .error-message {
   display: flex;
   justify-content: space-between;

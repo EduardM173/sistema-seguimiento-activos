@@ -1,0 +1,277 @@
+import {
+  Controller,
+  Get,
+  HttpException,
+  InternalServerErrorException,
+  Param,
+  Query,
+  Res,
+} from '@nestjs/common';
+import { Response } from 'express';
+import { ReportsService } from './reports.service';
+
+@Controller('reports')
+export class ReportsController {
+  constructor(private readonly reportsService: ReportsService) {}
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // HU45 — Reporte de movimientos de activos
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /**
+   * GET /reports/movements
+   * Retorna movimientos de activos filtrados por rango de fechas y tipo.
+   */
+  @Get('movements')
+  async getMovementsReport(
+    @Query('fechaDesde') fechaDesde: string | undefined,
+    @Query('fechaHasta') fechaHasta: string | undefined,
+    @Query('tipo') tipo: string | undefined,
+  ) {
+    try {
+      return await this.reportsService.getMovementsReport({
+        fechaDesde,
+        fechaHasta,
+        tipo,
+      });
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+      throw new InternalServerErrorException(this.getErrorMessage(error));
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // HU27 — Reporte general del inventario
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  @Get('inventory/general')
+  async getGeneralInventoryReport() {
+    try {
+      return await this.reportsService.getGeneralInventoryReport();
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException(this.getErrorMessage(error));
+    }
+  }
+
+  @Get('inventory/general/download/:format')
+  async downloadGeneralInventoryReport(
+    @Param('format') format: 'pdf' | 'excel',
+    @Query('generatedById') generatedById: string | undefined,
+    @Res() response: Response,
+  ) {
+    const file = await this.reportsService
+      .generateGeneralInventoryFile(format, generatedById)
+      .catch((error) => {
+        if (error instanceof HttpException) throw error;
+        throw new InternalServerErrorException(this.getErrorMessage(error));
+      });
+    response.setHeader('Content-Type', file.contentType);
+    response.setHeader('Content-Disposition', `attachment; filename="${file.filename}"`);
+    response.send(file.buffer);
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // HU28 — Reporte por categoría de activos
+  // IMPORTANTE: /category/download/:format debe ir ANTES de /category/:id/assets
+  // para que NestJS no interprete "download" como un categoryId
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  @Get('inventory/category')
+  async getCategoryReport() {
+    try {
+      return await this.reportsService.getCategoryReport();
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException(this.getErrorMessage(error));
+    }
+  }
+
+  @Get('inventory/category/download/:format')
+  async downloadCategoryReport(
+    @Param('format') format: 'pdf' | 'excel',
+    @Query('generatedById') generatedById: string | undefined,
+    @Query('categoryId') categoryId: string | undefined,
+    @Res() response: Response,
+  ) {
+    const file = await this.reportsService
+      .generateCategoryReportFile(format, generatedById, categoryId)
+      .catch((error) => {
+        if (error instanceof HttpException) throw error;
+        throw new InternalServerErrorException(this.getErrorMessage(error));
+      });
+    response.setHeader('Content-Type', file.contentType);
+    response.setHeader('Content-Disposition', `attachment; filename="${file.filename}"`);
+    response.send(file.buffer);
+  }
+
+  @Get('inventory/category/:categoryId/assets')
+  async getCategoryAssets(@Param('categoryId') categoryId: string) {
+    try {
+      return await this.reportsService.getCategoryAssets(categoryId);
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException(this.getErrorMessage(error));
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // HU47 — Reporte por responsable actual
+  // IMPORTANTE: /responsable/download/:format debe ir ANTES de /responsable/:id/assets
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /**
+   * GET /reports/inventory/responsable
+   * PROSIN-491 / PA1 — Cantidad de activos agrupados por responsable actual
+   */
+  @Get('inventory/responsable')
+  async getResponsableReport() {
+    try {
+      return await this.reportsService.getResponsableReport();
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException(this.getErrorMessage(error));
+    }
+  }
+
+  /**
+   * GET /reports/inventory/responsable/download/:format
+   * HU47 + HU30 — Descarga PDF o Excel del resumen por responsable
+   */
+  @Get('inventory/responsable/download/:format')
+  async downloadResponsableReport(
+    @Param('format') format: 'pdf' | 'excel',
+    @Query('generatedById') generatedById: string | undefined,
+    @Query('responsableId') responsableId: string | undefined,
+    @Res() response: Response,
+  ) {
+    const file = await this.reportsService
+      .generateResponsableReportFile(format, generatedById, responsableId)
+      .catch((error) => {
+        if (error instanceof HttpException) throw error;
+        throw new InternalServerErrorException(this.getErrorMessage(error));
+      });
+    response.setHeader('Content-Type', file.contentType);
+    response.setHeader('Content-Disposition', `attachment; filename="${file.filename}"`);
+    response.send(file.buffer);
+  }
+
+  /**
+   * GET /reports/inventory/responsable/:responsableId/assets
+   * PROSIN-492 / PA2 / PA3 / PA4 / PA5
+   * Activos (código, nombre, categoría, estado, ubicación) del responsable seleccionado.
+   * Lista vacía → PA5 "No existen activos asignados a este responsable"
+   */
+  @Get('inventory/responsable/:responsableId/assets')
+  async getResponsableAssets(@Param('responsableId') responsableId: string) {
+    try {
+      return await this.reportsService.getResponsableAssets(responsableId);
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException(this.getErrorMessage(error));
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // HU-AREA — Reporte por área o departamento
+  // IMPORTANTE: /area/download/:format debe ir ANTES de /area/:id/assets
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /** GET /reports/inventory/area — PA1 */
+  @Get('inventory/area')
+  async getAreaReport() {
+    try {
+      return await this.reportsService.getAreaReport();
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException(this.getErrorMessage(error));
+    }
+  }
+
+  /** GET /reports/inventory/area/download/:format */
+  @Get('inventory/area/download/:format')
+  async downloadAreaReport(
+    @Param('format') format: 'pdf' | 'excel',
+    @Query('generatedById') generatedById: string | undefined,
+    @Query('areaId') areaId: string | undefined,
+    @Res() response: Response,
+  ) {
+    const file = await this.reportsService
+      .generateAreaReportFile(format, generatedById, areaId)
+      .catch((error) => {
+        if (error instanceof HttpException) throw error;
+        throw new InternalServerErrorException(this.getErrorMessage(error));
+      });
+    response.setHeader('Content-Type', file.contentType);
+    response.setHeader('Content-Disposition', `attachment; filename="${file.filename}"`);
+    response.send(file.buffer);
+  }
+
+  /** GET /reports/inventory/area/:areaId/assets — PA2/PA3/PA4/PA5 */
+  @Get('inventory/area/:areaId/assets')
+  async getAreaAssets(@Param('areaId') areaId: string) {
+    try {
+      return await this.reportsService.getAreaAssets(areaId);
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException(this.getErrorMessage(error));
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // HU-UBICACION — Reporte por ubicación
+  // IMPORTANTE: /ubicacion/download/:format debe ir ANTES de /ubicacion/:id/assets
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /** GET /reports/inventory/ubicacion — PA1 */
+  @Get('inventory/ubicacion')
+  async getUbicacionReport() {
+    try {
+      return await this.reportsService.getUbicacionReport();
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException(this.getErrorMessage(error));
+    }
+  }
+
+  /** GET /reports/inventory/ubicacion/download/:format */
+  @Get('inventory/ubicacion/download/:format')
+  async downloadUbicacionReport(
+    @Param('format') format: 'pdf' | 'excel',
+    @Query('generatedById') generatedById: string | undefined,
+    @Query('ubicacionId') ubicacionId: string | undefined,
+    @Res() response: Response,
+  ) {
+    const file = await this.reportsService
+      .generateUbicacionReportFile(format, generatedById, ubicacionId)
+      .catch((error) => {
+        if (error instanceof HttpException) throw error;
+        throw new InternalServerErrorException(this.getErrorMessage(error));
+      });
+    response.setHeader('Content-Type', file.contentType);
+    response.setHeader('Content-Disposition', `attachment; filename="${file.filename}"`);
+    response.send(file.buffer);
+  }
+
+  /** GET /reports/inventory/ubicacion/:ubicacionId/assets — PA2/PA3/PA4/PA5 */
+  @Get('inventory/ubicacion/:ubicacionId/assets')
+  async getUbicacionAssets(@Param('ubicacionId') ubicacionId: string) {
+    try {
+      return await this.reportsService.getUbicacionAssets(ubicacionId);
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException(this.getErrorMessage(error));
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Helpers
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  private getErrorMessage(error: unknown) {
+    if (error instanceof Error) return error.message;
+    return 'Error al consultar el microservicio de reportes';
+  }
+}

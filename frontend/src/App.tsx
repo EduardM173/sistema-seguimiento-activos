@@ -17,6 +17,7 @@ import TransferenciasPage from './pages/transferencias/TransferenciasPage';
 import RecepcionesPage from './pages/recepciones/RecepcionesPage';
 import UsuariosPage from './pages/usuarios/UsuariosPage';
 import AuditoriaPage from './pages/auditoria/AuditoriaPage';
+import TrazabilidadDepartamentalPage from './pages/auditoria/TrazabilidadDepartamentalPage';
 import ReportesPage from './pages/reportes/ReportesPage';
 import NotificacionesPage from './pages/notificaciones/NotificacionesPage';
 import './App.css';
@@ -80,11 +81,20 @@ export default function App() {
               <Route element={<ProtectedRoute requiredPermission="INVENTORY_MANAGE" />}>
                 <Route path="/inventario" element={<InventarioPage />} />
               </Route>
-              <Route element={<ProtectedRoute requiredPermission="REPORT_VIEW" />}>
+              <Route
+                element={
+                  <ProtectedRoute
+                    requiredPermissions={['REPORT_VIEW', 'REPORT_GENERATE']}
+                  />
+                }
+              >
                 <Route path="/reportes" element={<ReportesPage />} />
               </Route>
               <Route element={<ProtectedRoute requiredPermission="AUDIT_VIEW" />}>
                 <Route path="/auditoria" element={<AuditoriaPage />} />
+              </Route>
+              <Route element={<ProtectedRoute requiredPermission="ASSET_VIEW" />}>
+                <Route path="/auditoria/departamental" element={<TrazabilidadDepartamentalPage />} />
               </Route>
               <Route element={<ProtectedRoute requiredPermission="USER_MANAGE" />}>
                 <Route path="/users" element={<UserList />} />
