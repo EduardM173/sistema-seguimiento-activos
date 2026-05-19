@@ -15,7 +15,7 @@ export class ReportsController {
   constructor(private readonly reportsService: ReportsService) {}
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // HU27 — Reporte general del inventario (sin cambios)
+  // HU27 — Reporte general del inventario
   // ═══════════════════════════════════════════════════════════════════════════
 
   @Get('inventory/general')
@@ -23,9 +23,7 @@ export class ReportsController {
     try {
       return await this.reportsService.getGeneralInventoryReport();
     } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
+      if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(this.getErrorMessage(error));
     }
   }
@@ -39,67 +37,30 @@ export class ReportsController {
     const file = await this.reportsService
       .generateGeneralInventoryFile(format, generatedById)
       .catch((error) => {
-        if (error instanceof HttpException) {
-          throw error;
-        }
+        if (error instanceof HttpException) throw error;
         throw new InternalServerErrorException(this.getErrorMessage(error));
       });
-
     response.setHeader('Content-Type', file.contentType);
-    response.setHeader(
-      'Content-Disposition',
-      `attachment; filename="${file.filename}"`,
-    );
+    response.setHeader('Content-Disposition', `attachment; filename="${file.filename}"`);
     response.send(file.buffer);
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
   // HU28 — Reporte por categoría de activos
+  // IMPORTANTE: /category/download/:format debe ir ANTES de /category/:id/assets
+  // para que NestJS no interprete "download" como un categoryId
   // ═══════════════════════════════════════════════════════════════════════════
 
-  /**
-   * GET /reports/inventory/category
-   * PROSIN-443 / PA1
-   * Retorna la cantidad de activos agrupados por cada categoría.
-   */
   @Get('inventory/category')
   async getCategoryReport() {
     try {
       return await this.reportsService.getCategoryReport();
     } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
+      if (error instanceof HttpException) throw error;
       throw new InternalServerErrorException(this.getErrorMessage(error));
     }
   }
 
-  /**
-   * GET /reports/inventory/category/:categoryId/assets
-   * PROSIN-444 / PA2 / PA3 / PA4 / PA5
-   * Retorna activos (código, nombre, estado, ubicación) de la categoría seleccionada.
-   * Lista vacía cuando la categoría no tiene activos → PA5.
-   *
-   * IMPORTANTE: esta ruta debe ir ANTES de /category/download/:format
-   * para que NestJS no confunda "download" con un categoryId.
-   */
-  @Get('inventory/category/:categoryId/assets')
-  async getCategoryAssets(@Param('categoryId') categoryId: string) {
-    try {
-      return await this.reportsService.getCategoryAssets(categoryId);
-    } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
-      }
-      throw new InternalServerErrorException(this.getErrorMessage(error));
-    }
-  }
-
-  /**
-   * GET /reports/inventory/category/download/:format
-   * HU28 + HU30
-   * Descarga PDF o Excel del resumen de categorías.
-   */
   @Get('inventory/category/download/:format')
   async downloadCategoryReport(
     @Param('format') format: 'pdf' | 'excel',
@@ -109,18 +70,78 @@ export class ReportsController {
     const file = await this.reportsService
       .generateCategoryReportFile(format, generatedById)
       .catch((error) => {
-        if (error instanceof HttpException) {
-          throw error;
-        }
+        if (error instanceof HttpException) throw error;
         throw new InternalServerErrorException(this.getErrorMessage(error));
       });
-
     response.setHeader('Content-Type', file.contentType);
-    response.setHeader(
-      'Content-Disposition',
-      `attachment; filename="${file.filename}"`,
-    );
+    response.setHeader('Content-Disposition', `attachment; filename="${file.filename}"`);
     response.send(file.buffer);
+  }
+
+  @Get('inventory/category/:categoryId/assets')
+  async getCategoryAssets(@Param('categoryId') categoryId: string) {
+    try {
+      return await this.reportsService.getCategoryAssets(categoryId);
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException(this.getErrorMessage(error));
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // HU47 — Reporte por responsable actual
+  // IMPORTANTE: /responsable/download/:format debe ir ANTES de /responsable/:id/assets
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /**
+   * GET /reports/inventory/responsable
+   * PROSIN-491 / PA1 — Cantidad de activos agrupados por responsable actual
+   */
+  @Get('inventory/responsable')
+  async getResponsableReport() {
+    try {
+      return await this.reportsService.getResponsableReport();
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException(this.getErrorMessage(error));
+    }
+  }
+
+  /**
+   * GET /reports/inventory/responsable/download/:format
+   * HU47 + HU30 — Descarga PDF o Excel del resumen por responsable
+   */
+  @Get('inventory/responsable/download/:format')
+  async downloadResponsableReport(
+    @Param('format') format: 'pdf' | 'excel',
+    @Query('generatedById') generatedById: string | undefined,
+    @Res() response: Response,
+  ) {
+    const file = await this.reportsService
+      .generateResponsableReportFile(format, generatedById)
+      .catch((error) => {
+        if (error instanceof HttpException) throw error;
+        throw new InternalServerErrorException(this.getErrorMessage(error));
+      });
+    response.setHeader('Content-Type', file.contentType);
+    response.setHeader('Content-Disposition', `attachment; filename="${file.filename}"`);
+    response.send(file.buffer);
+  }
+
+  /**
+   * GET /reports/inventory/responsable/:responsableId/assets
+   * PROSIN-492 / PA2 / PA3 / PA4 / PA5
+   * Activos (código, nombre, categoría, estado, ubicación) del responsable seleccionado.
+   * Lista vacía → PA5 "No existen activos asignados a este responsable"
+   */
+  @Get('inventory/responsable/:responsableId/assets')
+  async getResponsableAssets(@Param('responsableId') responsableId: string) {
+    try {
+      return await this.reportsService.getResponsableAssets(responsableId);
+    } catch (error) {
+      if (error instanceof HttpException) throw error;
+      throw new InternalServerErrorException(this.getErrorMessage(error));
+    }
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -128,9 +149,7 @@ export class ReportsController {
   // ═══════════════════════════════════════════════════════════════════════════
 
   private getErrorMessage(error: unknown) {
-    if (error instanceof Error) {
-      return error.message;
-    }
+    if (error instanceof Error) return error.message;
     return 'Error al consultar el microservicio de reportes';
   }
 }
