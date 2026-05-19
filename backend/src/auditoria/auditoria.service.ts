@@ -444,11 +444,6 @@ export class AuditoriaService {
         OR: [
           { areaOrigenId: { in: areaIds } },
           { areaDestinoId: { in: areaIds } },
-          {
-            activo: {
-              areaActualId: { in: areaIds },
-            },
-          },
         ],
       },
       select: {

@@ -659,11 +659,6 @@ describe('AuditoriaService notification inbox for HU32', () => {
           OR: [
             { areaOrigenId: { in: ['area-2'] } },
             { areaDestinoId: { in: ['area-2'] } },
-            {
-              activo: {
-                areaActualId: { in: ['area-2'] },
-              },
-            },
           ],
         },
       }),
@@ -724,11 +719,6 @@ describe('AuditoriaService notification inbox for HU32', () => {
           OR: [
             { areaOrigenId: { in: ['area-2'] } },
             { areaDestinoId: { in: ['area-2'] } },
-            {
-              activo: {
-                areaActualId: { in: ['area-2'] },
-              },
-            },
           ],
         },
       }),

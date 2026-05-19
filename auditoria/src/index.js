@@ -715,7 +715,6 @@ app.get('/api/auditoria/departamental/trazabilidad', async (req, res, next) => {
 
     const whereClauses = [
       `(
-        ac."areaActualId" = ANY($1::text[]) OR
         m."areaOrigenId" = ANY($1::text[]) OR
         m."areaDestinoId" = ANY($1::text[])
       )`,
