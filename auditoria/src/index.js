@@ -58,16 +58,8 @@ function getAuthenticatedUserId(req) {
 
 function parseDateRange(query) {
   const range = {};
-  const fechaDesde = query.fechaDesde ? new Date(String(query.fechaDesde)) : null;
-  const fechaHasta = query.fechaHasta ? new Date(String(query.fechaHasta)) : null;
-
-  if (fechaDesde && Number.isNaN(fechaDesde.getTime())) {
-    throw createHttpError(400, 'La fecha desde no es válida');
-  }
-
-  if (fechaHasta && Number.isNaN(fechaHasta.getTime())) {
-    throw createHttpError(400, 'La fecha hasta no es válida');
-  }
+  const fechaDesde = query.fechaDesde ? parseStrictDate(String(query.fechaDesde)) : null;
+  const fechaHasta = query.fechaHasta ? parseStrictDate(String(query.fechaHasta)) : null;
 
   if (fechaDesde) {
     fechaDesde.setUTCHours(0, 0, 0, 0);
@@ -88,6 +80,29 @@ function parseDateRange(query) {
   }
 
   return range;
+}
+
+function parseStrictDate(value) {
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) {
+    throw createHttpError(400, 'La fecha debe tener el formato YYYY-MM-DD');
+  }
+
+  const [, yearValue, monthValue, dayValue] = match;
+  const year = Number(yearValue);
+  const month = Number(monthValue);
+  const day = Number(dayValue);
+  const date = new Date(Date.UTC(year, month - 1, day));
+
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) {
+    throw createHttpError(400, 'La fecha ingresada no existe');
+  }
+
+  return date;
 }
 
 function formatMovementType(type) {

@@ -27,6 +27,25 @@ const MOVEMENT_OPTIONS: { value: TipoMovimientoTrazabilidad | ''; label: string 
   { value: 'INCIDENTE', label: 'Incidente' },
 ];
 
+function isValidDateValue(value: string) {
+  if (!value) return true;
+
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return false;
+
+  const [, yearValue, monthValue, dayValue] = match;
+  const year = Number(yearValue);
+  const month = Number(monthValue);
+  const day = Number(dayValue);
+  const date = new Date(Date.UTC(year, month - 1, day));
+
+  return (
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day
+  );
+}
+
 export default function TrazabilidadDepartamentalPage() {
   const { user } = useAuth();
   const [assets, setAssets] = useState<AssetListItem[]>([]);
@@ -43,9 +62,22 @@ export default function TrazabilidadDepartamentalPage() {
   const [departmentLoading, setDepartmentLoading] = useState(true);
   const [traceabilityLoading, setTraceabilityLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'error' | 'info'; text: string } | null>(null);
-  const invalidDateRange = Boolean(fechaDesde && fechaHasta && fechaDesde > fechaHasta);
+  const invalidDateValue = !isValidDateValue(fechaDesde) || !isValidDateValue(fechaHasta);
+  const invalidDateRange = Boolean(
+    !invalidDateValue && fechaDesde && fechaHasta && fechaDesde > fechaHasta,
+  );
 
   useEffect(() => {
+    if (invalidDateValue) {
+      setDepartmentTraceability(null);
+      setDepartmentLoading(false);
+      setMessage({
+        type: 'error',
+        text: 'Ingrese fechas válidas en formato año-mes-día.',
+      });
+      return;
+    }
+
     if (invalidDateRange) {
       setDepartmentTraceability(null);
       setDepartmentLoading(false);
@@ -57,7 +89,7 @@ export default function TrazabilidadDepartamentalPage() {
     }
 
     void loadDepartmentTraceability();
-  }, [tipoMovimiento, fechaDesde, fechaHasta, invalidDateRange]);
+  }, [tipoMovimiento, fechaDesde, fechaHasta, invalidDateValue, invalidDateRange]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -350,7 +382,7 @@ export default function TrazabilidadDepartamentalPage() {
                 value={fechaDesde}
                 max={fechaHasta || undefined}
                 onChange={(event) => setFechaDesde(event.target.value)}
-                aria-invalid={invalidDateRange}
+                aria-invalid={invalidDateValue || invalidDateRange}
               />
             </label>
 
@@ -361,7 +393,7 @@ export default function TrazabilidadDepartamentalPage() {
                 value={fechaHasta}
                 min={fechaDesde || undefined}
                 onChange={(event) => setFechaHasta(event.target.value)}
-                aria-invalid={invalidDateRange}
+                aria-invalid={invalidDateValue || invalidDateRange}
               />
             </label>
           </div>
@@ -369,6 +401,12 @@ export default function TrazabilidadDepartamentalPage() {
           {invalidDateRange ? (
             <div className="department-traceability__validation">
               La fecha desde no puede ser posterior a la fecha hasta.
+            </div>
+          ) : null}
+
+          {invalidDateValue ? (
+            <div className="department-traceability__validation">
+              Ingrese fechas válidas en formato año-mes-día.
             </div>
           ) : null}
 

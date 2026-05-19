@@ -434,6 +434,27 @@ describe('AuditoriaService notification inbox for HU32', () => {
     expect(prisma.auditoria.findMany).not.toHaveBeenCalled();
   });
 
+  it('rejects nonexistent dates for department traceability', async () => {
+    prisma.usuario.findUnique
+      .mockResolvedValueOnce({
+        rol: {
+          permisos: [{ permiso: { codigo: 'ASSET_VIEW' } }],
+        },
+      })
+      .mockResolvedValueOnce({
+        areaId: 'area-2',
+        areasGestionadas: [],
+      });
+
+    await expect(
+      service.getDepartmentTraceability('responsable-1', {
+        fechaDesde: '2026-02-31',
+      }),
+    ).rejects.toThrow('La fecha ingresada no existe');
+
+    expect(prisma.movimientoActivo.findMany).not.toHaveBeenCalled();
+  });
+
   it('allows department traceability only for assets in the user area scope', async () => {
     prisma.usuario.findUnique
       .mockResolvedValueOnce({
