@@ -35,6 +35,8 @@ const emptyReport: ReporteInventarioGeneral = {
   downloadReady: false,
 };
 
+const noDownloadDataMessage = 'No hay informacion disponible para descargar';
+
 const emptyCategoryReport: ReporteCategoria = {
   generatedAt: '',
   totalAssets: 0,
@@ -61,7 +63,6 @@ function estadoVariant(
 }
 
 // ─── Componente principal ────────────────────────────────────────────────────
-
 export const ReportesPage: React.FC = () => {
   const { user } = useAuth();
   const isAdminGeneral = user?.rol?.nombre === 'ADMIN_GENERAL';
@@ -183,7 +184,14 @@ export const ReportesPage: React.FC = () => {
       setLoading(true);
       const data = await reportesService.obtenerInventarioGeneral();
       setReport(data);
-      setMessage(null);
+      setMessage(
+        data.downloadReady
+          ? null
+          : {
+              type: 'error',
+              text: noDownloadDataMessage,
+            },
+      );
     } catch (err) {
       setMessage({
         type: 'error',
@@ -197,6 +205,14 @@ export const ReportesPage: React.FC = () => {
   };
 
   const descargarReporte = async (formato: 'pdf' | 'excel') => {
+    if (!report.downloadReady) {
+      setMessage({
+        type: 'error',
+        text: noDownloadDataMessage,
+      });
+      return;
+    }
+
     try {
       setDownloadingFormat(formato);
       await reportesService.descargarInventarioGeneral(formato, user?.id);
@@ -253,6 +269,14 @@ export const ReportesPage: React.FC = () => {
   };
 
   const descargarReporteCategoria = async (formato: 'pdf' | 'excel') => {
+    if (!categoryReport.downloadReady) {
+      setCategoryMessage({
+        type: 'error',
+        text: noDownloadDataMessage,
+      });
+      return;
+    }
+
     try {
       setDownloadingCategoryFormat(formato);
       await reportesService.descargarReporteCategoria(formato, user?.id);
@@ -312,6 +336,14 @@ export const ReportesPage: React.FC = () => {
   };
 
   const descargarReporteResponsable = async (formato: 'pdf' | 'excel') => {
+    if (!responsableReport.downloadReady) {
+      setResponsableMessage({
+        type: 'error',
+        text: noDownloadDataMessage,
+      });
+      return;
+    }
+
     try {
       setDownloadingResponsableFormat(formato);
       await reportesService.descargarReporteResponsable(formato, user?.id);
@@ -356,7 +388,7 @@ export const ReportesPage: React.FC = () => {
             label="PDF"
             variant="secondary"
             onClick={() => descargarReporte('pdf')}
-            disabled={loading}
+            disabled={loading || !user?.id || !report.downloadReady}
             isLoading={downloadingFormat === 'pdf'}
             icon={<Download size={16} />}
           />
@@ -364,7 +396,7 @@ export const ReportesPage: React.FC = () => {
             label="Excel"
             variant="secondary"
             onClick={() => descargarReporte('excel')}
-            disabled={loading}
+            disabled={loading || !user?.id || !report.downloadReady}
             isLoading={downloadingFormat === 'excel'}
             icon={<FileSpreadsheet size={16} />}
           />
@@ -452,7 +484,7 @@ export const ReportesPage: React.FC = () => {
             label="PDF"
             variant="secondary"
             onClick={() => descargarReporteCategoria('pdf')}
-            disabled={loadingCategories || !categoryReport.downloadReady}
+            disabled={loadingCategories || !user?.id || !categoryReport.downloadReady}
             isLoading={downloadingCategoryFormat === 'pdf'}
             icon={<Download size={16} />}
           />
@@ -460,7 +492,7 @@ export const ReportesPage: React.FC = () => {
             label="Excel"
             variant="secondary"
             onClick={() => descargarReporteCategoria('excel')}
-            disabled={loadingCategories || !categoryReport.downloadReady}
+            disabled={loadingCategories || !user?.id || !categoryReport.downloadReady}
             isLoading={downloadingCategoryFormat === 'excel'}
             icon={<FileSpreadsheet size={16} />}
           />
@@ -613,7 +645,7 @@ export const ReportesPage: React.FC = () => {
                 label="PDF"
                 variant="secondary"
                 onClick={() => descargarReporteResponsable('pdf')}
-                disabled={loadingResponsables || !responsableReport.downloadReady}
+                disabled={loadingResponsables || !user?.id || !responsableReport.downloadReady}
                 isLoading={downloadingResponsableFormat === 'pdf'}
                 icon={<Download size={16} />}
               />
@@ -621,7 +653,7 @@ export const ReportesPage: React.FC = () => {
                 label="Excel"
                 variant="secondary"
                 onClick={() => descargarReporteResponsable('excel')}
-                disabled={loadingResponsables || !responsableReport.downloadReady}
+                disabled={loadingResponsables || !user?.id || !responsableReport.downloadReady}
                 isLoading={downloadingResponsableFormat === 'excel'}
                 icon={<FileSpreadsheet size={16} />}
               />

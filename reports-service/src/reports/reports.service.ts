@@ -81,23 +81,29 @@ export class ReportsService {
         this.getLowStockMaterials(),
       ]);
 
+    const assetsTotal = assetsByStatus.reduce((sum, item) => sum + item.quantity, 0);
+
     return {
       generatedAt: new Date().toISOString(),
       assets: {
         byStatus: assetsByStatus,
-        total: assetsByStatus.reduce((sum, item) => sum + item.quantity, 0),
+        total: assetsTotal,
       },
       materials: {
         total: totalMaterials,
         lowStock: lowStockMaterials,
       },
-      downloadReady: true,
+      downloadReady: assetsTotal > 0 || totalMaterials > 0,
     };
   }
 
   async generateGeneralInventoryFile(format: ReportFormat, generatedById?: string) {
     if (!['pdf', 'excel'].includes(format)) {
       throw new BadRequestException('Formato de reporte no soportado');
+    }
+
+    if (!generatedById) {
+      throw new BadRequestException('Usuario generador requerido para registrar el reporte');
     }
 
     const report = await this.getGeneralInventoryReport();
@@ -109,15 +115,13 @@ export class ReportsService {
     const generatedAt = new Date();
     const filename = this.buildFilename('reporte-general-inventario', format, generatedAt);
 
-    if (generatedById) {
-      await this.registerGeneratedReport(
-        format,
-        generatedById,
-        generatedAt,
-        'Reporte general del inventario',
-        'inventario_general',
-      );
-    }
+    await this.registerGeneratedReport(
+      format,
+      generatedById,
+      generatedAt,
+      'Reporte general del inventario',
+      'inventario_general',
+    );
 
     if (format === 'pdf') {
       return {
@@ -207,6 +211,10 @@ export class ReportsService {
       throw new BadRequestException('Formato de reporte no soportado');
     }
 
+    if (!generatedById) {
+      throw new BadRequestException('Usuario generador requerido para registrar el reporte');
+    }
+
     const report = await this.getCategoryReport();
 
     if (!report.downloadReady) {
@@ -216,15 +224,13 @@ export class ReportsService {
     const generatedAt = new Date();
     const filename = this.buildFilename('reporte-por-categoria', format, generatedAt);
 
-    if (generatedById) {
-      await this.registerGeneratedReport(
-        format,
-        generatedById,
-        generatedAt,
-        'Reporte por categoria de activos',
-        'categoria_activos',
-      );
-    }
+    await this.registerGeneratedReport(
+      format,
+      generatedById,
+      generatedAt,
+      'Reporte por categoria de activos',
+      'categoria_activos',
+    );
 
     if (format === 'pdf') {
       return {
@@ -338,6 +344,10 @@ export class ReportsService {
       throw new BadRequestException('Formato de reporte no soportado');
     }
 
+    if (!generatedById) {
+      throw new BadRequestException('Usuario generador requerido para registrar el reporte');
+    }
+
     const report = await this.getResponsableReport();
 
     if (!report.downloadReady) {
@@ -347,15 +357,13 @@ export class ReportsService {
     const generatedAt = new Date();
     const filename = this.buildFilename('reporte-por-responsable', format, generatedAt);
 
-    if (generatedById) {
-      await this.registerGeneratedReport(
-        format,
-        generatedById,
-        generatedAt,
-        'Reporte por responsable actual',
-        'responsable_activos',
-      );
-    }
+    await this.registerGeneratedReport(
+      format,
+      generatedById,
+      generatedAt,
+      'Reporte por responsable actual',
+      'responsable_activos',
+    );
 
     if (format === 'pdf') {
       return {
@@ -463,7 +471,7 @@ export class ReportsService {
     );
 
     if (!userExists.rows[0]?.exists) {
-      return;
+      throw new BadRequestException('Usuario generador no encontrado');
     }
 
     await this.database.query(
