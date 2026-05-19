@@ -27,6 +27,7 @@ export const InventarioPage: React.FC = () => {
   const [isIngresoModalOpen, setIsIngresoModalOpen] = useState(false);
   const [isSalidaModalOpen, setIsSalidaModalOpen] = useState(false);
   const [isAjusteModalOpen, setIsAjusteModalOpen] = useState(false);
+  const [isInventoryActionsOpen, setIsInventoryActionsOpen] = useState(false);
   const [categorias, setCategorias] = useState<CategoriaMaterial[]>([]);
   const [areas, setAreas] = useState<{ id: string; nombre: string }[]>([]);
   const [searchText, setSearchText] = useState('');
@@ -129,6 +130,10 @@ export const InventarioPage: React.FC = () => {
   const handleCloseModal = () => {
     setIsMaterialModalOpen(false);
     setMaterialToEdit(null);
+  };
+
+  const closeInventoryActions = () => {
+    setIsInventoryActionsOpen(false);
   };
 
   const handleFilterChange = (query: FilterQuery) => {
@@ -371,38 +376,59 @@ export const InventarioPage: React.FC = () => {
             {deletingDemo ? 'limpiando...' : 'limpiar demo'}
           </button>
 
-          <Button
-            label="+ Nuevo Material"
-            variant="primary"
-            onClick={() => {
-              setMaterialToEdit(null);
-              setIsMaterialModalOpen(true);
-            }}
-          />
+          <div className="inventory-actions">
+            <Button
+              label={`Acciones de inventario ${isInventoryActionsOpen ? '▲' : '▼'}`}
+              variant="primary"
+              onClick={() => setIsInventoryActionsOpen((open) => !open)}
+            />
 
-          <Button
-            label="+ Registrar ingreso"
-            variant="primary"
-            onClick={() => {
-              setIsIngresoModalOpen(true);
-            }}
-          />
-
-          <Button
-            label="+ Registrar salida"
-            variant="secondary"
-            onClick={() => {
-              setIsSalidaModalOpen(true);
-            }}
-          />
-
-          <Button
-            label="+ Registrar ajuste"
-            variant="secondary"
-            onClick={() => {
-              setIsAjusteModalOpen(true);
-            }}
-          />
+            {isInventoryActionsOpen ? (
+              <div className="inventory-actions__menu">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMaterialToEdit(null);
+                    setIsMaterialModalOpen(true);
+                    closeInventoryActions();
+                  }}
+                >
+                  <strong>Nuevo material</strong>
+                  <span>Registrar un recurso nuevo</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsIngresoModalOpen(true);
+                    closeInventoryActions();
+                  }}
+                >
+                  <strong>Registrar ingreso</strong>
+                  <span>Aumentar stock disponible</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsSalidaModalOpen(true);
+                    closeInventoryActions();
+                  }}
+                >
+                  <strong>Registrar salida</strong>
+                  <span>Descontar stock del inventario</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsAjusteModalOpen(true);
+                    closeInventoryActions();
+                  }}
+                >
+                  <strong>Registrar ajuste</strong>
+                  <span>Corregir diferencia por conteo físico</span>
+                </button>
+              </div>
+            ) : null}
+          </div>
         </div>
       </div>
 
