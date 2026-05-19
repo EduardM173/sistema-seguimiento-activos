@@ -6,8 +6,13 @@ import type {
   AuditoriaMsResponse,
   AuditoriaMsUsuario,
 } from '../types/auditoria-ms.types';
+import type {
+  TrazabilidadActivo,
+  TrazabilidadDepartamental,
+} from '../types/auditoria.types';
 
-const AUDIT_API_URL = import.meta.env.VITE_AUDIT_API_URL || 'http://localhost:3002/api';
+const DEFAULT_AUDIT_API_URL = 'http://localhost:3003/api';
+const AUDIT_API_URL = import.meta.env.VITE_AUDIT_API_URL || DEFAULT_AUDIT_API_URL;
 
 class AuditoriaMsError extends Error {
   status: number;
@@ -54,7 +59,7 @@ async function request<T>(endpoint: string, params?: Record<string, unknown>): P
 
 export const auditoriaMsService = {
   health: async () => {
-    const response = await fetch((import.meta.env.VITE_AUDIT_API_URL || 'http://localhost:3002/api').replace('/api', '/health'));
+    const response = await fetch(AUDIT_API_URL.replace('/api', '/health'));
     return response.ok;
   },
 
@@ -68,6 +73,30 @@ export const auditoriaMsService = {
 
   obtenerRegistroPorId: async (id: string) => {
     return request<AuditoriaMsResponse<AuditoriaMsRegistro>>(`/auditoria/registros/${id}`);
+  },
+
+  obtenerTrazabilidadActivo: async (
+    activoId: string,
+    filtros?: {
+      fechaDesde?: string;
+      fechaHasta?: string;
+    },
+  ) => {
+    return request<AuditoriaMsResponse<TrazabilidadActivo>>(
+      `/auditoria/activos/${encodeURIComponent(activoId)}/trazabilidad`,
+      filtros,
+    );
+  },
+
+  obtenerTrazabilidadDepartamental: async (filtros?: {
+    tipoMovimiento?: string;
+    fechaDesde?: string;
+    fechaHasta?: string;
+  }) => {
+    return request<AuditoriaMsResponse<TrazabilidadDepartamental>>(
+      '/auditoria/departamental/trazabilidad',
+      filtros,
+    );
   },
 };
 

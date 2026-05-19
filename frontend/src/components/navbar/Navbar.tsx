@@ -33,7 +33,7 @@ type BottomItem = {
 };
 
 export default function Navbar() {
-  const { logout, hasPermission } = useAuth();
+  const { logout, hasPermission, user } = useAuth();
   const location = useLocation();
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   // Controla si el submenú de Transferencias está expandido
@@ -162,6 +162,18 @@ export default function Navbar() {
       label: 'Reportes',
       icon: <IconBarChart size={16} />,
       to: '/reportes',
+    });
+  }
+
+  const isAreaManager = Boolean(
+    user?.rol?.nombre?.toLowerCase().includes('responsable'),
+  );
+
+  if (hasPermission('ASSET_VIEW') && isAreaManager) {
+    mainItems.push({
+      label: 'Trazabilidad Área',
+      icon: <IconShield size={16} />,
+      to: '/auditoria/departamental',
     });
   }
 
