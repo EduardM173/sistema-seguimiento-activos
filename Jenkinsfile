@@ -12,7 +12,7 @@ pipeline {
         SECRET_ENV_PATH = credentials('env_activos_dev')
         
         TAG = "${env.BUILD_NUMBER}"
-        TARGET_BRANCH = "Sprint3_DEV"
+        TARGET_BRANCH = "Sprint4_DEV"
     }
 
     stages {

@@ -127,6 +127,7 @@ services:
       backend_local:
         condition: service_started
       auditoria_local:
+        condition: service_started
       reports_service:
         condition: service_started
 
