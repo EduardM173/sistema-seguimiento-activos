@@ -93,10 +93,11 @@ export class ReportsController {
   async downloadCategoryReport(
     @Param('format') format: 'pdf' | 'excel',
     @Query('generatedById') generatedById: string | undefined,
+    @Query('categoryId') categoryId: string | undefined,
     @Res() response: Response,
   ) {
     const file = await this.reportsService
-      .generateCategoryReportFile(format, generatedById)
+      .generateCategoryReportFile(format, generatedById, categoryId)
       .catch((error) => {
         if (error instanceof HttpException) throw error;
         throw new InternalServerErrorException(this.getErrorMessage(error));
@@ -143,10 +144,11 @@ export class ReportsController {
   async downloadResponsableReport(
     @Param('format') format: 'pdf' | 'excel',
     @Query('generatedById') generatedById: string | undefined,
+    @Query('responsableId') responsableId: string | undefined,
     @Res() response: Response,
   ) {
     const file = await this.reportsService
-      .generateResponsableReportFile(format, generatedById)
+      .generateResponsableReportFile(format, generatedById, responsableId)
       .catch((error) => {
         if (error instanceof HttpException) throw error;
         throw new InternalServerErrorException(this.getErrorMessage(error));

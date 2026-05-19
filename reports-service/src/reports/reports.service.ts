@@ -398,7 +398,11 @@ export class ReportsService {
     };
   }
 
-  async generateCategoryReportFile(format: ReportFormat, generatedById?: string) {
+  async generateCategoryReportFile(
+    format: ReportFormat,
+    generatedById?: string,
+    categoryId?: string,
+  ) {
     if (!['pdf', 'excel'].includes(format)) {
       throw new BadRequestException('Formato de reporte no soportado');
     }
@@ -408,6 +412,18 @@ export class ReportsService {
     }
 
     const report = await this.getCategoryReport();
+
+    if (categoryId) {
+      const matchedCategory = report.categories.find((category) => category.id === categoryId);
+
+      if (!matchedCategory) {
+        throw new NotFoundException('Categoria no encontrada');
+      }
+
+      report.categories = [matchedCategory];
+      report.totalAssets = matchedCategory.total;
+      report.downloadReady = matchedCategory.total > 0;
+    }
 
     if (!report.downloadReady) {
       throw new NotFoundException('No hay informacion disponible para descargar');
@@ -531,7 +547,11 @@ export class ReportsService {
    * HU47 + HU30
    * Genera PDF o Excel del resumen por responsable para descarga.
    */
-  async generateResponsableReportFile(format: ReportFormat, generatedById?: string) {
+  async generateResponsableReportFile(
+    format: ReportFormat,
+    generatedById?: string,
+    responsableId?: string,
+  ) {
     if (!['pdf', 'excel'].includes(format)) {
       throw new BadRequestException('Formato de reporte no soportado');
     }
@@ -541,6 +561,20 @@ export class ReportsService {
     }
 
     const report = await this.getResponsableReport();
+
+    if (responsableId) {
+      const matchedResponsable = report.responsables.find(
+        (responsable) => responsable.id === responsableId,
+      );
+
+      if (!matchedResponsable) {
+        throw new NotFoundException('Responsable no encontrado');
+      }
+
+      report.responsables = [matchedResponsable];
+      report.totalAssets = matchedResponsable.total;
+      report.downloadReady = matchedResponsable.total > 0;
+    }
 
     if (!report.downloadReady) {
       throw new NotFoundException('No hay informacion disponible para descargar');

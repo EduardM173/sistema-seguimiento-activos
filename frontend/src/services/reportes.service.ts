@@ -109,9 +109,14 @@ export const reportesService = {
     );
   },
 
-  descargarReporteCategoria: async (formato: 'pdf' | 'excel', generatedById?: string) => {
+  descargarReporteCategoria: async (
+    formato: 'pdf' | 'excel',
+    generatedById?: string,
+    categoryId?: string,
+  ) => {
     const params = new URLSearchParams();
     if (generatedById) params.set('generatedById', generatedById);
+    if (categoryId) params.set('categoryId', categoryId);
 
     const suffix = params.toString() ? `?${params.toString()}` : '';
     const response = await fetch(
@@ -146,6 +151,14 @@ export const reportesService = {
     queryParams.set('fechaHasta', params.fechaHasta);
 
     if (params.tipo) {
+      queryParams.set('tipo', params.tipo);
+    }
+
+    return requestReports<ReporteMovimientosActivos>(
+      `/reports/movements?${queryParams.toString()}`,
+    );
+  },
+
   // HU47 — Reporte por responsable actual
   // ═══════════════════════════════════════════════════════════════════════════
 
@@ -162,9 +175,14 @@ export const reportesService = {
   },
 
   /** HU47 + HU30 — Descarga PDF o Excel del resumen por responsable */
-  descargarReporteResponsable: async (formato: 'pdf' | 'excel', generatedById?: string) => {
+  descargarReporteResponsable: async (
+    formato: 'pdf' | 'excel',
+    generatedById?: string,
+    responsableId?: string,
+  ) => {
     const params = new URLSearchParams();
     if (generatedById) params.set('generatedById', generatedById);
+    if (responsableId) params.set('responsableId', responsableId);
 
     const suffix = params.toString() ? `?${params.toString()}` : '';
     const response = await fetch(
@@ -280,17 +298,6 @@ export const reportesService = {
 
   // ═══════════════════════════════════════════════════════════════════════════
   // Utilidades generales
-
-      response.headers.get('Content-Disposition'),
-      fallback,
-    );
-
-    downloadBlob(blob, filename);
-  },
-
-  // ═══════════════════════════════════════════════════════════════════════════
-  // Utilidades generales
->>>>>>> origin/Sprint4_DEV
   // ═══════════════════════════════════════════════════════════════════════════
 
   verificarMicroservicio: async () => {
