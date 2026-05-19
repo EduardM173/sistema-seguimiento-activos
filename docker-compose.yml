@@ -44,7 +44,7 @@ services:
     command: "npm run start:dev"
 
   reports_service:
-    container_name: activos_reports_service
+    container_name: activos_reports_service_local
     image: ${DOCKER_REGISTRY:-local_activos}/reports-service:${TAG:-latest}
     env_file:
       - ./.env
@@ -84,14 +84,27 @@ services:
 
     environment:
       POSTGRES_HOST: app_db_local
-      AUDIT_MS_PORT: 3002
+      AUDIT_MS_PORT: 3003
 
     ports:
-      - 3003:3002
+      - 3003:3003
 
     depends_on:
       app_db_local:
         condition: service_started
+
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3003/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
 
     volumes:
       - ./auditoria:/app/

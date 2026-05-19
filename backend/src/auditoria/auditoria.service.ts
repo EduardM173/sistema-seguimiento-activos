@@ -22,11 +22,17 @@ export class AuditoriaService {
     userId: string,
     assetId: string,
     query: AssetTraceabilityQueryDto = {},
+    options: {
+      permissionCode?: string;
+      permissionMessage?: string;
+      areaScoped?: boolean;
+    } = {},
   ) {
     await this.assertUserHasPermission(
       userId,
-      'AUDIT_VIEW',
-      'No tienes permisos para consultar la trazabilidad de activos',
+      options.permissionCode ?? 'AUDIT_VIEW',
+      options.permissionMessage ??
+        'No tienes permisos para consultar la trazabilidad de activos',
     );
 
     const asset = await this.prisma.activo.findUnique({
@@ -73,6 +79,32 @@ export class AuditoriaService {
       throw new NotFoundException(
         `No se encontró el activo con ID: ${assetId}`,
       );
+    }
+
+    if (options.areaScoped) {
+      const areaIds = await this.resolveUserAreaIds(userId);
+      const assetAreaId = asset.areaActual?.id ?? null;
+      const isCurrentAreaAsset = Boolean(
+        assetAreaId && areaIds.includes(assetAreaId),
+      );
+
+      const hasDepartmentMovement = areaIds.length
+        ? await this.prisma.movimientoActivo.count({
+            where: {
+              activoId: assetId,
+              OR: [
+                { areaOrigenId: { in: areaIds } },
+                { areaDestinoId: { in: areaIds } },
+              ],
+            },
+          })
+        : 0;
+
+      if (!isCurrentAreaAsset && hasDepartmentMovement === 0) {
+        throw new ForbiddenException(
+          'No tienes permisos para consultar la trazabilidad de este activo',
+        );
+      }
     }
 
     const dateRange = this.buildTraceabilityDateRange(query);
@@ -215,6 +247,7 @@ export class AuditoriaService {
       usuarioOrigenId: movimiento.usuarioOrigenId,
       usuarioDestinoId: movimiento.usuarioDestinoId,
       asignacionId: movimiento.asignacionId,
+      usuarioRelacionado: this.mapUserSummary(movimiento.realizadoPor),
       realizadoPor: this.mapUserSummary(movimiento.realizadoPor),
     }));
 
@@ -375,6 +408,140 @@ export class AuditoriaService {
       pagina: page,
       totalPages: Math.max(1, Math.ceil(total / pageSize)),
       hasMore: page * pageSize < total,
+    };
+  }
+
+  async getDepartmentTraceability(
+    userId: string,
+    query: AssetTraceabilityQueryDto = {},
+  ) {
+    await this.assertUserHasPermission(
+      userId,
+      'ASSET_VIEW',
+      'No tienes permisos para consultar la trazabilidad departamental',
+    );
+
+    const areaIds = await this.resolveUserAreaIds(userId);
+
+    if (areaIds.length === 0) {
+      return {
+        areaIds,
+        resumen: {
+          totalMovimientos: 0,
+          totalActivos: 0,
+          movimientosPorTipo: this.buildMovementTypeSummary([]),
+        },
+        movimientos: [],
+      };
+    }
+
+    const dateRange = this.buildTraceabilityDateRange(query);
+
+    const movimientos = await this.prisma.movimientoActivo.findMany({
+      where: {
+        ...(query.tipoMovimiento ? { tipo: query.tipoMovimiento } : {}),
+        ...(dateRange ? { creadoEn: dateRange } : {}),
+        OR: [
+          { areaOrigenId: { in: areaIds } },
+          { areaDestinoId: { in: areaIds } },
+        ],
+      },
+      select: {
+        id: true,
+        tipo: true,
+        areaOrigenId: true,
+        areaDestinoId: true,
+        usuarioOrigenId: true,
+        usuarioDestinoId: true,
+        asignacionId: true,
+        detalle: true,
+        creadoEn: true,
+        activo: {
+          select: {
+            id: true,
+            codigo: true,
+            nombre: true,
+            estado: true,
+            areaActual: {
+              select: { id: true, nombre: true },
+            },
+          },
+        },
+        realizadoPor: {
+          select: {
+            id: true,
+            nombres: true,
+            apellidos: true,
+          },
+        },
+      },
+      orderBy: {
+        creadoEn: 'desc',
+      },
+    });
+
+    const areaIdsInMovements = [
+      ...new Set(
+        movimientos
+          .flatMap((movimiento) => [
+            movimiento.areaOrigenId,
+            movimiento.areaDestinoId,
+          ])
+          .filter((areaId): areaId is string => Boolean(areaId)),
+      ),
+    ];
+
+    const areas =
+      areaIdsInMovements.length > 0
+        ? await this.prisma.area.findMany({
+            where: { id: { in: areaIdsInMovements } },
+            select: { id: true, nombre: true },
+          })
+        : [];
+
+    const areaMap = Object.fromEntries(areas.map((area) => [area.id, area]));
+
+    const movimientosUnificados = movimientos.map((movimiento) => ({
+      id: movimiento.id,
+      fuente: 'MOVIMIENTO' as const,
+      fecha: movimiento.creadoEn,
+      tipo: movimiento.tipo,
+      etiqueta: this.formatMovementType(movimiento.tipo),
+      detalle: movimiento.detalle ?? 'Sin detalle registrado',
+      activo: {
+        id: movimiento.activo.id,
+        codigo: movimiento.activo.codigo,
+        nombre: movimiento.activo.nombre,
+        estado: movimiento.activo.estado,
+        areaActual: movimiento.activo.areaActual,
+      },
+      areaOrigen: movimiento.areaOrigenId
+        ? (areaMap[movimiento.areaOrigenId] ?? null)
+        : null,
+      areaDestino: movimiento.areaDestinoId
+        ? (areaMap[movimiento.areaDestinoId] ?? null)
+        : null,
+      usuarioOrigen: null,
+      usuarioDestino: null,
+      usuarioOrigenId: movimiento.usuarioOrigenId,
+      usuarioDestinoId: movimiento.usuarioDestinoId,
+      asignacionId: movimiento.asignacionId,
+      usuarioRelacionado: this.mapUserSummary(movimiento.realizadoPor),
+      realizadoPor: this.mapUserSummary(movimiento.realizadoPor),
+    }));
+
+    const uniqueAssetIds = new Set(
+      movimientos.map((movimiento) => movimiento.activo.id),
+    );
+
+    return {
+      areaIds,
+      resumen: {
+        totalMovimientos: movimientos.length,
+        totalActivos: uniqueAssetIds.size,
+        movimientosPorTipo: this.buildMovementTypeSummary(movimientos),
+      },
+      movimientos: movimientosUnificados,
     };
   }
 
@@ -558,14 +725,40 @@ export class AuditoriaService {
   }
 
   private parseStartOfDay(value: string) {
-    const date = new Date(value);
+    const date = this.parseStrictDate(value);
     date.setUTCHours(0, 0, 0, 0);
     return date;
   }
 
   private parseEndOfDay(value: string) {
-    const date = new Date(value);
+    const date = this.parseStrictDate(value);
     date.setUTCHours(23, 59, 59, 999);
+    return date;
+  }
+
+  private parseStrictDate(value: string) {
+    const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+
+    if (!match) {
+      throw new BadRequestException(
+        'La fecha debe tener el formato YYYY-MM-DD',
+      );
+    }
+
+    const [, yearValue, monthValue, dayValue] = match;
+    const year = Number(yearValue);
+    const month = Number(monthValue);
+    const day = Number(dayValue);
+    const date = new Date(Date.UTC(year, month - 1, day));
+
+    if (
+      date.getUTCFullYear() !== year ||
+      date.getUTCMonth() !== month - 1 ||
+      date.getUTCDate() !== day
+    ) {
+      throw new BadRequestException('La fecha ingresada no existe');
+    }
+
     return date;
   }
 
@@ -611,6 +804,27 @@ export class AuditoriaService {
 
   private cleanNotificationMessage(message: string) {
     return message.replace(/\[ASSET_ID:[^\]]+\]\s*/g, '').trim();
+  }
+
+  private async resolveUserAreaIds(userId: string) {
+    const usuario = await this.prisma.usuario.findUnique({
+      where: { id: userId },
+      select: {
+        areaId: true,
+        areasGestionadas: {
+          select: { id: true },
+        },
+      },
+    });
+
+    return Array.from(
+      new Set(
+        [
+          usuario?.areaId ?? null,
+          ...(usuario?.areasGestionadas.map((area) => area.id) ?? []),
+        ].filter((areaId): areaId is string => Boolean(areaId)),
+      ),
+    );
   }
 
   private async resolveNotificationScope(userId: string) {

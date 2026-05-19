@@ -8,6 +8,12 @@ import type {
   ReporteCategoriaDetalle,
   ReporteMovimientosActivos,
   TipoMovimientoActivo,
+  ReporteResponsable,
+  ReporteResponsableDetalle,
+  ReporteArea,
+  ReporteAreaDetalle,
+  ReporteUbicacion,
+  ReporteUbicacionDetalle,
 } from '../types/reportes.types';
 import { tipoReporte } from '../types/reportes.types';
 import type { PaginatedResponse, ApiResponse } from '../types';
@@ -58,7 +64,7 @@ function downloadBlob(blob: Blob, filename: string) {
 export const reportesService = {
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // HU27 — Reporte general del inventario (sin cambios)
+  // HU27 — Reporte general del inventario
   // ═══════════════════════════════════════════════════════════════════════════
 
   obtenerInventarioGeneral: async () => {
@@ -93,26 +99,16 @@ export const reportesService = {
   // HU28 — Reporte por categoría de activos
   // ═══════════════════════════════════════════════════════════════════════════
 
-  /**
-   * PA1 — Obtiene el resumen de activos agrupados por categoría.
-   */
   obtenerReporteCategoria: async () => {
     return requestReports<ReporteCategoria>('/reports/inventory/category');
   },
 
-  /**
-   * PA2 / PA3 / PA4 / PA5 — Obtiene el detalle de activos de una categoría.
-   * Devuelve lista vacía cuando no hay activos (el componente muestra PA5).
-   */
   obtenerActivosPorCategoria: async (categoryId: string) => {
     return requestReports<ReporteCategoriaDetalle>(
       `/reports/inventory/category/${categoryId}/assets`,
     );
   },
 
-  /**
-   * HU28 + HU30 — Descarga PDF o Excel del resumen de categorías.
-   */
   descargarReporteCategoria: async (formato: 'pdf' | 'excel', generatedById?: string) => {
     const params = new URLSearchParams();
     if (generatedById) params.set('generatedById', generatedById);
@@ -137,7 +133,6 @@ export const reportesService = {
     downloadBlob(blob, filename);
   },
 
-  // ═══════════════════════════════════════════════════════════════════════════
   // HU45 — Reporte de movimientos de activos
   // ═══════════════════════════════════════════════════════════════════════════
 
@@ -151,16 +146,151 @@ export const reportesService = {
     queryParams.set('fechaHasta', params.fechaHasta);
 
     if (params.tipo) {
-      queryParams.set('tipo', params.tipo);
-    }
+  // HU47 — Reporte por responsable actual
+  // ═══════════════════════════════════════════════════════════════════════════
 
-    return requestReports<ReporteMovimientosActivos>(
-      `/reports/movements?${queryParams.toString()}`,
+  /** PA1 — Cantidad de activos agrupados por responsable actual */
+  obtenerReporteResponsable: async () => {
+    return requestReports<ReporteResponsable>('/reports/inventory/responsable');
+  },
+
+  /** PA2/PA3/PA4/PA5 — Activos del responsable seleccionado */
+  obtenerActivosPorResponsable: async (responsableId: string) => {
+    return requestReports<ReporteResponsableDetalle>(
+      `/reports/inventory/responsable/${responsableId}/assets`,
     );
   },
 
+  /** HU47 + HU30 — Descarga PDF o Excel del resumen por responsable */
+  descargarReporteResponsable: async (formato: 'pdf' | 'excel', generatedById?: string) => {
+    const params = new URLSearchParams();
+    if (generatedById) params.set('generatedById', generatedById);
+
+    const suffix = params.toString() ? `?${params.toString()}` : '';
+    const response = await fetch(
+      `${REPORTS_API_URL}/reports/inventory/responsable/download/${formato}${suffix}`,
+    );
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => null);
+      throw new Error(error?.message || 'No se pudo descargar el reporte por responsable');
+    }
+
+    const blob = await response.blob();
+    const fallback = `reporte-por-responsable.${formato === 'pdf' ? 'pdf' : 'xls'}`;
+    const filename = getFilenameFromDisposition(
+      response.headers.get('Content-Disposition'),
+      fallback,
+    );
+
+    downloadBlob(blob, filename);
+  },
+
   // ═══════════════════════════════════════════════════════════════════════════
-  // Utilidades generales (sin cambios)
+  // HU-AREA — Reporte por área o departamento
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /** PA1 — Cantidad de activos agrupados por área */
+  obtenerReporteArea: async () => {
+    return requestReports<ReporteArea>('/reports/inventory/area');
+  },
+
+  /** PA2/PA3/PA4/PA5 — Activos del área seleccionada */
+  obtenerActivosPorArea: async (areaId: string) => {
+    return requestReports<ReporteAreaDetalle>(
+      `/reports/inventory/area/${areaId}/assets`,
+    );
+  },
+
+  /** Descarga PDF o Excel del resumen por área */
+  descargarReporteArea: async (
+    formato: 'pdf' | 'excel',
+    generatedById?: string,
+    areaId?: string,
+  ) => {
+    const params = new URLSearchParams();
+    if (generatedById) params.set('generatedById', generatedById);
+    if (areaId) params.set('areaId', areaId);
+
+    const suffix = params.toString() ? `?${params.toString()}` : '';
+    const response = await fetch(
+      `${REPORTS_API_URL}/reports/inventory/area/download/${formato}${suffix}`,
+    );
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => null);
+      throw new Error(error?.message || 'No se pudo descargar el reporte por area');
+    }
+
+    const blob = await response.blob();
+    const fallback = `reporte-por-area.${formato === 'pdf' ? 'pdf' : 'xls'}`;
+    const filename = getFilenameFromDisposition(
+      response.headers.get('Content-Disposition'),
+      fallback,
+    );
+
+    downloadBlob(blob, filename);
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // HU-UBICACION — Reporte por ubicación
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /** PA1 — Cantidad de activos agrupados por ubicación */
+  obtenerReporteUbicacion: async () => {
+    return requestReports<ReporteUbicacion>('/reports/inventory/ubicacion');
+  },
+
+  /** PA2/PA3/PA4/PA5 — Activos de la ubicación seleccionada */
+  obtenerActivosPorUbicacion: async (ubicacionId: string) => {
+    return requestReports<ReporteUbicacionDetalle>(
+      `/reports/inventory/ubicacion/${ubicacionId}/assets`,
+    );
+  },
+
+  /** Descarga PDF o Excel del resumen por ubicación */
+  descargarReporteUbicacion: async (
+    formato: 'pdf' | 'excel',
+    generatedById?: string,
+    ubicacionId?: string,
+  ) => {
+    const params = new URLSearchParams();
+    if (generatedById) params.set('generatedById', generatedById);
+    if (ubicacionId) params.set('ubicacionId', ubicacionId);
+
+    const suffix = params.toString() ? `?${params.toString()}` : '';
+    const response = await fetch(
+      `${REPORTS_API_URL}/reports/inventory/ubicacion/download/${formato}${suffix}`,
+    );
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => null);
+      throw new Error(error?.message || 'No se pudo descargar el reporte por ubicacion');
+    }
+
+    const blob = await response.blob();
+    const fallback = `reporte-por-ubicacion.${formato === 'pdf' ? 'pdf' : 'xls'}`;
+    const filename = getFilenameFromDisposition(
+      response.headers.get('Content-Disposition'),
+      fallback,
+    );
+
+    downloadBlob(blob, filename);
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Utilidades generales
+
+      response.headers.get('Content-Disposition'),
+      fallback,
+    );
+
+    downloadBlob(blob, filename);
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Utilidades generales
+>>>>>>> origin/Sprint4_DEV
   // ═══════════════════════════════════════════════════════════════════════════
 
   verificarMicroservicio: async () => {

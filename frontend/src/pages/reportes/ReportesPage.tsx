@@ -11,13 +11,16 @@ import {
   Filter,
   History,
   Layers,
+  MapPin,
   RefreshCw,
   Search,
+  User,
 } from 'lucide-react';
 import { Alert, Badge, Button, Card, LoadingSpinner, Select } from '../../components/common';
 import type { SelectOption } from '../../components/common';
 import { useAuth } from '../../context/AuthContext';
 import { reportesService } from '../../services/reportes.service';
+import { tipoMovimientoActivo } from '../../types/reportes.types';
 import type {
   ReporteInventarioGeneral,
   ReporteCategoria,
@@ -26,7 +29,15 @@ import type {
   ReporteMovimientosActivos,
   MovimientoActivoReporte,
   TipoMovimientoActivo,
-  tipoMovimientoActivo,
+  ReporteResponsable,
+  ReporteResponsableDetalle,
+  ActivoDetalleResponsable,
+  ReporteArea,
+  ReporteAreaDetalle,
+  ActivoDetalleArea,
+  ReporteUbicacion,
+  ReporteUbicacionDetalle,
+  ActivoDetalleUbicacion,
 } from '../../types/reportes.types';
 import '../../styles/modules.css';
 
@@ -38,6 +49,8 @@ const emptyReport: ReporteInventarioGeneral = {
   materials: { total: 0, lowStock: 0 },
   downloadReady: false,
 };
+
+const noDownloadDataMessage = 'No hay informacion disponible para descargar';
 
 const emptyCategoryReport: ReporteCategoria = {
   generatedAt: '',
@@ -82,6 +95,27 @@ function getDefaultMovementDateRange() {
   };
 }
 
+const emptyResponsableReport: ReporteResponsable = {
+  generatedAt: '',
+  totalAssets: 0,
+  responsables: [],
+  downloadReady: false,
+};
+
+const emptyAreaReport: ReporteArea = {
+  generatedAt: '',
+  totalAssets: 0,
+  areas: [],
+  downloadReady: false,
+};
+
+const emptyUbicacionReport: ReporteUbicacion = {
+  generatedAt: '',
+  totalAssets: 0,
+  ubicaciones: [],
+  downloadReady: false,
+};
+
 // ─── Badge de estado de activo ───────────────────────────────────────────────
 
 function estadoVariant(
@@ -94,9 +128,9 @@ function estadoVariant(
 }
 
 // ─── Componente principal ────────────────────────────────────────────────────
-
 export const ReportesPage: React.FC = () => {
   const { user } = useAuth();
+  const isAdminGeneral = user?.rol?.nombre === 'ADMIN_GENERAL';
 
   // ── Reporte general (HU27) ────────────────────────────────────────────────
   const [report, setReport] = useState<ReporteInventarioGeneral>(emptyReport);
@@ -122,6 +156,39 @@ export const ReportesPage: React.FC = () => {
   const [fechaDesde, setFechaDesde] = useState(getDefaultMovementDateRange().fechaDesde);
   const [fechaHasta, setFechaHasta] = useState(getDefaultMovementDateRange().fechaHasta);
   const [tipoMovimiento, setTipoMovimiento] = useState<TipoMovimientoActivo | ''>('');
+
+  // ── Reporte por responsable (HU47) ────────────────────────────────────────
+  const [responsableReport, setResponsableReport] = useState<ReporteResponsable>(emptyResponsableReport);
+  const [loadingResponsables, setLoadingResponsables] = useState(true);
+
+  const [selectedResponsableId, setSelectedResponsableId] = useState('');
+  const [responsableDetail, setResponsableDetail] = useState<ReporteResponsableDetalle | null>(null);
+  const [loadingResponsableDetail, setLoadingResponsableDetail] = useState(false);
+
+  const [downloadingResponsableFormat, setDownloadingResponsableFormat] = useState<'pdf' | 'excel' | null>(null);
+  const [responsableMessage, setResponsableMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // ── Reporte por área (HU-AREA) ────────────────────────────────────────────
+  const [areaReport, setAreaReport] = useState<ReporteArea>(emptyAreaReport);
+  const [loadingAreas, setLoadingAreas] = useState(true);
+
+  const [selectedAreaId, setSelectedAreaId] = useState('');
+  const [areaDetail, setAreaDetail] = useState<ReporteAreaDetalle | null>(null);
+  const [loadingAreaDetail, setLoadingAreaDetail] = useState(false);
+
+  const [downloadingAreaFormat, setDownloadingAreaFormat] = useState<'pdf' | 'excel' | null>(null);
+  const [areaMessage, setAreaMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // ── Reporte por ubicación (HU-UBICACION) ────────────────────────────────────
+  const [ubicacionReport, setUbicacionReport] = useState<ReporteUbicacion>(emptyUbicacionReport);
+  const [loadingUbicaciones, setLoadingUbicaciones] = useState(true);
+
+  const [selectedUbicacionId, setSelectedUbicacionId] = useState('');
+  const [ubicacionDetail, setUbicacionDetail] = useState<ReporteUbicacionDetalle | null>(null);
+  const [loadingUbicacionDetail, setLoadingUbicacionDetail] = useState(false);
+
+  const [downloadingUbicacionFormat, setDownloadingUbicacionFormat] = useState<'pdf' | 'excel' | null>(null);
+  const [ubicacionMessage, setUbicacionMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   // ── Fechas formateadas ────────────────────────────────────────────────────
 
@@ -172,6 +239,30 @@ export const ReportesPage: React.FC = () => {
     return movementsReport.filters.tipo.replace(/_/g, ' ').toUpperCase();
   }, [movementsReport.filters.tipo]);
 
+  const generatedAtResponsable = useMemo(() => {
+    if (!responsableReport.generatedAt) return 'Sin consulta';
+    return new Intl.DateTimeFormat('es-BO', {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    }).format(new Date(responsableReport.generatedAt));
+  }, [responsableReport.generatedAt]);
+
+  const generatedAtArea = useMemo(() => {
+    if (!areaReport.generatedAt) return 'Sin consulta';
+    return new Intl.DateTimeFormat('es-BO', {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    }).format(new Date(areaReport.generatedAt));
+  }, [areaReport.generatedAt]);
+
+  const generatedAtUbicacion = useMemo(() => {
+    if (!ubicacionReport.generatedAt) return 'Sin consulta';
+    return new Intl.DateTimeFormat('es-BO', {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    }).format(new Date(ubicacionReport.generatedAt));
+  }, [ubicacionReport.generatedAt]);
+
   // ── Opciones del selector de categoría ───────────────────────────────────
 
   const categoryOptions: SelectOption[] = useMemo(
@@ -183,13 +274,56 @@ export const ReportesPage: React.FC = () => {
     [categoryReport.categories],
   );
 
+  // ── Opciones del selector de responsable (PROSIN-487) ────────────────────
+
+  const responsableOptions: SelectOption[] = useMemo(
+    () =>
+      responsableReport.responsables.map((r) => ({
+        value: r.id,
+        label: `${r.name} (${r.total})`,
+      })),
+    [responsableReport.responsables],
+  );
+
+  // ── Opciones del selector de área ────────────────────────────────────────
+
+  const areaOptions: SelectOption[] = useMemo(
+    () =>
+      areaReport.areas.map((a) => ({
+        value: a.id,
+        label: `${a.name} (${a.total})`,
+      })),
+    [areaReport.areas],
+  );
+
+  // ── Opciones del selector de ubicación ──────────────────────────────────
+
+  const ubicacionOptions: SelectOption[] = useMemo(
+    () =>
+      ubicacionReport.ubicaciones.map((u) => ({
+        value: u.id,
+        label: `${u.name} (${u.total})`,
+      })),
+    [ubicacionReport.ubicaciones],
+  );
+
   // ── Carga inicial ─────────────────────────────────────────────────────────
 
   useEffect(() => {
     cargarReporte();
     cargarReporteCategoria();
     cargarReporteMovimientos();
-  }, []);
+
+    if (isAdminGeneral) {
+      cargarReporteResponsable();
+      cargarReporteArea();
+      cargarReporteUbicacion();
+    } else {
+      setLoadingResponsables(false);
+      setLoadingAreas(false);
+      setLoadingUbicaciones(false);
+    }
+  }, [isAdminGeneral]);
 
   // ── Al cambiar la categoría seleccionada, carga el detalle ────────────────
 
@@ -201,6 +335,36 @@ export const ReportesPage: React.FC = () => {
     cargarDetalleCategoria(selectedCategoryId);
   }, [selectedCategoryId]);
 
+  // ── Al cambiar el responsable seleccionado, carga el detalle (PA2) ────────
+
+  useEffect(() => {
+    if (!isAdminGeneral || !selectedResponsableId) {
+      setResponsableDetail(null);
+      return;
+    }
+    cargarDetalleResponsable(selectedResponsableId);
+  }, [isAdminGeneral, selectedResponsableId]);
+
+  // ── Al cambiar el área seleccionada, carga el detalle ────────────────────
+
+  useEffect(() => {
+    if (!isAdminGeneral || !selectedAreaId) {
+      setAreaDetail(null);
+      return;
+    }
+    cargarDetalleArea(selectedAreaId);
+  }, [isAdminGeneral, selectedAreaId]);
+
+  // ── Al cambiar la ubicación seleccionada, carga el detalle ───────────────
+
+  useEffect(() => {
+    if (!isAdminGeneral || !selectedUbicacionId) {
+      setUbicacionDetail(null);
+      return;
+    }
+    cargarDetalleUbicacion(selectedUbicacionId);
+  }, [isAdminGeneral, selectedUbicacionId]);
+
   // ═══════════════════════════════════════════════════════════════════════════
   // Acciones — Reporte general (HU27)
   // ═══════════════════════════════════════════════════════════════════════════
@@ -210,7 +374,14 @@ export const ReportesPage: React.FC = () => {
       setLoading(true);
       const data = await reportesService.obtenerInventarioGeneral();
       setReport(data);
-      setMessage(null);
+      setMessage(
+        data.downloadReady
+          ? null
+          : {
+              type: 'error',
+              text: noDownloadDataMessage,
+            },
+      );
     } catch (err) {
       setMessage({
         type: 'error',
@@ -224,6 +395,14 @@ export const ReportesPage: React.FC = () => {
   };
 
   const descargarReporte = async (formato: 'pdf' | 'excel') => {
+    if (!report.downloadReady) {
+      setMessage({
+        type: 'error',
+        text: noDownloadDataMessage,
+      });
+      return;
+    }
+
     try {
       setDownloadingFormat(formato);
       await reportesService.descargarInventarioGeneral(formato, user?.id);
@@ -280,6 +459,14 @@ export const ReportesPage: React.FC = () => {
   };
 
   const descargarReporteCategoria = async (formato: 'pdf' | 'excel') => {
+    if (!categoryReport.downloadReady) {
+      setCategoryMessage({
+        type: 'error',
+        text: noDownloadDataMessage,
+      });
+      return;
+    }
+
     try {
       setDownloadingCategoryFormat(formato);
       await reportesService.descargarReporteCategoria(formato, user?.id);
@@ -334,6 +521,191 @@ export const ReportesPage: React.FC = () => {
   };
 
   // ═══════════════════════════════════════════════════════════════════════════
+  // Acciones — Reporte por responsable (HU47)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  // PROSIN-490 / PA1 — Carga resumen agrupado por responsable
+  const cargarReporteResponsable = async () => {
+    try {
+      setLoadingResponsables(true);
+      const data = await reportesService.obtenerReporteResponsable();
+      setResponsableReport(data);
+      setResponsableMessage(null);
+    } catch (err) {
+      setResponsableMessage({
+        type: 'error',
+        text: err instanceof Error
+          ? err.message
+          : 'No se pudo consultar el reporte por responsable',
+      });
+    } finally {
+      setLoadingResponsables(false);
+    }
+  };
+
+  // PA2 / PA3 / PA4 / PA5 — Carga activos del responsable seleccionado
+  const cargarDetalleResponsable = async (responsableId: string) => {
+    try {
+      setLoadingResponsableDetail(true);
+      setResponsableDetail(null);
+      const data = await reportesService.obtenerActivosPorResponsable(responsableId);
+      setResponsableDetail(data);
+    } catch (err) {
+      setResponsableMessage({
+        type: 'error',
+        text: err instanceof Error
+          ? err.message
+          : 'No se pudo consultar el detalle del responsable',
+      });
+    } finally {
+      setLoadingResponsableDetail(false);
+    }
+  };
+
+  const descargarReporteResponsable = async (formato: 'pdf' | 'excel') => {
+    if (!responsableReport.downloadReady) {
+      setResponsableMessage({
+        type: 'error',
+        text: noDownloadDataMessage,
+      });
+      return;
+    }
+
+    try {
+      setDownloadingResponsableFormat(formato);
+      await reportesService.descargarReporteResponsable(formato, user?.id);
+      setResponsableMessage({ type: 'success', text: 'El archivo quedo disponible para descarga' });
+    } catch (err) {
+      setResponsableMessage({
+        type: 'error',
+        text: err instanceof Error
+          ? err.message
+          : 'No se pudo descargar el reporte por responsable',
+      });
+    } finally {
+      setDownloadingResponsableFormat(null);
+    }
+  };
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Acciones — Reporte por área (HU-AREA)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  const cargarReporteArea = async () => {
+    try {
+      setLoadingAreas(true);
+      const data = await reportesService.obtenerReporteArea();
+      setAreaReport(data);
+      setAreaMessage(null);
+    } catch (err) {
+      setAreaMessage({
+        type: 'error',
+        text: err instanceof Error
+          ? err.message
+          : 'No se pudo consultar el reporte por area',
+      });
+    } finally {
+      setLoadingAreas(false);
+    }
+  };
+
+  const cargarDetalleArea = async (areaId: string) => {
+    try {
+      setLoadingAreaDetail(true);
+      setAreaDetail(null);
+      const data = await reportesService.obtenerActivosPorArea(areaId);
+      setAreaDetail(data);
+    } catch (err) {
+      setAreaMessage({
+        type: 'error',
+        text: err instanceof Error
+          ? err.message
+          : 'No se pudo consultar el detalle del area',
+      });
+    } finally {
+      setLoadingAreaDetail(false);
+    }
+  };
+
+  const descargarReporteArea = async (formato: 'pdf' | 'excel') => {
+    try {
+      setDownloadingAreaFormat(formato);
+      await reportesService.descargarReporteArea(formato, user?.id, selectedAreaId || undefined);
+      setAreaMessage({ type: 'success', text: 'El archivo quedo disponible para descarga' });
+    } catch (err) {
+      setAreaMessage({
+        type: 'error',
+        text: err instanceof Error
+          ? err.message
+          : 'No se pudo descargar el reporte por area',
+      });
+    } finally {
+      setDownloadingAreaFormat(null);
+    }
+  };
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // Acciones — Reporte por ubicación (HU-UBICACION)
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  const cargarReporteUbicacion = async () => {
+    try {
+      setLoadingUbicaciones(true);
+      const data = await reportesService.obtenerReporteUbicacion();
+      setUbicacionReport(data);
+      setUbicacionMessage(null);
+    } catch (err) {
+      setUbicacionMessage({
+        type: 'error',
+        text: err instanceof Error
+          ? err.message
+          : 'No se pudo consultar el reporte por ubicacion',
+      });
+    } finally {
+      setLoadingUbicaciones(false);
+    }
+  };
+
+  const cargarDetalleUbicacion = async (ubicacionId: string) => {
+    try {
+      setLoadingUbicacionDetail(true);
+      setUbicacionDetail(null);
+      const data = await reportesService.obtenerActivosPorUbicacion(ubicacionId);
+      setUbicacionDetail(data);
+    } catch (err) {
+      setUbicacionMessage({
+        type: 'error',
+        text: err instanceof Error
+          ? err.message
+          : 'No se pudo consultar el detalle de la ubicacion',
+      });
+    } finally {
+      setLoadingUbicacionDetail(false);
+    }
+  };
+
+  const descargarReporteUbicacion = async (formato: 'pdf' | 'excel') => {
+    try {
+      setDownloadingUbicacionFormat(formato);
+      await reportesService.descargarReporteUbicacion(
+        formato,
+        user?.id,
+        selectedUbicacionId || undefined,
+      );
+      setUbicacionMessage({ type: 'success', text: 'El archivo quedo disponible para descarga' });
+    } catch (err) {
+      setUbicacionMessage({
+        type: 'error',
+        text: err instanceof Error
+          ? err.message
+          : 'No se pudo descargar el reporte por ubicacion',
+      });
+    } finally {
+      setDownloadingUbicacionFormat(null);
+    }
+  };
+
+  // ═══════════════════════════════════════════════════════════════════════════
   // Render
   // ═══════════════════════════════════════════════════════════════════════════
 
@@ -361,7 +733,7 @@ export const ReportesPage: React.FC = () => {
             label="PDF"
             variant="secondary"
             onClick={() => descargarReporte('pdf')}
-            disabled={loading}
+            disabled={loading || !user?.id || !report.downloadReady}
             isLoading={downloadingFormat === 'pdf'}
             icon={<Download size={16} />}
           />
@@ -369,7 +741,7 @@ export const ReportesPage: React.FC = () => {
             label="Excel"
             variant="secondary"
             onClick={() => descargarReporte('excel')}
-            disabled={loading}
+            disabled={loading || !user?.id || !report.downloadReady}
             isLoading={downloadingFormat === 'excel'}
             icon={<FileSpreadsheet size={16} />}
           />
@@ -457,7 +829,7 @@ export const ReportesPage: React.FC = () => {
             label="PDF"
             variant="secondary"
             onClick={() => descargarReporteCategoria('pdf')}
-            disabled={loadingCategories || !categoryReport.downloadReady}
+            disabled={loadingCategories || !user?.id || !categoryReport.downloadReady}
             isLoading={downloadingCategoryFormat === 'pdf'}
             icon={<Download size={16} />}
           />
@@ -465,7 +837,7 @@ export const ReportesPage: React.FC = () => {
             label="Excel"
             variant="secondary"
             onClick={() => descargarReporteCategoria('excel')}
-            disabled={loadingCategories || !categoryReport.downloadReady}
+            disabled={loadingCategories || !user?.id || !categoryReport.downloadReady}
             isLoading={downloadingCategoryFormat === 'excel'}
             icon={<FileSpreadsheet size={16} />}
           />
@@ -749,6 +1121,497 @@ export const ReportesPage: React.FC = () => {
         </>
       )}
 
+      {isAdminGeneral ? (
+        <>
+          {/* ════════════════════════════════════════════════════════════════════
+              HU47 — Reporte por responsable de activos
+              PROSIN-486 — Vista de reporte por responsable actual
+          ════════════════════════════════════════════════════════════════════ */}
+
+          <div className="module-header rp__section-header">
+            <div>
+              <h1>Reporte por responsable de activos</h1>
+              <p>Consulta actualizada: {generatedAtResponsable}</p>
+            </div>
+            <div className="report-header-actions">
+              <Button
+                label="Actualizar"
+                variant="primary"
+                onClick={cargarReporteResponsable}
+                isLoading={loadingResponsables}
+                icon={<RefreshCw size={16} />}
+              />
+              <Button
+                label="PDF"
+                variant="secondary"
+                onClick={() => descargarReporteResponsable('pdf')}
+                disabled={loadingResponsables || !user?.id || !responsableReport.downloadReady}
+                isLoading={downloadingResponsableFormat === 'pdf'}
+                icon={<Download size={16} />}
+              />
+              <Button
+                label="Excel"
+                variant="secondary"
+                onClick={() => descargarReporteResponsable('excel')}
+                disabled={loadingResponsables || !user?.id || !responsableReport.downloadReady}
+                isLoading={downloadingResponsableFormat === 'excel'}
+                icon={<FileSpreadsheet size={16} />}
+              />
+            </div>
+          </div>
+
+          {responsableMessage && (
+            <Alert
+              type={responsableMessage.type}
+              message={responsableMessage.text}
+              dismissible
+              onClose={() => setResponsableMessage(null)}
+            />
+          )}
+
+          {loadingResponsables ? (
+            <LoadingSpinner />
+          ) : (
+            <>
+              {/* PROSIN-488 / PA1 — Cantidad de activos por cada responsable registrado */}
+              <Card title="Activos por responsable" padding="lg">
+                {responsableReport.responsables.length === 0 ? (
+                  <p className="rp__empty-state">
+                    No existen responsables con activos asignados en el sistema
+                  </p>
+                ) : (
+                  <div className="rp__category-grid">
+                    {responsableReport.responsables.map((resp) => (
+                      <button
+                        key={resp.id}
+                        className={`rp__category-card ${selectedResponsableId === resp.id ? 'rp__category-card--active' : ''}`}
+                        onClick={() =>
+                          setSelectedResponsableId(
+                            selectedResponsableId === resp.id ? '' : resp.id,
+                          )
+                        }
+                      >
+                        <div className="rp__category-card-icon">
+                          <User size={18} />
+                        </div>
+                        <div className="rp__category-card-body">
+                          <span className="rp__category-card-name">{resp.name}</span>
+                          <strong className="rp__category-card-count">{resp.total}</strong>
+                          <span className="rp__category-card-pct">{resp.percentage}%</span>
+                        </div>
+                        <ChevronRight
+                          size={14}
+                          className={`rp__category-card-arrow ${selectedResponsableId === resp.id ? 'rp__category-card-arrow--active' : ''}`}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </Card>
+
+              {/* PROSIN-487 / PROSIN-489 / PA2 / PA3 / PA4 / PA5 — Selector + detalle */}
+              <Card
+                title={
+                  selectedResponsableId
+                    ? `Activos de: ${responsableReport.responsables.find((r) => r.id === selectedResponsableId)?.name ?? ''}`
+                    : 'Detalle de activos por responsable'
+                }
+                padding="lg"
+              >
+                <div className="rp__selector-row">
+                  <span className="rp__selector-label">Seleccionar responsable:</span>
+                  {/* PROSIN-487 — Selector de responsable */}
+                  <Select
+                    value={selectedResponsableId}
+                    onChange={setSelectedResponsableId}
+                    options={responsableOptions}
+                    placeholder="Selecciona un responsable"
+                    className="rp__category-select"
+                  />
+                </div>
+
+                {/* Sin selección */}
+                {!selectedResponsableId && (
+                  <p className="rp__empty-state">
+                    Selecciona un responsable para ver los activos que tiene asignados
+                  </p>
+                )}
+
+                {/* Cargando detalle */}
+                {selectedResponsableId && loadingResponsableDetail && <LoadingSpinner />}
+
+                {/* PA5 — Responsable sin activos asignados */}
+                {selectedResponsableId && !loadingResponsableDetail && responsableDetail && responsableDetail.total === 0 && (
+                  <p className="rp__empty-state rp__empty-state--category">
+                    No existen activos asignados a este responsable
+                  </p>
+                )}
+
+                {/* PA2 / PA3 / PA4 — Tabla de activos del responsable seleccionado */}
+                {selectedResponsableId && !loadingResponsableDetail && responsableDetail && responsableDetail.total > 0 && (
+                  <div className="rp__detail-table-wrap">
+                    <table className="rp__detail-table">
+                      <thead>
+                        <tr>
+                          <th>Codigo</th>
+                          <th>Nombre</th>
+                          <th>Categoria</th>
+                          <th>Estado</th>
+                          <th>Ubicacion</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {responsableDetail.assets.map((activo: ActivoDetalleResponsable) => (
+                          <tr key={activo.id}>
+                            <td className="rp__td-code">{activo.codigo}</td>
+                            <td>{activo.nombre}</td>
+                            <td className="rp__td-location">{activo.categoria}</td>
+                            <td>
+                              <Badge
+                                label={activo.estadoLabel}
+                                variant={estadoVariant(activo.estado)}
+                                size="sm"
+                              />
+                            </td>
+                            <td className="rp__td-location">{activo.ubicacion}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    <p className="rp__detail-total">
+                      Total: <strong>{responsableDetail.total}</strong>{' '}
+                      {responsableDetail.total === 1 ? 'activo' : 'activos'}
+                    </p>
+                  </div>
+                )}
+              </Card>
+            </>
+          )}
+
+          {/* ════════════════════════════════════════════════════════════════════
+              HU-AREA — Reporte por área o departamento
+          ════════════════════════════════════════════════════════════════════ */}
+
+          <div className="module-header rp__section-header">
+            <div>
+              <h1>Reporte por area</h1>
+              <p>Consulta actualizada: {generatedAtArea}</p>
+            </div>
+            <div className="report-header-actions">
+              <Button
+                label="Actualizar"
+                variant="primary"
+                onClick={cargarReporteArea}
+                isLoading={loadingAreas}
+                icon={<RefreshCw size={16} />}
+              />
+              <Button
+                label="PDF"
+                variant="secondary"
+                onClick={() => descargarReporteArea('pdf')}
+                disabled={loadingAreas || !areaReport.downloadReady}
+                isLoading={downloadingAreaFormat === 'pdf'}
+                icon={<Download size={16} />}
+              />
+              <Button
+                label="Excel"
+                variant="secondary"
+                onClick={() => descargarReporteArea('excel')}
+                disabled={loadingAreas || !areaReport.downloadReady}
+                isLoading={downloadingAreaFormat === 'excel'}
+                icon={<FileSpreadsheet size={16} />}
+              />
+            </div>
+          </div>
+
+          {areaMessage && (
+            <Alert
+              type={areaMessage.type}
+              message={areaMessage.text}
+              dismissible
+              onClose={() => setAreaMessage(null)}
+            />
+          )}
+
+          {loadingAreas ? (
+            <LoadingSpinner />
+          ) : (
+            <>
+              {/* PA1 — Cantidad de activos por área registrada */}
+              <Card title="Activos por area" padding="lg">
+                {areaReport.areas.length === 0 ? (
+                  <p className="rp__empty-state">
+                    No existen areas registradas en el sistema
+                  </p>
+                ) : (
+                  <div className="rp__category-grid">
+                    {areaReport.areas.map((area) => (
+                      <button
+                        key={area.id}
+                        className={`rp__category-card ${selectedAreaId === area.id ? 'rp__category-card--active' : ''}`}
+                        onClick={() =>
+                          setSelectedAreaId(selectedAreaId === area.id ? '' : area.id)
+                        }
+                      >
+                        <div className="rp__category-card-icon">
+                          <Layers size={18} />
+                        </div>
+                        <div className="rp__category-card-body">
+                          <span className="rp__category-card-name">{area.name}</span>
+                          <strong className="rp__category-card-count">{area.total}</strong>
+                          <span className="rp__category-card-pct">{area.percentage}%</span>
+                        </div>
+                        <ChevronRight
+                          size={14}
+                          className={`rp__category-card-arrow ${selectedAreaId === area.id ? 'rp__category-card-arrow--active' : ''}`}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </Card>
+
+              {/* Selector de área + detalle */}
+              <Card
+                title={
+                  selectedAreaId
+                    ? `Activos de: ${areaReport.areas.find((a) => a.id === selectedAreaId)?.name ?? ''}`
+                    : 'Detalle de activos por area'
+                }
+                padding="lg"
+              >
+                <div className="rp__selector-row">
+                  <span className="rp__selector-label">Seleccionar area:</span>
+                  <Select
+                    value={selectedAreaId}
+                    onChange={setSelectedAreaId}
+                    options={areaOptions}
+                    placeholder="Selecciona un area"
+                    className="rp__category-select"
+                  />
+                </div>
+
+                {/* Sin selección */}
+                {!selectedAreaId && (
+                  <p className="rp__empty-state">
+                    Selecciona un area para ver los activos vinculados
+                  </p>
+                )}
+
+                {/* Cargando detalle */}
+                {selectedAreaId && loadingAreaDetail && <LoadingSpinner />}
+
+                {/* PA5 — Área sin activos */}
+                {selectedAreaId && !loadingAreaDetail && areaDetail && areaDetail.total === 0 && (
+                  <p className="rp__empty-state rp__empty-state--category">
+                    No existen activos vinculados a esta area
+                  </p>
+                )}
+
+                {/* PA2 / PA3 / PA4 — Tabla de activos del área seleccionada */}
+                {selectedAreaId && !loadingAreaDetail && areaDetail && areaDetail.total > 0 && (
+                  <div className="rp__detail-table-wrap">
+                    <table className="rp__detail-table">
+                      <thead>
+                        <tr>
+                          <th>Codigo</th>
+                          <th>Nombre</th>
+                          <th>Estado</th>
+                          <th>Ubicacion</th>
+                          <th>Responsable</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {areaDetail.assets.map((activo: ActivoDetalleArea) => (
+                          <tr key={activo.id}>
+                            <td className="rp__td-code">{activo.codigo}</td>
+                            <td>{activo.nombre}</td>
+                            <td>
+                              <Badge
+                                label={activo.estadoLabel}
+                                variant={estadoVariant(activo.estado)}
+                                size="sm"
+                              />
+                            </td>
+                            <td className="rp__td-location">{activo.ubicacion}</td>
+                            <td className="rp__td-location">{activo.responsable}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    <p className="rp__detail-total">
+                      Total: <strong>{areaDetail.total}</strong>{' '}
+                      {areaDetail.total === 1 ? 'activo' : 'activos'}
+                    </p>
+                  </div>
+                )}
+              </Card>
+            </>
+          )}
+
+          {/* ════════════════════════════════════════════════════════════════════
+              HU-UBICACION — Reporte por ubicación
+          ════════════════════════════════════════════════════════════════════ */}
+
+          <div className="module-header rp__section-header">
+            <div>
+              <h1>Reporte por ubicacion</h1>
+              <p>Consulta actualizada: {generatedAtUbicacion}</p>
+            </div>
+            <div className="report-header-actions">
+              <Button
+                label="Actualizar"
+                variant="primary"
+                onClick={cargarReporteUbicacion}
+                isLoading={loadingUbicaciones}
+                icon={<RefreshCw size={16} />}
+              />
+              <Button
+                label="PDF"
+                variant="secondary"
+                onClick={() => descargarReporteUbicacion('pdf')}
+                disabled={loadingUbicaciones || !ubicacionReport.downloadReady}
+                isLoading={downloadingUbicacionFormat === 'pdf'}
+                icon={<Download size={16} />}
+              />
+              <Button
+                label="Excel"
+                variant="secondary"
+                onClick={() => descargarReporteUbicacion('excel')}
+                disabled={loadingUbicaciones || !ubicacionReport.downloadReady}
+                isLoading={downloadingUbicacionFormat === 'excel'}
+                icon={<FileSpreadsheet size={16} />}
+              />
+            </div>
+          </div>
+
+          {ubicacionMessage && (
+            <Alert
+              type={ubicacionMessage.type}
+              message={ubicacionMessage.text}
+              dismissible
+              onClose={() => setUbicacionMessage(null)}
+            />
+          )}
+
+          {loadingUbicaciones ? (
+            <LoadingSpinner />
+          ) : (
+            <>
+              {/* PA1 — Cantidad de activos por ubicación registrada */}
+              <Card title="Activos por ubicacion" padding="lg">
+                {ubicacionReport.ubicaciones.length === 0 ? (
+                  <p className="rp__empty-state">
+                    No existen ubicaciones registradas en el sistema
+                  </p>
+                ) : (
+                  <div className="rp__category-grid">
+                    {ubicacionReport.ubicaciones.map((ubic) => (
+                      <button
+                        key={ubic.id}
+                        className={`rp__category-card ${selectedUbicacionId === ubic.id ? 'rp__category-card--active' : ''}`}
+                        onClick={() =>
+                          setSelectedUbicacionId(selectedUbicacionId === ubic.id ? '' : ubic.id)
+                        }
+                      >
+                        <div className="rp__category-card-icon">
+                          <MapPin size={18} />
+                        </div>
+                        <div className="rp__category-card-body">
+                          <span className="rp__category-card-name">{ubic.name}</span>
+                          <strong className="rp__category-card-count">{ubic.total}</strong>
+                          <span className="rp__category-card-pct">{ubic.percentage}%</span>
+                        </div>
+                        <ChevronRight
+                          size={14}
+                          className={`rp__category-card-arrow ${selectedUbicacionId === ubic.id ? 'rp__category-card-arrow--active' : ''}`}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </Card>
+
+              {/* Selector de ubicación + detalle */}
+              <Card
+                title={
+                  selectedUbicacionId
+                    ? `Activos de: ${ubicacionReport.ubicaciones.find((u) => u.id === selectedUbicacionId)?.name ?? ''}`
+                    : 'Detalle de activos por ubicacion'
+                }
+                padding="lg"
+              >
+                <div className="rp__selector-row">
+                  <span className="rp__selector-label">Seleccionar ubicacion:</span>
+                  <Select
+                    value={selectedUbicacionId}
+                    onChange={setSelectedUbicacionId}
+                    options={ubicacionOptions}
+                    placeholder="Selecciona una ubicacion"
+                    className="rp__category-select"
+                  />
+                </div>
+
+                {/* Sin selección */}
+                {!selectedUbicacionId && (
+                  <p className="rp__empty-state">
+                    Selecciona una ubicacion para ver los activos vinculados
+                  </p>
+                )}
+
+                {/* Cargando detalle */}
+                {selectedUbicacionId && loadingUbicacionDetail && <LoadingSpinner />}
+
+                {/* PA5 — Ubicación sin activos */}
+                {selectedUbicacionId && !loadingUbicacionDetail && ubicacionDetail && ubicacionDetail.total === 0 && (
+                  <p className="rp__empty-state rp__empty-state--category">
+                    No existen activos vinculados a esta ubicacion
+                  </p>
+                )}
+
+                {/* PA2 / PA3 / PA4 — Tabla de activos de la ubicación seleccionada */}
+                {selectedUbicacionId && !loadingUbicacionDetail && ubicacionDetail && ubicacionDetail.total > 0 && (
+                  <div className="rp__detail-table-wrap">
+                    <table className="rp__detail-table">
+                      <thead>
+                        <tr>
+                          <th>Codigo</th>
+                          <th>Nombre</th>
+                          <th>Estado</th>
+                          <th>Area</th>
+                          <th>Responsable</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {ubicacionDetail.assets.map((activo: ActivoDetalleUbicacion) => (
+                          <tr key={activo.id}>
+                            <td className="rp__td-code">{activo.codigo}</td>
+                            <td>{activo.nombre}</td>
+                            <td>
+                              <Badge
+                                label={activo.estadoLabel}
+                                variant={estadoVariant(activo.estado)}
+                                size="sm"
+                              />
+                            </td>
+                            <td className="rp__td-location">{activo.area}</td>
+                            <td className="rp__td-location">{activo.responsable}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    <p className="rp__detail-total">
+                      Total: <strong>{ubicacionDetail.total}</strong>{' '}
+                      {ubicacionDetail.total === 1 ? 'activo' : 'activos'}
+                    </p>
+                  </div>
+                )}
+              </Card>
+            </>
+          )}
+        </>
+      ) : null}
+
       {/* ─── Estilos inline ────────────────────────────────────────────────── */}
       <style>{`
         /* ── Acciones del header ─────────────────────────────────────────── */
@@ -834,10 +1697,10 @@ export const ReportesPage: React.FC = () => {
           font-size: var(--font-size-lg);
         }
 
-        /* ── Grid de categorías (HU28 / PA1) ────────────────────────────── */
+        /* ── Grid de tarjetas (HU28 / PA1 y HU47 / PA1) ────────────────── */
         .rp__category-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+          grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
           gap: 12px;
         }
 
@@ -889,9 +1752,9 @@ export const ReportesPage: React.FC = () => {
           font-size: var(--font-size-sm);
           font-weight: var(--font-weight-semibold);
           color: var(--color-text);
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
+          white-space: normal;
+          word-break: break-word;
+          line-height: 1.3;
         }
 
         .rp__category-card-count {
@@ -917,7 +1780,7 @@ export const ReportesPage: React.FC = () => {
           color: var(--color-primary-light);
         }
 
-        /* ── Selector + detalle (HU28 / PA2-PA5) ───────────────────────── */
+        /* ── Selector + detalle ─────────────────────────────────────────── */
         .rp__selector-row {
           display: flex;
           align-items: center;
