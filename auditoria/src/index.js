@@ -320,7 +320,7 @@ app.get('/api/auditoria/registros', async (req, res, next) => {
       FROM auditorias a
       LEFT JOIN usuarios u ON u.id = a."usuarioId"
       ${whereSql}
-      ORDER BY a."creadoEn" DESC
+      ORDER BY a."creadoEn" DESC, a.id DESC
       LIMIT ${limitPlaceholder}
       OFFSET ${offsetPlaceholder}
     `;

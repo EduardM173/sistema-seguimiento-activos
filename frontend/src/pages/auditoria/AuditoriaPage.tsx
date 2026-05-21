@@ -70,6 +70,9 @@ export const AuditoriaPage: React.FC = () => {
   const [fechaHasta, setFechaHasta] = useState('');
   const [traceFechaDesde, setTraceFechaDesde] = useState('');
   const [traceFechaHasta, setTraceFechaHasta] = useState('');
+  const invalidAuditDateRange = Boolean(
+    fechaDesde && fechaHasta && fechaDesde > fechaHasta,
+  );
   const invalidTraceDateRange = Boolean(
     traceFechaDesde && traceFechaHasta && traceFechaDesde > traceFechaHasta,
   );
@@ -198,6 +201,15 @@ export const AuditoriaPage: React.FC = () => {
     return unique.sort((a, b) => a.localeCompare(b));
   }, [registros]);
 
+  const auditRows = useMemo(
+    () =>
+      [...registros].sort(
+        (left, right) =>
+          new Date(right.creadoEn).getTime() - new Date(left.creadoEn).getTime(),
+      ),
+    [registros],
+  );
+
   const selectedAsset = useMemo(
     () => assets.find((asset) => asset.id === selectedAssetId) ?? null,
     [assets, selectedAssetId],
@@ -245,6 +257,14 @@ export const AuditoriaPage: React.FC = () => {
   }
 
   async function applyFilters() {
+    if (invalidAuditDateRange) {
+      setMessage({
+        type: 'error',
+        text: 'La fecha desde no puede ser posterior a la fecha hasta.',
+      });
+      return;
+    }
+
     await loadRegistros({
       usuarioId: usuarioId || undefined,
       tipoEntidad: tipoEntidad || undefined,
@@ -582,6 +602,8 @@ export const AuditoriaPage: React.FC = () => {
                 id="audit-desde"
                 type="date"
                 value={fechaDesde}
+                max={fechaHasta || undefined}
+                aria-invalid={invalidAuditDateRange}
                 onChange={(e) => setFechaDesde(e.target.value)}
               />
             </div>
@@ -592,21 +614,40 @@ export const AuditoriaPage: React.FC = () => {
                 id="audit-hasta"
                 type="date"
                 value={fechaHasta}
+                min={fechaDesde || undefined}
+                aria-invalid={invalidAuditDateRange}
                 onChange={(e) => setFechaHasta(e.target.value)}
               />
             </div>
 
             <div className="audit-actions">
+              <Button
+                label="Actualizar"
+                variant="secondary"
+                onClick={() => {
+                  void loadRegistros({
+                    ...filtros,
+                    page: 1,
+                    pageSize: 50,
+                  });
+                }}
+              />
               <Button label="Aplicar filtros" variant="primary" onClick={() => { void applyFilters(); }} />
               <Button label="Limpiar" variant="secondary" onClick={() => { void clearFilters(); }} />
             </div>
           </div>
         </div>
 
+        {invalidAuditDateRange ? (
+          <div className="audit-traceability__validation">
+            La fecha desde no puede ser posterior a la fecha hasta.
+          </div>
+        ) : null}
+
         <div className="audit-table-scroll">
           <DataTable<AuditoriaMsRegistro>
             columns={columns}
-            data={registros}
+            data={auditRows}
             loading={loading}
             emptyMessage="No hay registros de auditoría para los filtros seleccionados"
             striped

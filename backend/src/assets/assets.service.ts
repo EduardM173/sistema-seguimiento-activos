@@ -749,6 +749,81 @@ export class AssetsService {
     ) =>
       `${label}: ${previousValue ?? 'sin asignar'} -> ${nextValue ?? 'sin asignar'}`;
 
+    const normalizeAuditValue = (value: unknown) => {
+      if (value instanceof Date) {
+        return value.toISOString();
+      }
+
+      if (value && typeof value === 'object' && 'toString' in value) {
+        return String(value);
+      }
+
+      return value ?? null;
+    };
+
+    const previousAuditValues: Record<string, Prisma.InputJsonValue> = {};
+    const nextAuditValues: Record<string, Prisma.InputJsonValue> = {};
+    const addAuditChange = (field: string, previousValue: unknown, nextValue: unknown) => {
+      const normalizedPrevious = normalizeAuditValue(previousValue);
+      const normalizedNext = normalizeAuditValue(nextValue);
+
+      if (normalizedPrevious !== normalizedNext) {
+        previousAuditValues[field] = normalizedPrevious as Prisma.InputJsonValue;
+        nextAuditValues[field] = normalizedNext as Prisma.InputJsonValue;
+      }
+    };
+
+    addAuditChange('codigo', existing.codigo, nextCodigo);
+    addAuditChange('nombre', existing.nombre, nextNombre);
+    if (dto.descripcion !== undefined) {
+      addAuditChange('descripcion', existing.descripcion, dto.descripcion);
+    }
+    if (dto.marca !== undefined) {
+      addAuditChange('marca', existing.marca, dto.marca);
+    }
+    if (dto.modelo !== undefined) {
+      addAuditChange('modelo', existing.modelo, dto.modelo);
+    }
+    if (dto.numeroSerie !== undefined) {
+      addAuditChange('numeroSerie', existing.numeroSerie, dto.numeroSerie);
+    }
+    if (dto.fechaAdquisicion !== undefined) {
+      addAuditChange(
+        'fechaAdquisicion',
+        existing.fechaAdquisicion,
+        new Date(dto.fechaAdquisicion),
+      );
+    }
+    if (dto.costoAdquisicion !== undefined) {
+      addAuditChange('costoAdquisicion', existing.costoAdquisicion, dto.costoAdquisicion);
+    }
+    if (dto.vencimientoGarantia !== undefined) {
+      addAuditChange(
+        'vencimientoGarantia',
+        existing.vencimientoGarantia,
+        new Date(dto.vencimientoGarantia),
+      );
+    }
+    if (dto.estado !== undefined) {
+      addAuditChange('estado', existing.estado, dto.estado);
+    }
+    if (dto.categoriaId !== undefined) {
+      addAuditChange('categoriaId', existing.categoriaId, nextCategoriaId);
+    }
+    if (dto.ubicacionId !== undefined) {
+      addAuditChange('ubicacionId', existing.ubicacionId, nextUbicacionId);
+    }
+    if (dto.areaActualId !== undefined) {
+      addAuditChange('areaActualId', existing.areaActualId, nextAreaActualId);
+    }
+    if (dto.responsableActualId !== undefined) {
+      addAuditChange(
+        'responsableActualId',
+        existing.responsableActualId,
+        nextResponsableActualId,
+      );
+    }
+
     const activo = await this.prisma.$transaction(async (tx) => {
       const updatedAsset = await tx.activo.update({
         where: { id },
@@ -785,6 +860,19 @@ export class AssetsService {
           areaActual: true,
         },
       });
+
+      if (Object.keys(nextAuditValues).length > 0) {
+        await tx.auditoria.create({
+          data: {
+            usuarioId: userId,
+            tipoEntidad: 'activo',
+            entidadId: id,
+            accion: 'ACTUALIZACION',
+            valoresAnteriores: previousAuditValues,
+            valoresNuevos: nextAuditValues,
+          },
+        });
+      }
 
       if (isTransferUpdate) {
         const detailParts: string[] = [];

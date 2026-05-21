@@ -95,6 +95,23 @@ function getDefaultMovementDateRange() {
   };
 }
 
+function isValidDateInput(value: string) {
+  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return false;
+
+  const [, yearValue, monthValue, dayValue] = match;
+  const year = Number(yearValue);
+  const month = Number(monthValue);
+  const day = Number(dayValue);
+  const date = new Date(Date.UTC(year, month - 1, day));
+
+  return (
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day
+  );
+}
+
 const emptyResponsableReport: ReporteResponsable = {
   generatedAt: '',
   totalAssets: 0,
@@ -165,6 +182,18 @@ export const ReportesPage: React.FC = () => {
   const [fechaDesde, setFechaDesde] = useState(getDefaultMovementDateRange().fechaDesde);
   const [fechaHasta, setFechaHasta] = useState(getDefaultMovementDateRange().fechaHasta);
   const [tipoMovimiento, setTipoMovimiento] = useState<TipoMovimientoActivo | ''>('');
+  const todayInput = formatDateInput(new Date());
+  const invalidMovementDateValue =
+    !fechaDesde ||
+    !fechaHasta ||
+    !isValidDateInput(fechaDesde) ||
+    !isValidDateInput(fechaHasta) ||
+    fechaDesde > todayInput ||
+    fechaHasta > todayInput;
+  const invalidMovementDateRange = Boolean(
+    fechaDesde && fechaHasta && fechaDesde > fechaHasta,
+  );
+  const invalidMovementDates = invalidMovementDateValue || invalidMovementDateRange;
 
   // ── Reporte por responsable (HU47) ────────────────────────────────────────
   const [responsableReport, setResponsableReport] = useState<ReporteResponsable>(emptyResponsableReport);
@@ -533,6 +562,22 @@ export const ReportesPage: React.FC = () => {
   // ═══════════════════════════════════════════════════════════════════════════
 
   const cargarReporteMovimientos = async () => {
+    if (invalidMovementDateValue) {
+      setMovementMessage({
+        type: 'error',
+        text: 'Ingrese fechas válidas y no posteriores a la fecha actual.',
+      });
+      return;
+    }
+
+    if (invalidMovementDateRange) {
+      setMovementMessage({
+        type: 'error',
+        text: 'La fecha desde no puede ser posterior a la fecha hasta.',
+      });
+      return;
+    }
+
     try {
       setLoadingMovements(true);
       const data = await reportesService.obtenerMovimientosActivos({
@@ -1043,6 +1088,7 @@ export const ReportesPage: React.FC = () => {
                 label="Consultar"
                 variant="primary"
                 onClick={handleConsultarMovimientos}
+                disabled={invalidMovementDates}
                 isLoading={loadingMovements}
                 icon={<Search size={16} />}
               />
@@ -1068,6 +1114,9 @@ export const ReportesPage: React.FC = () => {
                 <input
                   type="date"
                   value={fechaDesde}
+                  max={fechaHasta && fechaHasta < todayInput ? fechaHasta : todayInput}
+                  required
+                  aria-invalid={invalidMovementDates}
                   onChange={(event) => setFechaDesde(event.target.value)}
                   className="rp__input"
                 />
@@ -1081,6 +1130,10 @@ export const ReportesPage: React.FC = () => {
                 <input
                   type="date"
                   value={fechaHasta}
+                  min={fechaDesde || undefined}
+                  max={todayInput}
+                  required
+                  aria-invalid={invalidMovementDates}
                   onChange={(event) => setFechaHasta(event.target.value)}
                   className="rp__input"
                 />
@@ -1100,6 +1153,16 @@ export const ReportesPage: React.FC = () => {
                 />
               </label>
             </div>
+
+            {invalidMovementDateRange ? (
+              <p className="rp__empty-state rp__empty-state--category">
+                La fecha desde no puede ser posterior a la fecha hasta.
+              </p>
+            ) : invalidMovementDateValue ? (
+              <p className="rp__empty-state rp__empty-state--category">
+                Ingrese fechas válidas y no posteriores a la fecha actual.
+              </p>
+            ) : null}
           </Card>
 
           {loadingMovements ? (
