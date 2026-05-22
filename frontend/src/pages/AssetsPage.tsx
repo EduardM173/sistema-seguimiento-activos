@@ -4,7 +4,6 @@ import EditAssetModal from '../components/activos/EditAssetModal';
 import ViewAssetModal from '../components/activos/ViewAssetModal';
 import OverlayModal from '../components/common/OverlayModal';
 import CreateAssetPage from './CreateAssetPage';
-import AssetDetailPanel from '../components/assets/AssetDetailPanel';
 import AssetTransferHistoryModal from '../components/assets/AssetTransferHistoryModal';
 import { useNotification } from '../context/NotificationContext';
 import { useAuth } from '../context/AuthContext';
@@ -737,7 +736,7 @@ export default function AssetsPage() {
                   keyExtractor={(a) => a.id}
                   emptyMessage="No se encontraron activos con los filtros seleccionados."
                   sortable={false}
-                  onRowClick={(asset) => openDetailPanel(asset.id)}
+                  onRowClick={(asset) => setViewingAssetId(asset.id)}
                   actions={assetActions}
                 />
 

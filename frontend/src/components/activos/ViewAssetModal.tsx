@@ -5,7 +5,9 @@ import { useNotification } from '../../context/NotificationContext';
 import { HttpError } from '../../services/http.client';
 import type { AssetDetail, EstadoActivo } from '../../types/assets.types';
 
+import AssetQrCode from '../assets/AssetQrCode';
 import OverlayModal from '../common/OverlayModal';
+import '../../styles/assets.css';
 
 const ESTADO_LABEL: Record<EstadoActivo, string> = {
   OPERATIVO: 'Operativo',
@@ -87,7 +89,7 @@ export default function ViewAssetModal({ assetId, open, onClose }: Props) {
       onClose={onClose}
       title="Detalle del Activo"
       subtitle={loading ? 'Cargando...' : `${asset?.codigo ?? ''} · ${asset?.nombre ?? ''}`}
-      width="680px"
+      width="760px"
     >
       {loading || !asset ? (
         <div style={{ padding: '40px', textAlign: 'center', color: '#6b7280' }}>
@@ -106,6 +108,12 @@ export default function ViewAssetModal({ assetId, open, onClose }: Props) {
               <div style={valueStyle}>{asset.nombre || emptyValue}</div>
             </div>
           </div>
+
+          <AssetQrCode
+            assetId={asset.id}
+            codigo={asset.codigo}
+            nombre={asset.nombre}
+          />
 
           {/* Marca + Modelo + Serie */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>

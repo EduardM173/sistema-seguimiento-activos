@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 
+import AssetQrCode from './AssetQrCode';
 import type { AssetDetail, EstadoActivo } from '../../types/assets.types';
 
 function formatDate(value: string | null) {
@@ -265,6 +266,12 @@ export default function AssetDetailPanel({
       </div>
 
       <div className="assetDetailSections">
+        <AssetQrCode
+          assetId={asset.id}
+          codigo={asset.codigo}
+          nombre={asset.nombre}
+        />
+
         {detailSections.map((section) => (
           <article key={section.title} className="assetDetailCard">
             <div className="assetDetailCard__head">
