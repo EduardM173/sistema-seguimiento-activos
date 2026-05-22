@@ -61,16 +61,16 @@ export default function ViewAssetModal({ assetId, open, onClose }: Props) {
     fontSize: '11px',
     fontWeight: 600,
     textTransform: 'uppercase',
-    color: '#6b7280',
+    color: '#9ca3af',
     letterSpacing: '0.5px',
   };
   const valueStyle: React.CSSProperties = {
     fontSize: '14px',
-    color: '#1f2937',
+    color: '#e5e7eb',
     padding: '8px 12px',
-    background: '#f9fafb',
+    background: '#111827',
     borderRadius: '6px',
-    border: '1px solid #e5e7eb',
+    border: '1px solid #374151',
     minHeight: '38px',
     display: 'flex',
     alignItems: 'center',
@@ -90,13 +90,23 @@ export default function ViewAssetModal({ assetId, open, onClose }: Props) {
       title="Detalle del Activo"
       subtitle={loading ? 'Cargando...' : `${asset?.codigo ?? ''} · ${asset?.nombre ?? ''}`}
       width="760px"
+      className="overlayModal__dialog--dark overlayModal__dialog--assetDetailDark"
     >
       {loading || !asset ? (
-        <div style={{ padding: '40px', textAlign: 'center', color: '#6b7280' }}>
+        <div style={{ padding: '40px', textAlign: 'center', color: '#9ca3af', background: '#0f172a' }}>
           Cargando información del activo...
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px',
+            padding: '4px',
+            color: '#e5e7eb',
+            background: '#0f172a',
+          }}
+        >
           {/* Código + Nombre */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <div style={fieldStyle}>
@@ -146,8 +156,8 @@ export default function ViewAssetModal({ assetId, open, onClose }: Props) {
           {/* ========== PA4: INFORMACIÓN DE BAJA ========== */}
           {asset.estado === 'DADO_DE_BAJA' && (
             <div style={{
-              backgroundColor: '#fef2f2',
-              borderLeft: '4px solid #dc2626',
+              backgroundColor: '#2b1116',
+              borderLeft: '4px solid #ef4444',
               padding: '12px 16px',
               borderRadius: '8px',
               marginTop: '4px'
@@ -158,8 +168,8 @@ export default function ViewAssetModal({ assetId, open, onClose }: Props) {
                 gap: '12px'
               }}>
                 <div style={fieldStyle}>
-                  <span style={{ ...labelStyle, color: '#991b1b' }}>📅 Fecha de baja</span>
-                  <div style={{ ...valueStyle, backgroundColor: '#fff5f5' }}>
+                  <span style={{ ...labelStyle, color: '#fca5a5' }}>Fecha de baja</span>
+                  <div style={{ ...valueStyle, backgroundColor: '#1f1215', borderColor: '#7f1d1d' }}>
                     {asset.dadoDeBajaEn 
                       ? new Date(asset.dadoDeBajaEn).toLocaleDateString('es-ES', {
                           year: 'numeric',
@@ -172,8 +182,8 @@ export default function ViewAssetModal({ assetId, open, onClose }: Props) {
                   </div>
                 </div>
                 <div style={fieldStyle}>
-                  <span style={{ ...labelStyle, color: '#991b1b' }}>⚠️ Motivo del retiro</span>
-                  <div style={{ ...valueStyle, backgroundColor: '#fff5f5', fontStyle: 'italic' }}>
+                  <span style={{ ...labelStyle, color: '#fca5a5' }}>Motivo del retiro</span>
+                  <div style={{ ...valueStyle, backgroundColor: '#1f1215', borderColor: '#7f1d1d', fontStyle: 'italic' }}>
                     {asset.motivoBaja || 'No especificado'}
                   </div>
                 </div>
