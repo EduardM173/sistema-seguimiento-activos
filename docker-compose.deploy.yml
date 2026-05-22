@@ -23,6 +23,7 @@ services:
       interval: 3s
       timeout: 3s
       retries: 5
+
   backend:
     container_name: activos_backend
     image: ${DOCKER_REGISTRY:-local_activos}/backend:${TAG:-latest}
@@ -35,18 +36,41 @@ services:
 
     environment:
       POSTGRES_HOST: app-db
-      BACKEND_PORT: 3000
+      BACKEND_PORT: 3001
 
     ports:
-      - 3000:3000
+      - 3001:3001
 
     depends_on:
       app-db:
         condition: service_healthy
 
-    command: > 
-      sh -c "npx prisma migrate deploy && 
-      npm run start:dev"
+    command: >
+      sh -c "npx prisma migrate deploy &&
+      npm run start:prod"
+
+  reports-service:
+    container_name: activos_reports_service
+    image: ${DOCKER_REGISTRY:-local_activos}/reports-service:${TAG:-latest}
+    build:
+      dockerfile: dockerfile
+      context: ./reports-service
+    user: ${UID:-1000}:${GID:-1000}
+    env_file:
+      - ./.env
+
+    environment:
+      POSTGRES_HOST: app-db
+      REPORTS_PORT: 3002
+
+    ports:
+      - 3002:3002
+
+    depends_on:
+      app-db:
+        condition: service_healthy
+
+    command: "npm run start:prod"
 
   auditoria:
     container_name: activos_auditoria
@@ -60,14 +84,27 @@ services:
 
     environment:
       POSTGRES_HOST: app-db
-      AUDIT_MS_PORT: 3002
+      AUDIT_MS_PORT: 3003
 
     ports:
-      - 3002:3002
+      - 3003:3003
 
     depends_on:
       app-db:
         condition: service_healthy
+
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3003/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
 
     command: "npm run dev"
 
@@ -77,16 +114,17 @@ services:
     build:
       dockerfile: dockerfile2
       context: ./frontend
-
     user: ${UID:-1000}:${GID:-1000}
     env_file:
       - ./.env
 
-
     environment:
       FRONTEND_PORT: 8084
-      VITE_BACKEND_URL: http://backend:3000
-      VITE_AUDIT_API_URL: http://localhost:3002/api
+      VITE_BACKEND_URL: http://backend:3001
+      VITE_REPORTS_URL: http://reports-service:3002
+      VITE_API_URL: http://localhost:8084/api
+      VITE_REPORTS_API_URL: http://localhost:8084/reports-api
+      VITE_AUDIT_API_URL: http://localhost:3003/api
 
     ports:
       - 8084:8084
@@ -95,6 +133,8 @@ services:
       backend:
         condition: service_started
       auditoria:
+        condition: service_started
+      reports-service:
         condition: service_started
 
 volumes:
