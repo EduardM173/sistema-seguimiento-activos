@@ -1,9 +1,12 @@
+import { useCallback } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
+import { DeeplinkProvider } from './deeplink';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import PrivateLayout from './components/layout/PrivateLayout';
 import ToastContainer from './components/notifications/ToastContainer';
+import ChatWidget from './components/chat/ChatWidget';
 import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import UserList from './pages/users/UserList';
@@ -45,11 +48,26 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+/**
+ * Bridges `useAuth()` to the deeplink engine so the navigation map JSON can
+ * be filtered/annotated with the current user's permission scope.
+ */
+function DeeplinkBridge({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
+  const getPermissions = useCallback(
+    () => user?.permisos?.map((p) => p.codigo) ?? [],
+    [user],
+  );
+  return <DeeplinkProvider getPermissions={getPermissions}>{children}</DeeplinkProvider>;
+}
+
 export default function App() {
   return (
     <AuthProvider>
       <NotificationProvider>
+        <DeeplinkBridge>
         <ToastContainer />
+        <ChatWidget />
         <Routes>
           <Route path="/" element={<LoginPage />} />
           <Route element={<ProtectedRoute />}>
@@ -103,6 +121,7 @@ export default function App() {
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        </DeeplinkBridge>
       </NotificationProvider>
     </AuthProvider>
   );

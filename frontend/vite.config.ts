@@ -2,6 +2,7 @@ import { defineConfig } from 'vite'
 import dotenv from "dotenv"
 import react from '@vitejs/plugin-react'
 import path from 'path'
+import { deeplinkApi } from './vite-plugins/deeplink-api'
 
 dotenv.config()
 
@@ -19,10 +20,15 @@ export default defineConfig(() => {
 
   const VITE_REPORTS_URL = process.env.VITE_REPORTS_URL || 'http://localhost:3002'
 
+  // Agent service (GraphRAG / DeeplinkAgent). Default apunta al stack
+  // levantado por deploy_rag.sh. Sobrescribir con VITE_AGENT_URL si hace
+  // falta (ej. localhost cuando se corre fuera de docker).
+  const VITE_AGENT_URL = process.env.VITE_AGENT_URL || 'http://graphrag_app:8000'
+
   const port = parseInt(process.env.FRONTEND_PORT || '5173', 10)
 
   return {
-    plugins: [react()],
+    plugins: [react(), deeplinkApi()],
     server: {
       host: '0.0.0.0',
 
@@ -39,6 +45,14 @@ export default defineConfig(() => {
           target: VITE_REPORTS_URL,
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/reports-api/, '')
+        },
+        // Proxy hacia el agent_service. El frontend habla con `/agent/...`
+        // y Vite lo reescribe quitando el prefijo, así el agent recibe
+        // p.ej. `/chat/sessions`.
+        "^\\/agent/.*$": {
+          target: VITE_AGENT_URL,
+          changeOrigin: true,
+          rewrite: (p: string) => p.replace(/^\/agent/, ''),
         }
       },
 

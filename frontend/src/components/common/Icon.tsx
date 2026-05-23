@@ -1,4 +1,5 @@
 export {
+  Clock             as IconClock,
   LayoutGrid        as IconGrid,
   Package           as IconPackage,
   Clipboard         as IconClipboard,

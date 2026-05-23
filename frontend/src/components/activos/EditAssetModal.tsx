@@ -360,7 +360,7 @@ export default function EditAssetModal({ assetId, open, onClose, onUpdated }: Pr
         disabled={submitting}
       >
         {loading ? (
-          <div style={{ padding: '40px', textAlign: 'center', color: '#6b7280' }}>
+          <div style={{ padding: '40px', textAlign: 'center', color: 'var(--color-text-muted)' }}>
             Cargando información del activo...
           </div>
         ) : (
@@ -456,10 +456,10 @@ export default function EditAssetModal({ assetId, open, onClose, onUpdated }: Pr
             <div
               style={{
                 padding: '12px 14px',
-                border: '1px solid #e5e7eb',
-                borderRadius: '10px',
-                background: '#f8fafc',
-                color: '#475569',
+                border: '1px solid var(--glass-border)',
+                borderLeft: '3px solid var(--color-primary-muted)',
+                background: 'var(--glass-bg)',
+                color: 'var(--color-text)',
                 fontSize: '0.88rem',
               }}
             >

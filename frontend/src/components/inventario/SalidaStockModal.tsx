@@ -107,7 +107,7 @@ const SalidaStockModal: React.FC<SalidaStockModalProps> = ({
           }}
         >
           <div style={{ gridColumn: '1 / -1' }}>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 700, color: 'var(--color-text-muted)', fontSize: '0.78rem', letterSpacing: '0.05em', textTransform: 'uppercase' as const }}>
               Material *
             </label>
             <select
@@ -117,8 +117,8 @@ const SalidaStockModal: React.FC<SalidaStockModalProps> = ({
               style={{
                 width: '100%',
                 padding: '12px 14px',
-                border: '1px solid #d1d5db',
-                borderRadius: '8px',
+                border: 'var(--input-border)',
+                borderRadius: 'var(--radius-base)',
                 fontSize: '16px',
               }}
             >
@@ -132,7 +132,7 @@ const SalidaStockModal: React.FC<SalidaStockModalProps> = ({
           </div>
 
           <div>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 700, color: 'var(--color-text-muted)', fontSize: '0.78rem', letterSpacing: '0.05em', textTransform: 'uppercase' as const }}>
               Stock disponible
             </label>
             <input
@@ -142,15 +142,15 @@ const SalidaStockModal: React.FC<SalidaStockModalProps> = ({
               style={{
                 width: '100%',
                 padding: '12px 14px',
-                border: '1px solid #d1d5db',
-                borderRadius: '8px',
-                background: '#f9fafb',
+                border: 'var(--input-border)',
+                borderRadius: 'var(--radius-base)',
+                background: 'var(--input-bg)',
               }}
             />
           </div>
 
           <div>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 700, color: 'var(--color-text-muted)', fontSize: '0.78rem', letterSpacing: '0.05em', textTransform: 'uppercase' as const }}>
               Cantidad de salida *
             </label>
             <input
@@ -162,14 +162,14 @@ const SalidaStockModal: React.FC<SalidaStockModalProps> = ({
               style={{
                 width: '100%',
                 padding: '12px 14px',
-                border: '1px solid #d1d5db',
-                borderRadius: '8px',
+                border: 'var(--input-border)',
+                borderRadius: 'var(--radius-base)',
               }}
             />
           </div>
 
           <div style={{ gridColumn: '1 / -1' }}>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 700, color: 'var(--color-text-muted)', fontSize: '0.78rem', letterSpacing: '0.05em', textTransform: 'uppercase' as const }}>
               Motivo de salida *
             </label>
             <textarea
@@ -181,15 +181,15 @@ const SalidaStockModal: React.FC<SalidaStockModalProps> = ({
               style={{
                 width: '100%',
                 padding: '12px 14px',
-                border: '1px solid #d1d5db',
-                borderRadius: '8px',
+                border: 'var(--input-border)',
+                borderRadius: 'var(--radius-base)',
                 resize: 'vertical',
               }}
             />
           </div>
 
           <div style={{ gridColumn: '1 / -1' }}>
-            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>
+            <label style={{ display: 'block', marginBottom: '8px', fontWeight: 700, color: 'var(--color-text-muted)', fontSize: '0.78rem', letterSpacing: '0.05em', textTransform: 'uppercase' as const }}>
               Stock resultante
             </label>
             <input
@@ -199,10 +199,10 @@ const SalidaStockModal: React.FC<SalidaStockModalProps> = ({
               style={{
                 width: '100%',
                 padding: '12px 14px',
-                border: '1px solid #d1d5db',
-                borderRadius: '8px',
-                background: '#eff6ff',
-                color: '#1d4ed8',
+                border: 'var(--input-border)',
+                borderRadius: 'var(--radius-base)',
+                background: 'var(--color-info-light)',
+                color: 'var(--color-primary-light)',
                 fontWeight: 700,
               }}
             />

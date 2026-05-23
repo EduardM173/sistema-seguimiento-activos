@@ -61,16 +61,16 @@ export default function ViewAssetModal({ assetId, open, onClose }: Props) {
     fontSize: '11px',
     fontWeight: 600,
     textTransform: 'uppercase',
-    color: '#9ca3af',
+    color: 'var(--color-text-muted)',
     letterSpacing: '0.5px',
   };
   const valueStyle: React.CSSProperties = {
     fontSize: '14px',
-    color: '#e5e7eb',
+    color: 'var(--color-text-bright)',
     padding: '8px 12px',
-    background: '#111827',
-    borderRadius: '6px',
-    border: '1px solid #374151',
+    background: 'var(--field-bg)',
+    borderRadius: 'var(--radius-base)',
+    border: '1px solid var(--field-border)',
     minHeight: '38px',
     display: 'flex',
     alignItems: 'center',
@@ -93,7 +93,7 @@ export default function ViewAssetModal({ assetId, open, onClose }: Props) {
       className="overlayModal__dialog--dark overlayModal__dialog--assetDetailDark"
     >
       {loading || !asset ? (
-        <div style={{ padding: '40px', textAlign: 'center', color: '#9ca3af', background: '#0f172a' }}>
+        <div style={{ padding: '40px', textAlign: 'center', color: 'var(--color-text-muted)' }}>
           Cargando información del activo...
         </div>
       ) : (
@@ -156,10 +156,10 @@ export default function ViewAssetModal({ assetId, open, onClose }: Props) {
           {/* ========== PA4: INFORMACIÓN DE BAJA ========== */}
           {asset.estado === 'DADO_DE_BAJA' && (
             <div style={{
-              backgroundColor: '#2b1116',
-              borderLeft: '4px solid #ef4444',
+              backgroundColor: 'var(--color-danger-light)',
+              borderLeft: '4px solid var(--color-danger)',
               padding: '12px 16px',
-              borderRadius: '8px',
+              borderRadius: 'var(--radius-base)',
               marginTop: '4px'
             }}>
               <div style={{
@@ -168,8 +168,8 @@ export default function ViewAssetModal({ assetId, open, onClose }: Props) {
                 gap: '12px'
               }}>
                 <div style={fieldStyle}>
-                  <span style={{ ...labelStyle, color: '#fca5a5' }}>Fecha de baja</span>
-                  <div style={{ ...valueStyle, backgroundColor: '#1f1215', borderColor: '#7f1d1d' }}>
+                  <span style={{ ...labelStyle, color: 'var(--color-danger)' }}>📅 Fecha de baja</span>
+                  <div style={{ ...valueStyle, background: 'var(--field-bg-danger)' }}>
                     {asset.dadoDeBajaEn 
                       ? new Date(asset.dadoDeBajaEn).toLocaleDateString('es-ES', {
                           year: 'numeric',
@@ -182,8 +182,8 @@ export default function ViewAssetModal({ assetId, open, onClose }: Props) {
                   </div>
                 </div>
                 <div style={fieldStyle}>
-                  <span style={{ ...labelStyle, color: '#fca5a5' }}>Motivo del retiro</span>
-                  <div style={{ ...valueStyle, backgroundColor: '#1f1215', borderColor: '#7f1d1d', fontStyle: 'italic' }}>
+                  <span style={{ ...labelStyle, color: 'var(--color-danger)' }}>⚠️ Motivo del retiro</span>
+                  <div style={{ ...valueStyle, background: 'var(--field-bg-danger)', fontStyle: 'italic' }}>
                     {asset.motivoBaja || 'No especificado'}
                   </div>
                 </div>
