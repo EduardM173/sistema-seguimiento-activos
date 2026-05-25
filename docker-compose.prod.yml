@@ -30,7 +30,7 @@ services:
     restart: unless-stopped
     command: agent -server -bootstrap-expect=1 -client=0.0.0.0 -advertise=consul
     ports:
-      - "${PROD_CONSUL_UI_PORT}:8500"
+      - "${PROD_CONSUL_UI_PORT:-18500}:8500"
     networks:
       - activos_prod_net
 
@@ -76,7 +76,7 @@ services:
     volumes:
       - activos_uploads_prod:/app/uploads
     ports:
-      - "${PROD_BACKEND_SWAGGER_PORT}:${BACKEND_PORT}"
+      - "${PROD_BACKEND_SWAGGER_PORT:-13001}:${BACKEND_PORT:-3001}"
     depends_on:
       postgres:
         condition: service_healthy
@@ -104,7 +104,7 @@ services:
       CONSUL_PORT:      "8500"
       SERVICE_ADDRESS:  reports
     ports:
-      - "${PROD_REPORTS_SWAGGER_PORT}:${REPORTS_PORT}"
+      - "${PROD_REPORTS_SWAGGER_PORT:-13002}:${REPORTS_PORT:-3002}"
     depends_on:
       postgres:
         condition: service_healthy
@@ -132,7 +132,7 @@ services:
       CONSUL_PORT:      "8500"
       SERVICE_ADDRESS:  auditoria
     ports:
-      - "${PROD_AUDITORIA_SWAGGER_PORT}:${AUDIT_MS_PORT}"
+      - "${PROD_AUDITORIA_SWAGGER_PORT:-13003}:${AUDIT_MS_PORT:-3003}"
     depends_on:
       postgres:
         condition: service_healthy
@@ -174,8 +174,8 @@ services:
     volumes:
       - activos_neo4j_data_prod:/data
     ports:
-      - "${PROD_NEO4J_UI_PORT}:7474"
-      - "${PROD_NEO4J_BOLT_PORT}:7687"
+      - "${PROD_NEO4J_UI_PORT:-17474}:7474"
+      - "${PROD_NEO4J_BOLT_PORT:-17687}:7687"
     networks:
       - activos_prod_net
     healthcheck:
@@ -218,7 +218,7 @@ services:
       DSL_MAX_DEDUCTION_STEPS:  ${DSL_MAX_DEDUCTION_STEPS}
       DSL_SIMPLIFY_BEFORE_ANSWER: ${DSL_SIMPLIFY_BEFORE_ANSWER}
     ports:
-      - "${PROD_AGENT_DOCS_PORT}:${APP_PORT}"
+      - "${PROD_AGENT_DOCS_PORT:-18000}:${APP_PORT:-8000}"
     depends_on:
       agent-postgres:
         condition: service_healthy
@@ -242,7 +242,7 @@ services:
       CONSUL_PORT: "8500"
       APP_DOMAIN:  ${APP_DOMAIN}
     ports:
-      - "${PROD_GATEWAY_PORT}:80"
+      - "${PROD_GATEWAY_PORT:-80}:80"
     depends_on:
       - consul
       - backend
