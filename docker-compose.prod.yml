@@ -28,7 +28,7 @@ services:
     image: hashicorp/consul:1.18
     container_name: activos_consul_prod
     restart: unless-stopped
-    command: agent -server -bootstrap-expect=1 -client=0.0.0.0 -advertise=consul
+    command: agent -server -bootstrap-expect=1 -ui -client=0.0.0.0
     ports:
       - "${PROD_CONSUL_UI_PORT:-18500}:8500"
     networks:
@@ -52,7 +52,8 @@ services:
       test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER}", "-d", "${POSTGRES_DB}", "-p", "${POSTGRES_PORT}"]
       interval: 5s
       timeout: 3s
-      retries: 10
+      retries: 20
+      start_period: 60s
 
   # ── Backend (NestJS) ──────────────────────────────────────────────────────
   backend:
@@ -159,7 +160,8 @@ services:
       test: ["CMD-SHELL", "pg_isready -U ${AGENT_POSTGRES_USER} -d ${AGENT_POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 30s
 
   # ── Neo4j ─────────────────────────────────────────────────────────────────
   agent-neo4j:
@@ -183,6 +185,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
+      start_period: 120s
 
   # ── Agent Service (Python / FastAPI) ──────────────────────────────────────
   agent:

@@ -173,6 +173,9 @@ services:
       NEO4J_PLUGINS:                                   '["apoc"]'
       NEO4J_dbms_security_procedures_unrestricted:     apoc.*
       NEO4J_ACCEPT_LICENSE_AGREEMENT:                  "yes"
+    ports:
+      - "7474:7474"
+      - "7687:7687"
     volumes:
       - activos_neo4j_data_dev:/data
     networks:

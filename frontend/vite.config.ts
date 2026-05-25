@@ -30,7 +30,7 @@ export default defineConfig(() => {
       port: PORT,
 
       // Allow requests from the configured host plus inter-container hostnames
-      allowedHosts: [HOST, 'frontend', 'localhost'],
+      allowedHosts: [HOST, 'frontend', 'localhost', 'dev.dontrisk.org'],
     },
 
     resolve: {
