@@ -1,4 +1,5 @@
 import { useEffect, useRef, type ReactNode } from 'react';
+import { IconX } from './Icon';
 import './OverlayModal.css';
 
 type OverlayModalProps = {
@@ -76,7 +77,7 @@ export default function OverlayModal({
             disabled={disabled}
             aria-label="Cerrar"
           >
-            ✕
+            <IconX size={16} />
           </button>
         </div>
         <div className="overlayModal__body">

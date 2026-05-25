@@ -1,0 +1,89 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# docker-compose.infra.yml  —  Infraestructura para desarrollo local sin Docker
+#
+# Levanta SOLO las bases de datos y Consul, con puertos expuestos al host.
+# Los servicios de aplicación corren nativamente (npm run start:dev, etc.)
+# y se conectan a localhost.
+#
+# Prerequisito: cp .env.example .env
+# Uso:          docker compose -f docker-compose.infra.yml up -d
+# ─────────────────────────────────────────────────────────────────────────────
+
+networks:
+  activos_infra_net:
+    name: activos_infra_net
+
+volumes:
+  infra_pg_data:
+  infra_agent_pg_data:
+  infra_neo4j_data:
+
+services:
+
+  # ── Consul ────────────────────────────────────────────────────────────────
+  consul:
+    image: hashicorp/consul:1.18
+    container_name: activos_consul_local
+    restart: unless-stopped
+    command: agent -dev -client=0.0.0.0 -ui
+    ports:
+      - "8500:8500"
+    networks:
+      - activos_infra_net
+
+  # ── Base de datos principal ───────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: activos_db_local
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER:     ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB:       ${POSTGRES_DB}
+      PGPORT:            ${POSTGRES_PORT}
+    ports:
+      - "${POSTGRES_PORT}:${POSTGRES_PORT}"
+    volumes:
+      - infra_pg_data:/var/lib/postgresql/data
+    networks:
+      - activos_infra_net
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER}", "-d", "${POSTGRES_DB}", "-p", "${POSTGRES_PORT}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # ── Agent DB (pgvector) ───────────────────────────────────────────────────
+  agent-postgres:
+    image: pgvector/pgvector:pg16
+    container_name: activos_agent_db_local
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER:     ${AGENT_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${AGENT_POSTGRES_PASSWORD}
+      POSTGRES_DB:       ${AGENT_POSTGRES_DB}
+    ports:
+      - "5432:5432"
+    volumes:
+      - infra_agent_pg_data:/var/lib/postgresql/data
+      - ./agent_service/migrations/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - activos_infra_net
+
+  # ── Neo4j ─────────────────────────────────────────────────────────────────
+  neo4j:
+    image: neo4j:5.26.23-community
+    container_name: activos_neo4j_local
+    restart: unless-stopped
+    environment:
+      NEO4J_AUTH:                                      ${NEO4J_USER}/${NEO4J_PASSWORD}
+      NEO4J_PLUGINS:                                   '["apoc"]'
+      NEO4J_dbms_security_procedures_unrestricted:     apoc.*
+      NEO4J_ACCEPT_LICENSE_AGREEMENT:                  "yes"
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    volumes:
+      - infra_neo4j_data:/data
+    networks:
+      - activos_infra_net

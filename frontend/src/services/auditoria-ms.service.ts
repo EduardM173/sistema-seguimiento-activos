@@ -1,4 +1,5 @@
 import { getAccessToken } from './auth.service';
+import { ActivosService } from '@activos/config/browser';
 import type {
   AuditoriaMsFiltros,
   AuditoriaMsListadoResponse,
@@ -11,8 +12,7 @@ import type {
   TrazabilidadDepartamental,
 } from '../types/auditoria.types';
 
-const DEFAULT_AUDIT_API_URL = 'http://localhost:3003/api';
-const AUDIT_API_URL = import.meta.env.VITE_AUDIT_API_URL || DEFAULT_AUDIT_API_URL;
+const AUDIT_API_URL = `/${ActivosService.AUDITORIA}/api`;
 
 class AuditoriaMsError extends Error {
   status: number;
@@ -34,16 +34,19 @@ async function request<T>(endpoint: string, params?: Record<string, unknown>): P
     headers.Authorization = `Bearer ${token}`;
   }
 
-  const url = new URL(`${AUDIT_API_URL}${endpoint}`);
+  let urlStr = `${AUDIT_API_URL}${endpoint}`;
   if (params) {
+    const qs = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined && value !== null && value !== '') {
-        url.searchParams.set(key, String(value));
+        qs.set(key, String(value));
       }
     });
+    const qsStr = qs.toString();
+    if (qsStr) urlStr += '?' + qsStr;
   }
 
-  const response = await fetch(url.toString(), {
+  const response = await fetch(urlStr, {
     method: 'GET',
     headers,
   });

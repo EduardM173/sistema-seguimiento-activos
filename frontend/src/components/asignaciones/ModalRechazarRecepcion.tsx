@@ -90,7 +90,7 @@ export const ModalRechazarRecepcion: React.FC<ModalRechazarRecepcionProps> = ({
           marginBottom: '16px' 
         }}>
           <p style={{ margin: 0, fontWeight: 'bold' }}>{asignacion?.activo?.nombre}</p>
-          <p style={{ margin: '4px 0 0 0', fontSize: '14px', color: '#6b7280' }}>
+          <p style={{ margin: '4px 0 0 0', fontSize: '14px', color: 'var(--color-text-muted)' }}>
             Código: {asignacion?.activo?.codigoActivo}
           </p>
         </div>
@@ -122,8 +122,8 @@ export const ModalRechazarRecepcion: React.FC<ModalRechazarRecepcionProps> = ({
             ))}
           </select>
           {error && (
-            <span style={{ color: '#dc2626', fontSize: '12px', marginTop: '4px', display: 'block' }}>
-              ⚠️ {error}
+              <span style={{ color: '#dc2626', fontSize: '12px', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <IconAlertTriangle size={13} /> {error}
             </span>
           )}
         </div>

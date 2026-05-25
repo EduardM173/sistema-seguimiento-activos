@@ -294,8 +294,8 @@ export const MaterialForm: React.FC<MaterialFormProps> = ({
               style={{ borderColor: errors.stockActual ? '#dc2626' : undefined }}
             />
             {errors.stockActual && (
-              <span style={{ color: '#dc2626', fontSize: '12px' }}>
-                ⚠️ {errors.stockActual}
+              <span style={{ color: '#dc2626', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <IconAlertTriangle size={13} /> {errors.stockActual}
               </span>
             )}
             {!errors.stockActual && formData.stockActual === minStockValue && minStockValue > 0 && (
@@ -317,8 +317,8 @@ export const MaterialForm: React.FC<MaterialFormProps> = ({
               style={{ borderColor: errors.stockMinimo ? '#dc2626' : undefined }}
             />
             {errors.stockMinimo && (
-              <span style={{ color: '#dc2626', fontSize: '12px' }}>
-                ⚠️ {errors.stockMinimo}
+              <span style={{ color: '#dc2626', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <IconAlertTriangle size={13} /> {errors.stockMinimo}
               </span>
             )}
             {!errors.stockMinimo && formData.stockMinimo === minStockValue && minStockValue > 0 && (

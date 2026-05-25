@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { SearchBar, Badge } from '../common';
 import { SmartTable } from '../common/SmartTable';
 import type { ColumnDef, ActionDef } from '../common/SmartTable';
+import { IconEye, IconEdit, IconTrash, IconX } from '../common/Icon';
 import type { Activo, FiltrosActivos, EstadoActivo } from '../../types/activos.types';
 import { estadoActivoDisplay } from '../../types/activos.types';
 import { activosService } from '../../services/activos.service';
@@ -119,22 +120,22 @@ export const ActivosList: React.FC<ActivosListProps> = ({
     const actions: ActionDef<Activo>[] = [];
     
     if (onDetails) {
-      actions.push({ label: 'Ver detalles', icon: '👁️', onClick: onDetails });
+      actions.push({ label: 'Ver detalles', icon: <IconEye size={14} />, onClick: onDetails });
     }
     if (onEdit) {
-      actions.push({ label: 'Editar', icon: '✏️', onClick: onEdit });
+      actions.push({ label: 'Editar', icon: <IconEdit size={14} />, onClick: onEdit });
     }
     // Solo mostrar "Dar de baja" si el activo NO está dado de baja
     if (activo.estado !== 'DADO_DE_BAJA') {
       actions.push({ 
         label: 'Dar de baja', 
-        icon: '🗑️', 
+        icon: <IconTrash size={14} />, 
         variant: 'danger' as const, 
         onClick: (a) => handleBajaClick(a) 
       });
     }
     if (onDelete && activo.estado === 'DADO_DE_BAJA') {
-      actions.push({ label: 'Eliminar', icon: '❌', variant: 'danger' as const, onClick: onDelete });
+      actions.push({ label: 'Eliminar', icon: <IconX size={14} />, variant: 'danger' as const, onClick: onDelete });
     }
     
     return actions;

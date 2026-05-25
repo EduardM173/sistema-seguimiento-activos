@@ -1,0 +1,37 @@
+{
+  "name": "@activos/config",
+  "version": "1.0.0",
+  "description": "Shared Consul utilities and service registry for Activos microservices",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./browser": {
+      "import": "./dist/browser.js",
+      "require": "./dist/browser.js",
+      "types": "./dist/browser.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "axios": "^1.6.0",
+    "consul": "^2.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "publishConfig": {
+    "registry": "http://localhost:20002/repository/activos/"
+  }
+}

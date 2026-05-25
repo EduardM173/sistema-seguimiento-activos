@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef, type FormEvent } from 'react';
+import { IconRefresh, IconSave } from '../common/Icon';
 
 import { getAssetById, updateAsset } from '../../services/assets.service';
 import { getCategorias, getUbicaciones, getAreas, getUsuarios } from '../../services/catalogs.service';
@@ -360,7 +361,7 @@ export default function EditAssetModal({ assetId, open, onClose, onUpdated }: Pr
         disabled={submitting}
       >
         {loading ? (
-          <div style={{ padding: '40px', textAlign: 'center', color: '#6b7280' }}>
+          <div style={{ padding: '40px', textAlign: 'center', color: 'var(--color-text-muted)' }}>
             Cargando información del activo...
           </div>
         ) : (
@@ -387,7 +388,7 @@ export default function EditAssetModal({ assetId, open, onClose, onUpdated }: Pr
                     onClick={handleGenerateCode}
                     disabled={generatingCode || submitting}
                   >
-                    {generatingCode ? '⏳' : '🔄'}
+                    {generatingCode ? <IconRefresh size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <IconRefresh size={14} />}
                   </button>
                 </div>
                 {codigoError ? <span className="formField__error">{codigoError}</span> : null}
@@ -456,10 +457,10 @@ export default function EditAssetModal({ assetId, open, onClose, onUpdated }: Pr
             <div
               style={{
                 padding: '12px 14px',
-                border: '1px solid #e5e7eb',
-                borderRadius: '10px',
-                background: '#f8fafc',
-                color: '#475569',
+                border: '1px solid var(--glass-border)',
+                borderLeft: '3px solid var(--color-primary-muted)',
+                background: 'var(--glass-bg)',
+                color: 'var(--color-text)',
                 fontSize: '0.88rem',
               }}
             >
@@ -582,7 +583,7 @@ export default function EditAssetModal({ assetId, open, onClose, onUpdated }: Pr
                 className="btn btn--primary"
                 disabled={submitting || hasRequiredErrors}
               >
-                {submitting ? 'Guardando...' : '💾 Guardar Cambios'}
+                {submitting ? 'Guardando...' : <><IconSave size={15} style={{ marginRight: '6px' }} />Guardar Cambios</>}
               </button>
             </div>
           </form>

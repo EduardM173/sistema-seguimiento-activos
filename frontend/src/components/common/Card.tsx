@@ -8,6 +8,8 @@ interface CardProps {
   onClick?: () => void;
   hoverable?: boolean;
   padding?: 'sm' | 'md' | 'lg';
+  /** Visual variant. Default = floating (no box). */
+  variant?: 'floating' | 'bordered' | 'surface';
 }
 
 export const Card: React.FC<CardProps> = ({
@@ -17,10 +19,14 @@ export const Card: React.FC<CardProps> = ({
   onClick,
   hoverable = false,
   padding = 'md',
+  variant = 'floating',
 }) => {
+  const variantClass =
+    variant === 'bordered' ? 'card--bordered' :
+    variant === 'surface' ? 'card--surface' : '';
   return (
     <div
-      className={`card card-${padding} ${hoverable ? 'card-hoverable' : ''} ${className}`}
+      className={`card card-${padding} ${variantClass} ${hoverable ? 'card-hoverable' : ''} ${className}`.trim()}
       onClick={onClick}
     >
       {title && <div className="card-title">{title}</div>}

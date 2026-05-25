@@ -1,0 +1,247 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# docker-compose.dev.yml  —  Entorno de DESARROLLO con Docker
+#
+# Capas de configuración por servicio:
+#   1. <servicio>/.env     — defaults localhost (capa de servicio, en git)
+#   2. ./.env              — secretos y overrides de despliegue (gitignored)
+#   3. environment:        — hostnames de red Docker (sobreescribe las capas 1-2)
+#
+# Prerequisito: cp .env.example .env
+# ─────────────────────────────────────────────────────────────────────────────
+
+networks:
+  activos_dev_net:
+    name: activos_dev_net
+
+volumes:
+  activos_pg_data_dev:
+  activos_agent_pg_data_dev:
+  activos_neo4j_data_dev:
+
+x-nexus-build: &nexus-build
+  args:
+    NEXUS_URL: ${NEXUS_URL}
+
+services:
+
+  # ── Consul ────────────────────────────────────────────────────────────────
+  consul:
+    image: hashicorp/consul:1.18
+    container_name: activos_consul_dev
+    restart: unless-stopped
+    command: agent -server -bootstrap-expect=1 -ui -client=0.0.0.0
+    ports:
+      - "8500:8500"
+    networks:
+      - activos_dev_net
+
+  # ── Base de datos principal ───────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: activos_db_dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER:     ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB:       ${POSTGRES_DB}
+      PGPORT:            ${POSTGRES_PORT}
+    volumes:
+      - activos_pg_data_dev:/var/lib/postgresql/data
+    networks:
+      - activos_dev_net
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER}", "-d", "${POSTGRES_DB}", "-p", "${POSTGRES_PORT}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 60s
+
+  # ── Backend (NestJS) ──────────────────────────────────────────────────────
+  backend:
+    container_name: activos_backend_dev
+    build:
+      context:    ./backend
+      dockerfile: dockerfile.dev
+      <<: *nexus-build
+    restart: unless-stopped
+    env_file:
+      - path: ./backend/.env
+        required: true
+      - path: ./.env
+        required: false
+    environment:
+      POSTGRES_HOST:    postgres
+      CONSUL_HOST:      consul
+      CONSUL_PORT:      "8500"
+      SERVICE_ADDRESS:  backend
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/prisma:/app/prisma
+    depends_on:
+      postgres:
+        condition: service_healthy
+      consul:
+        condition: service_started
+    networks:
+      - activos_dev_net
+
+  # ── Reports Service (NestJS) ──────────────────────────────────────────────
+  reports:
+    container_name: activos_reports_dev
+    build:
+      context:    ./reports-service
+      dockerfile: dockerfile.dev
+      <<: *nexus-build
+    restart: unless-stopped
+    env_file:
+      - path: ./reports-service/.env
+        required: true
+      - path: ./.env
+        required: false
+    environment:
+      POSTGRES_HOST:    postgres
+      CONSUL_HOST:      consul
+      CONSUL_PORT:      "8500"
+      SERVICE_ADDRESS:  reports
+    volumes:
+      - ./reports-service/src:/app/src
+    depends_on:
+      postgres:
+        condition: service_healthy
+      consul:
+        condition: service_started
+    networks:
+      - activos_dev_net
+
+  # ── Auditoria (Express) ───────────────────────────────────────────────────
+  auditoria:
+    container_name: activos_auditoria_dev
+    build:
+      context:    ./auditoria
+      dockerfile: dockerfile.dev
+      <<: *nexus-build
+    restart: unless-stopped
+    env_file:
+      - path: ./auditoria/.env
+        required: true
+      - path: ./.env
+        required: false
+    environment:
+      POSTGRES_HOST:    postgres
+      CONSUL_HOST:      consul
+      CONSUL_PORT:      "8500"
+      SERVICE_ADDRESS:  auditoria
+    volumes:
+      - ./auditoria/src:/app/src
+    depends_on:
+      postgres:
+        condition: service_healthy
+      consul:
+        condition: service_started
+    networks:
+      - activos_dev_net
+
+  # ── Agent DB (pgvector) ───────────────────────────────────────────────────
+  agent-postgres:
+    image: pgvector/pgvector:pg16
+    container_name: activos_agent_db_dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER:     ${AGENT_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${AGENT_POSTGRES_PASSWORD}
+      POSTGRES_DB:       ${AGENT_POSTGRES_DB}
+    volumes:
+      - activos_agent_pg_data_dev:/var/lib/postgresql/data
+      - ./agent_service/migrations/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - activos_dev_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${AGENT_POSTGRES_USER} -d ${AGENT_POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Neo4j ─────────────────────────────────────────────────────────────────
+  agent-neo4j:
+    image: neo4j:5.26.23-community
+    container_name: activos_neo4j_dev
+    restart: unless-stopped
+    environment:
+      NEO4J_AUTH:                                      ${NEO4J_USER}/${NEO4J_PASSWORD}
+      NEO4J_PLUGINS:                                   '["apoc"]'
+      NEO4J_dbms_security_procedures_unrestricted:     apoc.*
+      NEO4J_ACCEPT_LICENSE_AGREEMENT:                  "yes"
+    volumes:
+      - activos_neo4j_data_dev:/data
+    networks:
+      - activos_dev_net
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:7474 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 90s
+
+  # ── Agent Service (Python / FastAPI) ──────────────────────────────────────
+  agent:
+    container_name: activos_agent_dev
+    build:
+      context:    ./agent_service
+      dockerfile: dockerfile.dev
+    restart: unless-stopped
+    env_file:
+      - path: ./agent_service/.env
+        required: true
+      - path: ./.env
+        required: false
+    environment:
+      POSTGRES_HOST:        agent-postgres
+      NEO4J_URI:            bolt://agent-neo4j:7687
+      CONSUL_HOST:          consul
+      CONSUL_PORT:          "8500"
+      SERVICE_ADDRESS:      agent
+      DEEPLINK_NAV_MAP_URL: http://frontend:5173/__deeplink/navigation-map.json
+    volumes:
+      - ./agent_service/src:/app/src
+      - ./agent_service/atomic_tests:/app/atomic_tests
+    depends_on:
+      agent-postgres:
+        condition: service_healthy
+      agent-neo4j:
+        condition: service_healthy
+      consul:
+        condition: service_started
+    networks:
+      - activos_dev_net
+
+  # ── Frontend (Vite dev server) — ÚNICO SERVICIO EXPUESTO AL HOST ──────────
+  frontend:
+    container_name: activos_frontend_dev
+    build:
+      context:    ./frontend
+      dockerfile: dockerfile.dev
+      <<: *nexus-build
+    restart: unless-stopped
+    env_file:
+      - path: ./frontend/.env
+        required: true
+      - path: ./.env
+        required: false
+    environment:
+      CONSUL_HOST:  consul
+      CONSUL_PORT:  "8500"
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
+      - ./frontend/vite-plugins:/app/vite-plugins
+      - ./frontend/index.html:/app/index.html
+    ports:
+      - "${DEV_FRONTEND_PORT}:5173"
+    depends_on:
+      - consul
+      - backend
+      - reports
+      - auditoria
+      - agent
+    networks:
+      - activos_dev_net

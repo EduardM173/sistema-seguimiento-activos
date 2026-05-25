@@ -3,19 +3,18 @@
    Matches the SmartTable dark-navy theme.
    ============================================================ */
 
-/* ── Filter bar ──────────────────────────────────────────── */
+/* ── Filter bar — Haptic floating: no box, no border, no blur ── */
 .filterRow {
   display: flex;
   align-items: flex-end;
-  gap: var(--space-4);
+  gap: var(--space-5);
   flex-wrap: wrap;
-  background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-lg);
-  padding: var(--space-4) var(--space-5);
-  box-shadow: var(--shadow-base);
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0 0 var(--space-5);
+  margin-bottom: var(--space-2);
+  box-shadow: none;
 }
 
 /* ── Individual filter group ─────────────────────────────── */

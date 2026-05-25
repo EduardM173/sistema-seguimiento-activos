@@ -1,0 +1,46 @@
+# nginx.conf.ctmpl
+# consul-template regenera este archivo cada vez que cambia el registro de Consul.
+# Después de regenerar, ejecuta "nginx -s reload" para aplicar el nuevo estado.
+#
+# URL pattern:
+#   /<consul-service-name>/<path>  →  http://<service-address>:<port>/<path>
+#
+# El frontend compilado se sirve en la raíz.
+
+# ── Bloques upstream (uno por servicio registrado con tag "activos") ─────────
+{{ range services }}{{ $tag := false }}{{ range .Tags }}{{ if eq . "activos" }}{{ $tag = true }}{{ end }}{{ end }}{{ if $tag }}
+{{ $svc := service .Name }}{{ if $svc }}
+upstream {{ .Name }} {
+  least_conn;
+  {{ range $svc }}server {{ .Address }}:{{ .Port }};
+  {{ end }}keepalive 16;
+}
+{{ end }}{{ end }}{{ end }}
+
+server {
+    listen 80;
+    server_name {{ env "APP_DOMAIN" }};
+
+    # ── Frontend estático ────────────────────────────────────────────────────
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # SPA fallback: rutas desconocidas devuelven index.html
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # ── Rutas de servicios (una location por servicio) ───────────────────────
+    # Patrón: /<consul_service_name>/<path>  →  /<path> en el servicio
+    {{ range services }}{{ $tag := false }}{{ range .Tags }}{{ if eq . "activos" }}{{ $tag = true }}{{ end }}{{ end }}{{ if $tag }}{{ $svc := service .Name }}{{ if $svc }}
+    location /{{ .Name }}/ {
+        proxy_pass         http://{{ .Name }}/;
+        proxy_http_version 1.1;
+        proxy_set_header   Host              $host;
+        proxy_set_header   X-Real-IP         $remote_addr;
+        proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto $scheme;
+        proxy_set_header   Connection        "";
+    }
+    {{ end }}{{ end }}{{ end }}
+}

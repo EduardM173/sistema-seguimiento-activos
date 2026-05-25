@@ -12,7 +12,7 @@ pipeline {
         SECRET_ENV_PATH = credentials('env_activos_dev')
         
         TAG = "${env.BUILD_NUMBER}"
-        TARGET_BRANCH = "Sprint4_DEV"
+        TARGET_BRANCH = "Sprint5_DEV"
     }
 
     stages {
@@ -31,7 +31,7 @@ pipeline {
 
         stage('Docker Build') {
             steps {
-                sh "docker compose -f docker-compose.deploy.yml build"
+                sh "docker compose -f docker-compose.prod.yml build"
             }
         }
 
@@ -42,8 +42,8 @@ pipeline {
                 }
             }
             steps {
-                sh "docker compose -p seguimiento_activos -f docker-compose.deploy.yml down"
-                sh "docker compose -p seguimiento_activos -f docker-compose.deploy.yml up -d --force-recreate --remove-orphans"
+                sh "docker compose -p seguimiento_activos -f docker-compose.prod.yml down"
+                sh "docker compose -p seguimiento_activos -f docker-compose.prod.yml up -d --force-recreate --remove-orphans"
             }
         }
     }

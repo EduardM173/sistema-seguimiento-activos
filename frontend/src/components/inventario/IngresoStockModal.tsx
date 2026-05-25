@@ -84,7 +84,7 @@ const IngresoStockModal: React.FC<IngresoStockModalProps> = ({
             }}
           >
             <div style={{ gridColumn: '1 / -1' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 700, color: 'var(--color-text-muted)', fontSize: '0.78rem', letterSpacing: '0.05em', textTransform: 'uppercase' as const }}>
                 Material *
               </label>
               <select
@@ -94,8 +94,8 @@ const IngresoStockModal: React.FC<IngresoStockModalProps> = ({
                 style={{
                   width: '100%',
                   padding: '12px 14px',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '8px',
+                  border: 'var(--input-border)',
+                  borderRadius: 'var(--radius-base)',
                   fontSize: '16px',
                 }}
               >
@@ -109,7 +109,7 @@ const IngresoStockModal: React.FC<IngresoStockModalProps> = ({
             </div>
 
             <div>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 700, color: 'var(--color-text-muted)', fontSize: '0.78rem', letterSpacing: '0.05em', textTransform: 'uppercase' as const }}>
                 Stock actual
               </label>
               <input
@@ -119,15 +119,15 @@ const IngresoStockModal: React.FC<IngresoStockModalProps> = ({
                 style={{
                   width: '100%',
                   padding: '12px 14px',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '8px',
-                  background: '#f9fafb',
+                  border: 'var(--input-border)',
+                  borderRadius: 'var(--radius-base)',
+                  background: 'var(--input-bg)',
                 }}
               />
             </div>
 
             <div>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 700, color: 'var(--color-text-muted)', fontSize: '0.78rem', letterSpacing: '0.05em', textTransform: 'uppercase' as const }}>
                 Cantidad a ingresar *
               </label>
               <input
@@ -139,14 +139,14 @@ const IngresoStockModal: React.FC<IngresoStockModalProps> = ({
                 style={{
                   width: '100%',
                   padding: '12px 14px',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '8px',
+                  border: 'var(--input-border)',
+                  borderRadius: 'var(--radius-base)',
                 }}
               />
             </div>
 
             <div style={{ gridColumn: '1 / -1' }}>
-              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>
+              <label style={{ display: 'block', marginBottom: '8px', fontWeight: 700, color: 'var(--color-text-muted)', fontSize: '0.78rem', letterSpacing: '0.05em', textTransform: 'uppercase' as const }}>
                 Nuevo stock
               </label>
               <input
@@ -156,10 +156,10 @@ const IngresoStockModal: React.FC<IngresoStockModalProps> = ({
                 style={{
                   width: '100%',
                   padding: '12px 14px',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '8px',
-                  background: '#f0fdf4',
-                  color: '#166534',
+                  border: 'var(--input-border)',
+                  borderRadius: 'var(--radius-base)',
+                  background: 'var(--color-success-light)',
+                  color: 'var(--color-success)',
                   fontWeight: 700,
                 }}
               />

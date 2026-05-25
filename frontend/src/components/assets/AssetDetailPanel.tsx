@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { IconX } from '../common/Icon';
 
 import AssetQrCode from './AssetQrCode';
 import type { AssetDetail, EstadoActivo } from '../../types/assets.types';
@@ -179,7 +180,7 @@ export default function AssetDetailPanel({
           </div>
           {onClose ? (
             <button type="button" className="actionBtn" onClick={onClose}>
-              ✕
+              <IconX size={16} />
             </button>
           ) : null}
         </div>
@@ -203,7 +204,7 @@ export default function AssetDetailPanel({
         </div>
         {onClose ? (
           <button type="button" className="actionBtn" onClick={onClose}>
-            ✕
+            <IconX size={16} />
           </button>
         ) : null}
       </div>

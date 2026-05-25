@@ -2,11 +2,12 @@ import 'dotenv/config';
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { ActivosService, registerWithConsul, deregisterFromConsul } from '@activos/config';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  app.setGlobalPrefix('api');
+  app.setGlobalPrefix('api', { exclude: ['health'] });
   app.enableCors({
     origin: [
       'http://localhost:5173',
@@ -34,10 +35,22 @@ async function bootstrap() {
   const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('docs', app, swaggerDocument);
 
-  const port = process.env.BACKEND_PORT || 3000;
+  const port = parseInt(process.env.BACKEND_PORT ?? '3001', 10);
   await app.listen(port);
   console.log(`Backend corriendo en http://localhost:${port}/api`);
   console.log(`Swagger disponible en http://localhost:${port}/docs`);
+
+  const instanceId = await registerWithConsul({
+    service: ActivosService.BACKEND,
+    port,
+  });
+
+  const shutdown = async () => {
+    await deregisterFromConsul(instanceId);
+    process.exit(0);
+  };
+  process.on('SIGTERM', shutdown);
+  process.on('SIGINT',  shutdown);
 }
 
 bootstrap();

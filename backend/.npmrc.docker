@@ -1,0 +1,3 @@
+# Apunta a Nexus para resolver @activos/config
+# El ARG NEXUS_URL se inyecta desde el docker-compose como build-arg
+ARG NEXUS_URL=http://nexus:8081/repository/npm-group/
