@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback, useRef, type FormEvent } from 'react';
 import { IconRefresh, IconSave } from '../common/Icon';
+import { ImageGallery } from '../common/ImageGallery';
+import activosService from '../../services/activos.service';
 
 import { getAssetById, updateAsset } from '../../services/assets.service';
 import { getCategorias, getUbicaciones, getAreas, getUsuarios } from '../../services/catalogs.service';
@@ -366,6 +368,14 @@ export default function EditAssetModal({ assetId, open, onClose, onUpdated }: Pr
           </div>
         ) : (
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {/* Imágenes */}
+            <ImageGallery
+              entityId={assetId}
+              onLoad={(id) => activosService.listarImagenes(id)}
+              onDelete={(id, imgId) => activosService.eliminarImagen(id, imgId)}
+              onUpload={(id, files) => activosService.subirImagenes(id, files)}
+            />
+
             {/* Código + Nombre */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
               <div className={`formField ${codigoError ? 'formField--error' : ''}`}>

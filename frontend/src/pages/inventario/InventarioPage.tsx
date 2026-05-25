@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { ActivosService } from '@activos/config/browser';
 import { Button, Badge, SmartTable, SmartGalery } from '../../components/common';
 import type { ColumnDef, ActionDef } from '../../components/common';
 import type { CategoriaMaterial, Material } from '../../types/inventario.types';
@@ -44,7 +45,7 @@ export const InventarioPage: React.FC = () => {
   const [creatingDemo, setCreatingDemo] = useState(false);
   const [deletingDemo, setDeletingDemo] = useState(false);
 
-  const [viewMode, setViewMode] = useState<'table' | 'gallery'>('table');
+  const [viewMode, setViewMode] = useState<'table' | 'gallery'>('gallery');
 
   const [showHistorialModal, setShowHistorialModal] = useState(false);
   const [materialSeleccionado, setMaterialSeleccionado] = useState<Material | null>(null);
@@ -537,7 +538,7 @@ export const InventarioPage: React.FC = () => {
     },
   ]}
 />
-      <div className="module-list">
+      <div className="assetsTable__wrap">
         {viewMode === 'gallery' ? (
           <SmartGalery<Material>
             columns={[
@@ -566,6 +567,16 @@ export const InventarioPage: React.FC = () => {
             loading={loading}
             emptyMessage="No hay materiales registrados en el inventario"
             keyExtractor={(m) => m.id}
+            loadCoverImage={async (m: Material) => {
+              try {
+                const imgs = await inventarioService.listarImagenes(m.id);
+                return imgs.length > 0
+                  ? `/${ActivosService.BACKEND}${imgs[0].url}`
+                  : null;
+              } catch {
+                return null;
+              }
+            }}
             actions={materialActions}
             onRowClick={(m) => void abrirHistorial(m)}
           />
@@ -581,55 +592,55 @@ export const InventarioPage: React.FC = () => {
             onRowClick={(m) => void abrirHistorial(m)}
           />
         )}
-      </div>
 
-      {!loading && materiales.length > 0 && (
-        <div className="assetsPagination">
-          <span className="assetsPagination__info">
-            Mostrando{' '}
-            <strong>
-              {(currentPage - 1) * meta.pageSize + 1}–
-              {Math.min(currentPage * meta.pageSize, meta.total)}
-            </strong>{' '}
-            de <strong>{meta.total}</strong> materiales registrados
-          </span>
+        {!loading && materiales.length > 0 && (
+          <div className="assetsPagination">
+            <span className="assetsPagination__info">
+              Mostrando{' '}
+              <strong>
+                {(currentPage - 1) * meta.pageSize + 1}–
+                {Math.min(currentPage * meta.pageSize, meta.total)}
+              </strong>{' '}
+              de <strong>{meta.total}</strong> materiales registrados
+            </span>
 
-          <div className="assetsPagination__controls">
-            <button
-              type="button"
-              className="pageBtn"
-              disabled={currentPage <= 1}
-              onClick={() => setCurrentPage((page) => page - 1)}
-            >
-              &lt;
-            </button>
+            <div className="assetsPagination__controls">
+              <button
+                type="button"
+                className="pageBtn"
+                disabled={currentPage <= 1}
+                onClick={() => setCurrentPage((page) => page - 1)}
+              >
+                &lt;
+              </button>
 
-            {buildPageNumbers().map((page, index) =>
-              page === '...' ? (
-                <span key={`dots-${index}`} className="pageDots">…</span>
-              ) : (
-                <button
-                  key={page}
-                  type="button"
-                  className={`pageBtn pageBtn--num ${page === currentPage ? 'pageBtn--active' : ''}`}
-                  onClick={() => setCurrentPage(page)}
-                >
-                  {page}
-                </button>
-              )
-            )}
+              {buildPageNumbers().map((page, index) =>
+                page === '...' ? (
+                  <span key={`dots-${index}`} className="pageDots">…</span>
+                ) : (
+                  <button
+                    key={page}
+                    type="button"
+                    className={`pageBtn pageBtn--num ${page === currentPage ? 'pageBtn--active' : ''}`}
+                    onClick={() => setCurrentPage(page)}
+                  >
+                    {page}
+                  </button>
+                )
+              )}
 
-            <button
-              type="button"
-              className="pageBtn"
-              disabled={currentPage >= meta.totalPages}
-              onClick={() => setCurrentPage((page) => page + 1)}
-            >
-               &gt;
-            </button>
+              <button
+                type="button"
+                className="pageBtn"
+                disabled={currentPage >= meta.totalPages}
+                onClick={() => setCurrentPage((page) => page + 1)}
+              >
+                 &gt;
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       <MaterialForm
         isOpen={isMaterialModalOpen}

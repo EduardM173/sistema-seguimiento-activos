@@ -69,24 +69,32 @@ class VisionAgent:
 
         try:
             response = self._client.models.generate_content(
-                model="gemini-1.5-flash",
+                model=settings.llm_model,
                 contents=[image_part, user_prompt],
                 config=genai_types.GenerateContentConfig(
                     system_instruction=VISION_SYSTEM_PROMPT,
                     temperature=0.1,
-                    max_output_tokens=512,
+                    max_output_tokens=1024,
+                    response_mime_type="application/json",
                 ),
             )
-            raw_text = response.text.strip()
-            # Strip markdown code fences if present
+            raw_text = (response.text or "").strip()
+            if not raw_text:
+                logger.warning("[VisionAgent] Empty response from Gemini (safety filter or blocked content)")
+                return VisionAnalysisResult(
+                    notes="No se pudo procesar la imagen. Intente con otra foto más clara.",
+                    confidence=0.0,
+                )
+            # Strip markdown code fences if the model still adds them
             if raw_text.startswith("```"):
                 raw_text = "\n".join(raw_text.split("\n")[1:])
             if raw_text.endswith("```"):
                 raw_text = "\n".join(raw_text.split("\n")[:-1])
+            raw_text = raw_text.strip()
 
             vision_data = json.loads(raw_text)
         except (json.JSONDecodeError, ValueError) as exc:
-            logger.warning("[VisionAgent] Could not parse Gemini response: %s", exc)
+            logger.warning("[VisionAgent] Could not parse Gemini response: %s | raw: %.200s", exc, raw_text if 'raw_text' in dir() else '(no text)')
             return VisionAnalysisResult(
                 notes="No se pudo identificar el activo en la imagen.",
                 confidence=0.0,

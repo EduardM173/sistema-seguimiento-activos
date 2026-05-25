@@ -2,13 +2,21 @@
 /*  Spotify-style card gallery component.                                       */
 /* ─────────────────────────────────────────────────────────────────────────── */
 
-/* Grid ───────────────────────────────────────────────────────────────────── */
+/* Scroll wrapper (mirrors st__wrap — fills the assetsTable__wrap flex column) */
+
+.sg__wrap {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: 16px 16px 0;
+}
+
+/* Grid ───────────────────────────────────────────────────────────────────────── */
 
 .sg__grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(165px, 1fr));
   gap: 20px;
-  padding: 2px 0 8px;
+  padding-bottom: 16px;
 }
 
 /* Card ───────────────────────────────────────────────────────────────────── */
@@ -63,6 +71,16 @@
   pointer-events: none;
   transition: opacity 0.2s;
   letter-spacing: -1px;
+}
+
+/* Cover image (shown when loadCoverImage resolves a URL) */
+.sg__artImg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 8px;
 }
 
 /* ⋯ actions button — slides up on card hover */
@@ -169,10 +187,11 @@
 /* Skeleton loading ───────────────────────────────────────────────────────── */
 
 .sg__skeletonGrid {
+  flex-grow: 1;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(165px, 1fr));
   gap: 20px;
-  padding: 2px 0 8px;
+  padding: 16px;
 }
 
 .sg__skeletonCard {

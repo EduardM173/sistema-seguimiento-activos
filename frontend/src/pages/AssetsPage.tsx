@@ -17,6 +17,7 @@ import {
   getAssetById,
   searchAssets,
 } from '../services/assets.service';
+import activosService from '../services/activos.service';
 import { HttpError } from '../services/http.client';
 import type {
   Area,
@@ -98,7 +99,7 @@ export default function AssetsPage() {
   const [viewingAssetId, setViewingAssetId] = useState<string | null>(null);
   const [historyAssetId, setHistoryAssetId] = useState<string | null>(null);
 
-  const [viewMode, setViewMode] = useState<'table' | 'gallery'>('table');
+  const [viewMode, setViewMode] = useState<'table' | 'gallery'>('gallery');
   
   // ========== MODAL DE BAJA ==========
   const [bajaModalOpen, setBajaModalOpen] = useState(false);
@@ -803,6 +804,16 @@ export default function AssetsPage() {
                     keyExtractor={(a) => a.id}
                     emptyMessage="No se encontraron activos con los filtros seleccionados."
                     onRowClick={(asset) => setViewingAssetId(asset.id)}
+                    loadCoverImage={async (asset) => {
+                      try {
+                        const imgs = await activosService.listarImagenes(asset.id);
+                        return imgs.length > 0
+                          ? `/${ActivosService.BACKEND}${imgs[0].url}`
+                          : null;
+                      } catch {
+                        return null;
+                      }
+                    }}
                     actions={assetActions}
                   />
                 ) : (

@@ -36,14 +36,14 @@ pipeline {
         }
 
         stage('Deploy Detached') {  
-            when {
-                expression { 
-                    return env.GIT_BRANCH == "origin/${env.TARGET_BRANCH}" || env.GIT_BRANCH == env.TARGET_BRANCH 
-                }
-            }
+            // when {
+            //     expression { 
+            //         return env.GIT_BRANCH == "origin/${env.TARGET_BRANCH}" || env.GIT_BRANCH == env.TARGET_BRANCH 
+            //     }
+            // }
             steps {
-                sh "docker compose -p seguimiento_activos -f docker-compose.prod.yml down"
-                sh "docker compose -p seguimiento_activos -f docker-compose.prod.yml up -d --force-recreate --remove-orphans"
+                sh "docker compose -p seguimiento_activos -f docker-compose.deploy.yml down"
+                sh "docker compose -p seguimiento_activos -f docker-compose.deploy.yml up -d --force-recreate --remove-orphans"
             }
         }
     }

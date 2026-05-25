@@ -7,7 +7,13 @@ import '../../styles/SmartGalery.css';
 // ─── Public types ─────────────────────────────────────────────────────────────
 
 /** Same props as SmartTable — drop-in replacement that renders as a card grid. */
-export type SmartGaleryProps<T extends object> = SmartTableProps<T>;
+export type SmartGaleryProps<T extends object> = SmartTableProps<T> & {
+  /**
+   * Optional async resolver that returns the cover-image URL for a given row.
+   * Return `null` when no image is available — a colourful gradient is shown instead.
+   */
+  loadCoverImage?: (row: T) => Promise<string | null>;
+};
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -33,6 +39,78 @@ function buildGradient(seed: string | number): string {
 
 const SKELETON_COUNT = 10;
 
+// ─── Per-card cover art (handles lazy image loading) ─────────────────────────
+
+interface CoverArtProps {
+  rowKey: string | number;
+  row: unknown;
+  gradient: string;
+  loadCoverImage?: (row: unknown) => Promise<string | null>;
+  label: string;
+  clickable: boolean;
+  onArtClick?: () => void;
+  onArtKeyDown?: (e: React.KeyboardEvent<HTMLDivElement>) => void;
+  hasActions: boolean;
+  onMoreClick?: (btn: HTMLButtonElement) => void;
+}
+
+function CoverArt({
+  rowKey,
+  row,
+  gradient,
+  loadCoverImage,
+  label,
+  clickable,
+  onArtClick,
+  onArtKeyDown,
+  hasActions,
+  onMoreClick,
+}: CoverArtProps) {
+  const [coverUrl, setCoverUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!loadCoverImage) return;
+    let cancelled = false;
+    void loadCoverImage(row)
+      .then((url) => { if (!cancelled) setCoverUrl(url ?? null); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rowKey]);
+
+  return (
+    <div
+      className={`sg__art${clickable ? ' sg__art--clickable' : ''}`}
+      style={coverUrl ? undefined : { background: gradient }}
+      onClick={onArtClick}
+      onKeyDown={onArtKeyDown}
+      role={clickable ? 'button' : undefined}
+      tabIndex={clickable ? 0 : undefined}
+      aria-label={clickable ? label : undefined}
+    >
+      {coverUrl ? (
+        <img src={coverUrl} alt={label} className="sg__artImg" />
+      ) : (
+        <span className="sg__artLetter">{label.charAt(0).toUpperCase()}</span>
+      )}
+
+      {hasActions && (
+        <button
+          type="button"
+          className="sg__moreBtn"
+          aria-label="Abrir acciones"
+          onClick={(e) => {
+            e.stopPropagation();
+            onMoreClick?.(e.currentTarget);
+          }}
+        >
+          ⋯
+        </button>
+      )}
+    </div>
+  );
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function SmartGalery<T extends object>({
@@ -43,6 +121,7 @@ export function SmartGalery<T extends object>({
   keyExtractor,
   onRowClick,
   actions,
+  loadCoverImage,
 }: SmartGaleryProps<T>) {
   // ── Dropdown state ────────────────────────────────────────────────────────
   const [dropdownRowKey, setDropdownRowKey] = useState<string | number | null>(null);
@@ -130,102 +209,90 @@ export function SmartGalery<T extends object>({
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <>
-      <div className="sg__grid">
-        {data.map((row) => {
-          const rowKey = keyExtractor(row);
-          const gradient = buildGradient(rowKey);
+      <div className="sg__wrap">
+        <div className="sg__grid">
+          {data.map((row) => {
+            const rowKey = keyExtractor(row);
+            const gradient = buildGradient(rowKey);
 
-          const primaryRaw = primaryCol ? getCellValue(row, primaryCol) : null;
-          const firstLetter = String(primaryRaw ?? '?').charAt(0).toUpperCase();
+            const primaryRaw = primaryCol ? getCellValue(row, primaryCol) : null;
 
-          const primaryNode = primaryCol
-            ? primaryCol.render
-              ? primaryCol.render(primaryRaw, row)
-              : String(primaryRaw ?? '—')
-            : '—';
+            const primaryNode = primaryCol
+              ? primaryCol.render
+                ? primaryCol.render(primaryRaw, row)
+                : String(primaryRaw ?? '—')
+              : '—';
 
-          return (
-            <div key={rowKey} className="sg__card">
-              {/* ── Art area ── */}
-              <div
-                className={`sg__art${onRowClick ? ' sg__art--clickable' : ''}`}
-                style={{ background: gradient }}
-                onClick={onRowClick ? () => onRowClick(row) : undefined}
-                onKeyDown={
-                  onRowClick
-                    ? (e) => {
-                        if (e.key === 'Enter' || e.key === ' ') onRowClick(row);
-                      }
-                    : undefined
-                }
-                role={onRowClick ? 'button' : undefined}
-                tabIndex={onRowClick ? 0 : undefined}
-                aria-label={onRowClick ? String(primaryRaw ?? '') : undefined}
-              >
-                <span className="sg__artLetter">{firstLetter}</span>
+            return (
+              <div key={rowKey} className="sg__card">
+                {/* ── Art area ── */}
+                <CoverArt
+                  rowKey={rowKey}
+                  row={row as unknown}
+                  gradient={gradient}
+                  loadCoverImage={loadCoverImage as CoverArtProps['loadCoverImage']}
+                  label={String(primaryRaw ?? '')}
+                  clickable={Boolean(onRowClick)}
+                  onArtClick={onRowClick ? () => onRowClick(row) : undefined}
+                  onArtKeyDown={
+                    onRowClick
+                      ? (e) => {
+                          if (e.key === 'Enter' || e.key === ' ') onRowClick(row);
+                        }
+                      : undefined
+                  }
+                  hasActions={hasActions}
+                  onMoreClick={hasActions ? (btn) => openDropdown(row, btn) : undefined}
+                />
 
-                {hasActions && (
-                  <button
-                    type="button"
-                    className="sg__moreBtn"
-                    aria-label="Abrir acciones"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openDropdown(row, e.currentTarget);
-                    }}
-                  >
-                    ⋯
-                  </button>
-                )}
+                {/* ── Card body ── */}
+                <div className="sg__body">
+                  {/* Title */}
+                  {onRowClick ? (
+                    <button
+                      type="button"
+                      className="sg__titleBtn"
+                      onClick={() => onRowClick(row)}
+                      title={String(primaryRaw ?? '')}
+                    >
+                      {primaryNode}
+                    </button>
+                  ) : (
+                    <div className="sg__title" title={String(primaryRaw ?? '')}>
+                      {primaryNode}
+                    </div>
+                  )}
+
+                  {/* Subtitle */}
+                  {subtitleCol && (
+                    <div className="sg__subtitle">
+                      {(() => {
+                        const v = getCellValue(row, subtitleCol);
+                        return subtitleCol.render
+                          ? subtitleCol.render(v, row)
+                          : String(v ?? '—');
+                      })()}
+                    </div>
+                  )}
+
+                  {/* Meta */}
+                  {metaCols.length > 0 && (
+                    <div className="sg__meta">
+                      {metaCols.map((col) => {
+                        const v = getCellValue(row, col);
+                        return (
+                          <span key={col.id}>
+                            {col.render ? col.render(v, row) : String(v ?? '—')}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               </div>
-
-              {/* ── Card body ── */}
-              <div className="sg__body">
-                {/* Title */}
-                {onRowClick ? (
-                  <button
-                    type="button"
-                    className="sg__titleBtn"
-                    onClick={() => onRowClick(row)}
-                    title={String(primaryRaw ?? '')}
-                  >
-                    {primaryNode}
-                  </button>
-                ) : (
-                  <div className="sg__title" title={String(primaryRaw ?? '')}>
-                    {primaryNode}
-                  </div>
-                )}
-
-                {/* Subtitle */}
-                {subtitleCol && (
-                  <div className="sg__subtitle">
-                    {(() => {
-                      const v = getCellValue(row, subtitleCol);
-                      return subtitleCol.render
-                        ? subtitleCol.render(v, row)
-                        : String(v ?? '—');
-                    })()}
-                  </div>
-                )}
-
-                {/* Meta */}
-                {metaCols.length > 0 && (
-                  <div className="sg__meta">
-                    {metaCols.map((col) => {
-                      const v = getCellValue(row, col);
-                      return (
-                        <span key={col.id}>
-                          {col.render ? col.render(v, row) : String(v ?? '—')}
-                        </span>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
 
       {/* Actions dropdown — portal to avoid overflow clipping */}

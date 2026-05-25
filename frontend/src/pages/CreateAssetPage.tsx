@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef, type FormEvent } from 'react'
 import { IconClipboard, IconTag, IconMapPin, IconDollarSign, IconInfo, IconX, IconSave } from '../components/common/Icon';
 import { ImageUploader, type PendingImage } from '../components/common/ImageUploader';
 import { activosService } from '../services/activos.service';
+import { visionService } from '../services/vision.service';
 
 import { createAsset } from '../services/assets.service';
 import { getCategorias, getUbicaciones, getAreas, getUsuarios } from '../services/catalogs.service';
@@ -101,6 +102,27 @@ export default function CreateAssetPage({ open, onClose, prefill }: { open: bool
   const [proveedor, setProveedor] = useState('');
   const [observaciones, setObservaciones] = useState('');
   const [pendingImages, setPendingImages] = useState<PendingImage[]>([]);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiNote, setAiNote] = useState<string | null>(null);
+
+  const runAiAutofill = async () => {
+    if (!pendingImages.length) return;
+    setAiLoading(true);
+    try {
+      const result = await visionService.analyzeImage(pendingImages[0].file);
+      const p = result.partial ?? {};
+      if (p.nombre)        setNombre(p.nombre);
+      if (p.marca)         setMarca(p.marca);
+      if (p.modelo)        setModelo(p.modelo);
+      if (p.numeroDeSerie) setNumeroSerie(p.numeroDeSerie);
+      if (p.descripcion)   setObservaciones(p.descripcion);
+      setAiNote(result.notes || 'Formulario prellenado por el agente de IA. Revisa y ajusta los campos.');
+    } catch (err: any) {
+      notify.error('Error de análisis', err?.message || 'No se pudo analizar la imagen.');
+    } finally {
+      setAiLoading(false);
+    }
+  };
 
   // ── Prefill: applied once after catalogs finish loading ──
   const [prefillApplied, setPrefillApplied] = useState(false);
@@ -222,6 +244,7 @@ export default function CreateAssetPage({ open, onClose, prefill }: { open: bool
     setErrors({});
     setTouched(new Set());
     setPrefillApplied(false);
+    setAiNote(null);
   }, []);
 
   const handleGenerateCode = useCallback(async () => {
@@ -477,8 +500,48 @@ export default function CreateAssetPage({ open, onClose, prefill }: { open: bool
             <ImageUploader
               images={pendingImages}
               onChange={setPendingImages}
-              disabled={submitting}
+              disabled={submitting || aiLoading}
             />
+            {aiNote && (
+              <div style={{
+                display: 'flex', alignItems: 'flex-start', gap: '8px',
+                background: 'rgba(201,165,92,0.08)', border: '1px solid rgba(201,165,92,0.3)',
+                borderRadius: '6px', padding: '10px 12px', margin: '8px 0 0',
+                fontSize: '13px', color: 'var(--color-accent)',
+              }}>
+                <span style={{ fontSize: '15px', lineHeight: 1 }}>✨</span>
+                <span>{aiNote}</span>
+              </div>
+            )}
+            <button
+              type="button"
+              disabled={!pendingImages.length || submitting || aiLoading}
+              onClick={runAiAutofill}
+              style={{
+                marginTop: '8px',
+                width: '100%',
+                padding: '9px 16px',
+                background: (!pendingImages.length || submitting || aiLoading)
+                  ? 'rgba(201,165,92,0.15)'
+                  : 'var(--color-accent)',
+                color: (!pendingImages.length || submitting || aiLoading)
+                  ? 'rgba(201,165,92,0.45)'
+                  : '#1a1205',
+                border: '1px solid rgba(201,165,92,0.4)',
+                borderRadius: '6px',
+                fontWeight: 600,
+                fontSize: '14px',
+                cursor: (!pendingImages.length || submitting || aiLoading) ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '7px',
+                transition: 'background 0.2s, color 0.2s',
+              }}
+            >
+              <span style={{ fontSize: '15px' }}>✨</span>
+              {aiLoading ? 'Analizando imagen…' : 'Auto llenado IA'}
+            </button>
           </div>
         </div>
 
