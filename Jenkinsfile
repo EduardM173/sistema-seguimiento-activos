@@ -10,6 +10,7 @@ pipeline {
 
     environment{
         SECRET_ENV_PATH = credentials('env_activos_dev')
+        NEXUS_URL       = credentials('NEXUS_URL')
         
         TAG = "${env.BUILD_NUMBER}"
         TARGET_BRANCH = "Sprint5_DEV"
@@ -26,6 +27,7 @@ pipeline {
         stage('Setup Environment') {
             steps {
                 sh 'cp $SECRET_ENV_PATH ./.env'
+                sh 'echo "NEXUS_URL=$NEXUS_URL" >> ./.env'
             }
         }
 

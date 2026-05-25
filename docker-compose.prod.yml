@@ -29,6 +29,8 @@ services:
     container_name: activos_consul_prod
     restart: unless-stopped
     command: agent -server -bootstrap-expect=1 -client=0.0.0.0 -advertise=consul
+    ports:
+      - "${PROD_CONSUL_UI_PORT}:8500"
     networks:
       - activos_prod_net
 
@@ -62,7 +64,7 @@ services:
     restart: unless-stopped
     env_file:
       - path: ./backend/.env
-        required: true
+        required: false
       - path: ./.env
         required: false
     environment:
@@ -73,6 +75,8 @@ services:
     command: sh -c "npx prisma migrate deploy && npm run start:prod"
     volumes:
       - activos_uploads_prod:/app/uploads
+    ports:
+      - "${PROD_BACKEND_SWAGGER_PORT}:${BACKEND_PORT}"
     depends_on:
       postgres:
         condition: service_healthy
@@ -91,7 +95,7 @@ services:
     restart: unless-stopped
     env_file:
       - path: ./reports-service/.env
-        required: true
+        required: false
       - path: ./.env
         required: false
     environment:
@@ -99,6 +103,8 @@ services:
       CONSUL_HOST:      consul
       CONSUL_PORT:      "8500"
       SERVICE_ADDRESS:  reports
+    ports:
+      - "${PROD_REPORTS_SWAGGER_PORT}:${REPORTS_PORT}"
     depends_on:
       postgres:
         condition: service_healthy
@@ -117,7 +123,7 @@ services:
     restart: unless-stopped
     env_file:
       - path: ./auditoria/.env
-        required: true
+        required: false
       - path: ./.env
         required: false
     environment:
@@ -125,6 +131,8 @@ services:
       CONSUL_HOST:      consul
       CONSUL_PORT:      "8500"
       SERVICE_ADDRESS:  auditoria
+    ports:
+      - "${PROD_AUDITORIA_SWAGGER_PORT}:${AUDIT_MS_PORT}"
     depends_on:
       postgres:
         condition: service_healthy
@@ -165,6 +173,9 @@ services:
       NEO4J_ACCEPT_LICENSE_AGREEMENT:                  "yes"
     volumes:
       - activos_neo4j_data_prod:/data
+    ports:
+      - "${PROD_NEO4J_UI_PORT}:7474"
+      - "${PROD_NEO4J_BOLT_PORT}:7687"
     networks:
       - activos_prod_net
     healthcheck:
@@ -182,16 +193,32 @@ services:
     restart: unless-stopped
     env_file:
       - path: ./agent_service/.env
-        required: true
+        required: false
       - path: ./.env
         required: false
     environment:
+      # BD del agente — usa AGENT_POSTGRES_* del root .env para evitar
+      # conflicto con POSTGRES_* de la BD principal (que también llega
+      # vía env_file y compartiría el mismo nombre de variable).
       POSTGRES_HOST:        agent-postgres
+      POSTGRES_USER:        ${AGENT_POSTGRES_USER}
+      POSTGRES_PASSWORD:    ${AGENT_POSTGRES_PASSWORD}
+      POSTGRES_DB:          ${AGENT_POSTGRES_DB}
+      POSTGRES_PORT:        "5432"
       NEO4J_URI:            bolt://agent-neo4j:7687
       CONSUL_HOST:          consul
       CONSUL_PORT:          "8500"
       SERVICE_ADDRESS:      agent
       DEEPLINK_NAV_MAP_URL: http://nginx/activos-frontend/__deeplink/navigation-map.json
+      EMBEDDING_MODEL:          ${EMBEDDING_MODEL}
+      LLM_MODEL:                ${LLM_MODEL}
+      LLM_TEMPERATURE:          ${LLM_TEMPERATURE}
+      CHUNK_SIZE:               ${CHUNK_SIZE}
+      CHUNK_OVERLAP:            ${CHUNK_OVERLAP}
+      DSL_MAX_DEDUCTION_STEPS:  ${DSL_MAX_DEDUCTION_STEPS}
+      DSL_SIMPLIFY_BEFORE_ANSWER: ${DSL_SIMPLIFY_BEFORE_ANSWER}
+    ports:
+      - "${PROD_AGENT_DOCS_PORT}:${APP_PORT}"
     depends_on:
       agent-postgres:
         condition: service_healthy

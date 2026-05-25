@@ -3,6 +3,7 @@ import {
   ConflictException,
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
@@ -10,6 +11,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import { PrismaService } from '../common/prisma.service';
+import { AgentSyncService } from '../agent-sync/agent-sync.service';
 import { CreateAssetDto } from './dto/create-asset.dto';
 import { UpdateAssetDto } from './dto/update-asset.dto';
 import {
@@ -30,11 +32,19 @@ import {
 
 @Injectable()
 export class AssetsService {
-  
-  constructor(private readonly prisma: PrismaService) {}
+  private readonly logger = new Logger(AssetsService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly agentSync: AgentSyncService,
+  ) {}
 
   /**
    * Paginated list of all assets with optional filters.
+   *
+   * When soloTransferibles is NOT set, delegates to the agent-service for
+   * semantic search + Neo4j ranking.  Falls back to PostgreSQL if the
+   * agent is unavailable or soloTransferibles requires join-level filtering.
    */
   async findAll(query: SearchAssetsDto, user?: any) {
     
@@ -44,13 +54,49 @@ export class AssetsService {
       q,
       estado,
       categoriaId,
-      ubicacionId ,
+      ubicacionId,
       soloTransferibles,
       sortBy = AssetSortBy.CREADO_EN,
       sortType = SortType.DESC,
     } = query;
     const skip = (page - 1) * pageSize;
 
+    // ── Agent-service semantic search (skipped for soloTransferibles) ──
+    if (!soloTransferibles) {
+      const agentParams: Record<string, unknown> = {
+        page, pageSize, sortBy, sortType,
+        ...(q && { q }),
+        ...(estado && { estado }),
+        ...(categoriaId && { categoriaId }),
+        ...(ubicacionId && { ubicacionId }),
+      };
+
+      // Area-manager scope: compute allowed areaIds and pass to agent.
+      if (this.isAreaManagerRole(user?.rol) && user?.id) {
+        const userScope = await this.prisma.usuario.findUnique({
+          where: { id: user.id },
+          select: { areaId: true, areasGestionadas: { select: { id: true } } },
+        });
+        const scopedAreaIds = [
+          userScope?.areaId ?? null,
+          ...(userScope?.areasGestionadas.map((a) => a.id) ?? []),
+        ].filter((v, i, arr): v is string => Boolean(v) && arr.indexOf(v) === i);
+
+        if (scopedAreaIds.length === 0) {
+          // User has no area access — return empty immediately.
+          return { data: [], total: 0, page, pageSize };
+        }
+        agentParams['areaIds'] = scopedAreaIds;
+      }
+
+      const agentResult = await this.agentSync.searchAssets(agentParams);
+      if (agentResult) {
+        return agentResult;
+      }
+      this.logger.warn('[findAll] Agent search unavailable, falling back to Postgres');
+    }
+
+    // ── Postgres fallback (always used for soloTransferibles) ─────────
     const where: Prisma.ActivoWhereInput = {};
 
     const isAreaManager = this.isAreaManagerRole(user?.rol);
@@ -81,71 +127,13 @@ export class AssetsService {
     }
 
     if (query.q) {
-      where.OR = [
-        { codigo: { contains: query.q, mode: 'insensitive' } },
-        { nombre: { contains: query.q, mode: 'insensitive' } },
-        { categoria: { nombre: { contains: query.q, mode: 'insensitive' } } },
-        { ubicacion: { nombre: { contains: query.q, mode: 'insensitive' } } },
-        {
-          responsableActual: {
-            OR: [
-              { nombres: { contains: query.q, mode: 'insensitive' } },
-              { apellidos: { contains: query.q, mode: 'insensitive' } },
-            ],
-          },
-        },
-      ];
+      // q is a semantic-only parameter — it never filters in Postgres.
+      // Structural filters below still apply.
     }
 
     // Search by asset data, category, location or responsible person
-    if (q) {
-      const searchTerms = q
-        .trim()
-        .split(/\s+/)
-        .filter(Boolean);
-
-      where.OR = [
-        { nombre: { contains: q, mode: 'insensitive' } },
-        { codigo: { contains: q, mode: 'insensitive' } },
-        {
-          categoria: {
-            is: {
-              OR: [
-                { nombre: { contains: q, mode: 'insensitive' } },
-                { descripcion: { contains: q, mode: 'insensitive' } },
-              ],
-            },
-          },
-        },
-        {
-          ubicacion: {
-            is: {
-              OR: [
-                { nombre: { contains: q, mode: 'insensitive' } },
-                { edificio: { contains: q, mode: 'insensitive' } },
-                { piso: { contains: q, mode: 'insensitive' } },
-                { ambiente: { contains: q, mode: 'insensitive' } },
-                { descripcion: { contains: q, mode: 'insensitive' } },
-              ],
-            },
-          },
-        },
-        {
-          responsableActual: {
-            is: {
-              AND: searchTerms.map((term) => ({
-                OR: [
-                  { nombres: { contains: term, mode: 'insensitive' } },
-                  { apellidos: { contains: term, mode: 'insensitive' } },
-                  { correo: { contains: term, mode: 'insensitive' } },
-                  { nombreUsuario: { contains: term, mode: 'insensitive' } },
-                ],
-              })),
-            },
-          },
-        },
-      ];
-    }
+    // NOTE: q is intentionally excluded — it only drives semantic ranking via
+    // the agent-service.  Postgres results are never filtered by q.
 
     // Filter by status
     if (estado) {
@@ -532,6 +520,9 @@ export class AssetsService {
         areaActual: true,
       },
     });
+
+    // Fire-and-forget sync to Neo4j
+    this.buildAndSyncAsset(activo.id);
 
     return activo;
   }
@@ -953,6 +944,9 @@ export class AssetsService {
 
       return updatedAsset;
     });
+
+    // Fire-and-forget sync to Neo4j
+    this.buildAndSyncAsset(id);
 
     return activo;
   }
@@ -2065,6 +2059,87 @@ async disable(id: string, motivo: string, userId: string) {
     if (fs.existsSync(imagen.ruta)) {
       fs.unlinkSync(imagen.ruta);
     }
+  }
+
+  // ── Neo4j sync helper ────────────────────────────────────────────────
+
+  /**
+   * Diff-based Neo4j sync: fetches all Postgres IDs, asks the agent which
+   * are missing in Neo4j, then syncs only those.  Falls back to syncing
+   * everything if the agent is unreachable.
+   *
+   * Returns `{ total, missing, synced }`.
+   */
+  async rebuildSearchIndex(): Promise<{ total: number; missing: number; synced: number }> {
+    const allAssets = await this.prisma.activo.findMany({ select: { id: true } });
+    const allIds = allAssets.map((a) => a.id);
+    const total = allIds.length;
+
+    let idsToSync: string[];
+
+    const missingIds = await this.agentSync.getMissingIds(allIds, 'asset');
+    if (missingIds === null) {
+      // Agent unavailable — sync everything as fallback
+      this.logger.warn('[Rebuild] Agent unreachable; falling back to full sync (%d assets)', total);
+      idsToSync = allIds;
+    } else {
+      idsToSync = missingIds;
+    }
+
+    for (const id of idsToSync) {
+      this.buildAndSyncAsset(id);
+    }
+
+    this.logger.log(
+      '[Rebuild] Scheduled Neo4j sync for %d/%d assets (missing in graph)',
+      idsToSync.length,
+      total,
+    );
+    return { total, missing: idsToSync.length, synced: idsToSync.length };
+  }
+
+  private buildAndSyncAsset(assetId: string): void {
+    this.prisma.activo
+      .findUnique({
+        where: { id: assetId },
+        include: {
+          categoria: true,
+          ubicacion: true,
+          areaActual: true,
+          responsableActual: { select: { nombres: true, apellidos: true } },
+        },
+      })
+      .then((activo) => {
+        if (!activo) return;
+        this.agentSync.syncAsset({
+          id: activo.id,
+          codigo: activo.codigo,
+          nombre: activo.nombre,
+          descripcion: activo.descripcion ?? undefined,
+          marca: activo.marca ?? undefined,
+          modelo: activo.modelo ?? undefined,
+          numeroSerie: activo.numeroSerie ?? undefined,
+          estado: activo.estado,
+          categoriaId: activo.categoriaId ?? undefined,
+          categoriaNombre: activo.categoria?.nombre ?? undefined,
+          ubicacionId: activo.ubicacionId ?? undefined,
+          ubicacionNombre: activo.ubicacion?.nombre ?? undefined,
+          areaActualId: activo.areaActualId ?? undefined,
+          areaNombre: activo.areaActual?.nombre ?? undefined,
+          responsableActualId: activo.responsableActualId ?? undefined,
+          responsableNombre: activo.responsableActual
+            ? this.buildFullName(
+                activo.responsableActual.nombres,
+                activo.responsableActual.apellidos,
+              )
+            : undefined,
+          creadoEn: activo.creadoEn?.toISOString() ?? undefined,
+          actualizadoEn: activo.actualizadoEn?.toISOString() ?? undefined,
+        });
+      })
+      .catch((err) =>
+        this.logger.warn('[Sync] Failed to fetch asset for Neo4j sync (%s): %s', assetId, err?.message),
+      );
   }
 
   private serializeImagen(img: {

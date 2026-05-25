@@ -495,6 +495,12 @@ export class MaterialController {
       },
     },
   })
+  @Post('rebuild-index')
+  async rebuildIndex() {
+    const result = await this.materialService.rebuildSearchIndex();
+    return { ...result, message: `Sincronización Neo4j iniciada: ${result.synced} faltantes de ${result.total} materiales` };
+  }
+
   @ApiBadRequestResponse({
     description: 'La cantidad es inválida para la carga rápida de materiales demo',
   })
