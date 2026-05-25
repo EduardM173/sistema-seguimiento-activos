@@ -195,6 +195,22 @@ export class AssetsController {
   }
 
   @ApiOperation({
+    summary: 'Reconstruir índice de búsqueda semántica',
+    description:
+      'Sincroniza todos los activos existentes a Neo4j para habilitar búsqueda semántica. ' +
+      'Operación one-time para seeding inicial o reinicio del índice. Requiere ADMIN.',
+  })
+  @ApiOkResponse({ description: 'Sincronización iniciada' })
+  @Post('rebuild-index')
+  async rebuildIndex(@Req() req: any) {
+    const result = await this.assetsService.rebuildSearchIndex();
+    return ApiResponse.success(
+      result,
+      `Sincronización iniciada: ${result.synced} faltantes de ${result.total} activos`,
+    );
+  }
+
+  @ApiOperation({
     summary: 'Cargar activos demo rápidamente',
     description:
       'Genera una cantidad de activos ficticios para pruebas rápidas del listado y filtrado.',

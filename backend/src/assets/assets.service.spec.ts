@@ -19,7 +19,7 @@ describe('AssetsService notifications for HU32', () => {
       $transaction: jest.fn(),
     };
 
-    service = new AssetsService(prisma);
+    service = new AssetsService(prisma, { syncAsset: jest.fn(), syncMaterial: jest.fn(), searchAssets: jest.fn(), searchMaterials: jest.fn() } as any);
   });
 
   it('creates a notification when an assigned asset changes state', async () => {

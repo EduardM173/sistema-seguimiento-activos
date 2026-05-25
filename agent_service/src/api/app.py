@@ -13,6 +13,8 @@ from .routes.query import router as query_router
 from .routes.admin import router as admin_router
 from .routes.chat import router as chat_router
 from .routes.vision import router as vision_router
+from .routes.embeddings import router as embeddings_router
+from .routes.search import router as search_router
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +48,16 @@ def create_app() -> FastAPI:
     app.include_router(chat_router, prefix="/chat", tags=["Chat"])
     app.include_router(admin_router, prefix="/admin", tags=["Admin"])
     app.include_router(vision_router, prefix="/vision", tags=["Vision"])
+    app.include_router(embeddings_router, prefix="/embeddings", tags=["Embeddings"])
+    app.include_router(search_router, prefix="/search", tags=["Search"])
+
+    @app.on_event("startup")
+    async def _bootstrap_vector_indexes() -> None:
+        try:
+            from ..knowledge_graph.asset_embedding_store import ensure_vector_indexes
+            ensure_vector_indexes()
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Vector index bootstrap failed (non-fatal): %s", exc)
 
     @app.get("/health", tags=["Health"])
     async def health() -> dict:

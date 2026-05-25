@@ -1,10 +1,12 @@
 import {
   Injectable,
   BadRequestException,
+  Logger,
   NotFoundException,
   InternalServerErrorException,
 } from '@nestjs/common';
 import { PrismaService } from '../common/prisma.service';
+import { AgentSyncService } from '../agent-sync/agent-sync.service';
 import {
   CreateMaterialDTO,
   UpdateMaterialDTO,
@@ -19,7 +21,12 @@ import { Prisma } from '../generated/prisma/client';
 
 @Injectable()
 export class MaterialService {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(MaterialService.name);
+
+  constructor(
+    private prisma: PrismaService,
+    private readonly agentSync: AgentSyncService,
+  ) {}
 
   /**
    * Crear un nuevo material
@@ -98,6 +105,9 @@ export class MaterialService {
       // Nota: Registrar movimiento se haría aquí con el usuario autenticado
       // Por ahora se omite para las pruebas iniciales
 
+      // Fire-and-forget sync to Neo4j
+      this.buildAndSyncMaterial(material.id);
+
       return this.mapMaterialToDTO(materialConCategoria);
     } catch (error) {
       if (error instanceof NotFoundException) {
@@ -114,6 +124,9 @@ export class MaterialService {
 
   /**
    * Obtener todos los materiales con filtros opcionales
+   *
+   * When `q` is set (and no estado=CRITICO/NORMAL filter), delegates to the
+   * agent-service for semantic re-ranking. Falls back to Postgres on error.
    */
   async findAll(filters?: SearchMaterialDTO, user?: any): Promise<{
     data: MaterialResponseDTO[];
@@ -128,11 +141,55 @@ export class MaterialService {
         filters?.skip !== undefined
           ? Math.floor(filters.skip / pageSize) + 1
           : (filters?.page ?? 1);
+      const estadoFilter = filters?.estado ?? null;
+      const shouldFilterByEstado =
+        estadoFilter === MaterialEstadoFilter.CRITICO ||
+        estadoFilter === MaterialEstadoFilter.NORMAL;
+
+      // ── Agent-service semantic search ────────────────────────────────
+      // Skipped when CRITICO/NORMAL filter requires computed comparison.
+      if (filters?.q && !shouldFilterByEstado) {
+        // Resolve areaId scope same as Postgres path below
+        let resolvedAreaId: string | undefined;
+        if (filters?.areaId) {
+          resolvedAreaId = filters.areaId;
+        } else if (this.isAreaManagerRole(user?.rol) && user?.id) {
+          const userScope = await this.prisma.usuario.findUnique({
+            where: { id: user.id },
+            select: { areaId: true },
+          });
+          resolvedAreaId = userScope?.areaId ?? undefined;
+        }
+
+        const agentParams: Record<string, unknown> = {
+          q: filters.q,
+          page,
+          pageSize,
+          ...(filters.categoriaId && { categoriaId: filters.categoriaId }),
+          ...(resolvedAreaId && { areaId: resolvedAreaId }),
+          ...(filters.sortBy && { sortBy: filters.sortBy }),
+          ...(filters.sortType && { sortType: filters.sortType }),
+        };
+
+        const agentResult = await this.agentSync.searchMaterials(agentParams);
+        if (agentResult) {
+          const totalPages = Math.max(1, Math.ceil(agentResult.total / pageSize));
+          return {
+            data: agentResult.data as unknown as MaterialResponseDTO[],
+            total: agentResult.total,
+            page: agentResult.page,
+            pageSize: agentResult.pageSize,
+            totalPages,
+          };
+        }
+        this.logger.warn('[findAll] Agent unavailable, falling back to Postgres');
+      }
+
+      // ── Postgres path ────────────────────────────────────────────────
       const skip =
         filters?.skip !== undefined ? filters.skip : (page - 1) * pageSize;
 
       const where: Prisma.MaterialWhereInput = {};
-      const estadoFilter = filters?.estado ?? null;
 
       if (filters?.q) {
         where.OR = [
@@ -198,9 +255,6 @@ export class MaterialService {
 
       // Prisma no permite comparar columnas (stockActual vs stockMinimo) directamente en `where`.
       // Para mantener el filtro CRITICO/NORMAL sin tocar BD, filtramos en backend y luego paginamos.
-      const shouldFilterByEstado =
-        estadoFilter === MaterialEstadoFilter.CRITICO ||
-        estadoFilter === MaterialEstadoFilter.NORMAL;
 
       const [materialesRaw, totalRaw] = await Promise.all([
         this.prisma.material.findMany({
@@ -837,6 +891,68 @@ async getHistory(
       normalized === 'RESPONSABLE DE AREA' ||
       normalized === 'RESPONSABLE AREA'
     );
+  }
+
+  // ── Neo4j sync helper ────────────────────────────────────────────────────
+
+  /**
+   * Diff-based Neo4j sync for the Material index.
+   * Only pushes materials that are missing in Neo4j.
+   */
+  async rebuildSearchIndex(): Promise<{ total: number; missing: number; synced: number }> {
+    const allMaterials = await this.prisma.material.findMany({ select: { id: true } });
+    const allIds = allMaterials.map((m) => m.id);
+    const total = allIds.length;
+
+    let idsToSync: string[];
+
+    const missingIds = await this.agentSync.getMissingIds(allIds, 'material');
+    if (missingIds === null) {
+      this.logger.warn('[Rebuild] Agent unreachable; falling back to full sync (%d materials)', total);
+      idsToSync = allIds;
+    } else {
+      idsToSync = missingIds;
+    }
+
+    for (const id of idsToSync) {
+      this.buildAndSyncMaterial(id);
+    }
+
+    this.logger.log(
+      '[Rebuild] Scheduled Neo4j sync for %d/%d materials (missing in graph)',
+      idsToSync.length,
+      total,
+    );
+    return { total, missing: idsToSync.length, synced: idsToSync.length };
+  }
+
+  private buildAndSyncMaterial(materialId: string): void {
+    this.prisma.material
+      .findUnique({
+        where: { id: materialId },
+        include: { categoria: true, area: true },
+      })
+      .then((m) => {
+        if (!m) return;
+        this.agentSync.syncMaterial({
+          id: m.id,
+          codigo: m.codigo,
+          nombre: m.nombre,
+          descripcion: m.descripcion ?? undefined,
+          unidad: m.unidad ?? undefined,
+          stockActual: m.stockActual != null ? Number(m.stockActual) : undefined,
+          stockMinimo: m.stockMinimo != null ? Number(m.stockMinimo) : undefined,
+          categoriaId: m.categoriaId ?? undefined,
+          categoriaNombre: (m as any).categoria?.nombre ?? undefined,
+          areaId: m.areaId ?? undefined,
+          areaNombre: (m as any).area?.nombre ?? undefined,
+          creadoEn: m.creadoEn?.toISOString() ?? undefined,
+          actualizadoEn: m.actualizadoEn?.toISOString() ?? undefined,
+        });
+      })
+      .catch((err) =>
+        this.logger.warn('[Sync] Failed to fetch material for Neo4j sync (%s): %s', materialId, err?.message),
+      );
   }
 
   async deleteFakeBulk() {
