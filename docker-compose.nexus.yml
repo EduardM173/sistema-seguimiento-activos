@@ -1,0 +1,43 @@
+services:
+  nexus:
+    image: sonatype/nexus3:latest
+    container_name: activos_nexus
+    restart: unless-stopped
+    ports:
+      - "20002:8081"
+    volumes:
+      - nexus_data:/nexus-data
+    environment:
+      INSTALL4J_ADD_VM_PARAMS: >-
+        -Xms512m -Xmx1024m
+        -XX:MaxDirectMemorySize=512m
+
+volumes:
+  nexus_data:
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SETUP INICIAL (una sola vez tras el primer arranque)
+# ─────────────────────────────────────────────────────────────────────────────
+# 1. Levantar Nexus:
+#      docker-compose -f docker-compose.nexus.yml up -d
+#
+# 2. La contraseña inicial está en:
+#      docker exec activos_nexus cat /nexus-data/admin.password
+#
+# 3. Entrar a http://localhost:8081, hacer login con admin y esa contraseña.
+#    Completar el wizard de setup.
+#
+# 4. Crear repositorios npm:
+#    - "npm-hosted"  (tipo: hosted, write policy: Allow redeploy)
+#    - "npm-proxy"   (tipo: proxy, Remote URL: https://registry.npmjs.org)
+#    - "npm-group"   (tipo: group, members: npm-proxy + npm-hosted)
+#
+# 5. Publicar la librería @activos/config:
+#      cd activos-config
+#      npm install
+#      npm run build
+#      npm publish --registry http://localhost:8081/repository/npm-hosted/
+#
+# 6. A partir de aquí los servicios resuelven @activos/config vía Nexus
+#    durante el docker build usando el .npmrc de cada servicio.
+# ─────────────────────────────────────────────────────────────────────────────

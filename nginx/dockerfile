@@ -1,0 +1,47 @@
+# ── Stage 1: Compilar el frontend ────────────────────────────────────────────
+FROM node:lts-alpine3.22 AS frontend-builder
+
+WORKDIR /app
+
+# Instalar dependencias nativas para esbuild
+RUN apk add --no-cache python3 make g++
+
+COPY frontend/package*.json ./
+
+ARG NEXUS_URL
+RUN if [ -z "${NEXUS_URL}" ]; then \
+      echo "ERROR: El build-arg NEXUS_URL es obligatorio" >&2; \
+      exit 1; \
+    fi && \
+    echo "@activos:registry=${NEXUS_URL}" >> .npmrc
+
+RUN npm ci
+
+COPY frontend/ .
+
+RUN npm run build
+
+# ── Stage 2: Nginx + consul-template (gateway de producción) ─────────────────
+FROM nginx:stable-alpine
+
+# Instalar consul-template (detecta arquitectura: amd64 / arm64)
+RUN apk add --no-cache curl unzip && \
+    ARCH=$([ "$(uname -m)" = "aarch64" ] && echo "arm64" || echo "amd64") && \
+    CTMPL_VERSION="0.39.0" && \
+    curl -fsSL \
+      "https://releases.hashicorp.com/consul-template/${CTMPL_VERSION}/consul-template_${CTMPL_VERSION}_linux_${ARCH}.zip" \
+      -o /tmp/ct.zip && \
+    unzip /tmp/ct.zip -d /usr/local/bin && \
+    rm /tmp/ct.zip && \
+    apk del curl unzip
+
+# Frontend compilado en el destino que sirve nginx
+COPY --from=frontend-builder /app/dist /usr/share/nginx/html
+
+COPY nginx/entrypoint.sh /entrypoint.sh
+COPY nginx/nginx.conf.ctmpl /etc/nginx/nginx.conf.ctmpl
+
+RUN chmod +x /entrypoint.sh && \
+    mkdir -p /etc/nginx/conf.d
+
+ENTRYPOINT ["/entrypoint.sh"]

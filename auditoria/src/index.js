@@ -1,5 +1,6 @@
 require('dotenv').config();
 
+const { ActivosService, registerWithConsul, deregisterFromConsul } = require('@activos/config');
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
@@ -842,7 +843,19 @@ app.use((error, _req, res, _next) => {
   });
 });
 
-const port = Number(process.env.AUDIT_MS_PORT || 3002);
-app.listen(port, () => {
+const port = Number(process.env.AUDIT_MS_PORT || 3003);
+app.listen(port, async () => {
   console.log(`[auditoria-ms] corriendo en http://localhost:${port}`);
+
+  const instanceId = await registerWithConsul({
+    service: ActivosService.AUDITORIA,
+    port,
+  });
+
+  const shutdown = async () => {
+    await deregisterFromConsul(instanceId);
+    process.exit(0);
+  };
+  process.on('SIGTERM', shutdown);
+  process.on('SIGINT',  shutdown);
 });

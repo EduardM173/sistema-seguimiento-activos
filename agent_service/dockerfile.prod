@@ -1,0 +1,30 @@
+FROM python:3.11-slim
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        gcc \
+        libpq-dev \
+        libffi-dev \
+        libssl-dev \
+        libjpeg-dev \
+        zlib1g-dev \
+        poppler-utils \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY requirements.txt ./
+RUN pip install --upgrade pip --timeout=300 && \
+    pip install --timeout=300 --no-cache-dir -r requirements.txt
+
+COPY src/ ./src/
+COPY migrations/ ./migrations/
+
+RUN useradd -m appuser && chown -R appuser:appuser /app
+USER appuser
+
+EXPOSE 8000
+
+# Producción: múltiples workers, sin reload
+CMD ["python", "-m", "uvicorn", "src.main:app", \
+     "--host", "0.0.0.0", "--port", "8000", \
+     "--workers", "2", "--loop", "asyncio"]

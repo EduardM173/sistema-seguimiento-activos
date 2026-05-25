@@ -1,0 +1,215 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# docker-compose.prod.yml  —  Entorno de PRODUCCIÓN
+#
+# Red aislada: activos_prod_net
+# Contenedores: sufijo _prod para no colisionar con el compose de dev.
+# Sin volúmenes de código fuente (se trabaja con imágenes compiladas).
+# Solo el gateway Nginx queda expuesto al host en el puerto 80.
+# ─────────────────────────────────────────────────────────────────────────────
+
+networks:
+  activos_prod_net:
+    name: activos_prod_net
+
+volumes:
+  activos_pg_data_prod:
+  activos_agent_pg_data_prod:
+  activos_neo4j_data_prod:
+
+x-nexus-build: &nexus-build
+  args:
+    NEXUS_URL: ${NEXUS_URL:-http://nexus:8081/repository/npm-group/}
+
+services:
+
+  # ── Consul ────────────────────────────────────────────────────────────────
+  consul:
+    image: hashicorp/consul:1.18
+    container_name: activos_consul_prod
+    restart: unless-stopped
+    command: >
+      agent -server -bootstrap-expect=1
+      -client=0.0.0.0
+      -advertise=consul
+    networks:
+      - activos_prod_net
+
+  # ── Base de datos principal ───────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: activos_db_prod
+    restart: unless-stopped
+    env_file: ./.env
+    environment:
+      POSTGRES_PASSWORD: $POSTGRES_PASSWORD
+      POSTGRES_USER:     $POSTGRES_USER
+      POSTGRES_DB:       $POSTGRES_DB
+      PGPORT:            $POSTGRES_PORT
+    volumes:
+      - activos_pg_data_prod:/var/lib/postgresql/data
+    networks:
+      - activos_prod_net
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "$POSTGRES_USER", "-d", "$POSTGRES_DB", "-p", "$POSTGRES_PORT"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # ── Backend (NestJS) ──────────────────────────────────────────────────────
+  backend:
+    container_name: activos_backend_prod
+    build:
+      context:    ./backend
+      dockerfile: dockerfile.prod
+      <<: *nexus-build
+    restart: unless-stopped
+    env_file: ./.env
+    environment:
+      POSTGRES_HOST:   postgres
+      BACKEND_PORT:    3001
+      CONSUL_HOST:     consul
+      CONSUL_PORT:     8500
+      SERVICE_ADDRESS: backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+      consul:
+        condition: service_started
+    command: >
+      sh -c "npx prisma migrate deploy && npm run start:prod"
+    networks:
+      - activos_prod_net
+
+  # ── Reports Service (NestJS) ──────────────────────────────────────────────
+  reports:
+    container_name: activos_reports_prod
+    build:
+      context:    ./reports-service
+      dockerfile: dockerfile.prod
+      <<: *nexus-build
+    restart: unless-stopped
+    env_file: ./.env
+    environment:
+      POSTGRES_HOST:   postgres
+      REPORTS_PORT:    3002
+      CONSUL_HOST:     consul
+      CONSUL_PORT:     8500
+      SERVICE_ADDRESS: reports
+    depends_on:
+      postgres:
+        condition: service_healthy
+      consul:
+        condition: service_started
+    networks:
+      - activos_prod_net
+
+  # ── Auditoria (Express) ───────────────────────────────────────────────────
+  auditoria:
+    container_name: activos_auditoria_prod
+    build:
+      context:    ./auditoria
+      dockerfile: dockerfile.prod
+      <<: *nexus-build
+    restart: unless-stopped
+    env_file: ./.env
+    environment:
+      POSTGRES_HOST:   postgres
+      AUDIT_MS_PORT:   3003
+      CONSUL_HOST:     consul
+      CONSUL_PORT:     8500
+      SERVICE_ADDRESS: auditoria
+    depends_on:
+      postgres:
+        condition: service_healthy
+      consul:
+        condition: service_started
+    networks:
+      - activos_prod_net
+
+  # ── Agent DB (pgvector) ───────────────────────────────────────────────────
+  agent-postgres:
+    image: pgvector/pgvector:pg16
+    container_name: activos_agent_db_prod
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       ${AGENT_POSTGRES_DB:-graphrag}
+      POSTGRES_USER:     ${AGENT_POSTGRES_USER:-graphrag}
+      POSTGRES_PASSWORD: ${AGENT_POSTGRES_PASSWORD:-graphrag_secret}
+    volumes:
+      - activos_agent_pg_data_prod:/var/lib/postgresql/data
+      - ./agent_service/migrations/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - activos_prod_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${AGENT_POSTGRES_USER:-graphrag} -d ${AGENT_POSTGRES_DB:-graphrag}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Neo4j ─────────────────────────────────────────────────────────────────
+  agent-neo4j:
+    image: neo4j:5.26.23-community
+    container_name: activos_neo4j_prod
+    restart: unless-stopped
+    environment:
+      NEO4J_AUTH:                                  ${NEO4J_USER:-neo4j}/${NEO4J_PASSWORD:-graphrag_secret}
+      NEO4J_PLUGINS:                               '["apoc"]'
+      NEO4J_dbms_security_procedures_unrestricted: apoc.*
+      NEO4J_ACCEPT_LICENSE_AGREEMENT:              "yes"
+    volumes:
+      - activos_neo4j_data_prod:/data
+    networks:
+      - activos_prod_net
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:7474 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # ── Agent Service (Python / FastAPI) ──────────────────────────────────────
+  agent:
+    container_name: activos_agent_prod
+    build:
+      context:    ./agent_service
+      dockerfile: dockerfile.prod
+    restart: unless-stopped
+    env_file: ./agent_service/.env
+    environment:
+      POSTGRES_HOST:   agent-postgres
+      NEO4J_URI:       bolt://agent-neo4j:7687
+      CONSUL_HOST:     consul
+      CONSUL_PORT:     8500
+      SERVICE_ADDRESS: agent
+    depends_on:
+      agent-postgres:
+        condition: service_healthy
+      agent-neo4j:
+        condition: service_healthy
+      consul:
+        condition: service_started
+    networks:
+      - activos_prod_net
+
+  # ── Gateway Nginx — ÚNICO SERVICIO EXPUESTO AL HOST ───────────────────────
+  # Sirve el frontend compilado y hace reverse-proxy a los servicios via Consul.
+  # El frontend se compila dentro del build multi-stage (nginx/dockerfile).
+  nginx:
+    container_name: activos_nginx_prod
+    build:
+      context:    .
+      dockerfile: nginx/dockerfile
+      <<: *nexus-build
+    restart: unless-stopped
+    environment:
+      CONSUL_HOST: consul
+      CONSUL_PORT: 8500
+    ports:
+      - "${PROD_GATEWAY_PORT:-80}:80"
+    depends_on:
+      - consul
+      - backend
+      - reports
+      - auditoria
+      - agent
+    networks:
+      - activos_prod_net

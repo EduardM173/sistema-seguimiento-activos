@@ -1,5 +1,6 @@
 import { config } from 'dotenv';
 import { NestFactory } from '@nestjs/core';
+import { ActivosService, registerWithConsul, deregisterFromConsul } from '@activos/config';
 import { AppModule } from './app.module';
 
 config({ path: '../.env' });
@@ -21,9 +22,21 @@ async function bootstrap() {
     exposedHeaders: ['Content-Disposition'],
   });
 
-  const port = process.env.REPORTS_PORT || 3002;
+  const port = parseInt(process.env.REPORTS_PORT ?? '3002', 10);
   await app.listen(port);
   console.log(`Reports service corriendo en http://localhost:${port}`);
+
+  const instanceId = await registerWithConsul({
+    service: ActivosService.REPORTS,
+    port,
+  });
+
+  const shutdown = async () => {
+    await deregisterFromConsul(instanceId);
+    process.exit(0);
+  };
+  process.on('SIGTERM', shutdown);
+  process.on('SIGINT',  shutdown);
 }
 
 bootstrap();
