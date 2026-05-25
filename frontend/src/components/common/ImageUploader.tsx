@@ -275,20 +275,18 @@ interface CameraModalProps {
 
 const CameraModal: React.FC<CameraModalProps> = ({ onCapture, onClose }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment');
 
   const startStream = useCallback(async (facing: 'environment' | 'user') => {
-    // Stop any existing stream first
     streamRef.current?.getTracks().forEach((t) => t.stop());
     setReady(false);
     setError(null);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: facing, width: { ideal: 1280 }, height: { ideal: 720 } },
+        video: { facingMode: facing, width: { ideal: 1920 }, height: { ideal: 1080 } },
         audio: false,
       });
       streamRef.current = stream;
@@ -303,33 +301,23 @@ const CameraModal: React.FC<CameraModalProps> = ({ onCapture, onClose }) => {
   }, []);
 
   useEffect(() => {
-    startStream(facingMode);
-    return () => {
-      streamRef.current?.getTracks().forEach((t) => t.stop());
-    };
+    void startStream(facingMode);
+    return () => { streamRef.current?.getTracks().forEach((t) => t.stop()); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [facingMode]);
 
   const capture = () => {
     const video = videoRef.current;
-    const canvas = canvasRef.current;
-    if (!video || !canvas || !ready) return;
+    if (!video || !ready) return;
+    const canvas = document.createElement('canvas');
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     canvas.getContext('2d')!.drawImage(video, 0, 0);
-    canvas.toBlob(
-      (blob) => {
-        if (!blob) return;
-        const file = new File([blob], `captura-${Date.now()}.jpg`, { type: 'image/jpeg' });
-        onCapture(file);
-      },
-      'image/jpeg',
-      0.92,
-    );
-  };
-
-  const toggleCamera = () => {
-    setFacingMode((prev) => (prev === 'environment' ? 'user' : 'environment'));
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      const file = new File([blob], `captura-${Date.now()}.jpg`, { type: 'image/jpeg' });
+      onCapture(file);
+    }, 'image/jpeg', 0.92);
   };
 
   return (
@@ -337,96 +325,121 @@ const CameraModal: React.FC<CameraModalProps> = ({ onCapture, onClose }) => {
       style={{
         position: 'fixed',
         inset: 0,
-        zIndex: 9999,
-        background: 'rgba(0,0,0,0.85)',
+        background: 'rgba(0,0,0,0.97)',
+        zIndex: 10000,
         display: 'flex',
+        flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
+        gap: '20px',
       }}
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div
+      {/* Close */}
+      <button
+        type="button"
+        onClick={onClose}
         style={{
-          position: 'relative',
-          width: 'min(90vw, 640px)',
-          background: '#0d1526',
-          borderRadius: '12px',
-          overflow: 'hidden',
-          boxShadow: '0 24px 60px rgba(0,0,0,0.6)',
-          display: 'flex',
-          flexDirection: 'column',
+          position: 'absolute',
+          top: '16px',
+          right: '20px',
+          background: 'none',
+          border: 'none',
+          color: 'rgba(255,255,255,0.6)',
+          fontSize: '28px',
+          cursor: 'pointer',
+          lineHeight: 1,
         }}
       >
-        {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-          <span style={{ color: '#fff', fontWeight: 600, fontSize: '14px' }}>Tomar foto</span>
-          <button type="button" onClick={onClose} style={{ background: 'none', border: 'none', color: '#aaa', fontSize: '18px', cursor: 'pointer', lineHeight: 1 }}>✕</button>
-        </div>
+        ✕
+      </button>
 
-        {/* Video area */}
-        <div style={{ position: 'relative', background: '#000', aspectRatio: '16/9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <video
-            ref={videoRef}
-            playsInline
-            muted
-            style={{ width: '100%', height: '100%', objectFit: 'cover', display: ready ? 'block' : 'none' }}
-          />
-          {!ready && !error && (
-            <div style={{ color: '#aaa', fontSize: '13px' }}>Iniciando cámara…</div>
-          )}
-          {error && (
-            <div style={{ color: '#f87171', fontSize: '13px', padding: '16px', textAlign: 'center' }}>{error}</div>
-          )}
-        </div>
-
-        {/* Controls */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '24px', padding: '16px' }}>
-          {/* Flip camera */}
-          <button
-            type="button"
-            onClick={toggleCamera}
-            disabled={!!error}
-            title="Cambiar cámara"
-            style={{
-              background: 'rgba(255,255,255,0.1)',
-              border: '1px solid rgba(255,255,255,0.2)',
-              borderRadius: '50%',
-              width: '44px',
-              height: '44px',
-              color: '#fff',
-              fontSize: '18px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            🔄
-          </button>
-
-          {/* Capture */}
-          <button
-            type="button"
-            onClick={capture}
-            disabled={!ready}
-            title="Capturar"
-            style={{
-              background: ready ? 'var(--color-primary, #3b82f6)' : '#555',
-              border: '3px solid rgba(255,255,255,0.4)',
-              borderRadius: '50%',
-              width: '64px',
-              height: '64px',
-              cursor: ready ? 'pointer' : 'not-allowed',
-              transition: 'background 0.2s, transform 0.1s',
-            }}
-            onMouseDown={(e) => { (e.currentTarget.style.transform = 'scale(0.93)'); }}
-            onMouseUp={(e) => { (e.currentTarget.style.transform = 'scale(1)'); }}
-          />
-        </div>
+      {/* Video feed */}
+      <div style={{ position: 'relative', maxWidth: '90vw', maxHeight: '65vh', background: '#000', borderRadius: '8px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: '280px', minHeight: '180px' }}>
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          muted
+          style={{ maxWidth: '90vw', maxHeight: '65vh', display: ready ? 'block' : 'none', borderRadius: '8px' }}
+        />
+        {!ready && !error && (
+          <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px', margin: 0, padding: '32px' }}>
+            Iniciando cámara…
+          </p>
+        )}
+        {error && (
+          <p style={{ color: '#f87171', fontSize: '13px', margin: 0, padding: '24px', textAlign: 'center' }}>
+            {error}
+          </p>
+        )}
       </div>
 
-      {/* Off-screen canvas for capture */}
-      <canvas ref={canvasRef} style={{ display: 'none' }} />
+      {/* Controls */}
+      <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+        <button
+          type="button"
+          onClick={onClose}
+          style={{
+            padding: '10px 24px',
+            borderRadius: '6px',
+            border: '1px solid rgba(255,255,255,0.2)',
+            background: 'rgba(255,255,255,0.08)',
+            color: '#fff',
+            fontSize: '14px',
+            cursor: 'pointer',
+          }}
+        >
+          Cancelar
+        </button>
+
+        {/* Flip camera */}
+        <button
+          type="button"
+          onClick={() => setFacingMode((m) => m === 'environment' ? 'user' : 'environment')}
+          disabled={!!error}
+          title="Cambiar cámara"
+          style={{
+            background: 'rgba(255,255,255,0.1)',
+            border: '1px solid rgba(255,255,255,0.2)',
+            borderRadius: '50%',
+            width: '44px',
+            height: '44px',
+            color: '#fff',
+            fontSize: '18px',
+            cursor: error ? 'not-allowed' : 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          🔄
+        </button>
+
+        <button
+          type="button"
+          onClick={capture}
+          disabled={!ready}
+          style={{
+            padding: '10px 28px',
+            borderRadius: '6px',
+            border: 'none',
+            background: ready ? 'var(--color-primary, #4f8ef7)' : 'rgba(79,142,247,0.3)',
+            color: ready ? '#fff' : 'rgba(255,255,255,0.4)',
+            fontSize: '14px',
+            fontWeight: 600,
+            cursor: ready ? 'pointer' : 'not-allowed',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '7px',
+          }}
+        >
+          📷 Capturar foto
+        </button>
+      </div>
+
+      <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '12px', margin: 0 }}>
+        Apunta al objeto y pulsa «Capturar foto»
+      </p>
     </div>
   );
 };
