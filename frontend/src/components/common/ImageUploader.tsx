@@ -280,30 +280,45 @@ const CameraModal: React.FC<CameraModalProps> = ({ onCapture, onClose }) => {
   const [error, setError] = useState<string | null>(null);
   const [facingMode, setFacingMode] = useState<'environment' | 'user'>('environment');
 
-  const startStream = useCallback(async (facing: 'environment' | 'user') => {
-    streamRef.current?.getTracks().forEach((t) => t.stop());
-    setReady(false);
-    setError(null);
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: facing, width: { ideal: 1920 }, height: { ideal: 1080 } },
-        audio: false,
-      });
+  useEffect(() => {
+    let cancelled = false;
+
+    const run = async () => {
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+      if (!cancelled) { setReady(false); setError(null); }
+
+      let stream: MediaStream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode, width: { ideal: 1920 }, height: { ideal: 1080 } },
+          audio: false,
+        });
+      } catch {
+        // Retry without facingMode — desktop browsers may not support it
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        } catch {
+          if (!cancelled) setError('No se pudo acceder a la cámara. Verifica los permisos del navegador.');
+          return;
+        }
+      }
+
+      if (cancelled) { stream.getTracks().forEach((t) => t.stop()); return; }
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         await videoRef.current.play();
-        setReady(true);
+        if (!cancelled) setReady(true);
       }
-    } catch {
-      setError('No se pudo acceder a la cámara. Verifica los permisos del navegador.');
-    }
-  }, []);
+    };
 
-  useEffect(() => {
-    void startStream(facingMode);
-    return () => { streamRef.current?.getTracks().forEach((t) => t.stop()); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    void run();
+    return () => {
+      cancelled = true;
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    };
   }, [facingMode]);
 
   const capture = () => {
