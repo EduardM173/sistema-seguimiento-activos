@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { activosService } from '../../services/activos.service';
 import type { Activo } from '../../types/activos.types';
 import OverlayModal from '../common/OverlayModal';
+import { useNotification } from '../../context/NotificationContext';
 
 interface BajaActivoModalProps {
   isOpen: boolean;
@@ -18,21 +19,22 @@ export const BajaActivoModal: React.FC<BajaActivoModalProps> = ({
 }) => {
   const [motivo, setMotivo] = useState('');
   const [loading, setLoading] = useState(false);
+  const notify = useNotification();
 
   const handleSubmit = async () => {
     if (!motivo.trim()) {
-      alert('El motivo de baja es obligatorio');
+      notify.warning('El motivo de baja es obligatorio');
       return;
     }
 
     setLoading(true);
     try {
       await activosService.darDeBaja(activo!.id, motivo.trim());
-      alert('Activo dado de baja exitosamente');
+      notify.success('Activo dado de baja exitosamente');
       onSuccess();
       onClose();
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Error al dar de baja');
+      notify.error(err.response?.data?.message || 'Error al dar de baja');
     } finally {
       setLoading(false);
     }

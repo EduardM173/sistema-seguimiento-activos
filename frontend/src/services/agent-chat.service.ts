@@ -69,6 +69,12 @@ export interface SendMessageResponse {
   /** Map slug → deeplink ref. Tokens `[[link:<slug>]]` in `content`
    *  reference these entries. Empty when no deeplink applies. */
   deeplinks?: Record<string, DeeplinkRefWire>;
+  /**
+   * Quick-reply suggestions for wizard select fields.
+   * Present when the agent emitted a `[[ask_select:formId:field]]` token.
+   * The frontend renders these as clickable buttons.
+   */
+  suggestions?: Array<{ text: string; value: string; field: string }>;
 }
 
 export interface HistoryMessage {

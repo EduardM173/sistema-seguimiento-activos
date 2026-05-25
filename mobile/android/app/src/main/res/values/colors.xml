@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App brand colors -->
+    <color name="backgroundColor">#0D121F</color>
+    <color name="primaryColor">#1A5FAD</color>
+    <color name="accentColor">#C9A55C</color>
+</resources>

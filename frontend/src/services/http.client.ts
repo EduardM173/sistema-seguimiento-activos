@@ -96,4 +96,29 @@ export const http = {
 
   delete: <T>(endpoint: string, options?: RequestOptions) =>
     request<T>(endpoint, { ...options, method: 'DELETE' }),
+
+  upload: async <T>(endpoint: string, formData: FormData): Promise<T> => {
+    const token = getAccessToken();
+    const headers: Record<string, string> = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const url = `${API_URL}${endpoint}`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData,
+    });
+
+    if (response.status === 401) {
+      clearAuthSession();
+      window.location.replace('/');
+      throw new HttpError('Sesión expirada', 401);
+    }
+
+    const result = await response.json();
+    if (!response.ok) {
+      throw new HttpError(result.message || 'Error al subir archivos', response.status, result.errors);
+    }
+    return result as T;
+  },
 };

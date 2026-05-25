@@ -90,33 +90,45 @@ You are given:
   1. The latest USER message.
   2. The ASSISTANT REPLY (already produced by another agent).
   3. The NAVIGATION MAP of the application as JSON (every page, modal, action that exists).
+  4. The CURRENT ROUTE the user is already on (may be empty).
 
 You must:
-  A. Decide whether mentioning a navigable destination would help the user. Be conservative: only add links when the reply naturally talks about something the user can navigate to. If no link applies, return the assistant reply unchanged with no deeplinks.
-  B. Pick at most 3 destinations strictly from the NAVIGATION MAP. NEVER invent paths or modal ids that are not in the map.
-  C. For each chosen destination, build a stable kebab-case slug (e.g. "crear-activo", "ver-inventario"), pick a short user-facing label, and replace the most natural phrase in the reply with the token "[[link:<slug>]]".
-  D. Keep the reply's wording, tone and language identical. Only insert tokens; do not add new sentences.
+  A. If the user is ASKING TO NAVIGATE (e.g. "llévame", "ir a", "abrir", "quiero ir", "muéstrame", "quiero crear", "quiero ver") you MUST add a deeplink even if the reply doesn't mention a page by name. Choose the best matching destination from the navigation map.
+  B. Otherwise, add a deeplink only when the reply naturally mentions a navigable destination.
+  C. Pick at most 2 destinations strictly from the NAVIGATION MAP. NEVER invent paths or modal ids not in the map.
+  D. For each chosen destination, build a stable kebab-case slug (e.g. "crear-activo", "ver-inventario"), pick a short user-facing label, and replace the most natural phrase in the reply with the token "[[link:<slug>]]".
+  E. If the user is already on the target page (CURRENT ROUTE matches the page path), still include the deeplink — the user may want to open a modal on that page.
+  F. Keep the reply's wording, tone and language identical. Only insert tokens; do not add new sentences.
+  G. SPECIAL — PRE-FILLED FORM DEEPLINK: If the ASSISTANT REPLY already contains a URL of the
+     form /activos?modal=create-asset&prefill_nombre=...  (or similar prefill_* params), you MUST
+     convert it to a deeplink with page_id="activos", modal_id="create-asset" and put ALL the
+     prefill_* key-value pairs into "params". Do NOT modify or drop any prefill_* values.
+     Example: URL "/activos?modal=create-asset&prefill_nombre=Laptop+Dell&prefill_marca=Dell"
+     becomes params: {{"prefill_nombre": "Laptop Dell", "prefill_marca": "Dell"}}.
 
 You MUST output ONLY raw JSON, with this exact shape:
 
-{
+{{
   "text": "<reply with [[link:<slug>]] tokens>",
   "deeplinks": [
-    {
+    {{
       "slug": "<kebab-case-slug>",
       "page_id": "<id from navigation map>",
       "modal_id": "<id or null>",
-      "params": { "<param>": "<value>" },
+      "params": {{ "<param>": "<value>" }},
       "label": "<short human label>"
-    }
+    }}
   ]
-}
+}}
 
 If no deeplink applies, output exactly:
-{ "text": <original assistant reply unchanged>, "deeplinks": [] }
+{{ "text": <original assistant reply unchanged>, "deeplinks": [] }}
 
 USER MESSAGE:
 {user_message}
+
+CURRENT ROUTE (page the user is on right now):
+{current_route}
 
 ASSISTANT REPLY:
 {assistant_reply}
@@ -207,6 +219,7 @@ class DeeplinkAgent:
         user_message: str,
         assistant_reply: str,
         permissions: list[str] | None = None,
+        current_route: str | None = None,
     ) -> DeeplinkAnnotationResult:
         """Try to insert deeplinks into ``assistant_reply``.
 
@@ -225,6 +238,7 @@ class DeeplinkAgent:
             user_message=user_message,
             assistant_reply=assistant_reply,
             navigation_map=json.dumps(scoped_map, ensure_ascii=False),
+            current_route=current_route or "(desconocida)",
         )
 
         try:

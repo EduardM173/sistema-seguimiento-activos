@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { createUser } from '../services/user.service';
+import { useNotification } from '../context/NotificationContext';
 
 export default function UsersPage() {
+  const notify = useNotification();
   const [formData, setFormData] = useState({
     nombres: '',
     apellidos: '',
@@ -12,8 +14,6 @@ export default function UsersPage() {
     areaId: '',
   });
 
-  const [message, setMessage] = useState('');
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   function handleChange(event: React.ChangeEvent<HTMLInputElement>) {
@@ -27,8 +27,6 @@ export default function UsersPage() {
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setMessage('');
-    setError('');
     setLoading(true);
 
     try {
@@ -42,7 +40,7 @@ export default function UsersPage() {
         areaId: formData.areaId || undefined,
       });
 
-      setMessage('Usuario creado correctamente');
+      notify.success('Usuario creado correctamente');
 
       setFormData({
         nombres: '',
@@ -55,9 +53,9 @@ export default function UsersPage() {
       });
     } catch (err) {
       if (err instanceof Error) {
-        setError(err.message);
+        notify.error(err.message);
       } else {
-        setError('Ocurrió un error al crear el usuario');
+        notify.error('Ocurrió un error al crear el usuario');
       }
     } finally {
       setLoading(false);
@@ -163,14 +161,6 @@ export default function UsersPage() {
           {loading ? 'Guardando...' : 'Guardar usuario'}
         </button>
       </form>
-
-      {message && (
-        <p style={{ color: 'green', marginTop: '1rem' }}>{message}</p>
-      )}
-
-      {error && (
-        <p style={{ color: 'red', marginTop: '1rem' }}>{error}</p>
-      )}
     </div>
   );
 }

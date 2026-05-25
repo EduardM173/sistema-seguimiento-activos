@@ -24,6 +24,7 @@ export default function OverlayModal({
   className = '',
 }: OverlayModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
+  const bodyRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -34,10 +35,14 @@ export default function OverlayModal({
     return () => document.removeEventListener('keydown', handleKey);
   }, [open, onClose, disabled]);
 
-  // Trap focus on open
+  // Lock body scroll and reset modal scroll to top on open
   useEffect(() => {
     if (open) {
       document.body.style.overflow = 'hidden';
+      // Reset scroll position so the top of the form is always visible
+      if (bodyRef.current) bodyRef.current.scrollTop = 0;
+      // Capture focus on the dialog itself so inputs don't auto-scroll
+      if (dialogRef.current) dialogRef.current.focus();
     }
     return () => {
       document.body.style.overflow = '';
@@ -59,6 +64,7 @@ export default function OverlayModal({
         aria-modal="true"
         aria-labelledby="overlay-modal-title"
         style={{ maxWidth: width }}
+        tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="overlayModal__header">
@@ -80,7 +86,10 @@ export default function OverlayModal({
             <IconX size={16} />
           </button>
         </div>
-        <div className="overlayModal__body">
+        <div
+          ref={bodyRef}
+          className="overlayModal__body"
+        >
           {children}
         </div>
       </div>

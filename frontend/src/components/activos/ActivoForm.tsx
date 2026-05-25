@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Modal } from '../common';
 import { IconCheck } from '../common/Icon';
+import { ImageUploader, type PendingImage } from '../common/ImageUploader';
+import { ImageGallery } from '../common/ImageGallery';
 import type { Activo } from '../../types/activos.types';
 import { activosService } from '../../services/activos.service';
+import { useNotification } from '../../context/NotificationContext';
 import '../../styles/modules.css';
 
 interface ActivoFormProps {
@@ -38,6 +41,8 @@ export const ActivoForm: React.FC<ActivoFormProps> = ({
   const [ubicaciones, setUbicaciones] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [submitAttempted, setSubmitAttempted] = useState(false);
+  const [pendingImages, setPendingImages] = useState<PendingImage[]>([]);
+  const notify = useNotification();
 
   useEffect(() => {
     if (isOpen) {
@@ -61,7 +66,7 @@ export const ActivoForm: React.FC<ActivoFormProps> = ({
           observaciones: activo.observaciones || '',
         });
       } else {
-        setFormData(prev => ({
+        setFormData((prev: any) => ({
           ...prev,
           estado: '',
           codigoActivo: '',
@@ -71,6 +76,7 @@ export const ActivoForm: React.FC<ActivoFormProps> = ({
         }));
       }
       setSubmitAttempted(false);
+      setPendingImages([]);
     }
   }, [isOpen, activo]);
 
@@ -101,10 +107,8 @@ export const ActivoForm: React.FC<ActivoFormProps> = ({
     
     // VALIDACIÓN ESTRICTA DEL ESTADO
     if (!formData.estado || formData.estado === '') {
-      // Alerta visual
-      alert(' Debe seleccionar un estado para el activo (Operativo, Mantenimiento o Fuera de Servicio)');
-      
-      // Enfocar el select
+      notify.warning('Debe seleccionar un estado para el activo (Operativo, Mantenimiento o Fuera de Servicio)');
+
       const estadoSelect = document.querySelector('select[name="estado"]') as HTMLElement;
       if (estadoSelect) {
         estadoSelect.focus();
@@ -118,15 +122,28 @@ export const ActivoForm: React.FC<ActivoFormProps> = ({
     try {
       let resultado: Activo;
       if (activo) {
-        resultado = await activosService.actualizar(activo.id, formData);
+        resultado = (await activosService.actualizar(activo.id, formData))!;
       } else {
-        resultado = await activosService.crear(formData);
+        resultado = (await activosService.crear(formData))!;
       }
+
+      // Subir imágenes pendientes (en creación o edición)
+      if (pendingImages.length > 0) {
+        try {
+          await activosService.subirImagenes(
+            resultado.id,
+            pendingImages.map((p) => p.file),
+          );
+        } catch {
+          notify.warning('El activo fue guardado pero ocurrió un error al subir las imágenes.');
+        }
+      }
+
       onSubmit(resultado);
       onClose();
     } catch (err) {
       console.error('Error al guardar activo:', err);
-      alert('Error al guardar el activo');
+      notify.error('Error al guardar el activo');
     } finally {
       setLoading(false);
     }
@@ -150,6 +167,35 @@ export const ActivoForm: React.FC<ActivoFormProps> = ({
       loading={loading}
     >
       <form onSubmit={handleSubmit} className="form-container">
+        {/* ── Imágenes ── */}
+        <div className="form-group form-full">
+          <label>Imágenes del activo</label>
+
+          {/* Saved images — visible only in edit mode; upload/delete work immediately */}
+          {activo?.id && (
+            <>
+              <p style={{ margin: '0 0 8px', fontSize: '12px', color: 'var(--color-text-muted)' }}>
+                Imágenes guardadas
+              </p>
+              <ImageGallery
+                entityId={activo.id}
+                onLoad={(id) => activosService.listarImagenes(id)}
+                onDelete={(id, imgId) => activosService.eliminarImagen(id, imgId)}
+                onUpload={(id, files) => activosService.subirImagenes(id, files)}
+              />
+            </>
+          )}
+
+          {/* Pending images — only in create mode (uploaded after the asset is saved) */}
+          {!activo?.id && (
+            <ImageUploader
+              images={pendingImages}
+              onChange={setPendingImages}
+              disabled={loading}
+            />
+          )}
+        </div>
+
         <div className="form-grid">
           <div className="form-group">
             <label>Código de Activo *</label>
@@ -242,25 +288,15 @@ export const ActivoForm: React.FC<ActivoFormProps> = ({
           </div>
 
           {/* CAMPO ESTADO - Con validación visible */}
-          <div className="form-group" style={{ marginBottom: '20px' }}>
-            <label style={{ fontWeight: 'bold', display: 'block', marginBottom: '8px' }}>
-              Estado Operativo <span style={{ color: '#dc2626' }}>*</span>
+          <div className="form-group">
+            <label>
+              Estado Operativo <span style={{ color: 'var(--color-danger)' }}>*</span>
             </label>
-            <select 
-              name="estado" 
-              value={formData.estado} 
+            <select
+              name="estado"
+              value={formData.estado}
               onChange={handleChange}
               required
-              style={{
-                width: '100%',
-                padding: '12px',
-                borderRadius: '8px',
-                border: showEstadoError ? '2px solid #dc2626' : '1px solid #d1d5db',
-                backgroundColor: showEstadoError ? '#fef2f2' : '#ffffff',
-                fontSize: '14px',
-                cursor: 'pointer',
-                outline: 'none',
-              }}
             >
               <option value="" disabled>
                 -- Seleccione un estado --
@@ -272,33 +308,15 @@ export const ActivoForm: React.FC<ActivoFormProps> = ({
               ))}
             </select>
             {showEstadoError && (
-              <div style={{ 
-                color: '#dc2626', 
-                fontSize: '13px', 
-                marginTop: '8px', 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: '6px',
-                backgroundColor: '#fef2f2',
-                padding: '8px',
-                borderRadius: '6px',
-                borderLeft: '3px solid #dc2626'
-              }}>
-                <span>Debe seleccionar un estado para el activo</span>
-              </div>
+              <span style={{ color: 'var(--color-danger)', fontSize: '12px' }}>
+                Debe seleccionar un estado para el activo
+              </span>
             )}
             {!showEstadoError && formData.estado && (
-              <div style={{ 
-                color: '#10b981', 
-                fontSize: '12px', 
-                marginTop: '6px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px'
-              }}>
-                <IconCheck size={14} />
-                <span>Estado seleccionado: {estadoOptions.find(o => o.value === formData.estado)?.label}</span>
-              </div>
+              <span style={{ color: 'var(--color-success)', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <IconCheck size={13} />
+                {estadoOptions.find(o => o.value === formData.estado)?.label}
+              </span>
             )}
           </div>
 

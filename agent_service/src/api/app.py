@@ -12,6 +12,7 @@ from .routes.ingestion import router as ingestion_router
 from .routes.query import router as query_router
 from .routes.admin import router as admin_router
 from .routes.chat import router as chat_router
+from .routes.vision import router as vision_router
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +45,7 @@ def create_app() -> FastAPI:
     app.include_router(query_router, prefix="/query", tags=["Query"])
     app.include_router(chat_router, prefix="/chat", tags=["Chat"])
     app.include_router(admin_router, prefix="/admin", tags=["Admin"])
+    app.include_router(vision_router, prefix="/vision", tags=["Vision"])
 
     @app.get("/health", tags=["Health"])
     async def health() -> dict:

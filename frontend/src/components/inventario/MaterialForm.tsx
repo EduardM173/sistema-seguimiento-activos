@@ -1,5 +1,8 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { Button, Modal } from '../common';
+import { IconAlertTriangle } from '../common/Icon';
+import { ImageUploader, type PendingImage } from '../common/ImageUploader';
+import { ImageGallery } from '../common/ImageGallery';
 import type { CreateMaterialDTO, Material, UpdateMaterialDTO } from '../../types/inventario.types';
 import { inventarioService } from '../../services/inventario.service';
 import { getAreas } from '../../services/catalogs.service';
@@ -48,6 +51,7 @@ export const MaterialForm: React.FC<MaterialFormProps> = ({
   const [categorias, setCategorias] = useState<{ id: string; nombre: string }[]>([]);
   const [areas, setAreas] = useState<{ id: string; nombre: string }[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [pendingImages, setPendingImages] = useState<PendingImage[]>([]);
 
   // Reset cuando se abre/cierra
   useEffect(() => {
@@ -75,6 +79,7 @@ export const MaterialForm: React.FC<MaterialFormProps> = ({
         setStockMinimoInput(String(initialState.stockMinimo));
       }
       setErrors({});
+      setPendingImages([]);
     }
   }, [isOpen, materialToEdit, initialState]);
 
@@ -179,11 +184,28 @@ export const MaterialForm: React.FC<MaterialFormProps> = ({
           areaId: formData.areaId,
         };
         await inventarioService.actualizar(materialToEdit.id, updateData);
+
+        if (pendingImages.length > 0) {
+          try {
+            await inventarioService.subirImagenes(materialToEdit.id, pendingImages.map((p) => p.file));
+          } catch {
+            notify.warning('Material actualizado pero ocurrió un error al subir las imágenes.');
+          }
+        }
         notify.success('Material actualizado correctamente');
       } else {
         // Modo creación: crear nuevo material
         const createData = formData as CreateMaterialDTO;
-        await inventarioService.crear(createData);
+        const created = await inventarioService.crear(createData);
+        const createdId = (created as any)?.id ?? (created as any)?.data?.id;
+
+        if (pendingImages.length > 0 && createdId) {
+          try {
+            await inventarioService.subirImagenes(createdId, pendingImages.map((p) => p.file));
+          } catch {
+            notify.warning('Material registrado pero ocurrió un error al subir las imágenes.');
+          }
+        }
         notify.success('Material registrado correctamente');
       }
       await onCreated();
@@ -206,6 +228,37 @@ export const MaterialForm: React.FC<MaterialFormProps> = ({
       loading={loading}
     >
       <form onSubmit={handleSubmit} className="form-container">
+        {/* ── Imágenes ── */}
+        <div className="form-group form-full" style={{ marginBottom: '20px' }}>
+          <label style={{ fontWeight: 600, display: 'block', marginBottom: '8px' }}>
+            Imágenes del material
+          </label>
+
+          {/* Saved images — visible in edit mode; upload/delete take effect immediately */}
+          {materialToEdit?.id && (
+            <>
+              <p style={{ margin: '0 0 8px', fontSize: '12px', color: 'var(--color-text-muted)' }}>
+                Imágenes guardadas
+              </p>
+              <ImageGallery
+                entityId={materialToEdit.id}
+                onLoad={(id) => inventarioService.listarImagenes(id)}
+                onDelete={(id, imgId) => inventarioService.eliminarImagen(id, imgId)}
+                onUpload={(id, files) => inventarioService.subirImagenes(id, files)}
+              />
+            </>
+          )}
+
+          {/* Pending images — create mode only (uploaded after material is created) */}
+          {!materialToEdit?.id && (
+            <ImageUploader
+              images={pendingImages}
+              onChange={setPendingImages}
+              disabled={loading}
+            />
+          )}
+        </div>
+
         <div className="form-grid">
           {!isEditing && (
             <div className={`form-group ${errors.codigo ? 'formField--error' : ''}`}>

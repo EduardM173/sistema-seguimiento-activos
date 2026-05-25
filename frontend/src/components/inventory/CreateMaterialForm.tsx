@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { getMaterialCategories, type MaterialCategory } from '../../services/material-category.service';
 import { createMaterial, type CreateMaterialRequest } from '../../services/inventory.service';
+import { useNotification } from '../../context/NotificationContext';
 import '../../styles/inventory.css';
 
 interface CreateMaterialFormProps {
@@ -10,10 +11,9 @@ interface CreateMaterialFormProps {
 
 export default function CreateMaterialForm({ onSuccess }: CreateMaterialFormProps) {
   const { user } = useAuth();
+  const notify = useNotification();
   const [categories, setCategories] = useState<MaterialCategory[]>([]);
   const [loading, setLoading] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
 
   const [formData, setFormData] = useState({
     codigo: '',
@@ -54,7 +54,7 @@ export default function CreateMaterialForm({ onSuccess }: CreateMaterialFormProp
         setCategories(data);
       } catch (err) {
         console.error('Error al cargar categorías:', err);
-        setErrorMessage(`Error al cargar las categorías: ${err instanceof Error ? err.message : 'Error desconocido'}`);
+        notify.error(`Error al cargar las categorías: ${err instanceof Error ? err.message : 'Error desconocido'}`);
       }
     };
 
@@ -123,8 +123,6 @@ export default function CreateMaterialForm({ onSuccess }: CreateMaterialFormProp
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMessage('');
-    setSuccessMessage('');
 
     if (!validateForm()) {
       return;
@@ -150,7 +148,7 @@ export default function CreateMaterialForm({ onSuccess }: CreateMaterialFormProp
 
       await createMaterial(materialData, token);
 
-      setSuccessMessage('Material creado exitosamente');
+      notify.success('Material creado exitosamente');
       setFormData({
         codigo: '',
         nombre: '',
@@ -161,17 +159,12 @@ export default function CreateMaterialForm({ onSuccess }: CreateMaterialFormProp
         categoriaId: '',
       });
 
-      // Limpiar mensaje de éxito después de 3 segundos
-      setTimeout(() => {
-        setSuccessMessage('');
-        // Llamar callback onSuccess después de limpiar el mensaje
-        if (onSuccess) {
-          onSuccess();
-        }
-      }, 3000);
+      if (onSuccess) {
+        onSuccess();
+      }
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Error al crear el material';
-      setErrorMessage(errorMsg);
+      notify.error(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -195,16 +188,11 @@ export default function CreateMaterialForm({ onSuccess }: CreateMaterialFormProp
       stockMinimo: '',
       categoriaId: '',
     });
-    setErrorMessage('');
-    setSuccessMessage('');
   };
 
   return (
     <div className="createMaterialForm">
       <h2>Crear Nuevo Material</h2>
-
-      {successMessage && <div className="form-message form-message--success">{successMessage}</div>}
-      {errorMessage && <div className="form-message form-message--error">{errorMessage}</div>}
 
       <form onSubmit={handleSubmit}>
         <div className="form-group">

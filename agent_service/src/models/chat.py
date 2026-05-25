@@ -228,6 +228,12 @@ class SendMessageResponse(BaseModel):
     # render. Empty when no deeplink applies.
     deeplinks: dict[str, dict[str, Any]] = Field(default_factory=dict)
 
+    # Wizard quick-reply suggestions
+    # Present when the agent emitted `[[ask_select:formId:fieldName]]`.
+    # The frontend renders these as clickable buttons so the user picks a real
+    # DB id rather than typing a free-form category/location name.
+    suggestions: list[dict[str, str]] = Field(default_factory=list)
+
 
 class EndSessionRequest(BaseModel):
     """Request to end a chat session with feedback."""

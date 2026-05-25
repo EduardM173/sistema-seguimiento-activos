@@ -1,12 +1,15 @@
 import 'dotenv/config';
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ActivosService, registerWithConsul, deregisterFromConsul } from '@activos/config';
 import { AppModule } from './app.module';
+import * as path from 'path';
+import * as fs from 'fs';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
   app.setGlobalPrefix('api', { exclude: ['health'] });
   app.enableCors({
     origin: [
@@ -18,6 +21,14 @@ async function bootstrap() {
     ],
     credentials: true,
   });
+
+  // Servir archivos estáticos de uploads
+  const uploadsDir = '/app/uploads';
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  }
+  app.useStaticAssets(uploadsDir, { prefix: '/uploads' });
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,

@@ -6,6 +6,7 @@
 /* ── Scroll wrapper ──────────────────────────────────────── */
 .st__wrap {
   overflow-x: auto;
+  flex-grow: 1;
   /* Let the parent card decide radius / border */
 }
 

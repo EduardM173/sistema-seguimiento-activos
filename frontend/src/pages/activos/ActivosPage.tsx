@@ -1,17 +1,18 @@
 import React, { useState } from 'react';
-import { Button, Alert } from '../../components/common';
+import { Button } from '../../components/common';
 import ActivosList from '../../components/activos/ActivosList';
 import ActivoForm from '../../components/activos/ActivoForm';
 import ActivoDetail from '../../components/activos/ActivoDetail';
 import type { Activo } from '../../types/activos.types';
 import { activosService } from '../../services/activos.service';
+import { useNotification } from '../../context/NotificationContext';
 import '../../styles/modules.css';
 
 export const ActivosPage: React.FC = () => {
+  const notify = useNotification();
   const [formIsOpen, setFormIsOpen] = useState(false);
   const [selectedActivo, setSelectedActivo] = useState<Activo | undefined>();
   const [detailIsOpen, setDetailIsOpen] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
   const handleNewActivo = () => {
@@ -33,27 +34,22 @@ export const ActivosPage: React.FC = () => {
     if (window.confirm(`¿Está seguro de que desea eliminar el activo "${activo.nombre}"?`)) {
       try {
         await activosService.eliminar(activo.id);
-        setMessage({ type: 'success', text: 'Activo eliminado exitosamente' });
+        notify.success('Activo eliminado exitosamente');
         setRefreshKey((prev) => prev + 1);
       } catch (err) {
-        setMessage({ type: 'error', text: 'Error al eliminar el activo' });
+        notify.error('Error al eliminar el activo');
       }
     }
   };
 
-  // ========== NUEVO: Manejar éxito de baja ==========
   const handleBajaSuccess = () => {
-    setMessage({ type: 'success', text: 'Activo dado de baja exitosamente' });
+    notify.success('Activo dado de baja exitosamente');
     setRefreshKey((prev) => prev + 1);
-    setDetailIsOpen(false); // Cerrar detalle si estaba abierto
+    setDetailIsOpen(false);
   };
-  // =================================================
 
   const handleFormSubmit = () => {
-    setMessage({
-      type: 'success',
-      text: selectedActivo ? 'Activo actualizado exitosamente' : 'Activo creado exitosamente',
-    });
+    notify.success(selectedActivo ? 'Activo actualizado exitosamente' : 'Activo creado exitosamente');
     setRefreshKey((prev) => prev + 1);
     setFormIsOpen(false);
   };
@@ -64,15 +60,6 @@ export const ActivosPage: React.FC = () => {
         <h1>Gestión de Activos</h1>
         <Button label="+ Nuevo Activo" variant="primary" onClick={handleNewActivo} />
       </div>
-
-      {message && (
-        <Alert
-          type={message.type}
-          message={message.text}
-          dismissible
-          onClose={() => setMessage(null)}
-        />
-      )}
 
       <ActivosList
         key={refreshKey}

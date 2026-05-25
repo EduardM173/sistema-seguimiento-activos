@@ -31,7 +31,7 @@
   gap: 20px;
   animation: overlaySlideUp 0.25s ease;
   max-height: 90vh;
-  overflow-y: auto;
+  overflow: hidden;
 }
 
 .overlayModal__dialog--dark {
@@ -110,6 +110,9 @@
 }
 
 .overlayModal__body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 16px;

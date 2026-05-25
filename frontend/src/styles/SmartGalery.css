@@ -1,0 +1,254 @@
+/* ── SmartGalery.css ───────────────────────────────────────────────────────── */
+/*  Spotify-style card gallery component.                                       */
+/* ─────────────────────────────────────────────────────────────────────────── */
+
+/* Grid ───────────────────────────────────────────────────────────────────── */
+
+.sg__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(165px, 1fr));
+  gap: 20px;
+  padding: 2px 0 8px;
+}
+
+/* Card ───────────────────────────────────────────────────────────────────── */
+
+.sg__card {
+  padding: 14px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  transition:
+    background 0.2s ease,
+    transform 0.22s ease,
+    box-shadow 0.22s ease;
+  position: relative;
+  cursor: default;
+}
+
+.sg__card:hover {
+  background: rgba(255, 255, 255, 0.09);
+  transform: translateY(-5px);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+}
+
+/* Art area ───────────────────────────────────────────────────────────────── */
+
+.sg__art {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.sg__art--clickable {
+  cursor: pointer;
+}
+
+.sg__art--clickable:hover .sg__artLetter {
+  opacity: 0.35;
+}
+
+/* Large initial letter centred in art */
+.sg__artLetter {
+  font-size: 3.8rem;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.48);
+  text-transform: uppercase;
+  user-select: none;
+  pointer-events: none;
+  transition: opacity 0.2s;
+  letter-spacing: -1px;
+}
+
+/* ⋯ actions button — slides up on card hover */
+.sg__moreBtn {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.70);
+  color: #fff;
+  font-size: 17px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transform: translateY(8px);
+  transition:
+    opacity 0.18s ease,
+    transform 0.18s ease,
+    background 0.15s ease;
+  backdrop-filter: blur(6px);
+  z-index: 1;
+}
+
+.sg__card:hover .sg__moreBtn,
+.sg__moreBtn:focus-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.sg__moreBtn:hover {
+  background: var(--color-primary, #1a5fad);
+}
+
+.sg__moreBtn:focus-visible {
+  outline: 2px solid var(--color-primary, #1a5fad);
+  outline-offset: 2px;
+}
+
+/* Card body ──────────────────────────────────────────────────────────────── */
+
+.sg__body {
+  margin-top: 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.sg__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-bright, #fff);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.35;
+}
+
+/* Title as a clickable button (when onRowClick is provided) */
+.sg__titleBtn {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-bright, #fff);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.35;
+  text-align: left;
+  width: 100%;
+  cursor: pointer;
+}
+
+.sg__titleBtn:hover {
+  text-decoration: underline;
+}
+
+.sg__subtitle {
+  font-size: 13px;
+  color: var(--color-text-muted, rgba(255, 255, 255, 0.5));
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.35;
+  margin-top: 1px;
+}
+
+.sg__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 7px;
+}
+
+/* Skeleton loading ───────────────────────────────────────────────────────── */
+
+.sg__skeletonGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(165px, 1fr));
+  gap: 20px;
+  padding: 2px 0 8px;
+}
+
+.sg__skeletonCard {
+  padding: 14px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.sg__skeletonArt {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 8px;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.04) 0%,
+    rgba(255, 255, 255, 0.09) 50%,
+    rgba(255, 255, 255, 0.04) 100%
+  );
+  background-size: 200% 100%;
+  animation: sg__shimmer 1.6s ease-in-out infinite;
+}
+
+.sg__skeletonLine {
+  height: 13px;
+  border-radius: 6px;
+  margin-top: 13px;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.04) 0%,
+    rgba(255, 255, 255, 0.09) 50%,
+    rgba(255, 255, 255, 0.04) 100%
+  );
+  background-size: 200% 100%;
+  animation: sg__shimmer 1.6s ease-in-out infinite;
+}
+
+.sg__skeletonLine--short {
+  width: 65%;
+  margin-top: 7px;
+  opacity: 0.6;
+}
+
+@keyframes sg__shimmer {
+  0%   { background-position:  200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Empty / error state ────────────────────────────────────────────────────── */
+
+.sg__state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  color: var(--color-text-muted, rgba(255, 255, 255, 0.5));
+}
+
+.sg__stateText {
+  font-size: 14px;
+  text-align: center;
+}
+
+/* Responsive ─────────────────────────────────────────────────────────────── */
+
+@media (max-width: 600px) {
+  .sg__grid,
+  .sg__skeletonGrid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 14px;
+  }
+}
+
+@media (max-width: 360px) {
+  .sg__grid,
+  .sg__skeletonGrid {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+}

@@ -219,6 +219,7 @@ model Activo {
   movimientos  MovimientoActivo[]
   incidentes   IncidenteActivo[]
   documentos   DocumentoActivo[]
+  imagenes     ImagenActivo[]
 
   @@index([categoriaId])
   @@index([ubicacionId])
@@ -348,6 +349,7 @@ model Material {
   area           Area?                  @relation(fields: [areaId], references: [id])
   movimientos    MovimientoInventario[]
   notificaciones Notificacion[]
+  imagenes       ImagenMaterial[]
 
   @@index([categoriaId])
   @@index([areaId])
@@ -434,4 +436,36 @@ model ReporteGenerado {
   @@index([generadoPorId])
   @@index([creadoEn])
   @@map("reportes_generados")
+}
+
+model ImagenActivo {
+  id             String   @id @default(cuid())
+  activoId       String
+  nombreArchivo  String
+  nombreOriginal String
+  tipoMime       String
+  tamano         Int
+  ruta           String
+  creadoEn       DateTime @default(now())
+
+  activo Activo @relation(fields: [activoId], references: [id], onDelete: Cascade)
+
+  @@index([activoId])
+  @@map("imagenes_activos")
+}
+
+model ImagenMaterial {
+  id             String   @id @default(cuid())
+  materialId     String
+  nombreArchivo  String
+  nombreOriginal String
+  tipoMime       String
+  tamano         Int
+  ruta           String
+  creadoEn       DateTime @default(now())
+
+  material Material @relation(fields: [materialId], references: [id], onDelete: Cascade)
+
+  @@index([materialId])
+  @@map("imagenes_materiales")
 }

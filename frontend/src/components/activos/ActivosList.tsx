@@ -7,6 +7,7 @@ import type { Activo, FiltrosActivos, EstadoActivo } from '../../types/activos.t
 import { estadoActivoDisplay } from '../../types/activos.types';
 import { activosService } from '../../services/activos.service';
 import { BajaActivoModal } from './BajaActivoModal';
+import { useNotification } from '../../context/NotificationContext';
 import '../../styles/modules.css';
 
 interface ActivosListProps {
@@ -24,7 +25,7 @@ export const ActivosList: React.FC<ActivosListProps> = ({
 }) => {
   const [activos, setActivos] = useState<Activo[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const notify = useNotification();
   const [busqueda, setBusqueda] = useState('');
   const [filtros, setFiltros] = useState<FiltrosActivos>({
     pagina: 1,
@@ -43,9 +44,8 @@ export const ActivosList: React.FC<ActivosListProps> = ({
       setLoading(true);
       const resultado = await activosService.obtenerTodos(filtros);
       setActivos(resultado.data);
-      setError(null);
     } catch (err) {
-      setError('Error al cargar los activos');
+      notify.error('Error al cargar los activos');
       console.error(err);
     } finally {
       setLoading(false);

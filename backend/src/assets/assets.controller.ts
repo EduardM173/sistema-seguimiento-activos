@@ -10,7 +10,14 @@ import {
   Query,
   Req,
   UseGuards,
+  UseInterceptors,
+  UploadedFiles,
+  BadRequestException,
 } from '@nestjs/common';
+import { FilesInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
+import * as fs from 'fs';
 import { Request } from 'express';
 import {
   ApiBadRequestResponse,
@@ -24,6 +31,7 @@ import {
   ApiParam,
   ApiQuery,
   ApiTags,
+  ApiConsumes,
 } from '@nestjs/swagger';
 
 import { RejectReceptionDto } from './dto/reject-reception.dto';
@@ -680,4 +688,75 @@ async disable(
   const activo = await this.assetsService.disable(id, dto.motivo, userId);
   return ApiResponse.success(activo, 'Activo dado de baja exitosamente');
 }
+
+  // ── Imágenes ────────────────────────────────────────────────────────────
+
+  @ApiOperation({ summary: 'Subir imágenes a un activo' })
+  @ApiParam({ name: 'id', description: 'ID del activo' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        files: { type: 'array', items: { type: 'string', format: 'binary' } },
+      },
+    },
+  })
+  @ApiCreatedResponse({ description: 'Imágenes subidas correctamente' })
+  @Post(':id/images')
+  @UseInterceptors(
+    FilesInterceptor('files', 10, {
+      storage: diskStorage({
+        destination: (req, _file, cb) => {
+          const id = (req.params as any).id as string;
+          const dir = `/app/uploads/activos/${id}`;
+          fs.mkdirSync(dir, { recursive: true });
+          cb(null, dir);
+        },
+        filename: (_req, file, cb) => {
+          const unique = Date.now() + '-' + Math.round(Math.random() * 1e9);
+          cb(null, unique + extname(file.originalname));
+        },
+      }),
+      fileFilter: (_req, file, cb) => {
+        if (!file.mimetype.match(/^image\/(jpeg|png|gif|webp|avif)$/)) {
+          return cb(new BadRequestException('Solo se permiten imágenes (jpg, png, gif, webp, avif)'), false);
+        }
+        cb(null, true);
+      },
+      limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB por archivo
+    }),
+  )
+  async uploadImages(
+    @Param('id') id: string,
+    @UploadedFiles() files: Express.Multer.File[],
+  ) {
+    if (!files || files.length === 0) {
+      throw new BadRequestException('Debe adjuntar al menos una imagen');
+    }
+    const imagenes = await this.assetsService.addImages(id, files);
+    return ApiResponse.success(imagenes, 'Imágenes subidas correctamente');
+  }
+
+  @ApiOperation({ summary: 'Listar imágenes de un activo' })
+  @ApiParam({ name: 'id', description: 'ID del activo' })
+  @ApiOkResponse({ description: 'Lista de imágenes' })
+  @Get(':id/images')
+  async listImages(@Param('id') id: string) {
+    const imagenes = await this.assetsService.listImages(id);
+    return ApiResponse.success(imagenes);
+  }
+
+  @ApiOperation({ summary: 'Eliminar una imagen de un activo' })
+  @ApiParam({ name: 'id', description: 'ID del activo' })
+  @ApiParam({ name: 'imageId', description: 'ID de la imagen' })
+  @ApiOkResponse({ description: 'Imagen eliminada correctamente' })
+  @Delete(':id/images/:imageId')
+  async deleteImage(
+    @Param('id') id: string,
+    @Param('imageId') imageId: string,
+  ) {
+    await this.assetsService.deleteImage(id, imageId);
+    return ApiResponse.success(null, 'Imagen eliminada correctamente');
+  }
 }

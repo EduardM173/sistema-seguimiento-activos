@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { SearchBar, Button, Badge, Alert } from '../../components/common';
 import { SmartTable } from '../../components/common/SmartTable';
 import type { ColumnDef, ActionDef } from '../../components/common/SmartTable';
+import { IconEye, IconEdit } from '../../components/common/Icon';
 import type { Usuario } from '../../types/usuarios.types';
 import { usuariosService } from '../../services/usuarios.service';
 import '../../styles/modules.css';
@@ -78,14 +79,14 @@ export const UsuariosPage: React.FC = () => {
   const actions: ActionDef<Usuario>[] = [
     {
       label: 'Ver detalles',
-      icon: '👁️',
+      icon: <IconEye size={14} />,
       onClick: (_usuario) => {
         // TODO: abrir panel de detalle
       },
     },
     {
       label: 'Editar',
-      icon: '✏️',
+      icon: <IconEdit size={14} />,
       onClick: (_usuario) => {
         // TODO: abrir formulario de edición
       },

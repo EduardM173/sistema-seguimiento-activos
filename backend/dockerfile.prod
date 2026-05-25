@@ -39,4 +39,7 @@ RUN npm ci --omit=dev
 COPY --from=builder --chown=node:node /app/dist ./dist
 COPY --from=builder --chown=node:node /app/node_modules/.prisma ./node_modules/.prisma
 
+# Directorio de uploads con permisos node para inicialización de volumen
+RUN mkdir -p /app/uploads
+
 CMD ["npm", "run", "start:prod"]

@@ -15,6 +15,7 @@ volumes:
   activos_pg_data_prod:
   activos_agent_pg_data_prod:
   activos_neo4j_data_prod:
+  activos_uploads_prod:
 
 x-nexus-build: &nexus-build
   args:
@@ -70,6 +71,8 @@ services:
       CONSUL_PORT:      "8500"
       SERVICE_ADDRESS:  backend
     command: sh -c "npx prisma migrate deploy && npm run start:prod"
+    volumes:
+      - activos_uploads_prod:/app/uploads
     depends_on:
       postgres:
         condition: service_healthy

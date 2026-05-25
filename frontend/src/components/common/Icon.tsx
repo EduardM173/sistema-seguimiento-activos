@@ -1,6 +1,7 @@
 export {
   Clock             as IconClock,
   LayoutGrid        as IconGrid,
+  LayoutList        as IconLayoutList,
   Package           as IconPackage,
   Clipboard         as IconClipboard,
   ArrowLeftRight    as IconArrowsLeftRight,

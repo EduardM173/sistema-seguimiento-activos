@@ -401,7 +401,9 @@ export const ModelName = {
   MovimientoInventario: 'MovimientoInventario',
   Notificacion: 'Notificacion',
   Auditoria: 'Auditoria',
-  ReporteGenerado: 'ReporteGenerado'
+  ReporteGenerado: 'ReporteGenerado',
+  ImagenActivo: 'ImagenActivo',
+  ImagenMaterial: 'ImagenMaterial'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -417,7 +419,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "usuario" | "rol" | "permiso" | "rolPermiso" | "area" | "ubicacion" | "categoriaActivo" | "activo" | "asignacionActivo" | "movimientoActivo" | "incidenteActivo" | "documentoActivo" | "categoriaMaterial" | "material" | "movimientoInventario" | "notificacion" | "auditoria" | "reporteGenerado"
+    modelProps: "usuario" | "rol" | "permiso" | "rolPermiso" | "area" | "ubicacion" | "categoriaActivo" | "activo" | "asignacionActivo" | "movimientoActivo" | "incidenteActivo" | "documentoActivo" | "categoriaMaterial" | "material" | "movimientoInventario" | "notificacion" | "auditoria" | "reporteGenerado" | "imagenActivo" | "imagenMaterial"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1753,6 +1755,154 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    ImagenActivo: {
+      payload: Prisma.$ImagenActivoPayload<ExtArgs>
+      fields: Prisma.ImagenActivoFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ImagenActivoFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ImagenActivoPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ImagenActivoFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ImagenActivoPayload>
+        }
+        findFirst: {
+          args: Prisma.ImagenActivoFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ImagenActivoPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ImagenActivoFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ImagenActivoPayload>
+        }
+        findMany: {
+          args: Prisma.ImagenActivoFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ImagenActivoPayload>[]
+        }
+        create: {
+          args: Prisma.ImagenActivoCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ImagenActivoPayload>
+        }
+        createMany: {
+          args: Prisma.ImagenActivoCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ImagenActivoCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ImagenActivoPayload>[]
+        }
+        delete: {
+          args: Prisma.ImagenActivoDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ImagenActivoPayload>
+        }
+        update: {
+          args: Prisma.ImagenActivoUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ImagenActivoPayload>
+        }
+        deleteMany: {
+          args: Prisma.ImagenActivoDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ImagenActivoUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ImagenActivoUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ImagenActivoPayload>[]
+        }
+        upsert: {
+          args: Prisma.ImagenActivoUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ImagenActivoPayload>
+        }
+        aggregate: {
+          args: Prisma.ImagenActivoAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateImagenActivo>
+        }
+        groupBy: {
+          args: Prisma.ImagenActivoGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ImagenActivoGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ImagenActivoCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ImagenActivoCountAggregateOutputType> | number
+        }
+      }
+    }
+    ImagenMaterial: {
+      payload: Prisma.$ImagenMaterialPayload<ExtArgs>
+      fields: Prisma.ImagenMaterialFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ImagenMaterialFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ImagenMaterialPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ImagenMaterialFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ImagenMaterialPayload>
+        }
+        findFirst: {
+          args: Prisma.ImagenMaterialFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ImagenMaterialPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ImagenMaterialFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ImagenMaterialPayload>
+        }
+        findMany: {
+          args: Prisma.ImagenMaterialFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ImagenMaterialPayload>[]
+        }
+        create: {
+          args: Prisma.ImagenMaterialCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ImagenMaterialPayload>
+        }
+        createMany: {
+          args: Prisma.ImagenMaterialCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ImagenMaterialCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ImagenMaterialPayload>[]
+        }
+        delete: {
+          args: Prisma.ImagenMaterialDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ImagenMaterialPayload>
+        }
+        update: {
+          args: Prisma.ImagenMaterialUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ImagenMaterialPayload>
+        }
+        deleteMany: {
+          args: Prisma.ImagenMaterialDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ImagenMaterialUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ImagenMaterialUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ImagenMaterialPayload>[]
+        }
+        upsert: {
+          args: Prisma.ImagenMaterialUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ImagenMaterialPayload>
+        }
+        aggregate: {
+          args: Prisma.ImagenMaterialAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateImagenMaterial>
+        }
+        groupBy: {
+          args: Prisma.ImagenMaterialGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ImagenMaterialGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ImagenMaterialCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ImagenMaterialCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -2050,6 +2200,34 @@ export const ReporteGeneradoScalarFieldEnum = {
 export type ReporteGeneradoScalarFieldEnum = (typeof ReporteGeneradoScalarFieldEnum)[keyof typeof ReporteGeneradoScalarFieldEnum]
 
 
+export const ImagenActivoScalarFieldEnum = {
+  id: 'id',
+  activoId: 'activoId',
+  nombreArchivo: 'nombreArchivo',
+  nombreOriginal: 'nombreOriginal',
+  tipoMime: 'tipoMime',
+  tamano: 'tamano',
+  ruta: 'ruta',
+  creadoEn: 'creadoEn'
+} as const
+
+export type ImagenActivoScalarFieldEnum = (typeof ImagenActivoScalarFieldEnum)[keyof typeof ImagenActivoScalarFieldEnum]
+
+
+export const ImagenMaterialScalarFieldEnum = {
+  id: 'id',
+  materialId: 'materialId',
+  nombreArchivo: 'nombreArchivo',
+  nombreOriginal: 'nombreOriginal',
+  tipoMime: 'tipoMime',
+  tamano: 'tamano',
+  ruta: 'ruta',
+  creadoEn: 'creadoEn'
+} as const
+
+export type ImagenMaterialScalarFieldEnum = (typeof ImagenMaterialScalarFieldEnum)[keyof typeof ImagenMaterialScalarFieldEnum]
+
+
 export const SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -2278,6 +2456,20 @@ export type IntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'In
 export type ListIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Int[]'>
     
 
+
+/**
+ * Reference to a field of type 'Float'
+ */
+export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
+    
+
+
+/**
+ * Reference to a field of type 'Float[]'
+ */
+export type ListFloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float[]'>
+    
+
 /**
  * Batch Payload for updateMany & deleteMany & createMany
  */
@@ -2406,6 +2598,8 @@ export type GlobalOmitConfig = {
   notificacion?: Prisma.NotificacionOmit
   auditoria?: Prisma.AuditoriaOmit
   reporteGenerado?: Prisma.ReporteGeneradoOmit
+  imagenActivo?: Prisma.ImagenActivoOmit
+  imagenMaterial?: Prisma.ImagenMaterialOmit
 }
 
 /* Types for Logging */
