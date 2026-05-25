@@ -6,6 +6,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
+import * as fs from 'fs';
+import * as path from 'path';
 
 import { PrismaService } from '../common/prisma.service';
 import { CreateAssetDto } from './dto/create-asset.dto';
@@ -2016,4 +2018,73 @@ async disable(id: string, motivo: string, userId: string) {
     },
   });
 }
+
+  // ── Imágenes ────────────────────────────────────────────────────────────
+
+  async addImages(activoId: string, files: Express.Multer.File[]) {
+    const activo = await this.prisma.activo.findUnique({ where: { id: activoId } });
+    if (!activo) throw new NotFoundException('Activo no encontrado');
+
+    const created = await this.prisma.$transaction(
+      files.map((f) =>
+        this.prisma.imagenActivo.create({
+          data: {
+            activoId,
+            nombreArchivo: f.filename,
+            nombreOriginal: f.originalname,
+            tipoMime: f.mimetype,
+            tamano: f.size,
+            ruta: f.path,
+          },
+        }),
+      ),
+    );
+
+    return created.map((img) => this.serializeImagen(img));
+  }
+
+  async listImages(activoId: string) {
+    const activo = await this.prisma.activo.findUnique({ where: { id: activoId } });
+    if (!activo) throw new NotFoundException('Activo no encontrado');
+
+    const imagenes = await this.prisma.imagenActivo.findMany({
+      where: { activoId },
+      orderBy: { creadoEn: 'asc' },
+    });
+    return imagenes.map((img) => this.serializeImagen(img));
+  }
+
+  async deleteImage(activoId: string, imageId: string) {
+    const imagen = await this.prisma.imagenActivo.findFirst({
+      where: { id: imageId, activoId },
+    });
+    if (!imagen) throw new NotFoundException('Imagen no encontrada');
+
+    await this.prisma.imagenActivo.delete({ where: { id: imageId } });
+
+    if (fs.existsSync(imagen.ruta)) {
+      fs.unlinkSync(imagen.ruta);
+    }
+  }
+
+  private serializeImagen(img: {
+    id: string;
+    activoId: string;
+    nombreArchivo: string;
+    nombreOriginal: string;
+    tipoMime: string;
+    tamano: number;
+    ruta: string;
+    creadoEn: Date;
+  }) {
+    return {
+      id: img.id,
+      activoId: img.activoId,
+      nombreOriginal: img.nombreOriginal,
+      tipoMime: img.tipoMime,
+      tamano: img.tamano,
+      url: `/uploads/activos/${img.activoId}/${img.nombreArchivo}`,
+      creadoEn: img.creadoEn,
+    };
+  }
 }

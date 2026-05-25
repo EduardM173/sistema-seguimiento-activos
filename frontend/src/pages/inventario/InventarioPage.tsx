@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Button, Badge, SmartTable } from '../../components/common';
+import { Button, Badge, SmartTable, SmartGalery } from '../../components/common';
 import type { ColumnDef, ActionDef } from '../../components/common';
 import type { CategoriaMaterial, Material } from '../../types/inventario.types';
 import { inventarioService } from '../../services/inventario.service';
@@ -13,7 +13,7 @@ import AjusteInventarioModal from '../../components/inventario/AjusteInventarioM
 import SalidaStockModal from '../../components/inventario/SalidaStockModal';
 import { FilterRow } from '../../components/common/FilterRow';
 import type { FilterQuery } from '../../components/common/FilterRow';
-import { IconClock, IconEdit, IconX } from '@/components/common/Icon';
+import { IconClock, IconEdit, IconX, IconGrid, IconLayoutList } from '@/components/common/Icon';
 import OverlayModal from '../../components/common/OverlayModal';
 import { useModalUrlSync } from '@/deeplink';
 
@@ -22,7 +22,6 @@ export const InventarioPage: React.FC = () => {
 
   const [materiales, setMateriales] = useState<Material[]>([]);
   const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState<{ type: 'error'; text: string } | null>(null);
   const [isMaterialModalOpen, setIsMaterialModalOpen] = useState(false);
   const [materialToEdit, setMaterialToEdit] = useState<Material | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -44,6 +43,8 @@ export const InventarioPage: React.FC = () => {
   const [meta, setMeta] = useState({ total: 0, pageSize: 10, totalPages: 1 });
   const [creatingDemo, setCreatingDemo] = useState(false);
   const [deletingDemo, setDeletingDemo] = useState(false);
+
+  const [viewMode, setViewMode] = useState<'table' | 'gallery'>('table');
 
   const [showHistorialModal, setShowHistorialModal] = useState(false);
   const [materialSeleccionado, setMaterialSeleccionado] = useState<Material | null>(null);
@@ -83,7 +84,6 @@ export const InventarioPage: React.FC = () => {
   const cargarMateriales = async () => {
     try {
       setLoading(true);
-      setMessage(null);
 
       const resultado = await inventarioService.obtenerTodos({
         q: searchText || undefined,
@@ -103,7 +103,7 @@ export const InventarioPage: React.FC = () => {
         totalPages: resultado.totalPages,
       });
     } catch (err) {
-      setMessage({ type: 'error', text: 'Error al cargar inventario' });
+      notify.error('Error al cargar inventario');
       console.error(err);
     } finally {
       setLoading(false);
@@ -150,8 +150,6 @@ export const InventarioPage: React.FC = () => {
     setCategoriaId(query.categoria ?? '');
     setAreaId(query.area ?? '');
     setEstado((query.estado ?? '') as 'CRITICO' | 'NORMAL' | '');
-    setSortBy((query.sortBy || 'creadoEn') as typeof sortBy);
-    setSortType((query.sortType || 'DESC') as 'ASC' | 'DESC');
     setCurrentPage(1);
   };
 
@@ -179,7 +177,7 @@ export const InventarioPage: React.FC = () => {
       setHistorial(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Error cargando historial', error);
-      setMessage({ type: 'error', text: 'Error al cargar historial' });
+      notify.error('Error al cargar historial');
       setHistorial([]);
     } finally {
       setLoadingHistorial(false);
@@ -297,23 +295,97 @@ export const InventarioPage: React.FC = () => {
     }
   ];
 
+  type InventarioSortBy = typeof sortBy;
+
+  function handleSort(column: InventarioSortBy) {
+    setCurrentPage(1);
+    if (sortBy === column) {
+      setSortType((prev) => (prev === 'ASC' ? 'DESC' : 'ASC'));
+    } else {
+      setSortBy(column);
+      const textCols: InventarioSortBy[] = ['codigo', 'nombre', 'categoria', 'area', 'unidad'];
+      setSortType(textCols.includes(column) ? 'ASC' : 'DESC');
+    }
+  }
+
+  function buildPageNumbers(): (number | '...')[] {
+    const totalPages = meta.totalPages;
+    const pages: (number | '...')[] = [];
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i += 1) pages.push(i);
+      return pages;
+    }
+    pages.push(1);
+    if (currentPage > 3) pages.push('...');
+    const start = Math.max(2, currentPage - 1);
+    const end = Math.min(totalPages - 1, currentPage + 1);
+    for (let i = start; i <= end; i += 1) pages.push(i);
+    if (currentPage < totalPages - 2) pages.push('...');
+    pages.push(totalPages);
+    return pages;
+  }
+
+  function renderSortLabel(label: string, column: InventarioSortBy): React.ReactNode {
+    const isActive = sortBy === column;
+    const direction = isActive ? sortType : null;
+    return (
+      <button
+        type="button"
+        className={`assetsTable__sortButton ${isActive ? 'assetsTable__sortButton--active' : ''}`}
+        onClick={() => handleSort(column)}
+      >
+        <span>{label}</span>
+        <span
+          className={`assetsTable__sortIcon ${
+            direction === 'ASC'
+              ? 'assetsTable__sortIcon--asc'
+              : direction === 'DESC'
+                ? 'assetsTable__sortIcon--desc'
+                : ''
+          }`}
+        >
+          {direction === 'ASC' ? '▲' : direction === 'DESC' ? '▼' : '↕'}
+        </span>
+      </button>
+    );
+  }
+
   const columns: ColumnDef<Material>[] = [
-  { id: 'codigo', header: 'Código', accessor: 'codigo', width: 100 },
-  { id: 'nombre', header: 'Nombre', primary: true, accessor: 'nombre' },
-  {
-    id: 'categoria',
-    header: 'Categoría',
-    accessor: (row: Material) => row.categoria?.nombre || 'N/A',
-  },
-  {
-    id: 'area',
-    header: 'Area',
-    accessor: (row: Material) => row.area?.nombre || 'Sin area',
-  },
+    {
+      id: 'codigo',
+      header: 'Código',
+      accessor: 'codigo',
+      width: 110,
+      headerContent: renderSortLabel('Código', 'codigo'),
+    },
+    {
+      id: 'nombre',
+      header: 'Nombre',
+      primary: true,
+      accessor: 'nombre',
+      width: 200,
+      headerContent: renderSortLabel('Material', 'nombre'),
+    },
+    {
+      id: 'categoria',
+      header: 'Categoría',
+      accessor: (row: Material) => row.categoria?.nombre || 'N/A',
+      width: 150,
+      headerContent: renderSortLabel('Categoría', 'categoria'),
+    },
+    {
+      id: 'area',
+      header: 'Área',
+      accessor: (row: Material) => row.area?.nombre || 'Sin área',
+      width: 160,
+      headerContent: renderSortLabel('Área', 'area'),
+    },
     {
       id: 'stockActual',
       header: 'Disponible',
       accessor: (row: Material) => row.stockActual,
+      width: 110,
+      headerContent: renderSortLabel('Disponible', 'stockActual'),
       render: (value: unknown, row: Material) => (
         <strong style={{ color: getStockColor(row.stockActual, row.stockMinimo) }}>
           {(value as number).toFixed(2)}
@@ -324,15 +396,22 @@ export const InventarioPage: React.FC = () => {
       id: 'stockMinimo',
       header: 'Mínimo',
       accessor: 'stockMinimo',
+      width: 100,
+      headerContent: renderSortLabel('Mínimo', 'stockMinimo'),
       render: (value: unknown) => (value as number).toFixed(2),
     },
-
-    { id: 'unidad', header: 'Un. Medida', accessor: 'unidad', width: 100 },
-
+    {
+      id: 'unidad',
+      header: 'Un. Medida',
+      accessor: 'unidad',
+      width: 100,
+      headerContent: renderSortLabel('Unidad', 'unidad'),
+    },
     {
       id: 'estado',
       header: 'Estado',
       accessor: (row: Material) => row.stockActual,
+      width: 120,
       render: (_value: unknown, row: Material) => {
         const status = getStockStatus(row.stockActual, row.stockMinimo);
         return <Badge label={status.label} variant={status.variant} size="sm" />;
@@ -346,27 +425,24 @@ export const InventarioPage: React.FC = () => {
         <h1>Gestión de Inventario</h1>
 
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-          <button
-            type="button"
-            className="btn btn-ghost btn-sm"
-            onClick={() => void handleCreateDemo()}
-            disabled={creatingDemo}
-            title="Carga rápida de materiales demo"
-            style={{ opacity: 0.7 }}
-          >
-            {creatingDemo ? 'cargando…' : 'demo x100'}
-          </button>
-
-          <button
-            type="button"
-            className="btn btn-ghost btn-sm"
-            onClick={() => void handleDeleteDemo()}
-            disabled={deletingDemo}
-            title="Eliminar materiales demo"
-            style={{ opacity: 0.7, color: 'var(--color-danger)' }}
-          >
-            {deletingDemo ? 'limpiando…' : 'limpiar demo'}
-          </button>
+          <div className="viewToggle" style={{ alignSelf: 'center' }}>
+            <button
+              type="button"
+              className={`viewToggle__btn ${viewMode === 'table' ? 'viewToggle__btn--active' : ''}`}
+              onClick={() => setViewMode('table')}
+              title="Vista de tabla"
+            >
+              <IconLayoutList size={16} />
+            </button>
+            <button
+              type="button"
+              className={`viewToggle__btn ${viewMode === 'gallery' ? 'viewToggle__btn--active' : ''}`}
+              onClick={() => setViewMode('gallery')}
+              title="Vista de galería"
+            >
+              <IconGrid size={16} />
+            </button>
+          </div>
 
           <div className="inventory-actions">
             <Button
@@ -424,12 +500,7 @@ export const InventarioPage: React.FC = () => {
         </div>
       </div>
 
-      {message && (
-        <div style={{ marginBottom: '12px', color: '#dc2626' }}>
-          {message.text}
-        </div>
-      )}
-
+      {/* FilterRow */}
 <FilterRow
   onChange={handleFilterChange}
   elements={[
@@ -464,100 +535,101 @@ export const InventarioPage: React.FC = () => {
         { value: 'CRITICO', label: 'Crítico' },
       ],
     },
-    {
-      type: 'select',
-      key: 'sortBy',
-      label: 'ORDENAR POR',
-      placeholder: 'Más recientes',
-      options: [
-        { value: 'creadoEn', label: 'Más recientes' },
-        { value: 'codigo', label: 'Código' },
-        { value: 'nombre', label: 'Nombre' },
-        { value: 'categoria', label: 'Categoría' },
-        { value: 'area', label: 'Area' },
-        { value: 'stockActual', label: 'Stock actual' },
-        { value: 'stockMinimo', label: 'Stock mínimo' },
-        { value: 'unidad', label: 'Unidad' },
-      ],
-    },
-    {
-      type: 'select',
-      key: 'sortType',
-      label: 'DIRECCIÓN',
-      placeholder: 'Descendente',
-      options: [
-        { value: 'ASC', label: 'Ascendente' },
-        { value: 'DESC', label: 'Descendente' },
-      ],
-    },
   ]}
 />
       <div className="module-list">
-        <SmartTable<Material>
-          columns={columns}
-          data={materiales}
-          loading={loading}
-          emptyMessage="📦 No hay materiales registrados en el inventario"
-          keyExtractor={(m) => m.id}
-          actions={materialActions}
-          onRowClick={(m) => handleEdit(m)}
-        />
+        {viewMode === 'gallery' ? (
+          <SmartGalery<Material>
+            columns={[
+              {
+                id: 'nombre',
+                header: 'Nombre',
+                accessor: 'nombre',
+                primary: true,
+              },
+              {
+                id: 'codigo',
+                header: 'Código',
+                accessor: 'codigo',
+              },
+              {
+                id: 'estado',
+                header: 'Estado',
+                accessor: (row: Material) => row.stockActual,
+                render: (_value: unknown, row: Material) => {
+                  const status = getStockStatus(row.stockActual, row.stockMinimo);
+                  return <Badge label={status.label} variant={status.variant} size="sm" />;
+                },
+              },
+            ]}
+            data={materiales}
+            loading={loading}
+            emptyMessage="No hay materiales registrados en el inventario"
+            keyExtractor={(m) => m.id}
+            actions={materialActions}
+            onRowClick={(m) => void abrirHistorial(m)}
+          />
+        ) : (
+          <SmartTable<Material>
+            columns={columns}
+            data={materiales}
+            loading={loading}
+            emptyMessage="No hay materiales registrados en el inventario"
+            keyExtractor={(m) => m.id}
+            sortable={false}
+            actions={materialActions}
+            onRowClick={(m) => void abrirHistorial(m)}
+          />
+        )}
       </div>
 
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          gap: '12px',
-          flexWrap: 'wrap',
-          marginTop: '12px',
-          color: 'var(--color-text-muted)',
-        }}
-      >
-        <span>
-          Mostrando{' '}
-          <strong>
-            {materiales.length === 0 ? 0 : (currentPage - 1) * meta.pageSize + 1}-
-            {Math.min(currentPage * meta.pageSize, meta.total)}
-          </strong>{' '}
-          de <strong>{meta.total}</strong> materiales
-        </span>
-
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-          <button
-            type="button"
-            onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-            disabled={currentPage === 1}
-            style={{
-              padding: '8px 14px',
-              borderRadius: '8px',
-              border: '1px solid #d1d5db',
-              background: '#fff',
-            }}
-          >
-            Anterior
-          </button>
-          <span>
-            Página {currentPage} de {meta.totalPages}
+      {!loading && materiales.length > 0 && (
+        <div className="assetsPagination">
+          <span className="assetsPagination__info">
+            Mostrando{' '}
+            <strong>
+              {(currentPage - 1) * meta.pageSize + 1}–
+              {Math.min(currentPage * meta.pageSize, meta.total)}
+            </strong>{' '}
+            de <strong>{meta.total}</strong> materiales registrados
           </span>
-          <button
-            type="button"
-            onClick={() =>
-              setCurrentPage((prev) => Math.min(meta.totalPages, prev + 1))
-            }
-            disabled={currentPage >= meta.totalPages}
-            style={{
-              padding: '8px 14px',
-              borderRadius: '8px',
-              border: '1px solid #d1d5db',
-              background: '#fff',
-            }}
-          >
-            Siguiente
-          </button>
+
+          <div className="assetsPagination__controls">
+            <button
+              type="button"
+              className="pageBtn"
+              disabled={currentPage <= 1}
+              onClick={() => setCurrentPage((page) => page - 1)}
+            >
+              &lt;
+            </button>
+
+            {buildPageNumbers().map((page, index) =>
+              page === '...' ? (
+                <span key={`dots-${index}`} className="pageDots">…</span>
+              ) : (
+                <button
+                  key={page}
+                  type="button"
+                  className={`pageBtn pageBtn--num ${page === currentPage ? 'pageBtn--active' : ''}`}
+                  onClick={() => setCurrentPage(page)}
+                >
+                  {page}
+                </button>
+              )
+            )}
+
+            <button
+              type="button"
+              className="pageBtn"
+              disabled={currentPage >= meta.totalPages}
+              onClick={() => setCurrentPage((page) => page + 1)}
+            >
+               &gt;
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       <MaterialForm
         isOpen={isMaterialModalOpen}
@@ -645,40 +717,48 @@ export const InventarioPage: React.FC = () => {
         </div>
 
         {/* Table */}
-        {loadingHistorial ? (
-          <p style={{ color: 'var(--color-text-muted)' }}>Cargando historial...</p>
-        ) : historial.length === 0 ? (
-          <p style={{ color: 'var(--color-text-muted)' }}>No hay movimientos registrados para este material.</p>
-        ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-              <thead>
-                <tr style={{ background: 'var(--table-header-bg)' }}>
-                  {['Fecha', 'Tipo', 'Cantidad', 'Responsable', 'Observación'].map((h) => (
-                    <th key={h} style={{ padding: '10px 12px', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, color: 'var(--color-text-muted)', letterSpacing: '0.05em', textTransform: 'uppercase', borderBottom: '1px solid var(--table-row-border)' }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {historial.map((item, index) => (
-                  <tr key={item.id ?? index} style={{ borderBottom: '1px solid var(--table-row-border)' }}>
-                    <td style={{ padding: '10px 12px', color: 'var(--color-text)', fontSize: '0.88rem' }}>
-                      {item.fecha ? new Date(item.fecha).toLocaleString('es-BO') : '—'}
-                    </td>
-                    <td style={{ padding: '10px 12px', color: 'var(--color-text-bright)', fontWeight: 600, fontSize: '0.85rem' }}>{item.tipo ?? '—'}</td>
-                    <td style={{ padding: '10px 12px', color: 'var(--color-text)', fontSize: '0.88rem' }}>{item.cantidad ?? '—'}</td>
-                    <td style={{ padding: '10px 12px', color: 'var(--color-text)', fontSize: '0.88rem' }}>
-                      {item.responsable ?? item.usuario?.nombreCompleto ?? '—'}
-                    </td>
-                    <td style={{ padding: '10px 12px', color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>
-                      {item.observacion ?? item.motivo ?? '—'}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+        <SmartTable<any>
+          columns={[
+            {
+              id: 'fecha',
+              header: 'Fecha',
+              accessor: 'fecha',
+              width: 180,
+              render: (v) => (v ? new Date(String(v)).toLocaleString('es-BO') : '—'),
+            },
+            {
+              id: 'tipo',
+              header: 'Tipo',
+              accessor: 'tipo',
+              width: 140,
+              render: (v) => (v ? <strong>{String(v)}</strong> : '—'),
+            },
+            {
+              id: 'cantidad',
+              header: 'Cantidad',
+              accessor: 'cantidad',
+              width: 100,
+              render: (v) => (v != null ? String(v) : '—'),
+            },
+            {
+              id: 'responsable',
+              header: 'Responsable',
+              accessor: (row: any) => row.responsable ?? row.usuario?.nombreCompleto ?? '—',
+              width: 160,
+              sortable: false,
+            },
+            {
+              id: 'observacion',
+              header: 'Observación',
+              accessor: (row: any) => row.observacion ?? row.motivo ?? '—',
+              sortable: false,
+            },
+          ]}
+          data={historial}
+          loading={loadingHistorial}
+          emptyMessage="No hay movimientos registrados para este material."
+          keyExtractor={(item: any) => item.id ?? String(Math.random())}
+        />
       </OverlayModal>
     </div>
   );

@@ -129,6 +129,23 @@ export const activosService = {
   return response.data;
   },
   // ==========================================
+
+  // ── Imágenes ────────────────────────────────────────────────────────────
+  subirImagenes: async (activoId: string, files: File[]) => {
+    const formData = new FormData();
+    files.forEach((f) => formData.append('files', f));
+    const response = await apiClient.upload<ApiResponse<any[]>>(`/assets/${activoId}/images`, formData);
+    return response.data ?? [];
+  },
+
+  listarImagenes: async (activoId: string) => {
+    const response = await apiClient.get<ApiResponse<any[]>>(`/assets/${activoId}/images`);
+    return response.data ?? [];
+  },
+
+  eliminarImagen: async (activoId: string, imageId: string) => {
+    await apiClient.delete(`/assets/${activoId}/images/${imageId}`);
+  },
 };
 
 export default activosService;

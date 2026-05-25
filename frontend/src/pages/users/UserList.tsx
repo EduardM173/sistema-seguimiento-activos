@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import CreateUser from '../../components/users/CreateUser';
+import { IconEdit } from '../../components/common/Icon';
 
 import { useAuth } from '../../context/AuthContext';
 import {
@@ -12,7 +13,7 @@ import {
 } from '../../services/user.service';
 
 import type { Permission, Role, User } from '../../types/user.types';
-import { SmartTable } from '../../components/common/SmartTable';
+import { Button, Badge, SmartTable } from '../../components/common';
 import type { ColumnDef, ActionDef } from '../../components/common/SmartTable';
 import { FilterRow } from '../../components/common/FilterRow';
 import { useModalUrlSync } from '@/deeplink';
@@ -440,7 +441,7 @@ export default function UserList() {
     const userActions: ActionDef<User>[] = [
       {
         label: 'Editar',
-        icon: '✏️',
+        icon: <IconEdit size={14} />,
         onClick: (u) => setEditingUserId(u.id),
       },
     ];
@@ -483,98 +484,90 @@ export default function UserList() {
             Selecciona el rol correspondiente para cada usuario del sistema.
           </p>
 
-          <table
-            style={{
-              width: '100%',
-              borderCollapse: 'collapse',
-              marginTop: '16px',
-            }}
-          >
-            <thead>
-              <tr style={{ backgroundColor: 'var(--glass-bg)', textAlign: 'left' }}>
-                <th style={{ padding: '12px' }}>Usuario</th>
-                <th style={{ padding: '12px' }}>Correo</th>
-                <th style={{ padding: '12px' }}>Rol actual</th>
-                <th style={{ padding: '12px' }}>Nuevo rol</th>
-                <th style={{ padding: '12px' }}>Acción</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {filteredUsers.length > 0 ? (
-                filteredUsers.map((currentUser) => {
-                  const currentRoleId = currentUser.rol?.id || currentUser.rolId || '';
-                  const selectedRoleId = selectedRoles[currentUser.id] || '';
-
+          {(() => {
+            const userRoleColumns: ColumnDef<User>[] = [
+              {
+                id: 'nombre',
+                header: 'Usuario',
+                primary: true,
+                accessor: (row: User) => `${row.nombres} ${row.apellidos}`,
+              },
+              {
+                id: 'correo',
+                header: 'Correo',
+                accessor: 'correo' as keyof User,
+              },
+              {
+                id: 'rolActual',
+                header: 'Rol actual',
+                accessor: (row: User) => row.rol?.nombre || 'Sin rol',
+                render: (value: unknown) => (
+                  <Badge label={String(value)} variant="secondary" size="sm" />
+                ),
+              },
+              {
+                id: 'nuevoRol',
+                header: 'Nuevo rol',
+                accessor: (row: User) => row.id,
+                render: (_value: unknown, row: User) => (
+                  <select
+                    value={selectedRoles[row.id] || ''}
+                    onChange={(e) => handleSelectedRoleChange(row.id, e.target.value)}
+                    style={{
+                      padding: '10px 12px',
+                      background: 'transparent',
+                      color: 'var(--color-text-bright)',
+                      border: 'none',
+                      borderBottom: '1px solid var(--color-border)',
+                      minWidth: '200px',
+                    }}
+                  >
+                    <option value="">Seleccionar rol</option>
+                    {roles.map((role) => (
+                      <option key={role.id} value={role.id}>
+                        {role.nombre}
+                      </option>
+                    ))}
+                  </select>
+                ),
+              },
+              {
+                id: 'accion',
+                header: 'Acción',
+                accessor: (row: User) => row.id,
+                width: 130,
+                render: (_value: unknown, row: User) => {
+                  const currentRoleId = row.rol?.id || row.rolId || '';
+                  const selectedRoleId = selectedRoles[row.id] || '';
                   return (
-                    <tr key={currentUser.id} style={{ borderBottom: '1px solid var(--color-border-light)' }}>
-                      <td style={{ padding: '12px' }}>
-                        {currentUser.nombres} {currentUser.apellidos}
-                      </td>
-                      <td style={{ padding: '12px' }}>{currentUser.correo}</td>
-                      <td style={{ padding: '12px' }}>
-                        <span
-                          style={{
-                            backgroundColor: 'var(--glass-bg)',
-                            color: 'var(--color-text-bright)',
-                            padding: '4px 8px',
-                            borderRadius: '999px',
-                            fontSize: '13px',
-                            fontWeight: 600,
-                          }}
-                        >
-                          {currentUser.rol?.nombre || 'Sin rol'}
-                        </span>
-                      </td>
-                      <td style={{ padding: '12px' }}>
-                        <select
-                          value={selectedRoleId}
-                          onChange={(e) =>
-                            handleSelectedRoleChange(currentUser.id, e.target.value)
-                          }
-                          style={{
-                            padding: '10px 12px',
-                            borderRadius: 0,
-                            border: 'none',
-                            borderBottom: '1px solid var(--color-border)',
-                            background: 'transparent',
-                            color: 'var(--color-text-bright)',
-                            minWidth: '220px',
-                          }}
-                        >
-                          <option value="">Seleccionar rol</option>
-                          {roles.map((role) => (
-                            <option key={role.id} value={role.id}>
-                              {role.nombre}
-                            </option>
-                          ))}
-                        </select>
-                      </td>
-                      <td style={{ padding: '12px' }}>
-                        <button
-                          className="btn btn-primary btn-sm"
-                          onClick={() => handleSaveRole(currentUser)}
-                          disabled={
-                            savingUserId === currentUser.id ||
-                            !selectedRoleId ||
-                            selectedRoleId === currentRoleId
-                          }
-                        >
-                          {savingUserId === currentUser.id ? 'Guardando…' : 'Guardar'}
-                        </button>
-                      </td>
-                    </tr>
+                    <Button
+                      label={savingUserId === row.id ? 'Guardando…' : 'Guardar'}
+                      variant="primary"
+                      size="sm"
+                      isLoading={savingUserId === row.id}
+                      disabled={
+                        savingUserId === row.id ||
+                        !selectedRoleId ||
+                        selectedRoleId === currentRoleId
+                      }
+                      onClick={() => void handleSaveRole(row)}
+                    />
                   );
-                })
-              ) : (
-                <tr>
-                  <td colSpan={5} style={{ padding: '20px', textAlign: 'center' }}>
-                    No hay usuarios para mostrar.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                },
+              },
+            ];
+
+            return (
+              <SmartTable<User>
+                columns={userRoleColumns}
+                data={filteredUsers}
+                loading={false}
+                emptyMessage="No hay usuarios para mostrar."
+                keyExtractor={(u) => u.id}
+                sortable={false}
+              />
+            );
+          })()}
         </div>
 
         <div style={sectionCardStyle}>

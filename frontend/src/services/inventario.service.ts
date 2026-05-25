@@ -282,6 +282,23 @@ export const inventarioService = {
     }
     return response?.data ?? [];
   },
+
+  // ── Imágenes ────────────────────────────────────────────────────────────
+  subirImagenes: async (materialId: string, files: File[]) => {
+    const formData = new FormData();
+    files.forEach((f) => formData.append('files', f));
+    const response = await apiClient.upload<any>(`/materials/${materialId}/images`, formData);
+    return response?.data ?? [];
+  },
+
+  listarImagenes: async (materialId: string) => {
+    const response = await apiClient.get<any>(`/materials/${materialId}/images`);
+    return response?.data ?? [];
+  },
+
+  eliminarImagen: async (materialId: string, imageId: string) => {
+    await apiClient.delete(`/materials/${materialId}/images/${imageId}`);
+  },
 };
 
 export default inventarioService;

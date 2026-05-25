@@ -57,8 +57,18 @@ const PAGES: DeeplinkPageDefinition[] = [
       {
         id: 'create-asset',
         title: 'Crear activo',
-        description: 'Formulario para registrar un nuevo activo.',
+        description: 'Formulario para registrar un nuevo activo. Soporta prellenado vía parámetros prefill_* en la URL (asistente de IA).',
         requiredPermission: 'ASSET_CREATE',
+        params: [
+          { name: 'prefill_nombre', type: 'string', in: 'query', description: 'Nombre del activo a pre-rellenar.' },
+          { name: 'prefill_marca', type: 'string', in: 'query', description: 'Marca del activo.' },
+          { name: 'prefill_modelo', type: 'string', in: 'query', description: 'Modelo del activo.' },
+          { name: 'prefill_numeroSerie', type: 'string', in: 'query', description: 'Número de serie.' },
+          { name: 'prefill_descripcion', type: 'string', in: 'query', description: 'Descripción libre.' },
+          { name: 'prefill_categoriaNombre', type: 'string', in: 'query', description: 'Nombre de la categoría (se resuelve a ID).' },
+          { name: 'prefill_ubicacionNombre', type: 'string', in: 'query', description: 'Nombre de la ubicación (se resuelve a ID).' },
+          { name: 'prefill_estado', type: 'enum', in: 'query', enumValues: ['OPERATIVO', 'MANTENIMIENTO', 'FUERA_DE_SERVICIO'], description: 'Estado inicial.' },
+        ],
       },
       {
         id: 'view-asset',

@@ -10,6 +10,7 @@ This module provides:
 from __future__ import annotations
 
 import logging
+import re
 from datetime import datetime
 from typing import Any
 from uuid import uuid4
@@ -39,6 +40,27 @@ from ...models.chat import (
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+# ── Wizard quick-reply helpers ────────────────────────────────────────────────
+
+_ASK_SELECT_RE = re.compile(r'\[\[ask_select:([^:]+):([^\]]+)\]\]')
+
+# Static options for enum fields whose values never change.
+_WIZARD_STATIC_OPTIONS: dict[str, list[dict[str, str]]] = {
+    'estado': [
+        {'text': 'Operativo',        'value': 'OPERATIVO',         'field': 'estado'},
+        {'text': 'Mantenimiento',    'value': 'MANTENIMIENTO',     'field': 'estado'},
+        {'text': 'Fuera de Servicio','value': 'FUERA_DE_SERVICIO', 'field': 'estado'},
+    ],
+}
+
+# Maps a wizard field name to the key inside context.wizard_catalogs.
+_WIZARD_CATALOG_MAP: dict[str, str] = {
+    'categoriaId':        'categorias',
+    'ubicacionId':        'ubicaciones',
+    'areaActualId':       'areas',
+    'responsableActualId':'usuarios',
+}
 
 from ...telemetry import log_event, get_recent_events
 from ...persistence.chat_db import (
@@ -398,14 +420,17 @@ async def send_message(session_id: str, body: SendMessageRequest) -> SendMessage
     deeplinks_payload: dict[str, dict[str, Any]] = {}
     if settings.deeplink_enabled:
         try:
-            permissions = (body.context or {}).get("permissions") if body.context else None
+            ctx = body.context or {}
+            permissions = ctx.get("permissions") if ctx else None
             if permissions is not None and not isinstance(permissions, list):
                 permissions = None
+            current_route = ctx.get("current_route") if ctx else None
             deeplink_agent = get_deeplink_agent()
             annotation = await deeplink_agent.annotate(
                 user_message=body.content,
                 assistant_reply=assistant_msg.content,
                 permissions=permissions,
+                current_route=current_route,
             )
             annotated_text = annotation.text
             deeplinks_payload = {
@@ -417,6 +442,25 @@ async def send_message(session_id: str, body: SendMessageRequest) -> SendMessage
                 _db_persist_message(assistant_msg)
         except Exception as e:  # pragma: no cover - defensive
             logger.warning("DeeplinkAgent failed for session %s: %s", session_id, e)
+
+    # Wizard quick-reply suggestions: parse [[ask_select:formId:fieldName]]
+    # The token is stripped from content so the user never sees raw markup.
+    suggestions_payload: list[dict[str, str]] = []
+    ask_select_match = _ASK_SELECT_RE.search(annotated_text)
+    if ask_select_match:
+        field_name = ask_select_match.group(2)
+        annotated_text = _ASK_SELECT_RE.sub('', annotated_text).rstrip()
+        ctx = body.context or {}
+        if field_name in _WIZARD_STATIC_OPTIONS:
+            suggestions_payload = _WIZARD_STATIC_OPTIONS[field_name]
+        elif field_name in _WIZARD_CATALOG_MAP:
+            catalog_key = _WIZARD_CATALOG_MAP[field_name]
+            items = (ctx.get('wizard_catalogs') or {}).get(catalog_key, [])
+            suggestions_payload = [
+                {'text': item.get('nombre', ''), 'value': item.get('id', ''), 'field': field_name}
+                for item in items
+                if item.get('nombre') and item.get('id')
+            ]
 
     log_event("chat.request.completed", {
         "session_id": session_id,
@@ -444,6 +488,7 @@ async def send_message(session_id: str, body: SendMessageRequest) -> SendMessage
         is_conjecture=getattr(result, "is_conjecture", False),
         new_facts_count=new_facts_count,
         deeplinks=deeplinks_payload,
+        suggestions=suggestions_payload,
     )
 
 

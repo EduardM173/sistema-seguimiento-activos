@@ -5,6 +5,7 @@ import type { Activo, MovimientoActivo, EstadoActivo } from '../../types/activos
 import { estadoActivoDisplay } from '../../types/activos.types';
 import { activosService } from '../../services/activos.service';
 import BajaActivoModal from './BajaActivoModal';
+import { ImageGallery } from '../common/ImageGallery';
 import '../../styles/modules.css';
 
 interface ActivoDetailProps {
@@ -180,6 +181,16 @@ export const ActivoDetail: React.FC<ActivoDetailProps> = ({
             <p>{activo.observaciones}</p>
           </div>
         )}
+
+        <div className="detail-section">
+          <h3>Imágenes</h3>
+          <ImageGallery
+            entityId={activo.id}
+            onLoad={(id) => activosService.listarImagenes(id)}
+            onDelete={onEdit ? (id, imgId) => activosService.eliminarImagen(id, imgId) : undefined}
+            onUpload={onEdit ? (id, files) => activosService.subirImagenes(id, files) : undefined}
+          />
+        </div>
 
         {movimientos.length > 0 && (
           <div className="detail-section">

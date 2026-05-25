@@ -1,3 +1,4 @@
+import React from 'react';
 import { useNotification } from '../../context/NotificationContext';
 import { IconCheck, IconX, IconAlertTriangle, IconInfo } from '../common/Icon';
 import '../../styles/toast.css';

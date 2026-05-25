@@ -53,7 +53,7 @@ function ModalRechazo({ pendiente, onConfirmar, onCancelar, submitting }: ModalR
             disabled={submitting}
             aria-label="Cerrar"
           >
-            ✕
+            <IconX size={16} />
           </button>
         </div>
 
@@ -627,7 +627,7 @@ export const TransferenciasPage: React.FC<TransferenciasPageProps> = ({
                     onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
                     disabled={currentPage === 1}
                   >
-                    &lt; Anterior
+                    &lt;
                   </button>
                   <span className="transfer-page-indicator">
                     Página {currentPage} de {totalPages}
@@ -638,7 +638,7 @@ export const TransferenciasPage: React.FC<TransferenciasPageProps> = ({
                     onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
                     disabled={currentPage === totalPages}
                   >
-                    Siguiente &gt;
+                    &gt;
                   </button>
                 </div>
               </div>

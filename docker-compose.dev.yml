@@ -17,6 +17,7 @@ volumes:
   activos_pg_data_dev:
   activos_agent_pg_data_dev:
   activos_neo4j_data_dev:
+  activos_uploads_dev:
 
 x-nexus-build: &nexus-build
   args:
@@ -77,6 +78,7 @@ services:
     volumes:
       - ./backend/src:/app/src
       - ./backend/prisma:/app/prisma
+      - activos_uploads_dev:/app/uploads
     depends_on:
       postgres:
         condition: service_healthy
@@ -235,6 +237,7 @@ services:
       - ./frontend/public:/app/public
       - ./frontend/vite-plugins:/app/vite-plugins
       - ./frontend/index.html:/app/index.html
+      - ./frontend/vite.config.ts:/app/vite.config.ts:ro
     ports:
       - "${DEV_FRONTEND_PORT}:5173"
     depends_on:

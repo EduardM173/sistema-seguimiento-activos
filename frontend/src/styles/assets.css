@@ -217,6 +217,9 @@
 
 /* ── Assets table wrapper ──────────────────────────────── */
 .assetsTable__wrap {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
   background: var(--color-surface);
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-lg);
@@ -330,6 +333,8 @@
 
 /* ── Pagination ────────────────────────────────────────── */
 .assetsPagination {
+  position: sticky;
+  bottom: 0px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -342,6 +347,29 @@
   flex-wrap: wrap;
 }
 
+.assetsPagination__controls {
+  display: flex;
+  flex-flow: row;
+}
+
+.assetsWorkspace {
+  display: flex;
+  flex-direction: column;
+  flex: auto;
+  height: 100%;
+}
+
+.assetsWorkspace__panel{
+  height: 100%;
+}
+
+.assetsWorkspace__content{
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  height: 100%;
+}
+
 .assetsPagination__pages {
   display: flex;
   align-items: center;
@@ -349,7 +377,7 @@
 }
 
 .pageBtn {
-  width: 32px;
+  width: fit-content;
   height: 32px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-base);
@@ -376,6 +404,41 @@
 }
 
 .pageBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ── View toggle (table / gallery) ──────────────────────── */
+.viewToggle {
+  display: flex;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-base);
+  overflow: hidden;
+}
+
+.viewToggle__btn {
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.viewToggle__btn + .viewToggle__btn {
+  border-left: 1px solid var(--color-border);
+}
+
+.viewToggle__btn--active {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.viewToggle__btn:not(.viewToggle__btn--active):hover {
+  background: var(--glass-bg);
+  color: var(--color-text-bright);
+}
 
 /* ── Detail panel ──────────────────────────────────────── */
 .assetDetailPage {

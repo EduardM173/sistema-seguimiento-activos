@@ -1,4 +1,7 @@
 import { useState, useEffect, useCallback, useRef, type FormEvent } from 'react';
+import { IconClipboard, IconTag, IconMapPin, IconDollarSign, IconInfo, IconX, IconSave } from '../components/common/Icon';
+import { ImageUploader, type PendingImage } from '../components/common/ImageUploader';
+import { activosService } from '../services/activos.service';
 
 import { createAsset } from '../services/assets.service';
 import { getCategorias, getUbicaciones, getAreas, getUsuarios } from '../services/catalogs.service';
@@ -29,7 +32,25 @@ const ESTADO_OPTIONS: { value: EstadoActivo; label: string }[] = [
 
 type Priority = 'CRITICO' | 'ALTO' | 'NORMAL';
 
-export default function CreateAssetPage({ open, onClose }: { open: boolean; onClose: () => void }) {
+/** Pre-fill data provided by the AI assistant when opening via deeplink. */
+export interface AssetPrefillData {
+  nombre?: string;
+  marca?: string;
+  modelo?: string;
+  numeroSerie?: string;
+  descripcion?: string;
+  /** Direct category DB id — used when set by the AI wizard (preferred over categoriaNombre). */
+  categoriaId?: string;
+  /** Category name — resolved to an ID after catalogs load (fallback). */
+  categoriaNombre?: string;
+  /** Direct location DB id — preferred over ubicacionNombre. */
+  ubicacionId?: string;
+  /** Location name — resolved to an ID after catalogs load (fallback). */
+  ubicacionNombre?: string;
+  estado?: EstadoActivo;
+}
+
+export default function CreateAssetPage({ open, onClose, prefill }: { open: boolean; onClose: () => void; prefill?: AssetPrefillData | Record<string, string> }) {
   const notify = useNotification();
 
   // ── Catalog data from backend ──
@@ -79,6 +100,48 @@ export default function CreateAssetPage({ open, onClose }: { open: boolean; onCl
   const [fechaAdquisicion, setFechaAdquisicion] = useState('');
   const [proveedor, setProveedor] = useState('');
   const [observaciones, setObservaciones] = useState('');
+  const [pendingImages, setPendingImages] = useState<PendingImage[]>([]);
+
+  // ── Prefill: applied once after catalogs finish loading ──
+  const [prefillApplied, setPrefillApplied] = useState(false);
+  useEffect(() => {
+    if (catalogsLoading || prefillApplied || !prefill) return;
+    if (prefill.nombre) setNombre(prefill.nombre);
+    if (prefill.marca) setMarca(prefill.marca);
+    if (prefill.modelo) setModelo(prefill.modelo);
+    if (prefill.numeroSerie) setNumeroSerie(prefill.numeroSerie);
+    if (prefill.descripcion) setObservaciones(prefill.descripcion);
+    if (prefill.estado && ['OPERATIVO', 'MANTENIMIENTO', 'FUERA_DE_SERVICIO'].includes(prefill.estado)) {
+      setEstado(prefill.estado as EstadoActivo);
+    }
+    // Category: prefer direct id, fall back to name-based lookup
+    if (prefill.categoriaId) {
+      const match = categorias.find((c) => c.id === prefill.categoriaId);
+      if (match) setCategoriaId(match.id);
+    } else if (prefill.categoriaNombre) {
+      const match = categorias.find(
+        (c) => c.nombre.toLowerCase() === prefill.categoriaNombre!.toLowerCase(),
+      );
+      if (match) setCategoriaId(match.id);
+    }
+    // Location: prefer direct id, fall back to name-based lookup
+    if (prefill.ubicacionId) {
+      const match = ubicaciones.find((u) => u.id === prefill.ubicacionId);
+      if (match) {
+        setUbicacionId(match.id);
+        setUbicacionSearch(match.nombre);
+      }
+    } else if (prefill.ubicacionNombre) {
+      const match = ubicaciones.find(
+        (u) => u.nombre.toLowerCase().includes(prefill.ubicacionNombre!.toLowerCase()),
+      );
+      if (match) {
+        setUbicacionId(match.id);
+        setUbicacionSearch(match.nombre);
+      }
+    }
+    setPrefillApplied(true);
+  }, [catalogsLoading, prefillApplied, prefill, categorias, ubicaciones]);
 
   // ── UI state ──
   const [errors, setErrors] = useState<FormErrors>({});
@@ -137,6 +200,30 @@ export default function CreateAssetPage({ open, onClose }: { open: boolean; onCl
     }
   }, [ubicaciones]);
 
+  /** Resets all form fields to their initial state; also revokes pending image blob URLs. */
+  const resetForm = useCallback(() => {
+    setCodigo('');
+    setNombre('');
+    setMarca('');
+    setModelo('');
+    setNumeroSerie('');
+    setCategoriaId('');
+    setEstado('');
+    setUbicacionId('');
+    setUbicacionSearch('');
+    setAreaActualId('');
+    setResponsableActualId('');
+    setPrioridad('NORMAL');
+    setCostoAdquisicion('');
+    setFechaAdquisicion('');
+    setProveedor('');
+    setObservaciones('');
+    setPendingImages((prev) => { prev.forEach((p) => URL.revokeObjectURL(p.preview)); return []; });
+    setErrors({});
+    setTouched(new Set());
+    setPrefillApplied(false);
+  }, []);
+
   const handleGenerateCode = useCallback(async () => {
     try {
       setGeneratingCode(true);
@@ -155,6 +242,12 @@ export default function CreateAssetPage({ open, onClose }: { open: boolean; onCl
       void handleGenerateCode();
     }
   }, [codigo, handleGenerateCode]);
+
+  // Reset the form (and trigger CUA re-generation) every time the modal is opened
+  useEffect(() => {
+    if (open) resetForm();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   function handleLocationCreated(loc: LocationItem) {
     const newUbi: Ubicacion = {
@@ -250,6 +343,13 @@ export default function CreateAssetPage({ open, onClose }: { open: boolean; onCl
       if (estado) payload.estado = estado;
 
       const result = await createAsset(payload);
+      if (pendingImages.length > 0 && result.data?.id) {
+        try {
+          await activosService.subirImagenes(result.data.id, pendingImages.map((p) => p.file));
+        } catch {
+          notify.warning('Activo registrado', 'No se pudieron subir algunas imágenes.');
+        }
+      }
       notify.success(result.message ?? 'Activo registrado exitosamente');
       onClose();
     } catch (err) {
@@ -279,15 +379,16 @@ export default function CreateAssetPage({ open, onClose }: { open: boolean; onCl
     >
       <form onSubmit={handleSubmit} className="createAssetForm" noValidate>
         {/* ── Section 1: Información General ── */}
-        <fieldset className="formSection">
-          <legend className="formSection__legend">
-            <span className="formSection__icon">📋</span>
+        <div className="formSection">
+          <div className="formSection__legend">
+            <span className="formSection__icon"><IconClipboard size={18} /></span>
             <div>
               <span className="formSection__title">Información General</span>
               <span className="formSection__desc">Identificación básica y marca del activo universitario.</span>
             </div>
-          </legend>
+          </div>
 
+          {/* Row 1: Código + Nombre */}
           <div className="formGrid formGrid--2">
             <div className={`formField ${getFieldError('codigo') ? 'formField--error' : ''}`}>
               <label htmlFor="codigo">
@@ -302,16 +403,16 @@ export default function CreateAssetPage({ open, onClose }: { open: boolean; onCl
                   readOnly
                   maxLength={50}
                 />
-                <span
+                <button
+                  type="button"
                   className="formField__infoIcon"
-                  title={
-                    generatingCode
-                      ? 'El sistema está generando un código único'
-                      : 'Código único institucional generado automáticamente'
-                  }
+                  onClick={handleGenerateCode}
+                  disabled={generatingCode || submitting}
+                  title={generatingCode ? 'Generando código…' : 'Generar nuevo código único'}
+                  style={{ cursor: generatingCode ? 'wait' : 'pointer', background: 'none', border: 'none', padding: 0, fontSize: '16px' }}
                 >
-                  ⓘ
-                </span>
+                  {generatingCode ? '⏳' : '↻'}
+                </button>
               </div>
               {getFieldError('codigo') && <span className="formField__error">{getFieldError('codigo')}</span>}
             </div>
@@ -333,6 +434,7 @@ export default function CreateAssetPage({ open, onClose }: { open: boolean; onCl
             </div>
           </div>
 
+          {/* Row 2: Marca + Modelo + Número de Serie */}
           <div className="formGrid formGrid--3">
             <div className="formField">
               <label htmlFor="marca">Marca</label>
@@ -368,17 +470,27 @@ export default function CreateAssetPage({ open, onClose }: { open: boolean; onCl
               />
             </div>
           </div>
-        </fieldset>
+
+          {/* Row 3: Imágenes (full width) */}
+          <div className="formField">
+            <label>Imágenes del Activo</label>
+            <ImageUploader
+              images={pendingImages}
+              onChange={setPendingImages}
+              disabled={submitting}
+            />
+          </div>
+        </div>
 
         {/* ── Section 2: Clasificación y Estado ── */}
-        <fieldset className="formSection">
-          <legend className="formSection__legend">
-            <span className="formSection__icon">🏷️</span>
+        <div className="formSection">
+          <div className="formSection__legend">
+            <span className="formSection__icon"><IconTag size={18} /></span>
             <div>
               <span className="formSection__title">Clasificación y Estado</span>
               <span className="formSection__desc">Categorización para reportes y depreciación.</span>
             </div>
-          </legend>
+          </div>
 
           <div className="formGrid formGrid--2">
             <div className={`formField ${getFieldError('categoriaId') ? 'formField--error' : ''}`}>
@@ -413,17 +525,17 @@ export default function CreateAssetPage({ open, onClose }: { open: boolean; onCl
               </select>
             </div>
           </div>
-        </fieldset>
+        </div>
 
         {/* ── Section 3: Ubicación y Responsable ── */}
-        <fieldset className="formSection">
-          <legend className="formSection__legend">
-            <span className="formSection__icon">📍</span>
+        <div className="formSection">
+          <div className="formSection__legend">
+            <span className="formSection__icon"><IconMapPin size={18} /></span>
             <div>
               <span className="formSection__title">Ubicación y Responsable</span>
               <span className="formSection__desc">¿Dónde se encuentra y quién responde por él?</span>
             </div>
-          </legend>
+          </div>
 
           <div className="formGrid formGrid--3">
             <div
@@ -529,10 +641,6 @@ export default function CreateAssetPage({ open, onClose }: { open: boolean; onCl
                   markTouched('estado');
                 }}
                 onBlur={() => markTouched('estado')}
-                style={{
-                  borderColor: getFieldError('estado') ? '#dc2626' : undefined,
-                  backgroundColor: getFieldError('estado') ? '#fef2f2' : undefined,
-                }}
               >
                 <option value="" disabled>-- Seleccione un estado --</option>
                 {ESTADO_OPTIONS.map((opt) => (
@@ -542,12 +650,9 @@ export default function CreateAssetPage({ open, onClose }: { open: boolean; onCl
                 ))}
               </select>
               {getFieldError('estado') && (
-                <span className="formField__error"> {getFieldError('estado')}</span>
-                )}
+                <span className="formField__error">{getFieldError('estado')}</span>
+              )}
               </div>
-              {getFieldError('ubicacionId') ? (
-                <span className="formField__error">{getFieldError('ubicacionId')}</span>
-              ) : null}
             </div>
 
           <div className="formGrid formGrid--2">
@@ -588,17 +693,17 @@ export default function CreateAssetPage({ open, onClose }: { open: boolean; onCl
               </div>
             </div>
           </div>
-        </fieldset>
+        </div>
 
         {/* ── Section 4: Financiero y Documentación ── */}
-        <fieldset className="formSection">
-          <legend className="formSection__legend">
-            <span className="formSection__icon">💰</span>
+        <div className="formSection">
+          <div className="formSection__legend">
+            <span className="formSection__icon"><IconDollarSign size={18} /></span>
             <div>
               <span className="formSection__title">Financiero y Documentación</span>
               <span className="formSection__desc">Valor de adquisición, proveedores y soporte legal.</span>
             </div>
-          </legend>
+          </div>
 
           <div className="formGrid formGrid--3">
             <div className={`formField ${getFieldError('costoAdquisicion') ? 'formField--error' : ''}`}>
@@ -652,20 +757,11 @@ export default function CreateAssetPage({ open, onClose }: { open: boolean; onCl
             />
           </div>
 
-          {/* Document upload area (visual only) */}
-          <div className="formField">
-            <label>Documentos y Evidencia Fotográfica</label>
-            <div className="uploadArea">
-              <span className="uploadArea__icon">☁️</span>
-              <p className="uploadArea__text">Haga clic o arrastre archivos aquí</p>
-              <p className="uploadArea__hint">PDF, JPG, PNG o DOC (Máx. 10MB por archivo)</p>
-            </div>
-          </div>
-        </fieldset>
+        </div>
 
         {/* System Recommendation */}
         <div className="systemNote">
-          <span className="systemNote__icon">💡</span>
+          <span className="systemNote__icon"><IconInfo size={18} /></span>
           <div>
             <strong>Recomendación del Sistema</strong>
             <p>
@@ -687,13 +783,13 @@ export default function CreateAssetPage({ open, onClose }: { open: boolean; onCl
           <button
             type="button"
             className="btn btn--ghost"
-            onClick={onClose}
+            onClick={() => { resetForm(); onClose(); }}
             disabled={submitting}
           >
-            ✕ Cancelar
+            <IconX size={14} style={{ marginRight: '6px' }} /> Cancelar
           </button>
           <button type="submit" className="btn btn--primary btn--lg" disabled={submitting}>
-            {submitting ? 'Guardando...' : '💾 Guardar y Registrar'}
+            {submitting ? 'Guardando...' : <><IconSave size={15} style={{ marginRight: '6px' }} />Guardar y Registrar</>}
           </button>
         </div>
       </form>

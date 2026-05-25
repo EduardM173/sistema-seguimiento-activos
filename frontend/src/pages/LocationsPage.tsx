@@ -18,6 +18,7 @@ import { HttpError } from '../services/http.client';
 import type { PaginationMeta } from '../types/assets.types';
 
 import OverlayModal from '../components/common/OverlayModal';
+import { IconTrash } from '../components/common/Icon';
 import { useModalUrlSync } from '@/deeplink';
 import CreateLocationForm from '../components/common/CreateLocationForm';
 import { SmartTable } from '../components/common/SmartTable';
@@ -251,7 +252,7 @@ export default function LocationsPage() {
   const locationActions: ActionDef<LocationItem>[] = [
     {
       label: 'Eliminar',
-      icon: '🗑',
+      icon: <IconTrash size={14} />,
       variant: 'danger',
       onClick: (loc) => handleDelete(loc.id, loc.nombre),
     },
@@ -324,7 +325,7 @@ export default function LocationsPage() {
                 disabled={currentPage <= 1}
                 onClick={() => setCurrentPage((p) => p - 1)}
               >
-                &lt; Anterior
+                &lt;
               </button>
 
               {buildPageNumbers().map((page, i) =>
@@ -348,7 +349,7 @@ export default function LocationsPage() {
                 disabled={currentPage >= totalPages}
                 onClick={() => setCurrentPage((p) => p + 1)}
               >
-                Siguiente &gt;
+                &gt;
               </button>
             </div>
           </div>

@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { DataTable, Badge, Button } from '../../components/common';
+import { SmartTable, Badge, Button } from '../../components/common';
+import type { ColumnDef } from '../../components/common';
+import { IconCheck, IconX } from '../../components/common/Icon';
 import { asignacionesService } from '../../services/asignaciones.service';
 import { useAuth } from '../../context/AuthContext';
+import { useNotification } from '../../context/NotificationContext';
 import ModalConfirmarRecepcion from '../../components/asignaciones/ModalConfirmarRecepcion';
 import ModalRechazarRecepcion from '../../components/asignaciones/ModalRechazarRecepcion';
 import type { AsignacionActivo, EstadoAsignacion } from '../../types/asignaciones.types';
@@ -9,13 +12,13 @@ import '../../styles/modules.css';
 
 export const AsignacionesPendientesPage: React.FC = () => {
   const { user } = useAuth();
+  const notify = useNotification();
   const [asignaciones, setAsignaciones] = useState<AsignacionActivo[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
   const [confirmarModalOpen, setConfirmarModalOpen] = useState(false);
   const [rechazarModalOpen, setRechazarModalOpen] = useState(false);
   const [selectedAsignacion, setSelectedAsignacion] = useState<AsignacionActivo | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     cargarAsignacionesPendientes();
@@ -24,7 +27,6 @@ export const AsignacionesPendientesPage: React.FC = () => {
   const cargarAsignacionesPendientes = async () => {
     try {
       setLoading(true);
-      setError(null);
       const resultado = await asignacionesService.obtenerPendientesPorArea({
         page: 1,
         pageSize: 100,
@@ -32,7 +34,7 @@ export const AsignacionesPendientesPage: React.FC = () => {
       setAsignaciones(resultado.data);
     } catch (err) {
       console.error('Error al cargar asignaciones pendientes:', err);
-      setError('Error al cargar las asignaciones pendientes');
+      notify.error('Error al cargar las asignaciones pendientes');
       setAsignaciones([]);
     } finally {
       setLoading(false);
@@ -81,75 +83,76 @@ export const AsignacionesPendientesPage: React.FC = () => {
     return display[estado] || estado;
   };
 
-  const columns = [
-    { 
-      header: 'Código', 
-      accessor: (row: AsignacionActivo) => row.activo?.codigoActivo || 'N/A', 
-      width: '100px' 
-    },
-    { 
-      header: 'Nombre', 
-      accessor: (row: AsignacionActivo) => row.activo?.nombre || 'N/A' 
-    },
-    { 
-      header: 'Marca', 
-      accessor: (row: AsignacionActivo) => row.activo?.marca || 'N/A' 
-    },
-    { 
-      header: 'Modelo', 
-      accessor: (row: AsignacionActivo) => row.activo?.modelo || 'N/A' 
+  const columns: ColumnDef<AsignacionActivo>[] = [
+    {
+      id: 'codigo',
+      header: 'Código',
+      accessor: (row) => row.activo?.codigoActivo || 'N/A',
+      width: 110,
     },
     {
+      id: 'nombre',
+      header: 'Nombre',
+      accessor: (row) => row.activo?.nombre || 'N/A',
+      primary: true,
+      width: 200,
+    },
+    {
+      id: 'marca',
+      header: 'Marca',
+      accessor: (row) => row.activo?.marca || 'N/A',
+      width: 120,
+    },
+    {
+      id: 'modelo',
+      header: 'Modelo',
+      accessor: (row) => row.activo?.modelo || 'N/A',
+      width: 120,
+    },
+    {
+      id: 'estado',
       header: 'Estado',
       accessor: 'estado',
-      render: (value: EstadoAsignacion) => (
-        <Badge label={getEstadoDisplay(value)} variant={getEstadoColor(value)} size="sm" />
+      width: 120,
+      render: (value) => (
+        <Badge
+          label={getEstadoDisplay(value as EstadoAsignacion)}
+          variant={getEstadoColor(value as EstadoAsignacion)}
+          size="sm"
+        />
       ),
     },
     {
+      id: 'asignadoEn',
       header: 'Asignado el',
       accessor: 'asignadoEn',
-      render: (value: Date) => new Date(value).toLocaleDateString(),
+      width: 140,
+      render: (value) => new Date(String(value)).toLocaleDateString(),
     },
     {
+      id: 'acciones',
       header: 'Acciones',
-      accessor: (row: AsignacionActivo) => row.id,
-      render: (_id: string, row: AsignacionActivo) => (
-        <div className="actions-group" style={{ display: 'flex', gap: '8px' }}>
+      accessor: (row) => row.id,
+      sortable: false,
+      width: 220,
+      render: (_id, row) => (
+        <div style={{ display: 'flex', gap: '6px' }}>
           {row.estado === 'PENDIENTE' && (
             <>
-              <button
-                className="btn-action btn-confirm"
+              <Button
+                label="Aceptar"
+                variant="success"
+                size="sm"
+                icon={<IconCheck size={12} />}
                 onClick={() => handleConfirmarClick(row)}
-                title="Confirmar Recepción"
-                style={{
-                  cursor: 'pointer',
-                  padding: '6px 12px',
-                  borderRadius: '4px',
-                  background: '#10b981',
-                  color: 'white',
-                  border: 'none',
-                  fontSize: '12px',
-                }}
-              >
-                ✓ Aceptar
-              </button>
-              <button
-                className="btn-action btn-reject"
+              />
+              <Button
+                label="Rechazar"
+                variant="danger"
+                size="sm"
+                icon={<IconX size={12} />}
                 onClick={() => handleRechazarClick(row)}
-                title="Rechazar Recepción"
-                style={{
-                  cursor: 'pointer',
-                  padding: '6px 12px',
-                  borderRadius: '4px',
-                  background: '#dc2626',
-                  color: 'white',
-                  border: 'none',
-                  fontSize: '12px',
-                }}
-              >
-                ✗ Rechazar
-              </button>
+              />
             </>
           )}
           {row.estado === 'RECIBIDO' && (
@@ -167,39 +170,20 @@ export const AsignacionesPendientesPage: React.FC = () => {
 
   return (
     <div className="module-page">
-      <div className="module-header">
+      <div>
         <h1>Recepción de Activos</h1>
         <p style={{ color: 'var(--color-text-muted)', marginTop: '4px' }}>
           Activos pendientes de recepción para <strong>{areaNombre}</strong>
         </p>
       </div>
 
-      {error && (
-        <div style={{ 
-          background: '#fee2e2', 
-          color: '#dc2626', 
-          padding: '12px', 
-          borderRadius: '8px', 
-          marginBottom: '16px' 
-        }}>
-          {error}
-          <button 
-            onClick={cargarAsignacionesPendientes}
-            style={{ marginLeft: '12px', padding: '4px 8px', cursor: 'pointer' }}
-          >
-            Reintentar
-          </button>
-        </div>
-      )}
-
       <div className="module-list">
-        <DataTable<AsignacionActivo>
+        <SmartTable<AsignacionActivo>
           columns={columns}
           data={asignaciones}
           loading={loading}
-          emptyMessage="📦 No hay activos pendientes de recepción para tu área"
-          striped
-          hover
+          emptyMessage="No hay activos pendientes de recepción para tu área"
+          keyExtractor={(row) => row.id}
         />
       </div>
 

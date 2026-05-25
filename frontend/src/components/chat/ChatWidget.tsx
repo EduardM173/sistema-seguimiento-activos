@@ -12,12 +12,16 @@
  *    react-router's `<Link>` for SPA navigation.
  *  - The widget closes on link click so the user lands on the destination
  *    page without the chat panel covering it.
+ *  - When the agent is guiding a form-filling wizard, it can emit quick-reply
+ *    suggestions for select fields. Clicking a suggestion sends the label as a
+ *    message and passes the actual DB value in `context.wizard_selection` so
+ *    the agent can build an accurate prefill URL.
  *
  * Auth context (when present) is sent as `body.context` so the agent can
  * filter the navigation map by the user's permissions.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { IconMessageSquare, IconBot, IconSend, IconX } from '../common/Icon';
 
 import { useAuth } from '../../context/AuthContext';
@@ -28,6 +32,8 @@ import {
   type DeeplinkRefWire,
   type SendMessageResponse,
 } from '../../services/agent-chat.service';
+import { getCategorias, getUbicaciones } from '../../services/catalogs.service';
+import type { WizardCatalogs, WizardSelection, ChatSuggestion } from '../../formmap';
 import '../../styles/chat-widget.css';
 
 interface ChatMessageVM {
@@ -35,6 +41,8 @@ interface ChatMessageVM {
   role: 'user' | 'assistant' | 'error';
   content: string;
   deeplinks?: Record<string, DeeplinkRefWire>;
+  /** Quick-reply suggestions for form wizard select fields. */
+  suggestions?: ChatSuggestion[];
 }
 
 const WELCOME_TEXT =
@@ -43,6 +51,7 @@ const WELCOME_TEXT =
 export default function ChatWidget() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [open, setOpen] = useState(false);
   const [sending, setSending] = useState(false);
@@ -51,11 +60,36 @@ export default function ChatWidget() {
   const [messages, setMessages] = useState<ChatMessageVM[]>([]);
   const [unread, setUnread] = useState(0);
 
+  // Wizard state ──────────────────────────────────────────────────────────────
+  /** Catalog data fetched on first open; sent as context.wizard_catalogs. */
+  const [wizardCatalogs, setWizardCatalogs] = useState<WizardCatalogs | null>(null);
+  /**
+   * When the user clicks a suggestion button, store the selection here until
+   * the next message is submitted, then include it in context.wizard_selection.
+   */
+  const [pendingSelection, setPendingSelection] = useState<WizardSelection | null>(null);
+
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const creatingSessionRef = useRef<Promise<string> | null>(null);
 
   const isAuthenticated = Boolean(user);
+
+  // Fetch wizard catalogs once when the widget is opened. Best-effort.
+  useEffect(() => {
+    if (!open || wizardCatalogs !== null) return;
+    void Promise.all([getCategorias(), getUbicaciones()])
+      .then(([cats, ubis]) => {
+        setWizardCatalogs({
+          categorias: cats.map((c) => ({ id: c.id, nombre: c.nombre })),
+          ubicaciones: ubis.map((u) => ({ id: u.id, nombre: u.nombre })),
+        });
+      })
+      .catch(() => {
+        // Non-critical — wizard still works; agent won't have live options
+        setWizardCatalogs({});
+      });
+  }, [open, wizardCatalogs]);
 
   // Auto-scroll on new messages.
   useEffect(() => {
@@ -99,8 +133,8 @@ export default function ChatWidget() {
     [user],
   );
 
-  const submit = useCallback(async () => {
-    const text = draft.trim();
+  const submit = useCallback(async (overrideDraft?: string, selection?: WizardSelection) => {
+    const text = (overrideDraft ?? draft).trim();
     if (!text || sending) return;
 
     const userMsg: ChatMessageVM = {
@@ -112,18 +146,28 @@ export default function ChatWidget() {
     setDraft('');
     setSending(true);
 
+    // Capture and clear pending selection before the async call
+    const sel = selection ?? pendingSelection;
+    setPendingSelection(null);
+
     try {
       const sid = await ensureSession();
       const reply: SendMessageResponse = await agentChatService.sendMessage(sid, {
         content: text,
         allow_conjectures: true,
-        context: permissions.length > 0 ? { permissions } : undefined,
+        context: {
+          permissions: permissions.length > 0 ? permissions : undefined,
+          current_route: location.pathname,
+          ...(wizardCatalogs ? { wizard_catalogs: wizardCatalogs } : {}),
+          ...(sel ? { wizard_selection: sel } : {}),
+        },
       });
       const assistantMsg: ChatMessageVM = {
         id: reply.message_id,
         role: 'assistant',
         content: reply.content,
         deeplinks: reply.deeplinks,
+        suggestions: reply.suggestions,
       };
       setMessages((prev) => [...prev, assistantMsg]);
       if (!open) setUnread((n) => n + 1);
@@ -143,7 +187,17 @@ export default function ChatWidget() {
     } finally {
       setSending(false);
     }
-  }, [draft, sending, ensureSession, permissions, open]);
+  }, [draft, sending, ensureSession, permissions, open, wizardCatalogs, pendingSelection]);
+
+  /** Called when user clicks a quick-reply suggestion button. */
+  const handleSuggestionClick = useCallback((suggestion: ChatSuggestion) => {
+    const sel: WizardSelection = {
+      field: suggestion.field,
+      value: suggestion.value,
+      label: suggestion.text,
+    };
+    void submit(suggestion.text, sel);
+  }, [submit]);
 
   const onKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -222,7 +276,12 @@ export default function ChatWidget() {
             onClick={onDeeplinkClick}
           >
             {renderableMessages.map((m) => (
-              <MessageBubble key={m.id} msg={m} />
+              <MessageBubble
+                key={m.id}
+                msg={m}
+                onSuggestionClick={handleSuggestionClick}
+                suggestionsDisabled={sending}
+              />
             ))}
             {sending && (
               <div className="chat-widget__typing" aria-label="Asistente escribiendo">
@@ -265,7 +324,13 @@ export default function ChatWidget() {
   );
 }
 
-function MessageBubble({ msg }: { msg: ChatMessageVM }) {
+interface MessageBubbleProps {
+  msg: ChatMessageVM;
+  onSuggestionClick: (s: ChatSuggestion) => void;
+  suggestionsDisabled: boolean;
+}
+
+function MessageBubble({ msg, onSuggestionClick, suggestionsDisabled }: MessageBubbleProps) {
   const cls =
     msg.role === 'user'
       ? 'chat-widget__msg chat-widget__msg--user'
@@ -276,14 +341,32 @@ function MessageBubble({ msg }: { msg: ChatMessageVM }) {
   if (msg.role === 'user' || msg.role === 'error') {
     return <div className={cls}>{msg.content}</div>;
   }
-  // Assistant: render with deeplink interpolation.
+
+  // Assistant: render with deeplink interpolation and optional suggestions.
   return (
-    <div className={cls}>
-      <DeeplinkText
-        text={msg.content}
-        deeplinks={msg.deeplinks as Record<string, DeeplinkRef> | undefined}
-        linkClassName="chat-widget__deeplink"
-      />
+    <div className="chat-widget__msg-group">
+      <div className={cls}>
+        <DeeplinkText
+          text={msg.content}
+          deeplinks={msg.deeplinks as Record<string, DeeplinkRef> | undefined}
+          linkClassName="chat-widget__deeplink"
+        />
+      </div>
+      {msg.suggestions && msg.suggestions.length > 0 && (
+        <div className="chat-widget__suggestions" role="group" aria-label="Opciones de respuesta">
+          {msg.suggestions.map((s) => (
+            <button
+              key={`${s.field}-${s.value}`}
+              type="button"
+              className="chat-widget__suggestion-btn"
+              onClick={() => onSuggestionClick(s)}
+              disabled={suggestionsDisabled}
+            >
+              {s.text}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

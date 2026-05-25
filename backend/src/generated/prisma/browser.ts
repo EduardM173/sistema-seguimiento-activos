@@ -107,3 +107,13 @@ export type Auditoria = Prisma.AuditoriaModel
  * 
  */
 export type ReporteGenerado = Prisma.ReporteGeneradoModel
+/**
+ * Model ImagenActivo
+ * 
+ */
+export type ImagenActivo = Prisma.ImagenActivoModel
+/**
+ * Model ImagenMaterial
+ * 
+ */
+export type ImagenMaterial = Prisma.ImagenMaterialModel

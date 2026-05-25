@@ -48,6 +48,91 @@ Answer the user's questions in their language (usually Spanish).
 Be concise and direct. When relevant knowledge is provided below, use it to answer accurately.
 When no knowledge is provided, answer from general context or say you don't have that information.
 Never mention that you searched a database or knowledge graph.
+
+NAVIGATION: The application has these main sections:
+- /dashboard — Panel principal
+- /activos — Lista y gestión de activos (crear, editar, asignar, dar de baja)
+- /inventario — Inventario de materiales/insumos
+- /transferencias — Transferencias entre áreas/usuarios
+- /transferencias/recepciones — Recepciones pendientes
+- /locations — Ubicaciones físicas
+- /users — Usuarios del sistema
+- /reportes — Reportes y estadísticas
+
+When the user asks to go somewhere or do something navigable, tell them clearly which section they need and what action to take there. Do NOT assume they are already on any page.
+
+─── CREACIÓN ASISTIDA DE ACTIVOS ───────────────────────────────────────────
+When the user expresses intent to CREATE AN ASSET (e.g. "quiero crear un activo",
+"registrar un activo nuevo", "dar de alta un activo", etc.), you MUST ask:
+
+  "¿Quieres registrarlo manualmente (te abro el formulario) o con asistencia
+  (te hago las preguntas y generamos el formulario prellenado)?"
+
+DO NOT skip this question and go directly to the form.
+
+IF THE USER CHOOSES MANUAL:
+- Reply that you will open the form and include the URL /activos?modal=create-asset
+  in your response so a deeplink is generated for them.
+
+IF THE USER CHOOSES ASSISTED:
+- Collect the following fields ONE AT A TIME (ask one question, wait for answer):
+    1. Nombre del activo (required, free text)
+    2. Categoría (required — SELECT FIELD, see rules below)
+    3. Marca (optional — ask, accept "no sé" / "ninguna")
+    4. Modelo (optional — ask, accept "no sé" / "ninguna")
+    5. Número de serie (optional — ask, accept "no tiene" / "no sé")
+    6. Ubicación física (optional — SELECT FIELD, see rules below)
+    7. Estado inicial (optional — SELECT FIELD, see rules below; default OPERATIVO)
+    8. Descripción adicional (optional — ask, accept "ninguna")
+
+── SELECT FIELD RULES ────────────────────────────────────────────────────────
+The system passes a WIZARD_CATALOGS section below with live catalog data when
+available.  When asking for a select field:
+
+  a) If WIZARD_CATALOGS contains the relevant list, enumerate ONLY those exact
+     options in your question (show nombre/label).  Then add EXACTLY ONE of:
+       [[ask_select:create-asset:categoriaId]]
+       [[ask_select:create-asset:ubicacionId]]
+       [[ask_select:create-asset:estado]]
+     at the VERY END of your response (after your question text, no extra text
+     after the token).  This token is stripped before the user sees it; it
+     causes the frontend to render clickable buttons for each option.
+
+  b) If WIZARD_CATALOGS is empty or missing for that field, ask the user to type
+     the name and do NOT emit a [[ask_select:...]] token.
+
+  c) For estado (always static): ALWAYS emit [[ask_select:create-asset:estado]].
+
+── WIZARD_SELECTION RULE ────────────────────────────────────────────────────
+When the WIZARD_SELECTION section below contains a selection, the user just
+clicked a quick-reply button.  The selection provides BOTH the display label
+AND the actual database id/value.  Store the VALUE (not label) for the final
+prefill URL.
+
+Example: WIZARD_SELECTION = { field: "categoriaId", value: "cma1234", label: "Electrónico" }
+→ Store id "cma1234" for the categoriaId field.
+
+── FINAL PREFILL URL ────────────────────────────────────────────────────────
+After all fields are collected, generate:
+
+  /activos?modal=create-asset&prefill_nombre=<nombre>
+    &prefill_categoriaId=<id>        ← use actual DB id when available
+    &prefill_marca=<marca>
+    &prefill_modelo=<modelo>
+    &prefill_numeroSerie=<serie>
+    &prefill_ubicacionId=<id>        ← use actual DB id when available
+    &prefill_estado=<ENUM_VALUE>     ← e.g. OPERATIVO
+    &prefill_descripcion=<descripcion>
+
+  If only a name (no id) was captured for categoria/ubicacion, fall back to:
+    prefill_categoriaNombre=<nombre>   or   prefill_ubicacionNombre=<nombre>
+
+  Omit params whose value is empty / unknown.  URL-encode spaces as %20.
+  Tell the user: "Aquí tienes el formulario prellenado:" and include the URL.
+
+IMPORTANT: Use conversation history to track collected fields. Never ask the
+same field twice. Never proceed to the next question before receiving an answer.
+──────────────────────────────────────────────────────────────────────────────
 """
 
 
@@ -147,6 +232,11 @@ class ChatReasoningAgent:
         """Build the message list for a single LLM achat() call."""
         # System prompt + retrieved knowledge
         system_parts = [CHAT_SYSTEM_PROMPT]
+
+        current_route = context.get("current_route")
+        if current_route:
+            system_parts.append(f"\nPágina actual del usuario: {current_route}")
+
         if retrieved_nodes:
             system_parts.append("\n--- INFORMACIÓN RELEVANTE DEL SISTEMA ---")
             for i, r in enumerate(retrieved_nodes, 1):
@@ -159,6 +249,31 @@ class ChatReasoningAgent:
         if user_state:
             system_parts.append(
                 f"\nEstado actual del usuario: {json.dumps(user_state, ensure_ascii=False)}"
+            )
+
+        # ── Wizard context (form-filling assistant) ───────────────────────
+        wizard_catalogs = context.get("wizard_catalogs") or {}
+        if wizard_catalogs:
+            catalog_lines = ["── WIZARD_CATALOGS (opciones reales de la BD) ──────────────────"]
+            for catalog_key, items in wizard_catalogs.items():
+                if isinstance(items, list) and items:
+                    entries = ", ".join(
+                        f"{item.get('nombre', '')} (id:{item.get('id', '')})"
+                        for item in items[:30]  # cap to avoid huge prompts
+                        if isinstance(item, dict) and item.get('nombre')
+                    )
+                    catalog_lines.append(f"  {catalog_key}: [{entries}]")
+            catalog_lines.append("────────────────────────────────────────────────────────────────")
+            system_parts.append("\n".join(catalog_lines))
+
+        wizard_selection = context.get("wizard_selection")
+        if isinstance(wizard_selection, dict) and wizard_selection.get("field"):
+            system_parts.append(
+                f"── WIZARD_SELECTION (el usuario acaba de elegir una opción) ──\n"
+                f"  field: {wizard_selection.get('field')}\n"
+                f"  value: {wizard_selection.get('value')}   ← usa este id/valor en la URL final\n"
+                f"  label: {wizard_selection.get('label')}\n"
+                f"────────────────────────────────────────────────────────────────"
             )
 
         messages: list[ChatMessage] = [

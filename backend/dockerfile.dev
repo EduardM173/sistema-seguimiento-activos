@@ -17,6 +17,10 @@ RUN if [ -z "${NEXUS_URL}" ]; then \
 USER node
 RUN npm install
 
+# Crear directorio de uploads como usuario node para que el volumen
+# se inicialice con los permisos correctos en el primer arranque
+RUN mkdir -p /app/uploads
+
 # Copiar el resto del código fuente
 COPY --chown=node:node . .
 

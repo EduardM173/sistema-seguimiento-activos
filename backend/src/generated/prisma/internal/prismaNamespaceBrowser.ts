@@ -68,7 +68,9 @@ export const ModelName = {
   MovimientoInventario: 'MovimientoInventario',
   Notificacion: 'Notificacion',
   Auditoria: 'Auditoria',
-  ReporteGenerado: 'ReporteGenerado'
+  ReporteGenerado: 'ReporteGenerado',
+  ImagenActivo: 'ImagenActivo',
+  ImagenMaterial: 'ImagenMaterial'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -343,6 +345,34 @@ export const ReporteGeneradoScalarFieldEnum = {
 } as const
 
 export type ReporteGeneradoScalarFieldEnum = (typeof ReporteGeneradoScalarFieldEnum)[keyof typeof ReporteGeneradoScalarFieldEnum]
+
+
+export const ImagenActivoScalarFieldEnum = {
+  id: 'id',
+  activoId: 'activoId',
+  nombreArchivo: 'nombreArchivo',
+  nombreOriginal: 'nombreOriginal',
+  tipoMime: 'tipoMime',
+  tamano: 'tamano',
+  ruta: 'ruta',
+  creadoEn: 'creadoEn'
+} as const
+
+export type ImagenActivoScalarFieldEnum = (typeof ImagenActivoScalarFieldEnum)[keyof typeof ImagenActivoScalarFieldEnum]
+
+
+export const ImagenMaterialScalarFieldEnum = {
+  id: 'id',
+  materialId: 'materialId',
+  nombreArchivo: 'nombreArchivo',
+  nombreOriginal: 'nombreOriginal',
+  tipoMime: 'tipoMime',
+  tamano: 'tamano',
+  ruta: 'ruta',
+  creadoEn: 'creadoEn'
+} as const
+
+export type ImagenMaterialScalarFieldEnum = (typeof ImagenMaterialScalarFieldEnum)[keyof typeof ImagenMaterialScalarFieldEnum]
 
 
 export const SortOrder = {

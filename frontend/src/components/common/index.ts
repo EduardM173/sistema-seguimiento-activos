@@ -9,6 +9,8 @@ export { SearchBar } from './SearchBar';
 export { Badge } from './Badge';
 export { SmartTable } from './SmartTable';
 export type { ColumnDef, ActionDef, SmartTableProps } from './SmartTable';
+export { SmartGalery } from './SmartGalery';
+export type { SmartGaleryProps } from './SmartGalery';
 export { Select } from './Select';
 export type { SelectOption, SelectProps } from './Select';
 export { FilterRow } from './FilterRow';

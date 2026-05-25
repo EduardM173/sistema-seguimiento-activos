@@ -4,6 +4,7 @@ import react from '@vitejs/plugin-react'
 import path from 'path'
 import { deeplinkApi } from './vite-plugins/deeplink-api'
 import { consulProxy } from './vite-plugins/consul-proxy'
+import { formmapApi } from './vite-plugins/formmap-api'
 
 dotenv.config()
 
@@ -22,13 +23,14 @@ export default defineConfig(() => {
   const PORT: number = parseInt(FRONTEND_PORT_RAW, 10)
 
   return {
-    plugins: [react(), deeplinkApi(), consulProxy()],
+    plugins: [react(), deeplinkApi(), formmapApi(), consulProxy()],
     server: {
       host: '0.0.0.0',
 
       port: PORT,
 
-      allowedHosts: [HOST],
+      // Allow requests from the configured host plus inter-container hostnames
+      allowedHosts: [HOST, 'frontend', 'localhost'],
     },
 
     resolve: {

@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNotification } from '../../context/NotificationContext';
+import { IconX, IconCheck, IconAlertTriangle } from '../../components/common/Icon';
 import {
   getPendientesRecepcion,
   confirmarRecepcion,
@@ -63,7 +64,7 @@ function ModalRechazo({ pendiente, onConfirmar, onCancelar, submitting }: ModalR
             disabled={submitting}
             aria-label="Cerrar modal"
           >
-            ✕
+            <IconX size={16} />
           </button>
         </div>
 
@@ -80,7 +81,7 @@ function ModalRechazo({ pendiente, onConfirmar, onCancelar, submitting }: ModalR
 
         {/* Advertencia */}
         <div className="recep-modal__warning">
-          <span className="recep-modal__warning-icon">⚠</span>
+          <span className="recep-modal__warning-icon"><IconAlertTriangle size={18} /></span>
           <p>
             Al rechazar, el activo <strong>volverá al área de origen</strong>.
             El motivo quedará registrado en el historial del activo.
@@ -163,7 +164,7 @@ function BannerConfirmacion({ activoCodigo, activoNombre, recibidoPor, recibidoE
 
   return (
     <div className="recep-confirm-banner" role="status" aria-live="polite">
-      <div className="recep-confirm-banner__icon">✓</div>
+      <div className="recep-confirm-banner__icon"><IconCheck size={18} /></div>
       <div className="recep-confirm-banner__content">
         <strong>{activoCodigo} — {activoNombre}</strong>
         <span>Confirmado por <strong>{recibidoPor}</strong> el {fecha}</span>
@@ -174,7 +175,7 @@ function BannerConfirmacion({ activoCodigo, activoNombre, recibidoPor, recibidoE
         onClick={onClose}
         aria-label="Cerrar"
       >
-        ✕
+        <IconX size={16} />
       </button>
     </div>
   );
@@ -398,7 +399,7 @@ export const RecepcionesPage: React.FC = () => {
       {/* Sin área asignada */}
       {sinArea && (
         <div className="recep-empty-state recep-empty-state--warning">
-          <span className="recep-empty-state__icon">⚠</span>
+          <span className="recep-empty-state__icon"><IconAlertTriangle size={24} /></span>
           <p>Su usuario no tiene un área asignada. Contacte al administrador para poder gestionar recepciones.</p>
         </div>
       )}
@@ -414,7 +415,7 @@ export const RecepcionesPage: React.FC = () => {
       {/* Sin pendientes */}
       {!sinArea && !loading && pendientes.length === 0 && (
         <div className="recep-empty-state">
-          <span className="recep-empty-state__icon">✓</span>
+          <span className="recep-empty-state__icon"><IconCheck size={24} /></span>
           <strong>Sin recepciones pendientes</strong>
           <p>No hay activos transferidos a su área que requieran confirmación.</p>
         </div>

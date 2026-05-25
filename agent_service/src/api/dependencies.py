@@ -100,5 +100,10 @@ def get_user_state_agent() -> Any:
 def get_deeplink_agent() -> Any:
     """Return the DeeplinkAgent instance."""
     from ..agents import DeeplinkAgent
+    from ..config import settings
     llm = get_llm()
-    return DeeplinkAgent(llm=llm)
+    return DeeplinkAgent(
+        llm=llm,
+        nav_map_url=settings.deeplink_nav_map_url,
+        cache_ttl_s=settings.deeplink_cache_ttl_s,
+    )
