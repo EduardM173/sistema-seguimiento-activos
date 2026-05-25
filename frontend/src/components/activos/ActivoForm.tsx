@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Modal } from '../common';
+import { IconCheck } from '../common/Icon';
 import type { Activo } from '../../types/activos.types';
 import { activosService } from '../../services/activos.service';
 import '../../styles/modules.css';
@@ -295,7 +296,7 @@ export const ActivoForm: React.FC<ActivoFormProps> = ({
                 alignItems: 'center',
                 gap: '4px'
               }}>
-                <span>✓</span>
+                <IconCheck size={14} />
                 <span>Estado seleccionado: {estadoOptions.find(o => o.value === formData.estado)?.label}</span>
               </div>
             )}

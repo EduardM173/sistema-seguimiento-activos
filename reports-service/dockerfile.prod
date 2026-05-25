@@ -1,8 +1,9 @@
-FROM node:lts-alpine3.22 AS builder
+FROM node:lts-alpine3.22
 
 RUN mkdir -p /app && chown -R node:node /app
 WORKDIR /app
 
+# ── Layer cacheado: solo cambia si cambian las dependencias ──
 COPY --chown=node:node package*.json ./
 
 ARG NEXUS_URL
@@ -15,27 +16,8 @@ RUN if [ -z "${NEXUS_URL}" ]; then \
 USER node
 RUN npm ci
 
+# ── Layer que cambia con el código ──
 COPY --chown=node:node . .
 RUN npm run build
-
-# ── Runtime ─────────────────────────────────────────────────────────────────
-FROM node:lts-alpine3.22
-
-RUN mkdir -p /app && chown -R node:node /app
-WORKDIR /app
-
-COPY --chown=node:node package*.json ./
-
-ARG NEXUS_URL
-RUN if [ -z "${NEXUS_URL}" ]; then \
-      echo "ERROR: El build-arg NEXUS_URL es obligatorio" >&2; \
-      exit 1; \
-    fi && \
-    echo "@activos:registry=${NEXUS_URL}" >> .npmrc
-
-USER node
-RUN npm ci --omit=dev
-
-COPY --from=builder --chown=node:node /app/dist ./dist
 
 CMD ["npm", "run", "start:prod"]

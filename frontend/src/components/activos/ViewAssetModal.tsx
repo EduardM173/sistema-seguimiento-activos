@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { IconAlertTriangle, IconCalendar } from '../common/Icon';
 
 import { getAssetById } from '../../services/assets.service';
 import { useNotification } from '../../context/NotificationContext';
@@ -168,7 +169,7 @@ export default function ViewAssetModal({ assetId, open, onClose }: Props) {
                 gap: '12px'
               }}>
                 <div style={fieldStyle}>
-                  <span style={{ ...labelStyle, color: 'var(--color-danger)' }}>📅 Fecha de baja</span>
+                  <span style={{ ...labelStyle, color: 'var(--color-danger)', display: 'flex', alignItems: 'center', gap: '4px' }}><IconCalendar size={13} /> Fecha de baja</span>
                   <div style={{ ...valueStyle, background: 'var(--field-bg-danger)' }}>
                     {asset.dadoDeBajaEn 
                       ? new Date(asset.dadoDeBajaEn).toLocaleDateString('es-ES', {
@@ -182,7 +183,7 @@ export default function ViewAssetModal({ assetId, open, onClose }: Props) {
                   </div>
                 </div>
                 <div style={fieldStyle}>
-                  <span style={{ ...labelStyle, color: 'var(--color-danger)' }}>⚠️ Motivo del retiro</span>
+                  <span style={{ ...labelStyle, color: 'var(--color-danger)', display: 'flex', alignItems: 'center', gap: '4px' }}><IconAlertTriangle size={13} /> Motivo del retiro</span>
                   <div style={{ ...valueStyle, background: 'var(--field-bg-danger)', fontStyle: 'italic' }}>
                     {asset.motivoBaja || 'No especificado'}
                   </div>

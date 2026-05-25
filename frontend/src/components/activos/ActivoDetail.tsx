@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Card, Badge, LoadingSpinner } from '../common';
+import { IconAlertTriangle } from '../common/Icon';
 import type { Activo, MovimientoActivo, EstadoActivo } from '../../types/activos.types';
 import { estadoActivoDisplay } from '../../types/activos.types';
 import { activosService } from '../../services/activos.service';
@@ -111,7 +112,7 @@ export const ActivoDetail: React.FC<ActivoDetailProps> = ({
           {/* ========== NUEVO: Sección de información de baja (PROSIN-366, PA4) ========== */}
           {isDadoDeBaja && (
             <div className="detail-section" style={{ borderLeft: '4px solid #dc3545', paddingLeft: '16px' }}>
-              <h3 style={{ color: '#dc3545' }}>⚠️ Información de Baja</h3>
+              <h3 style={{ color: '#dc3545', display: 'flex', alignItems: 'center', gap: '6px' }}><IconAlertTriangle size={16} /> Información de Baja</h3>
               <div className="detail-row">
                 <span className="label">Fecha de baja:</span>
                 <span className="value">

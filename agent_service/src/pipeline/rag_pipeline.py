@@ -3,8 +3,7 @@ RAG Pipeline
 ============
 Orchestrates:
   1. Document ingestion → chunking → embedding → PGVector store
-  2. Query flow: retrieve relevant chunks → DSL deduction → NL answer
-  3. DSL reasoning layer between retrieval and answer generation
+  2. Query flow: retrieve relevant chunks → NL answer via LLM
 """
 from __future__ import annotations
 
@@ -13,7 +12,6 @@ from pathlib import Path
 from typing import Any
 
 from ..config import settings
-from ..dsl import DSLParser, DSLEvaluator, EvaluationContext, DSLTranslator
 from .retrieval import RetrievalResult
 
 logger = logging.getLogger(__name__)
@@ -36,9 +34,6 @@ class RAGPipeline:
         self._embed = self._build_embedding()
         self._vector_store = self._build_vector_store()
         self._index = self._build_index()
-        self._dsl_parser = DSLParser()
-        self._dsl_evaluator = DSLEvaluator(max_steps=settings.dsl_max_deduction_steps)
-        self._dsl_translator = DSLTranslator(llm=self._llm)
 
     # ── Builder methods ───────────────────────────────────────────────────────
 
@@ -181,64 +176,21 @@ class RAGPipeline:
             for n in nodes
         ]
 
-    async def query(self, user_question: str, dsl_context: EvaluationContext | None = None) -> str:
-        """
-        Full RAG + DSL reasoning pipeline:
-          1. Retrieve relevant document chunks.
-          2. Extract DSL expressions from retrieved context.
-          3. Run DSL evaluator (deduction / simplification).
-          4. Translate final AOP expression to natural language.
-          5. Return answer.
-        """
+    async def query(self, user_question: str) -> str:
+        """Retrieve relevant chunks and generate an answer via LLM."""
         results = self.retrieve(user_question)
         if not results:
-            return "I could not find relevant information to answer your question."
+            return "No se encontró información relevante para responder la pregunta."
 
-        ctx = dsl_context or EvaluationContext()
-
-        # Try to parse any DSL snippets from retrieved nodes
-        for result in results:
-            try:
-                nodes = self._dsl_parser.parse(result.text)
-                self._dsl_evaluator.evaluate(nodes, ctx)
-            except Exception:
-                # Non-DSL text is acceptable — store as raw context
-                pass
-
-        # Assemble a concise DSL/text summary for the LLM
         context_text = "\n\n".join(
             f"[{r.score:.3f}] {r.text[:800]}" for r in results
         )
-
-        if settings.dsl_simplify_before_answer and ctx.contexts.get(ctx.active_ctx):
-            # Translate the last simplified DSL statement to NL
-            last_expr = ctx.contexts[ctx.active_ctx][-1]
-            try:
-                return await self._dsl_translator.to_natural_language(last_expr)
-            except Exception:
-                pass  # fallback to LLM answer below
-
-        # Fallback: pass context to LLM for a direct answer
         prompt = (
-            f"You are a helpful banking support assistant. "
-            f"Use ONLY the following context to answer the user's question.\n\n"
-            f"Context:\n{context_text}\n\n"
-            f"Question: {user_question}\n"
-            f"Answer:"
+            f"Eres un asistente útil. "
+            f"Usa SOLO el siguiente contexto para responder la pregunta del usuario.\n\n"
+            f"Contexto:\n{context_text}\n\n"
+            f"Pregunta: {user_question}\n"
+            f"Respuesta:"
         )
         response = await self._llm.acomplete(prompt)
         return response.text.strip()
-
-    # ── Properties ────────────────────────────────────────────────────────────
-
-    @property
-    def dsl_parser(self) -> DSLParser:
-        return self._dsl_parser
-
-    @property
-    def dsl_evaluator(self) -> DSLEvaluator:
-        return self._dsl_evaluator
-
-    @property
-    def dsl_translator(self) -> DSLTranslator:
-        return self._dsl_translator

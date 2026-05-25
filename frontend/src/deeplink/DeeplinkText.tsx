@@ -46,6 +46,51 @@ export interface DeeplinkTextProps {
 }
 
 const TOKEN_RE = /\[\[link:([a-zA-Z0-9_-]+)\]\]/g;
+const MARKDOWN_LINK_RE = /\[([^\]]+)\]\((app:\/\/[^\)]+|\/[^\)]*|https?:\/\/[^\)]+)\)/g;
+
+/** Render a text segment that may contain markdown `[label](url)` links. */
+function renderTextSegment(
+  segment: string,
+  keyStart: number,
+  linkClassName?: string,
+  asAnchor?: boolean,
+): { nodes: ReactNode[]; nextKey: number } {
+  const nodes: ReactNode[] = [];
+  let key = keyStart;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  MARKDOWN_LINK_RE.lastIndex = 0;
+  while ((match = MARKDOWN_LINK_RE.exec(segment)) !== null) {
+    const [full, label, url] = match;
+    const start = match.index;
+    if (start > lastIndex) {
+      nodes.push(<Fragment key={key++}>{segment.slice(lastIndex, start)}</Fragment>);
+    }
+    const isAppLink = url.startsWith('app://');
+    const isExternal = url.startsWith('http://') || url.startsWith('https://');
+    const to = isAppLink ? '/' + url.slice('app://'.length) : url;
+    if (isExternal) {
+      nodes.push(
+        <a key={key++} href={url} target="_blank" rel="noopener noreferrer" className={linkClassName}>
+          {label}
+        </a>,
+      );
+    } else if (asAnchor) {
+      nodes.push(
+        <a key={key++} href={to} className={linkClassName}>{label}</a>,
+      );
+    } else {
+      nodes.push(
+        <Link key={key++} to={to} className={linkClassName}>{label}</Link>,
+      );
+    }
+    lastIndex = start + full.length;
+  }
+  if (lastIndex < segment.length) {
+    nodes.push(<Fragment key={key++}>{segment.slice(lastIndex)}</Fragment>);
+  }
+  return { nodes, nextKey: key };
+}
 
 export function DeeplinkText({
   text,
@@ -55,8 +100,10 @@ export function DeeplinkText({
 }: DeeplinkTextProps): ReactNode {
   if (!text) return null;
   if (!deeplinks || Object.keys(deeplinks).length === 0) {
-    // Strip any orphan tokens just in case the backend sent them.
-    return <>{text.replace(TOKEN_RE, '')}</>;
+    // No deeplink tokens — still render markdown links in the raw text.
+    const stripped = text.replace(TOKEN_RE, '');
+    const { nodes } = renderTextSegment(stripped, 0, linkClassName, asAnchor);
+    return <>{nodes}</>;
   }
 
   const nodes: ReactNode[] = [];
@@ -70,7 +117,10 @@ export function DeeplinkText({
     const [token, slug] = match;
     const start = match.index;
     if (start > lastIndex) {
-      nodes.push(<Fragment key={key++}>{text.slice(lastIndex, start)}</Fragment>);
+      const segment = text.slice(lastIndex, start);
+      const { nodes: segNodes, nextKey } = renderTextSegment(segment, key, linkClassName, asAnchor);
+      nodes.push(...segNodes);
+      key = nextKey;
     }
 
     const ref = deeplinks[slug];
@@ -96,7 +146,9 @@ export function DeeplinkText({
   }
 
   if (lastIndex < text.length) {
-    nodes.push(<Fragment key={key++}>{text.slice(lastIndex)}</Fragment>);
+    const segment = text.slice(lastIndex);
+    const { nodes: segNodes } = renderTextSegment(segment, key, linkClassName, asAnchor);
+    nodes.push(...segNodes);
   }
 
   return <>{nodes}</>;

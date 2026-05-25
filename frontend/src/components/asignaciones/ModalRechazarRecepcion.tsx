@@ -122,8 +122,8 @@ export const ModalRechazarRecepcion: React.FC<ModalRechazarRecepcionProps> = ({
             ))}
           </select>
           {error && (
-            <span style={{ color: '#dc2626', fontSize: '12px', marginTop: '4px', display: 'block' }}>
-              ⚠️ {error}
+              <span style={{ color: '#dc2626', fontSize: '12px', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <IconAlertTriangle size={13} /> {error}
             </span>
           )}
         </div>

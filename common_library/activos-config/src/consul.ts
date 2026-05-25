@@ -24,12 +24,12 @@ export interface ConsulRegistrationOptions {
   healthPath?: string;
 }
 
-function buildClient(): Consul {
+function buildClient(): Consul | null {
   const host = process.env.CONSUL_HOST;
-  const portRaw = process.env.CONSUL_PORT;
+  if (!host) return null;
 
-  if (!host) throw new Error('[activos-config] Falta la variable de entorno CONSUL_HOST');
-  if (!portRaw) throw new Error('[activos-config] Falta la variable de entorno CONSUL_PORT');
+  const portRaw = process.env.CONSUL_PORT;
+  if (!portRaw) throw new Error('[activos-config] CONSUL_HOST está definido pero falta CONSUL_PORT');
 
   const port = parseInt(portRaw, 10);
   if (isNaN(port)) throw new Error(`[activos-config] CONSUL_PORT no es un número válido: "${portRaw}"`);
@@ -42,7 +42,9 @@ function buildClient(): Consul {
  * Útil si necesitas acceso directo al cliente para casos avanzados.
  */
 export function getConsulClient(): Consul {
-  return buildClient();
+  const client = buildClient();
+  if (!client) throw new Error('[activos-config] CONSUL_HOST no está definido');
+  return client;
 }
 
 /**
@@ -53,8 +55,13 @@ export function getConsulClient(): Consul {
  */
 export async function registerWithConsul(
   opts: ConsulRegistrationOptions,
-): Promise<string> {
+): Promise<string | null> {
   const client = buildClient();
+
+  if (!client) {
+    console.warn('[Consul] CONSUL_HOST no definido — registro omitido (modo desarrollo local)');
+    return null;
+  }
 
   const address = opts.address ?? process.env.SERVICE_ADDRESS ?? '127.0.0.1';
   const healthPath = opts.healthPath ?? '/health';
@@ -87,8 +94,10 @@ export async function registerWithConsul(
  * Elimina este proceso del registro de Consul.
  * Llama en el shutdown hook del proceso para evitar tráfico a instancias muertas.
  */
-export async function deregisterFromConsul(instanceId: string): Promise<void> {
+export async function deregisterFromConsul(instanceId: string | null): Promise<void> {
+  if (!instanceId) return;
   const client = buildClient();
+  if (!client) return;
   await client.agent.service.deregister(instanceId);
   console.log(`[Consul] Dado de baja "${instanceId}"`);
 }

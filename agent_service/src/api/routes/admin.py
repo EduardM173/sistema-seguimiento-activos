@@ -14,7 +14,6 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 from ...telemetry import log_event, get_recent_events
-from ...dsl.guardrails import evaluate_statement_against_context
 
 
 class DSLParseRequest(BaseModel):

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef, type FormEvent } from 'react';
+import { IconRefresh, IconSave } from '../common/Icon';
 
 import { getAssetById, updateAsset } from '../../services/assets.service';
 import { getCategorias, getUbicaciones, getAreas, getUsuarios } from '../../services/catalogs.service';
@@ -387,7 +388,7 @@ export default function EditAssetModal({ assetId, open, onClose, onUpdated }: Pr
                     onClick={handleGenerateCode}
                     disabled={generatingCode || submitting}
                   >
-                    {generatingCode ? '⏳' : '🔄'}
+                    {generatingCode ? <IconRefresh size={14} style={{ animation: 'spin 1s linear infinite' }} /> : <IconRefresh size={14} />}
                   </button>
                 </div>
                 {codigoError ? <span className="formField__error">{codigoError}</span> : null}
@@ -582,7 +583,7 @@ export default function EditAssetModal({ assetId, open, onClose, onUpdated }: Pr
                 className="btn btn--primary"
                 disabled={submitting || hasRequiredErrors}
               >
-                {submitting ? 'Guardando...' : '💾 Guardar Cambios'}
+                {submitting ? 'Guardando...' : <><IconSave size={15} style={{ marginRight: '6px' }} />Guardar Cambios</>}
               </button>
             </div>
           </form>

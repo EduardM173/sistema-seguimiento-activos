@@ -1,7 +1,7 @@
 import { getAccessToken, clearAuthSession } from './auth.service';
 import { ActivosService } from '@activos/config/browser';
 
-const API_URL = `/${ActivosService.BACKEND}`;
+const API_URL = `/${ActivosService.BACKEND}/api`;
 
 export class HttpError extends Error {
   status: number;

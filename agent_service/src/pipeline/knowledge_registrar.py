@@ -148,17 +148,12 @@ class KnowledgeRegistrar:
         ast_node = None
         predicates: list[str] = []
         entities: list[str] = []
+        # DSL parsing removed — extract entities as simple words from label/source
         try:
-            from ..dsl import DSLParser
-            parser = DSLParser()
-            nodes = parser.parse(req.dsl_source)
-            if nodes:
-                ast_node = nodes[0]
-                predicates = _extract_predicates(ast_node)
-                entities = _extract_entities(ast_node)
-        except Exception as e:
-            result.warnings.append(f"DSL parse warning: {e}")
-            logger.debug("DSL parse issue (non-fatal): %s", e)
+            text = label or req.dsl_source or ""
+            entities = [w for w in text.split() if w and w[0].isupper()][:5]
+        except Exception:
+            pass
 
         # ── 2. Build rich embedding text ────────────────────────────────
         properties = {
@@ -367,101 +362,20 @@ class KnowledgeRegistrar:
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# AST helpers
+# AST helpers (stubs — DSL parser removed)
 # ═══════════════════════════════════════════════════════════════════════════════
 
 def _extract_predicates(node: Any) -> list[str]:
-    """Extract predicate names from a parsed AST node."""
-    predicates: list[str] = []
-    _walk_ast(node, predicates, "predicate")
-    return list(set(predicates))
+    return []
 
 
 def _extract_entities(node: Any) -> list[str]:
-    """Extract entity/literal names from a parsed AST node."""
-    entities: list[str] = []
-    _walk_ast(node, entities, "entity")
-    return list(set(entities))
+    return []
 
 
 def _extract_binary_relations(node: Any) -> list[tuple[str, str, str]]:
-    """
-    Extract explicit binary relations from the AST.
-    Looks for PredicateNode(name, [LiteralNode(A), LiteralNode(B)])
-    and returns (A, name, B) tuples.
-    """
-    relations: list[tuple[str, str, str]] = []
-    from ..dsl.parser import PredicateNode, LiteralNode, SubstNode
-
-    def _walk_for_triples(n: Any):
-        if n is None:
-            return
-        
-        # We also want to pierce Substituted variables.
-        # But for simplicity we just look for literal arguments.
-        if isinstance(n, PredicateNode):
-            if len(n.args) == 2:
-                arg1, arg2 = n.args
-                # Check if both are literals
-                if isinstance(arg1, LiteralNode) and isinstance(arg2, LiteralNode):
-                    if isinstance(arg1.value, str) and isinstance(arg2.value, str):
-                        relations.append((arg1.value, n.name, arg2.value))
-            # Continue checking sub-args just in case (e.g. nested logic)
-            for a in n.args:
-                _walk_for_triples(a)
-        
-        # Generic AST walking
-        if hasattr(n, "operand"):
-            _walk_for_triples(getattr(n, "operand"))
-        if hasattr(n, "left"):
-            _walk_for_triples(getattr(n, "left"))
-        if hasattr(n, "right"):
-            _walk_for_triples(getattr(n, "right"))
-        if hasattr(n, "body"):
-            _walk_for_triples(getattr(n, "body"))
-        if hasattr(n, "expr") and not isinstance(n, SubstNode): # Avoid infinite on SubstNode string
-            _walk_for_triples(getattr(n, "expr"))
-        if hasattr(n, "premises") and isinstance(getattr(n, "premises"), list):
-            for p in getattr(n, "premises"):
-                _walk_for_triples(p)
-        if hasattr(n, "conclusion"):
-            _walk_for_triples(getattr(n, "conclusion"))
-
-    _walk_for_triples(node)
-    return list(set(relations))
+    return []
 
 
 def _walk_ast(node: Any, collector: list[str], mode: str) -> None:
-    """Recursively walk an AST node and collect predicates or entities."""
-    from ..dsl.parser import (
-        PredicateNode, LiteralNode, BinaryOpNode, NotNode,
-        QuantifiedNode, AxiomNode, RuleNode, ProcedureNode,
-    )
-
-    if node is None:
-        return
-
-    if isinstance(node, PredicateNode):
-        if mode == "predicate":
-            collector.append(node.name)
-        for arg in (node.args or []):
-            _walk_ast(arg, collector, mode)
-    elif isinstance(node, LiteralNode):
-        if mode == "entity" and isinstance(node.value, str):
-            collector.append(node.value)
-    elif isinstance(node, BinaryOpNode):
-        _walk_ast(node.left, collector, mode)
-        _walk_ast(node.right, collector, mode)
-    elif isinstance(node, NotNode):
-        _walk_ast(node.operand, collector, mode)
-    elif isinstance(node, QuantifiedNode):
-        _walk_ast(node.body, collector, mode)
-    elif isinstance(node, AxiomNode):
-        _walk_ast(node.expr, collector, mode)
-    elif isinstance(node, RuleNode):
-        for p in (node.premises or []):
-            _walk_ast(p, collector, mode)
-        _walk_ast(node.conclusion, collector, mode)
-    elif isinstance(node, ProcedureNode):
-        for step in (node.steps or []):
-            _walk_ast(step, collector, mode)
+    pass

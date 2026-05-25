@@ -3,6 +3,7 @@ FROM node:lts-alpine3.22
 RUN mkdir -p /app && chown -R node:node /app
 WORKDIR /app
 
+# ── Layer cacheado: solo cambia si cambian las dependencias ──
 COPY --chown=node:node package*.json ./
 
 ARG NEXUS_URL
@@ -15,6 +16,7 @@ RUN if [ -z "${NEXUS_URL}" ]; then \
 USER node
 RUN npm ci --omit=dev
 
-COPY --chown=node:node . .
+# ── Layer que cambia con el código ──
+COPY --chown=node:node src ./src
 
-CMD ["npm", "run", "start"]
+CMD ["node", "src/index.js"]

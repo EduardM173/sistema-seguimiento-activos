@@ -18,6 +18,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { IconMessageSquare, IconBot, IconSend, IconX } from '../common/Icon';
 
 import { useAuth } from '../../context/AuthContext';
 import { DeeplinkText } from '../../deeplink';
@@ -37,7 +38,7 @@ interface ChatMessageVM {
 }
 
 const WELCOME_TEXT =
-  'Hola 👋 Soy tu asistente. Preguntame por activos, inventario, transferencias o usuarios y, si corresponde, te llevo directo a la pantalla.';
+  'Hola! Soy tu asistente. Preguntame por activos, inventario, transferencias o usuarios y, si corresponde, te llevo directo a la pantalla.';
 
 export default function ChatWidget() {
   const { user } = useAuth();
@@ -190,7 +191,7 @@ export default function ChatWidget() {
         onClick={() => setOpen((v) => !v)}
         aria-label={open ? 'Cerrar asistente' : 'Abrir asistente'}
       >
-        {open ? '✕' : '💬'}
+        <IconMessageSquare size={22} />
         {!open && unread > 0 && (
           <span className="chat-widget__badge">{unread > 9 ? '9+' : unread}</span>
         )}
@@ -199,17 +200,19 @@ export default function ChatWidget() {
       {open && (
         <section className="chat-widget__panel" role="dialog" aria-label="Asistente">
           <header className="chat-widget__header">
-            <div>
+            <div className="chat-widget__header-icon" aria-hidden="true"><IconBot size={18} /></div>
+            <div className="chat-widget__header-text">
               <h3>Asistente</h3>
-              <p className="chat-widget__header-sub">Te guío por la app</p>
+              <p className="chat-widget__header-sub">En línea</p>
             </div>
+            <div className="chat-widget__status-dot" aria-hidden="true" />
             <button
               type="button"
               className="chat-widget__close"
               onClick={() => setOpen(false)}
               aria-label="Cerrar"
             >
-              ✕
+              <IconX size={14} />
             </button>
           </header>
 
@@ -251,8 +254,9 @@ export default function ChatWidget() {
               type="submit"
               className="chat-widget__send"
               disabled={sending || draft.trim().length === 0}
+              aria-label="Enviar mensaje"
             >
-              Enviar
+              <IconSend size={16} />
             </button>
           </form>
         </section>

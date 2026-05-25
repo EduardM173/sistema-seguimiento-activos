@@ -34,16 +34,19 @@ async function request<T>(endpoint: string, params?: Record<string, unknown>): P
     headers.Authorization = `Bearer ${token}`;
   }
 
-  const url = new URL(`${AUDIT_API_URL}${endpoint}`);
+  let urlStr = `${AUDIT_API_URL}${endpoint}`;
   if (params) {
+    const qs = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined && value !== null && value !== '') {
-        url.searchParams.set(key, String(value));
+        qs.set(key, String(value));
       }
     });
+    const qsStr = qs.toString();
+    if (qsStr) urlStr += '?' + qsStr;
   }
 
-  const response = await fetch(url.toString(), {
+  const response = await fetch(urlStr, {
     method: 'GET',
     headers,
   });

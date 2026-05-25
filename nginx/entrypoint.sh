@@ -10,6 +10,10 @@ if [ -z "${CONSUL_PORT}" ]; then
   echo "[nginx-gateway] ERROR: Falta la variable de entorno CONSUL_PORT" >&2
   exit 1
 fi
+if [ -z "${APP_DOMAIN}" ]; then
+  echo "[nginx-gateway] ERROR: Falta la variable de entorno APP_DOMAIN" >&2
+  exit 1
+fi
 
 CONSUL_ADDR="${CONSUL_HOST}:${CONSUL_PORT}"
 TEMPLATE="/etc/nginx/nginx.conf.ctmpl:/etc/nginx/conf.d/default.conf"

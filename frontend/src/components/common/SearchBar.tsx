@@ -1,4 +1,5 @@
 import React from 'react';
+import { IconX, IconSearch } from './Icon';
 import '../../styles/components.css';
 
 interface SearchBarProps {
@@ -46,10 +47,10 @@ export const SearchBar: React.FC<SearchBarProps> = ({
         />
         {searchTerm && (
           <button className="search-clear" onClick={handleClear}>
-            ✕
+            <IconX size={14} />
           </button>
         )}
-        <span className="search-icon">🔍</span>
+        <span className="search-icon"><IconSearch size={16} /></span>
       </div>
       {showFilters && (
         <button className="search-filter-btn">

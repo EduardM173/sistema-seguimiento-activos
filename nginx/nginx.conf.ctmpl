@@ -19,7 +19,7 @@ upstream {{ .Name }} {
 
 server {
     listen 80;
-    server_name _;
+    server_name {{ env "APP_DOMAIN" }};
 
     # ── Frontend estático ────────────────────────────────────────────────────
     root /usr/share/nginx/html;

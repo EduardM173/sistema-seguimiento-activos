@@ -37,4 +37,13 @@ export {
   FileText          as IconFileText,
   Bell              as IconBell,
   Home              as IconHome,
+  MessageSquare     as IconMessageSquare,
+  Bot               as IconBot,
+  Send              as IconSend,
+  Save              as IconSave,
+  Tag               as IconTag,
+  DollarSign        as IconDollarSign,
+  Upload            as IconUpload,
+  Lightbulb         as IconLightbulb,
+  Calendar          as IconCalendar,
 } from 'lucide-react';
