@@ -1,4 +1,5 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:10000';
+import { ActivosService } from '@activos/config/browser';
+const API_URL = `/${ActivosService.BACKEND}`;
 
 export interface MaterialCategory {
   id: string;

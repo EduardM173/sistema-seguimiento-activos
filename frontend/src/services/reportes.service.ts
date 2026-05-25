@@ -1,4 +1,5 @@
 import { http as apiClient } from './http.client';
+import { ActivosService } from '@activos/config/browser';
 import type {
   ReporteGenerado,
   ParametrosReporte,
@@ -18,7 +19,7 @@ import type {
 import { tipoReporte } from '../types/reportes.types';
 import type { PaginatedResponse, ApiResponse } from '../types';
 
-const REPORTS_API_URL = import.meta.env.VITE_REPORTS_API_URL || '/reports-api';
+const REPORTS_API_URL = `/${ActivosService.REPORTS}`;
 
 async function requestReports<T>(endpoint: string, init?: RequestInit): Promise<T> {
   const url = `${REPORTS_API_URL}${endpoint}`;

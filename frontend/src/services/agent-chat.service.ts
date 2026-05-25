@@ -9,7 +9,9 @@
  * state. Errors are normalised to `AgentChatError`.
  */
 
-const AGENT_BASE = (import.meta.env.VITE_AGENT_BASE_PATH as string | undefined) || '/agent';
+import { ActivosService } from '@activos/config/browser';
+
+const AGENT_BASE = `/${ActivosService.AGENT}`;
 
 export class AgentChatError extends Error {
   status: number;

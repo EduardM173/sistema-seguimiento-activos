@@ -1,4 +1,5 @@
 import { getAccessToken } from './auth.service';
+import { ActivosService } from '@activos/config/browser';
 import type {
   AuditoriaMsFiltros,
   AuditoriaMsListadoResponse,
@@ -11,8 +12,7 @@ import type {
   TrazabilidadDepartamental,
 } from '../types/auditoria.types';
 
-const DEFAULT_AUDIT_API_URL = 'http://localhost:3003/api';
-const AUDIT_API_URL = import.meta.env.VITE_AUDIT_API_URL || DEFAULT_AUDIT_API_URL;
+const AUDIT_API_URL = `/${ActivosService.AUDITORIA}/api`;
 
 class AuditoriaMsError extends Error {
   status: number;

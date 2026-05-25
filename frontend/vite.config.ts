@@ -3,64 +3,32 @@ import dotenv from "dotenv"
 import react from '@vitejs/plugin-react'
 import path from 'path'
 import { deeplinkApi } from './vite-plugins/deeplink-api'
+import { consulProxy } from './vite-plugins/consul-proxy'
 
 dotenv.config()
 
 export default defineConfig(() => {
 
-  const VITE_HOST = process.env.VITE_HOST
-  if (!VITE_HOST) {
-    throw new Error("Falta VITE_HOST en el entorno")
+  const FRONTEND_HOST_RAW = process.env.FRONTEND
+  if (!FRONTEND_HOST_RAW) {
+    throw new Error("Falta FRONEND_HOST en el entorno")
   }
 
-  const VITE_BACKEND_URL = process.env.VITE_BACKEND_URL
-  if (!VITE_BACKEND_URL) {
-    throw new Error("Falta VITE_BACKEND_URL en el entorno")
+  const FRONTEND_PORT_RAW = process.env.FRONTEND_PORT
+  if(!FRONTEND_PORT_RAW){
+    throw new Error("Falta FRONEND_PORT en el entorno")
   }
-
-  const VITE_REPORTS_URL = process.env.VITE_REPORTS_URL || 'http://localhost:3002'
-
-  // Agent service (GraphRAG / DeeplinkAgent). Default apunta al stack
-  // levantado por deploy_rag.sh. Sobrescribir con VITE_AGENT_URL si hace
-  // falta (ej. localhost cuando se corre fuera de docker).
-  const VITE_AGENT_URL = process.env.VITE_AGENT_URL || 'http://graphrag_app:8000'
-
-  const port = parseInt(process.env.FRONTEND_PORT || '5173', 10)
+  const HOST: string = FRONTEND_HOST_RAW
+  const PORT: number = parseInt(FRONTEND_PORT_RAW, 10)
 
   return {
-    plugins: [react(), deeplinkApi()],
+    plugins: [react(), deeplinkApi(), consulProxy()],
     server: {
       host: '0.0.0.0',
 
-      port: port,
+      port: PORT,
 
-      allowedHosts: [VITE_HOST],
-
-      proxy: {
-        "^\\/api.*$": {
-          target: VITE_BACKEND_URL,
-          changeOrigin: true
-        },
-        "^\\/reports-api.*$": {
-          target: VITE_REPORTS_URL,
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/reports-api/, '')
-        },
-        // Proxy hacia el agent_service. El frontend habla con `/agent/...`
-        // y Vite lo reescribe quitando el prefijo, así el agent recibe
-        // p.ej. `/chat/sessions`.
-        "^\\/agent/.*$": {
-          target: VITE_AGENT_URL,
-          changeOrigin: true,
-          rewrite: (p: string) => p.replace(/^\/agent/, ''),
-        }
-      },
-
-      cors: {
-        origin: [`http://${VITE_HOST}`],
-        methods: ['GET', 'OPTIONS', 'POST', 'PATCH', 'DELETE', 'PUT'],
-        credentials: true,
-      }
+      allowedHosts: [HOST],
     },
 
     resolve: {

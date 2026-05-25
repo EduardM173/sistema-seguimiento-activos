@@ -1,6 +1,7 @@
 import { getAccessToken, clearAuthSession } from './auth.service';
+import { ActivosService } from '@activos/config/browser';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const API_URL = `/${ActivosService.BACKEND}`;
 
 export class HttpError extends Error {
   status: number;

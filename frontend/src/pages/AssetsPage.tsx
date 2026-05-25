@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { ActivosService } from '@activos/config/browser';
 
 import EditAssetModal from '../components/activos/EditAssetModal';
 import ViewAssetModal from '../components/activos/ViewAssetModal';
@@ -320,7 +321,7 @@ export default function AssetsPage() {
     
     console.log('Enviando baja:', requestBody); // Debug
     
-    const response = await fetch(`/api/assets/${bajaAsset.id}/disable`, {
+    const response = await fetch(`/${ActivosService.BACKEND}/api/assets/${bajaAsset.id}/disable`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -1,0 +1,29 @@
+FROM node:lts-alpine3.22 AS builder
+
+WORKDIR /app
+
+COPY package*.json ./
+
+ARG NEXUS_URL
+RUN if [ -z "${NEXUS_URL}" ]; then \
+      echo "ERROR: El build-arg NEXUS_URL es obligatorio" >&2; \
+      exit 1; \
+    fi && \
+    echo "@activos:registry=${NEXUS_URL}" >> .npmrc
+
+RUN npm ci
+
+COPY . .
+RUN npm run build
+
+# ── Runtime: Nginx sirve el bundle compilado ─────────────────────────────────
+FROM nginx:stable-alpine
+
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+# La config de Nginx la provee el gateway (nginx/ del raíz del repo).
+# En prod, el contenedor gateway monta su propia conf; este stage
+# es solo el servidor de archivos estáticos del frontend.
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]

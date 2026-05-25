@@ -1,4 +1,5 @@
 import { getAccessToken } from './auth.service';
+import { ActivosService } from '@activos/config/browser';
 import type {
   CreateRoleRequest,
   CreateRoleResponse,
@@ -15,8 +16,8 @@ import type {
   User,
 } from '../types/user.types';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-const USERS_URL = `${API_URL}/users`;
+const API_URL = `/${ActivosService.BACKEND}`;
+const USERS_URL = `${API_URL}/api/users`;
 
 function buildHeaders(): HeadersInit {
   const token = getAccessToken();
