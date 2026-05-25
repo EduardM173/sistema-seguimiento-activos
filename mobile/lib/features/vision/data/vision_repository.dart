@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
+import 'package:http_parser/http_parser.dart';
 
 import '../../../core/network/api_client.dart';
 import '../../../core/network/service_registry.dart';
@@ -52,15 +53,31 @@ class VisionAnalysisResult {
       };
 }
 
+/// Returns the image/* subtype from a file extension.
+String _mimeSubtype(String path) {
+  final ext = path.split('.').last.toLowerCase();
+  return switch (ext) {
+    'jpg' || 'jpeg' => 'jpeg',
+    'png' => 'png',
+    'webp' => 'webp',
+    'heic' || 'heif' => 'heic',
+    _ => 'jpeg',
+  };
+}
+
 class VisionRepository {
   const VisionRepository(this._client);
   final ApiClient _client;
 
   Future<VisionAnalysisResult> analyzePhoto(File imageFile) async {
+    final subtype = _mimeSubtype(imageFile.path);
+    final filename = 'photo.$subtype';
+
     final formData = FormData.fromMap({
       'image': await MultipartFile.fromFile(
         imageFile.path,
-        filename: 'asset_photo.jpg',
+        filename: filename,
+        contentType: MediaType('image', subtype),
       ),
     });
 
@@ -70,7 +87,12 @@ class VisionRepository {
       formData,
       fromJson: (d) =>
           VisionAnalysisResult.fromJson(d as Map<String, dynamic>),
-      options: Options(contentType: 'multipart/form-data'),
+      options: Options(
+        contentType: 'multipart/form-data',
+        // Gemini vision can take up to ~45 s for large images.
+        receiveTimeout: const Duration(seconds: 90),
+        sendTimeout: const Duration(seconds: 30),
+      ),
     );
 
     return result;
