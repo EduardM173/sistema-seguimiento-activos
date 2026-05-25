@@ -43,7 +43,10 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
   const [deleting, setDeleting] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [cameraOpen, setCameraOpen] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -102,6 +105,54 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
     setDragOver(false);
     handleUpload(e.dataTransfer.files);
   };
+
+  // ── Camera via getUserMedia ───────────────────────────────────────────────
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } },
+      });
+      streamRef.current = stream;
+      setCameraOpen(true);
+    } catch {
+      // Fallback: open file picker if camera not available
+      fileRef.current?.click();
+    }
+  };
+
+  const stopCamera = () => {
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current = null;
+    setCameraOpen(false);
+  };
+
+  const capturePhoto = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext('2d')?.drawImage(video, 0, 0);
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      const file = new File([blob], `foto_${Date.now()}.jpg`, { type: 'image/jpeg' });
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      stopCamera();
+      void handleUpload(dt.files);
+    }, 'image/jpeg', 0.92);
+  };
+
+  // Attach stream to video element once the overlay mounts
+  useEffect(() => {
+    if (cameraOpen && videoRef.current && streamRef.current) {
+      videoRef.current.srcObject = streamRef.current;
+      void videoRef.current.play();
+    }
+  }, [cameraOpen]);
+
+  // Stop camera on unmount
+  useEffect(() => () => { streamRef.current?.getTracks().forEach((t) => t.stop()); }, []);
 
   // ── Render ────────────────────────────────────────────────────────────────
   const canUpload = !!onUpload;
@@ -192,38 +243,70 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
             </div>
           ))}
 
-          {/* "Add more" tile */}
+          {/* "Add more" + camera tiles */}
           {canUpload && (
-            <div
-              onClick={() => fileRef.current?.click()}
-              title="Añadir más imágenes"
-              style={{
-                width: '90px',
-                height: '90px',
-                borderRadius: '4px',
-                border: '2px dashed var(--color-border-strong)',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: uploading ? 'default' : 'pointer',
-                color: 'var(--color-text-muted)',
-                fontSize: '11px',
-                gap: '4px',
-                background: 'var(--glass-bg)',
-                flexShrink: 0,
-                opacity: uploading ? 0.5 : 1,
-              }}
-            >
-              {uploading ? (
-                <span>...</span>
-              ) : (
-                <>
-                  <span style={{ fontSize: '22px' }}>+</span>
-                  <span>Añadir</span>
-                </>
-              )}
-            </div>
+            <>
+              <div
+                onClick={() => fileRef.current?.click()}
+                title="Añadir más imágenes"
+                style={{
+                  width: '90px',
+                  height: '90px',
+                  borderRadius: '4px',
+                  border: '2px dashed var(--color-border-strong)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: uploading ? 'default' : 'pointer',
+                  color: 'var(--color-text-muted)',
+                  fontSize: '11px',
+                  gap: '4px',
+                  background: 'var(--glass-bg)',
+                  flexShrink: 0,
+                  opacity: uploading ? 0.5 : 1,
+                }}
+              >
+                {uploading ? (
+                  <span>...</span>
+                ) : (
+                  <>
+                    <span style={{ fontSize: '22px' }}>+</span>
+                    <span>Añadir</span>
+                  </>
+                )}
+              </div>
+              <div
+                onClick={() => { if (!uploading) void startCamera(); }}
+                title="Tomar foto con la cámara"
+                style={{
+                  width: '90px',
+                  height: '90px',
+                  borderRadius: '4px',
+                  border: '2px dashed var(--color-border-strong)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: uploading ? 'default' : 'pointer',
+                  color: 'var(--color-text-muted)',
+                  fontSize: '11px',
+                  gap: '4px',
+                  background: 'var(--glass-bg)',
+                  flexShrink: 0,
+                  opacity: uploading ? 0.5 : 1,
+                }}
+              >
+                {uploading ? (
+                  <span>...</span>
+                ) : (
+                  <>
+                    <span style={{ fontSize: '22px' }}>📷</span>
+                    <span>Cámara</span>
+                  </>
+                )}
+              </div>
+            </>
           )}
         </div>
       ) : (
@@ -258,6 +341,26 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
           <p style={{ margin: 0, color: 'var(--color-text-muted)', fontSize: '11px' }}>
             JPG, PNG, GIF, WEBP, AVIF · máx. 10 MB por imagen
           </p>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); void startCamera(); }}
+            disabled={uploading}
+            style={{
+              marginTop: '10px',
+              background: 'none',
+              border: '1px solid var(--color-border-strong)',
+              borderRadius: '4px',
+              padding: '5px 12px',
+              color: 'var(--color-text-muted)',
+              fontSize: '12px',
+              cursor: uploading ? 'default' : 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '5px',
+            }}
+          >
+            📷 Tomar foto
+          </button>
         </div>
       )}
 
@@ -271,6 +374,52 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
           style={{ display: 'none' }}
           onChange={(e) => { handleUpload(e.target.files); e.target.value = ''; }}
         />
+      )}
+
+      {/* Camera overlay */}
+      {cameraOpen && (
+        <div
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.97)',
+            zIndex: 10000, display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center', gap: '20px',
+          }}
+        >
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            style={{ maxWidth: '90vw', maxHeight: '65vh', borderRadius: '8px', background: '#000' }}
+          />
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <button
+              type="button"
+              onClick={stopCamera}
+              style={{
+                padding: '10px 24px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.2)',
+                background: 'rgba(255,255,255,0.08)', color: '#fff', fontSize: '14px', cursor: 'pointer',
+              }}
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={capturePhoto}
+              style={{
+                padding: '10px 28px', borderRadius: '6px', border: 'none',
+                background: 'var(--color-primary, #4f8ef7)', color: '#fff',
+                fontSize: '14px', fontWeight: 600, cursor: 'pointer',
+                display: 'flex', alignItems: 'center', gap: '7px',
+              }}
+            >
+              📷 Capturar foto
+            </button>
+          </div>
+          <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px', margin: 0 }}>
+            Apunta al objeto y pulsa “Capturar foto”
+          </p>
+        </div>
       )}
 
       {/* ── Lightbox ──────────────────────────────────────────────────────── */}

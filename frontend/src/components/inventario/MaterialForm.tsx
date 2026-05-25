@@ -5,6 +5,7 @@ import { ImageUploader, type PendingImage } from '../common/ImageUploader';
 import { ImageGallery } from '../common/ImageGallery';
 import type { CreateMaterialDTO, Material, UpdateMaterialDTO } from '../../types/inventario.types';
 import { inventarioService } from '../../services/inventario.service';
+import { visionService } from '../../services/vision.service';
 import { getAreas } from '../../services/catalogs.service';
 import { useAuth } from '../../context/AuthContext';
 import { useNotification } from '../../context/NotificationContext';
@@ -52,6 +53,28 @@ export const MaterialForm: React.FC<MaterialFormProps> = ({
   const [areas, setAreas] = useState<{ id: string; nombre: string }[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [pendingImages, setPendingImages] = useState<PendingImage[]>([]);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiNote, setAiNote] = useState<string | null>(null);
+
+  const runAiAutofill = async () => {
+    if (!pendingImages.length) return;
+    setAiLoading(true);
+    try {
+      const result = await visionService.analyzeImage(pendingImages[0].file);
+      const p = result.partial ?? {};
+      setFormData((prev) => ({
+        ...prev,
+        ...(p.nombre      ? { nombre:      p.nombre }      : {}),
+        ...(p.unidad      ? { unidad:      p.unidad }      : {}),
+        ...(p.descripcion ? { descripcion: p.descripcion } : {}),
+      }));
+      setAiNote(result.notes || 'Formulario prellenado por el agente de IA. Revisa y ajusta los campos.');
+    } catch (err: any) {
+      notify.error('Error de análisis', err?.message || 'No se pudo analizar la imagen.');
+    } finally {
+      setAiLoading(false);
+    }
+  };
 
   // Reset cuando se abre/cierra
   useEffect(() => {
@@ -251,11 +274,53 @@ export const MaterialForm: React.FC<MaterialFormProps> = ({
 
           {/* Pending images — create mode only (uploaded after material is created) */}
           {!materialToEdit?.id && (
-            <ImageUploader
-              images={pendingImages}
-              onChange={setPendingImages}
-              disabled={loading}
-            />
+            <>
+              <ImageUploader
+                images={pendingImages}
+                onChange={setPendingImages}
+                disabled={loading || aiLoading}
+              />
+              {aiNote && (
+                <div style={{
+                  display: 'flex', alignItems: 'flex-start', gap: '8px',
+                  background: 'rgba(201,165,92,0.08)', border: '1px solid rgba(201,165,92,0.3)',
+                  borderRadius: '6px', padding: '10px 12px', margin: '8px 0',
+                  fontSize: '13px', color: 'var(--color-accent)',
+                }}>
+                  <span style={{ fontSize: '15px', lineHeight: 1 }}>✨</span>
+                  <span>{aiNote}</span>
+                </div>
+              )}
+              <button
+                type="button"
+                disabled={!pendingImages.length || loading || aiLoading}
+                onClick={runAiAutofill}
+                style={{
+                  marginTop: '8px',
+                  width: '100%',
+                  padding: '9px 16px',
+                  background: (!pendingImages.length || loading || aiLoading)
+                    ? 'rgba(201,165,92,0.15)'
+                    : 'var(--color-accent)',
+                  color: (!pendingImages.length || loading || aiLoading)
+                    ? 'rgba(201,165,92,0.45)'
+                    : '#1a1205',
+                  border: '1px solid rgba(201,165,92,0.4)',
+                  borderRadius: '6px',
+                  fontWeight: 600,
+                  fontSize: '14px',
+                  cursor: (!pendingImages.length || loading || aiLoading) ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '7px',
+                  transition: 'background 0.2s, color 0.2s',
+                }}
+              >
+                <span style={{ fontSize: '15px' }}>✨</span>
+                {aiLoading ? 'Analizando imagen…' : 'Auto llenado IA'}
+              </button>
+            </>
           )}
         </div>
 
