@@ -1,9 +1,10 @@
 FROM node:lts-alpine3.22
 
-RUN mkdir -p /app && chown -R node:node /app
-WORKDIR /app
+RUN mkdir -p /app/reports-service /app/common_library && chown -R node:node /app
+WORKDIR /app/reports-service
 
-COPY --chown=node:node package*.json ./
+COPY --chown=node:node common_library/activos-config ../common_library/activos-config
+COPY --chown=node:node reports-service/package*.json ./
 
 ARG NEXUS_URL
 RUN if [ -z "${NEXUS_URL}" ]; then \
@@ -13,8 +14,9 @@ RUN if [ -z "${NEXUS_URL}" ]; then \
     echo "@activos:registry=${NEXUS_URL}" >> .npmrc
 
 USER node
+RUN cd ../common_library/activos-config && npm ci && npm run build
 RUN npm install
 
-COPY --chown=node:node . .
+COPY --chown=node:node reports-service/ .
 
 CMD ["npm", "run", "start:dev"]

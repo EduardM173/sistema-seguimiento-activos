@@ -3,6 +3,7 @@ Application configuration loaded from environment / .env file.
 """
 from __future__ import annotations
 
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -11,6 +12,13 @@ class Settings(BaseSettings):
 
     # Google GenAI (replaces deprecated Gemini)
     google_api_key: str = ""
+    legacy_gemini_api_key: str = Field(default="", validation_alias="GEMINI_API_KEY")
+
+    @model_validator(mode="after")
+    def apply_legacy_gemini_api_key(self) -> "Settings":
+        if not self.google_api_key and self.legacy_gemini_api_key:
+            self.google_api_key = self.legacy_gemini_api_key
+        return self
     
     # Legacy alias for backwards compatibility
     @property

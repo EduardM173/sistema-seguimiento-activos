@@ -63,7 +63,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setUser(session.usuario);
         setIsAuthenticated(true);
       } catch {
-        syncAuthState();
+        clearAuthSession();
+        setUser(null);
+        setIsAuthenticated(false);
       }
     }
 

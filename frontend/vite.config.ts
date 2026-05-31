@@ -10,15 +10,9 @@ dotenv.config()
 
 export default defineConfig(() => {
 
-  const FRONTEND_HOST_RAW = process.env.VITE_HOST
-  if (!FRONTEND_HOST_RAW) {
-    throw new Error('Falta VITE_HOST en frontend/.env')
-  }
+  const FRONTEND_HOST_RAW = process.env.VITE_HOST || 'localhost'
 
-  const FRONTEND_PORT_RAW = process.env.VITE_PORT
-  if (!FRONTEND_PORT_RAW) {
-    throw new Error('Falta VITE_PORT en frontend/.env')
-  }
+  const FRONTEND_PORT_RAW = process.env.VITE_PORT || '5173'
   const HOST: string = FRONTEND_HOST_RAW
   const PORT: number = parseInt(FRONTEND_PORT_RAW, 10)
 
