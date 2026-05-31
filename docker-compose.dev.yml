@@ -21,7 +21,7 @@ volumes:
 
 x-nexus-build: &nexus-build
   args:
-    NEXUS_URL: ${NEXUS_URL}
+    NEXUS_URL: ${NEXUS_URL:-https://nexus.dontrisk.org/repository/activos/}
 
 services:
 
@@ -45,13 +45,13 @@ services:
       POSTGRES_USER:     ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB:       ${POSTGRES_DB}
-      PGPORT:            ${POSTGRES_PORT}
+      PGPORT:            ${POSTGRES_PORT:-5432}
     volumes:
       - activos_pg_data_dev:/var/lib/postgresql/data
     networks:
       - activos_dev_net
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER}", "-d", "${POSTGRES_DB}", "-p", "${POSTGRES_PORT}"]
+      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER}", "-d", "${POSTGRES_DB}", "-p", "${POSTGRES_PORT:-5432}"]
       interval: 5s
       timeout: 3s
       retries: 20
@@ -61,8 +61,8 @@ services:
   backend:
     container_name: activos_backend_dev
     build:
-      context:    ./backend
-      dockerfile: dockerfile.dev
+      context:    .
+      dockerfile: backend/dockerfile.dev
       <<: *nexus-build
     restart: unless-stopped
     env_file:
@@ -72,13 +72,15 @@ services:
         required: false
     environment:
       POSTGRES_HOST:    postgres
+      POSTGRES_PORT:    ${POSTGRES_PORT:-5432}
+      BACKEND_PORT:     "3001"
       CONSUL_HOST:      consul
       CONSUL_PORT:      "8500"
       SERVICE_ADDRESS:  backend
     volumes:
-      - ./backend/src:/app/src
-      - ./backend/prisma:/app/prisma
-      - activos_uploads_dev:/app/uploads
+      - ./backend/src:/app/backend/src
+      - ./backend/prisma:/app/backend/prisma
+      - activos_uploads_dev:/app/backend/uploads
     depends_on:
       postgres:
         condition: service_healthy
@@ -91,22 +93,24 @@ services:
   reports:
     container_name: activos_reports_dev
     build:
-      context:    ./reports-service
-      dockerfile: dockerfile.dev
+      context:    .
+      dockerfile: reports-service/dockerfile.dev
       <<: *nexus-build
     restart: unless-stopped
     env_file:
       - path: ./reports-service/.env
-        required: true
+        required: false
       - path: ./.env
         required: false
     environment:
       POSTGRES_HOST:    postgres
+      POSTGRES_PORT:    ${POSTGRES_PORT:-5432}
+      REPORTS_PORT:     "3002"
       CONSUL_HOST:      consul
       CONSUL_PORT:      "8500"
       SERVICE_ADDRESS:  reports
     volumes:
-      - ./reports-service/src:/app/src
+      - ./reports-service/src:/app/reports-service/src
     depends_on:
       postgres:
         condition: service_healthy
@@ -119,22 +123,24 @@ services:
   auditoria:
     container_name: activos_auditoria_dev
     build:
-      context:    ./auditoria
-      dockerfile: dockerfile.dev
+      context:    .
+      dockerfile: auditoria/dockerfile.dev
       <<: *nexus-build
     restart: unless-stopped
     env_file:
       - path: ./auditoria/.env
-        required: true
+        required: false
       - path: ./.env
         required: false
     environment:
       POSTGRES_HOST:    postgres
+      POSTGRES_PORT:    ${POSTGRES_PORT:-5432}
+      AUDIT_MS_PORT:    "3003"
       CONSUL_HOST:      consul
       CONSUL_PORT:      "8500"
       SERVICE_ADDRESS:  auditoria
     volumes:
-      - ./auditoria/src:/app/src
+      - ./auditoria/src:/app/auditoria/src
     depends_on:
       postgres:
         condition: service_healthy
@@ -149,16 +155,16 @@ services:
     container_name: activos_agent_db_dev
     restart: unless-stopped
     environment:
-      POSTGRES_USER:     ${AGENT_POSTGRES_USER}
-      POSTGRES_PASSWORD: ${AGENT_POSTGRES_PASSWORD}
-      POSTGRES_DB:       ${AGENT_POSTGRES_DB}
+      POSTGRES_USER:     ${AGENT_POSTGRES_USER:-graphrag}
+      POSTGRES_PASSWORD: ${AGENT_POSTGRES_PASSWORD:-graphrag_secret}
+      POSTGRES_DB:       ${AGENT_POSTGRES_DB:-graphrag}
     volumes:
       - activos_agent_pg_data_dev:/var/lib/postgresql/data
       - ./agent_service/migrations/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     networks:
       - activos_dev_net
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${AGENT_POSTGRES_USER} -d ${AGENT_POSTGRES_DB}"]
+      test: ["CMD-SHELL", "pg_isready -U ${AGENT_POSTGRES_USER:-graphrag} -d ${AGENT_POSTGRES_DB:-graphrag}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -169,7 +175,7 @@ services:
     container_name: activos_neo4j_dev
     restart: unless-stopped
     environment:
-      NEO4J_AUTH:                                      ${NEO4J_USER}/${NEO4J_PASSWORD}
+      NEO4J_AUTH:                                      ${NEO4J_USER:-neo4j}/${NEO4J_PASSWORD:-graphrag_secret}
       NEO4J_PLUGINS:                                   '["apoc"]'
       NEO4J_dbms_security_procedures_unrestricted:     apoc.*
       NEO4J_ACCEPT_LICENSE_AGREEMENT:                  "yes"
@@ -193,11 +199,17 @@ services:
     restart: unless-stopped
     env_file:
       - path: ./agent_service/.env
-        required: true
+        required: false
       - path: ./.env
         required: false
     environment:
       POSTGRES_HOST:        agent-postgres
+      POSTGRES_PORT:        "5432"
+      POSTGRES_USER:        ${AGENT_POSTGRES_USER:-graphrag}
+      POSTGRES_PASSWORD:    ${AGENT_POSTGRES_PASSWORD:-graphrag_secret}
+      POSTGRES_DB:          ${AGENT_POSTGRES_DB:-graphrag}
+      NEO4J_USER:           ${NEO4J_USER:-neo4j}
+      NEO4J_PASSWORD:       ${NEO4J_PASSWORD:-graphrag_secret}
       NEO4J_URI:            bolt://agent-neo4j:7687
       CONSUL_HOST:          consul
       CONSUL_PORT:          "8500"
@@ -220,8 +232,8 @@ services:
   frontend:
     container_name: activos_frontend_dev
     build:
-      context:    ./frontend
-      dockerfile: dockerfile.dev
+      context:    .
+      dockerfile: frontend/dockerfile.dev
       <<: *nexus-build
     restart: unless-stopped
     env_file:
@@ -232,14 +244,16 @@ services:
     environment:
       CONSUL_HOST:  consul
       CONSUL_PORT:  "8500"
+      VITE_HOST:    localhost
+      VITE_PORT:    "5173"
     volumes:
-      - ./frontend/src:/app/src
-      - ./frontend/public:/app/public
-      - ./frontend/vite-plugins:/app/vite-plugins
-      - ./frontend/index.html:/app/index.html
-      - ./frontend/vite.config.ts:/app/vite.config.ts:ro
+      - ./frontend/src:/app/frontend/src
+      - ./frontend/public:/app/frontend/public
+      - ./frontend/vite-plugins:/app/frontend/vite-plugins
+      - ./frontend/index.html:/app/frontend/index.html
+      - ./frontend/vite.config.ts:/app/frontend/vite.config.ts:ro
     ports:
-      - "${DEV_FRONTEND_PORT}:5173"
+      - "${DEV_FRONTEND_PORT:-8085}:5173"
     depends_on:
       - consul
       - backend

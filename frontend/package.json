@@ -11,7 +11,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@activos/config": "^1.0.0",
+    "@activos/config": "file:../common_library/activos-config",
     "@nestjs/swagger": "^11.2.6",
     "axios": "^1.13.6",
     "dotenv": "^17.4.2",

@@ -1,10 +1,11 @@
 FROM node:lts-alpine3.22
 
-RUN mkdir -p /app && chown -R node:node /app
-WORKDIR /app
+RUN mkdir -p /app/backend /app/common_library && chown -R node:node /app
+WORKDIR /app/backend
 
 # Instalar dependencias primero (layer cache)
-COPY --chown=node:node package*.json ./
+COPY --chown=node:node common_library/activos-config ../common_library/activos-config
+COPY --chown=node:node backend/package*.json ./
 
 # Configurar Nexus como registry para @activos/*
 ARG NEXUS_URL
@@ -15,6 +16,7 @@ RUN if [ -z "${NEXUS_URL}" ]; then \
     echo "@activos:registry=${NEXUS_URL}" >> .npmrc
 
 USER node
+RUN cd ../common_library/activos-config && npm ci && npm run build
 RUN npm install
 
 # Crear directorio de uploads como usuario node para que el volumen
@@ -22,7 +24,7 @@ RUN npm install
 RUN mkdir -p /app/uploads
 
 # Copiar el resto del código fuente
-COPY --chown=node:node . .
+COPY --chown=node:node backend/ .
 
 # El hot-reload de NestJS detecta cambios en el volumen montado
 CMD ["npm", "run", "start:dev"]

@@ -98,6 +98,14 @@ async def analyze_asset_photo(
             detail=str(exc),
         ) from exc
     except Exception as exc:
+        status_code = getattr(exc, "status_code", None)
+        exc_text = str(exc)
+        if status_code == status.HTTP_429_TOO_MANY_REQUESTS or "429 RESOURCE_EXHAUSTED" in exc_text:
+            logger.warning("[/vision/analyze] Gemini quota exceeded: %s", exc)
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail="Se excedio la cuota disponible de Gemini para analizar imagenes. Intente mas tarde o revise el plan/API key.",
+            ) from exc
         logger.exception("[/vision/analyze] Unexpected error: %s", exc)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

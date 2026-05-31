@@ -1,11 +1,12 @@
 # ── Stage 1: Compilar el frontend ────────────────────────────────────────────
 FROM node:lts-alpine3.22 AS frontend-builder
 
-WORKDIR /app
+WORKDIR /app/frontend
 
 # Instalar dependencias nativas para esbuild
 RUN apk add --no-cache python3 make g++
 
+COPY common_library/activos-config ../common_library/activos-config
 COPY frontend/package*.json ./
 
 ARG NEXUS_URL
@@ -15,6 +16,7 @@ RUN if [ -z "${NEXUS_URL}" ]; then \
     fi && \
     echo "@activos:registry=${NEXUS_URL}" >> .npmrc
 
+RUN cd ../common_library/activos-config && npm ci && npm run build
 RUN npm ci
 
 COPY frontend/ .
@@ -36,7 +38,7 @@ RUN apk add --no-cache curl unzip && \
     apk del curl unzip
 
 # Frontend compilado en el destino que sirve nginx
-COPY --from=frontend-builder /app/dist /usr/share/nginx/html
+COPY --from=frontend-builder /app/frontend/dist /usr/share/nginx/html
 
 COPY nginx/entrypoint.sh /entrypoint.sh
 COPY nginx/nginx.conf.ctmpl /etc/nginx/nginx.conf.ctmpl

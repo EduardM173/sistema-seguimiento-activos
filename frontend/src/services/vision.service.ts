@@ -43,7 +43,7 @@ export const visionService = {
       let message = `Error ${response.status}`;
       try {
         const body = await response.json();
-        message = body?.message || body?.error || message;
+        message = body?.message || body?.error || body?.detail || message;
       } catch {
         // keep default message
       }

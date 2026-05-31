@@ -1,9 +1,10 @@
 FROM node:lts-alpine3.22 AS builder
 
-RUN mkdir -p /app && chown -R node:node /app
-WORKDIR /app
+RUN mkdir -p /app/backend /app/common_library && chown -R node:node /app
+WORKDIR /app/backend
 
-COPY --chown=node:node package*.json ./
+COPY --chown=node:node common_library/activos-config ../common_library/activos-config
+COPY --chown=node:node backend/package*.json ./
 
 ARG NEXUS_URL
 RUN if [ -z "${NEXUS_URL}" ]; then \
@@ -13,18 +14,20 @@ RUN if [ -z "${NEXUS_URL}" ]; then \
     echo "@activos:registry=${NEXUS_URL}" >> .npmrc
 
 USER node
+RUN cd ../common_library/activos-config && npm ci && npm run build
 RUN npm ci
 
-COPY --chown=node:node . .
+COPY --chown=node:node backend/ .
 RUN npm run build
 
 # ── Runtime ─────────────────────────────────────────────────────────────────
 FROM node:lts-alpine3.22
 
-RUN mkdir -p /app && chown -R node:node /app
-WORKDIR /app
+RUN mkdir -p /app/backend /app/common_library && chown -R node:node /app
+WORKDIR /app/backend
 
-COPY --chown=node:node package*.json ./
+COPY --chown=node:node common_library/activos-config ../common_library/activos-config
+COPY --chown=node:node backend/package*.json ./
 
 ARG NEXUS_URL
 RUN if [ -z "${NEXUS_URL}" ]; then \
@@ -34,10 +37,10 @@ RUN if [ -z "${NEXUS_URL}" ]; then \
     echo "@activos:registry=${NEXUS_URL}" >> .npmrc
 
 USER node
+RUN cd ../common_library/activos-config && npm ci && npm run build
 RUN npm ci --omit=dev
 
-COPY --from=builder --chown=node:node /app/dist ./dist
-COPY --from=builder --chown=node:node /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder --chown=node:node /app/backend/dist ./dist
 
 # Directorio de uploads con permisos node para inicialización de volumen
 RUN mkdir -p /app/uploads
