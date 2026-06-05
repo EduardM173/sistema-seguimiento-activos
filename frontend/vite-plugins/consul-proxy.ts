@@ -27,6 +27,19 @@ interface ConsulHealthEntry {
   Service: { Address: string; Port: number };
 }
 
+function getFallbackTarget(serviceName: string): string | null {
+  if (serviceName !== 'activos-backend') return null;
+
+  const backendUrlRaw = process.env.VITE_BACKEND_URL || process.env.VITE_API_URL;
+  if (!backendUrlRaw) return 'http://localhost:3001';
+
+  try {
+    return new URL(backendUrlRaw).origin;
+  } catch {
+    return null;
+  }
+}
+
 /** Pregunta a Consul por una instancia saludable del servicio. */
 function consulResolve(
   consulHost: string,
@@ -103,8 +116,9 @@ export function consulProxy(): Plugin {
 
         // Resolver en Consul en tiempo real
         const target = await resolveTarget(serviceName);
+        const targetOrFallback = target ?? getFallbackTarget(serviceName);
 
-        if (!target) {
+        if (!targetOrFallback) {
           console.warn(`[consul-proxy] "${serviceName}" sin instancias saludables en Consul`);
           res.writeHead(502, { 'Content-Type': 'text/plain' });
           res.end(`[consul-proxy] Servicio "${serviceName}" no disponible`);
@@ -114,7 +128,7 @@ export function consulProxy(): Plugin {
         // Reescribir URL: quitar el prefijo /<service_name>
         req.url = restPath + queryString;
 
-        const targetUrl = new URL(target);
+        const targetUrl = new URL(targetOrFallback);
 
         // Forward de la request al servicio real
         const proxyReq = http.request(
@@ -132,7 +146,7 @@ export function consulProxy(): Plugin {
         );
 
         proxyReq.on('error', (err) => {
-          console.error(`[consul-proxy] Error conectando con ${target}:`, err.message);
+          console.error(`[consul-proxy] Error conectando con ${targetOrFallback}:`, err.message);
           if (!res.headersSent) {
             res.writeHead(502, { 'Content-Type': 'text/plain' });
             res.end(`[consul-proxy] Error de conexión con "${serviceName}"`);

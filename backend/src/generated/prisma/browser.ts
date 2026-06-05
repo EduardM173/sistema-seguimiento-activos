@@ -117,3 +117,13 @@ export type ImagenActivo = Prisma.ImagenActivoModel
  * 
  */
 export type ImagenMaterial = Prisma.ImagenMaterialModel
+/**
+ * Model SolicitudCompra
+ * 
+ */
+export type SolicitudCompra = Prisma.SolicitudCompraModel
+/**
+ * Model Proveedor
+ * 
+ */
+export type Proveedor = Prisma.ProveedorModel

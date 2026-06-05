@@ -62,6 +62,18 @@ enum FormatoReporte {
   EXCEL
 }
 
+enum TipoSolicitudCompra {
+  ACTIVO
+  MATERIAL
+}
+
+enum EstadoSolicitudCompra {
+  PENDIENTE
+  APROBADA
+  RECHAZADA
+  COMPLETADA
+}
+
 model Usuario {
   id             String        @id @default(cuid())
   nombres        String
@@ -94,6 +106,7 @@ model Usuario {
   auditorias            Auditoria[]
   notificaciones        Notificacion[]
   reportesGenerados     ReporteGenerado[]
+  solicitudesCompra     SolicitudCompra[]
 
   @@index([rolId])
   @@index([areaId])
@@ -220,6 +233,7 @@ model Activo {
   incidentes   IncidenteActivo[]
   documentos   DocumentoActivo[]
   imagenes     ImagenActivo[]
+  solicitudesCompra SolicitudCompra[]
 
   @@index([categoriaId])
   @@index([ubicacionId])
@@ -350,6 +364,7 @@ model Material {
   movimientos    MovimientoInventario[]
   notificaciones Notificacion[]
   imagenes       ImagenMaterial[]
+  solicitudesCompra SolicitudCompra[]
 
   @@index([categoriaId])
   @@index([areaId])
@@ -468,4 +483,47 @@ model ImagenMaterial {
 
   @@index([materialId])
   @@map("imagenes_materiales")
+}
+
+model SolicitudCompra {
+  id              String                @id @default(cuid())
+  tipo            TipoSolicitudCompra
+  estado          EstadoSolicitudCompra @default(PENDIENTE)
+  cantidad        Int                   @default(1)
+  nota            String?
+  solicitanteId   String
+  activoId        String?
+  materialId      String?
+  creadoEn        DateTime              @default(now())
+  actualizadoEn   DateTime              @updatedAt
+
+  solicitante Usuario   @relation(fields: [solicitanteId], references: [id])
+  activo      Activo?   @relation(fields: [activoId], references: [id], onDelete: SetNull)
+  material    Material? @relation(fields: [materialId], references: [id], onDelete: SetNull)
+
+  @@index([solicitanteId])
+  @@index([activoId])
+  @@index([materialId])
+  @@index([tipo])
+  @@index([estado])
+  @@map("solicitudes_compra")
+}
+
+model Proveedor {
+  id             String   @id @default(cuid())
+  nombre         String
+  nit            String?  @unique
+  contacto       String?
+  telefono       String?
+  correo         String?
+  direccion      String?
+  rubro          String?
+  observaciones  String?
+  activo         Boolean  @default(true)
+  creadoEn       DateTime @default(now())
+  actualizadoEn  DateTime @updatedAt
+
+  @@index([nombre])
+  @@index([rubro])
+  @@map("proveedores")
 }

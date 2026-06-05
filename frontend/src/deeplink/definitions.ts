@@ -28,7 +28,37 @@ const PAGES: DeeplinkPageDefinition[] = [
     title: 'Dashboard',
     description: 'Panel principal con resumen de la operación.',
     tags: ['home'],
-    relatedPages: ['activos', 'inventario', 'transferencias', 'notificaciones'],
+    relatedPages: ['activos', 'inventario', 'transferencias', 'notificaciones', 'marketplace'],
+  },
+
+  {
+    id: 'marketplace',
+    path: '/marketplace',
+    title: 'Catálogo de materiales',
+    description:
+      'Catalogo de materiales para compradores y registro de solicitudes de compra externa.',
+    requiredPermission: 'MARKETPLACE_VIEW',
+    tags: ['compras', 'marketplace', 'materials'],
+    params: [
+      { name: 'q', type: 'string', in: 'query', description: 'Texto libre de busqueda.' },
+    ],
+    actions: [
+      { id: 'search', title: 'Buscar en catalogo', requiredPermission: 'MARKETPLACE_VIEW' },
+      { id: 'purchase', title: 'Solicitar compra', requiredPermission: 'PURCHASE_CREATE' },
+    ],
+  },
+
+  {
+    id: 'proveedores',
+    path: '/proveedores',
+    title: 'Registro de proveedores',
+    description: 'Registro y consulta de proveedores externos para compras universitarias.',
+    requiredPermission: 'SUPPLIER_MANAGE',
+    tags: ['compras', 'proveedores', 'suppliers'],
+    actions: [
+      { id: 'createSupplier', title: 'Registrar proveedor', requiredPermission: 'SUPPLIER_MANAGE' },
+      { id: 'searchSupplier', title: 'Buscar proveedor', requiredPermission: 'SUPPLIER_MANAGE' },
+    ],
   },
 
   /* ----------------------------------------------------------- activos */

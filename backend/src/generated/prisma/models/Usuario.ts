@@ -253,6 +253,7 @@ export type UsuarioWhereInput = {
   auditorias?: Prisma.AuditoriaListRelationFilter
   notificaciones?: Prisma.NotificacionListRelationFilter
   reportesGenerados?: Prisma.ReporteGeneradoListRelationFilter
+  solicitudesCompra?: Prisma.SolicitudCompraListRelationFilter
 }
 
 export type UsuarioOrderByWithRelationInput = {
@@ -283,6 +284,7 @@ export type UsuarioOrderByWithRelationInput = {
   auditorias?: Prisma.AuditoriaOrderByRelationAggregateInput
   notificaciones?: Prisma.NotificacionOrderByRelationAggregateInput
   reportesGenerados?: Prisma.ReporteGeneradoOrderByRelationAggregateInput
+  solicitudesCompra?: Prisma.SolicitudCompraOrderByRelationAggregateInput
 }
 
 export type UsuarioWhereUniqueInput = Prisma.AtLeast<{
@@ -316,6 +318,7 @@ export type UsuarioWhereUniqueInput = Prisma.AtLeast<{
   auditorias?: Prisma.AuditoriaListRelationFilter
   notificaciones?: Prisma.NotificacionListRelationFilter
   reportesGenerados?: Prisma.ReporteGeneradoListRelationFilter
+  solicitudesCompra?: Prisma.SolicitudCompraListRelationFilter
 }, "id" | "correo" | "nombreUsuario">
 
 export type UsuarioOrderByWithAggregationInput = {
@@ -380,6 +383,7 @@ export type UsuarioCreateInput = {
   auditorias?: Prisma.AuditoriaCreateNestedManyWithoutUsuarioInput
   notificaciones?: Prisma.NotificacionCreateNestedManyWithoutUsuarioInput
   reportesGenerados?: Prisma.ReporteGeneradoCreateNestedManyWithoutGeneradoPorInput
+  solicitudesCompra?: Prisma.SolicitudCompraCreateNestedManyWithoutSolicitanteInput
 }
 
 export type UsuarioUncheckedCreateInput = {
@@ -408,6 +412,7 @@ export type UsuarioUncheckedCreateInput = {
   auditorias?: Prisma.AuditoriaUncheckedCreateNestedManyWithoutUsuarioInput
   notificaciones?: Prisma.NotificacionUncheckedCreateNestedManyWithoutUsuarioInput
   reportesGenerados?: Prisma.ReporteGeneradoUncheckedCreateNestedManyWithoutGeneradoPorInput
+  solicitudesCompra?: Prisma.SolicitudCompraUncheckedCreateNestedManyWithoutSolicitanteInput
 }
 
 export type UsuarioUpdateInput = {
@@ -436,6 +441,7 @@ export type UsuarioUpdateInput = {
   auditorias?: Prisma.AuditoriaUpdateManyWithoutUsuarioNestedInput
   notificaciones?: Prisma.NotificacionUpdateManyWithoutUsuarioNestedInput
   reportesGenerados?: Prisma.ReporteGeneradoUpdateManyWithoutGeneradoPorNestedInput
+  solicitudesCompra?: Prisma.SolicitudCompraUpdateManyWithoutSolicitanteNestedInput
 }
 
 export type UsuarioUncheckedUpdateInput = {
@@ -464,6 +470,7 @@ export type UsuarioUncheckedUpdateInput = {
   auditorias?: Prisma.AuditoriaUncheckedUpdateManyWithoutUsuarioNestedInput
   notificaciones?: Prisma.NotificacionUncheckedUpdateManyWithoutUsuarioNestedInput
   reportesGenerados?: Prisma.ReporteGeneradoUncheckedUpdateManyWithoutGeneradoPorNestedInput
+  solicitudesCompra?: Prisma.SolicitudCompraUncheckedUpdateManyWithoutSolicitanteNestedInput
 }
 
 export type UsuarioCreateManyInput = {
@@ -870,6 +877,20 @@ export type UsuarioUpdateOneRequiredWithoutReportesGeneradosNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UsuarioUpdateToOneWithWhereWithoutReportesGeneradosInput, Prisma.UsuarioUpdateWithoutReportesGeneradosInput>, Prisma.UsuarioUncheckedUpdateWithoutReportesGeneradosInput>
 }
 
+export type UsuarioCreateNestedOneWithoutSolicitudesCompraInput = {
+  create?: Prisma.XOR<Prisma.UsuarioCreateWithoutSolicitudesCompraInput, Prisma.UsuarioUncheckedCreateWithoutSolicitudesCompraInput>
+  connectOrCreate?: Prisma.UsuarioCreateOrConnectWithoutSolicitudesCompraInput
+  connect?: Prisma.UsuarioWhereUniqueInput
+}
+
+export type UsuarioUpdateOneRequiredWithoutSolicitudesCompraNestedInput = {
+  create?: Prisma.XOR<Prisma.UsuarioCreateWithoutSolicitudesCompraInput, Prisma.UsuarioUncheckedCreateWithoutSolicitudesCompraInput>
+  connectOrCreate?: Prisma.UsuarioCreateOrConnectWithoutSolicitudesCompraInput
+  upsert?: Prisma.UsuarioUpsertWithoutSolicitudesCompraInput
+  connect?: Prisma.UsuarioWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UsuarioUpdateToOneWithWhereWithoutSolicitudesCompraInput, Prisma.UsuarioUpdateWithoutSolicitudesCompraInput>, Prisma.UsuarioUncheckedUpdateWithoutSolicitudesCompraInput>
+}
+
 export type UsuarioCreateWithoutRolInput = {
   id?: string
   nombres: string
@@ -895,6 +916,7 @@ export type UsuarioCreateWithoutRolInput = {
   auditorias?: Prisma.AuditoriaCreateNestedManyWithoutUsuarioInput
   notificaciones?: Prisma.NotificacionCreateNestedManyWithoutUsuarioInput
   reportesGenerados?: Prisma.ReporteGeneradoCreateNestedManyWithoutGeneradoPorInput
+  solicitudesCompra?: Prisma.SolicitudCompraCreateNestedManyWithoutSolicitanteInput
 }
 
 export type UsuarioUncheckedCreateWithoutRolInput = {
@@ -922,6 +944,7 @@ export type UsuarioUncheckedCreateWithoutRolInput = {
   auditorias?: Prisma.AuditoriaUncheckedCreateNestedManyWithoutUsuarioInput
   notificaciones?: Prisma.NotificacionUncheckedCreateNestedManyWithoutUsuarioInput
   reportesGenerados?: Prisma.ReporteGeneradoUncheckedCreateNestedManyWithoutGeneradoPorInput
+  solicitudesCompra?: Prisma.SolicitudCompraUncheckedCreateNestedManyWithoutSolicitanteInput
 }
 
 export type UsuarioCreateOrConnectWithoutRolInput = {
@@ -993,6 +1016,7 @@ export type UsuarioCreateWithoutAreasGestionadasInput = {
   auditorias?: Prisma.AuditoriaCreateNestedManyWithoutUsuarioInput
   notificaciones?: Prisma.NotificacionCreateNestedManyWithoutUsuarioInput
   reportesGenerados?: Prisma.ReporteGeneradoCreateNestedManyWithoutGeneradoPorInput
+  solicitudesCompra?: Prisma.SolicitudCompraCreateNestedManyWithoutSolicitanteInput
 }
 
 export type UsuarioUncheckedCreateWithoutAreasGestionadasInput = {
@@ -1020,6 +1044,7 @@ export type UsuarioUncheckedCreateWithoutAreasGestionadasInput = {
   auditorias?: Prisma.AuditoriaUncheckedCreateNestedManyWithoutUsuarioInput
   notificaciones?: Prisma.NotificacionUncheckedCreateNestedManyWithoutUsuarioInput
   reportesGenerados?: Prisma.ReporteGeneradoUncheckedCreateNestedManyWithoutGeneradoPorInput
+  solicitudesCompra?: Prisma.SolicitudCompraUncheckedCreateNestedManyWithoutSolicitanteInput
 }
 
 export type UsuarioCreateOrConnectWithoutAreasGestionadasInput = {
@@ -1052,6 +1077,7 @@ export type UsuarioCreateWithoutAreaInput = {
   auditorias?: Prisma.AuditoriaCreateNestedManyWithoutUsuarioInput
   notificaciones?: Prisma.NotificacionCreateNestedManyWithoutUsuarioInput
   reportesGenerados?: Prisma.ReporteGeneradoCreateNestedManyWithoutGeneradoPorInput
+  solicitudesCompra?: Prisma.SolicitudCompraCreateNestedManyWithoutSolicitanteInput
 }
 
 export type UsuarioUncheckedCreateWithoutAreaInput = {
@@ -1079,6 +1105,7 @@ export type UsuarioUncheckedCreateWithoutAreaInput = {
   auditorias?: Prisma.AuditoriaUncheckedCreateNestedManyWithoutUsuarioInput
   notificaciones?: Prisma.NotificacionUncheckedCreateNestedManyWithoutUsuarioInput
   reportesGenerados?: Prisma.ReporteGeneradoUncheckedCreateNestedManyWithoutGeneradoPorInput
+  solicitudesCompra?: Prisma.SolicitudCompraUncheckedCreateNestedManyWithoutSolicitanteInput
 }
 
 export type UsuarioCreateOrConnectWithoutAreaInput = {
@@ -1127,6 +1154,7 @@ export type UsuarioUpdateWithoutAreasGestionadasInput = {
   auditorias?: Prisma.AuditoriaUpdateManyWithoutUsuarioNestedInput
   notificaciones?: Prisma.NotificacionUpdateManyWithoutUsuarioNestedInput
   reportesGenerados?: Prisma.ReporteGeneradoUpdateManyWithoutGeneradoPorNestedInput
+  solicitudesCompra?: Prisma.SolicitudCompraUpdateManyWithoutSolicitanteNestedInput
 }
 
 export type UsuarioUncheckedUpdateWithoutAreasGestionadasInput = {
@@ -1154,6 +1182,7 @@ export type UsuarioUncheckedUpdateWithoutAreasGestionadasInput = {
   auditorias?: Prisma.AuditoriaUncheckedUpdateManyWithoutUsuarioNestedInput
   notificaciones?: Prisma.NotificacionUncheckedUpdateManyWithoutUsuarioNestedInput
   reportesGenerados?: Prisma.ReporteGeneradoUncheckedUpdateManyWithoutGeneradoPorNestedInput
+  solicitudesCompra?: Prisma.SolicitudCompraUncheckedUpdateManyWithoutSolicitanteNestedInput
 }
 
 export type UsuarioUpsertWithWhereUniqueWithoutAreaInput = {
@@ -1197,6 +1226,7 @@ export type UsuarioCreateWithoutActivosResponsableInput = {
   auditorias?: Prisma.AuditoriaCreateNestedManyWithoutUsuarioInput
   notificaciones?: Prisma.NotificacionCreateNestedManyWithoutUsuarioInput
   reportesGenerados?: Prisma.ReporteGeneradoCreateNestedManyWithoutGeneradoPorInput
+  solicitudesCompra?: Prisma.SolicitudCompraCreateNestedManyWithoutSolicitanteInput
 }
 
 export type UsuarioUncheckedCreateWithoutActivosResponsableInput = {
@@ -1224,6 +1254,7 @@ export type UsuarioUncheckedCreateWithoutActivosResponsableInput = {
   auditorias?: Prisma.AuditoriaUncheckedCreateNestedManyWithoutUsuarioInput
   notificaciones?: Prisma.NotificacionUncheckedCreateNestedManyWithoutUsuarioInput
   reportesGenerados?: Prisma.ReporteGeneradoUncheckedCreateNestedManyWithoutGeneradoPorInput
+  solicitudesCompra?: Prisma.SolicitudCompraUncheckedCreateNestedManyWithoutSolicitanteInput
 }
 
 export type UsuarioCreateOrConnectWithoutActivosResponsableInput = {
@@ -1256,6 +1287,7 @@ export type UsuarioCreateWithoutActivosCreadosInput = {
   auditorias?: Prisma.AuditoriaCreateNestedManyWithoutUsuarioInput
   notificaciones?: Prisma.NotificacionCreateNestedManyWithoutUsuarioInput
   reportesGenerados?: Prisma.ReporteGeneradoCreateNestedManyWithoutGeneradoPorInput
+  solicitudesCompra?: Prisma.SolicitudCompraCreateNestedManyWithoutSolicitanteInput
 }
 
 export type UsuarioUncheckedCreateWithoutActivosCreadosInput = {
@@ -1283,6 +1315,7 @@ export type UsuarioUncheckedCreateWithoutActivosCreadosInput = {
   auditorias?: Prisma.AuditoriaUncheckedCreateNestedManyWithoutUsuarioInput
   notificaciones?: Prisma.NotificacionUncheckedCreateNestedManyWithoutUsuarioInput
   reportesGenerados?: Prisma.ReporteGeneradoUncheckedCreateNestedManyWithoutGeneradoPorInput
+  solicitudesCompra?: Prisma.SolicitudCompraUncheckedCreateNestedManyWithoutSolicitanteInput
 }
 
 export type UsuarioCreateOrConnectWithoutActivosCreadosInput = {
@@ -1315,6 +1348,7 @@ export type UsuarioCreateWithoutActivosActualizadosInput = {
   auditorias?: Prisma.AuditoriaCreateNestedManyWithoutUsuarioInput
   notificaciones?: Prisma.NotificacionCreateNestedManyWithoutUsuarioInput
   reportesGenerados?: Prisma.ReporteGeneradoCreateNestedManyWithoutGeneradoPorInput
+  solicitudesCompra?: Prisma.SolicitudCompraCreateNestedManyWithoutSolicitanteInput
 }
 
 export type UsuarioUncheckedCreateWithoutActivosActualizadosInput = {
@@ -1342,6 +1376,7 @@ export type UsuarioUncheckedCreateWithoutActivosActualizadosInput = {
   auditorias?: Prisma.AuditoriaUncheckedCreateNestedManyWithoutUsuarioInput
   notificaciones?: Prisma.NotificacionUncheckedCreateNestedManyWithoutUsuarioInput
   reportesGenerados?: Prisma.ReporteGeneradoUncheckedCreateNestedManyWithoutGeneradoPorInput
+  solicitudesCompra?: Prisma.SolicitudCompraUncheckedCreateNestedManyWithoutSolicitanteInput
 }
 
 export type UsuarioCreateOrConnectWithoutActivosActualizadosInput = {
@@ -1385,6 +1420,7 @@ export type UsuarioUpdateWithoutActivosResponsableInput = {
   auditorias?: Prisma.AuditoriaUpdateManyWithoutUsuarioNestedInput
   notificaciones?: Prisma.NotificacionUpdateManyWithoutUsuarioNestedInput
   reportesGenerados?: Prisma.ReporteGeneradoUpdateManyWithoutGeneradoPorNestedInput
+  solicitudesCompra?: Prisma.SolicitudCompraUpdateManyWithoutSolicitanteNestedInput
 }
 
 export type UsuarioUncheckedUpdateWithoutActivosResponsableInput = {
@@ -1412,6 +1448,7 @@ export type UsuarioUncheckedUpdateWithoutActivosResponsableInput = {
   auditorias?: Prisma.AuditoriaUncheckedUpdateManyWithoutUsuarioNestedInput
   notificaciones?: Prisma.NotificacionUncheckedUpdateManyWithoutUsuarioNestedInput
   reportesGenerados?: Prisma.ReporteGeneradoUncheckedUpdateManyWithoutGeneradoPorNestedInput
+  solicitudesCompra?: Prisma.SolicitudCompraUncheckedUpdateManyWithoutSolicitanteNestedInput
 }
 
 export type UsuarioUpsertWithoutActivosCreadosInput = {
@@ -1450,6 +1487,7 @@ export type UsuarioUpdateWithoutActivosCreadosInput = {
   auditorias?: Prisma.AuditoriaUpdateManyWithoutUsuarioNestedInput
   notificaciones?: Prisma.NotificacionUpdateManyWithoutUsuarioNestedInput
   reportesGenerados?: Prisma.ReporteGeneradoUpdateManyWithoutGeneradoPorNestedInput
+  solicitudesCompra?: Prisma.SolicitudCompraUpdateManyWithoutSolicitanteNestedInput
 }
 
 export type UsuarioUncheckedUpdateWithoutActivosCreadosInput = {
@@ -1477,6 +1515,7 @@ export type UsuarioUncheckedUpdateWithoutActivosCreadosInput = {
   auditorias?: Prisma.AuditoriaUncheckedUpdateManyWithoutUsuarioNestedInput
   notificaciones?: Prisma.NotificacionUncheckedUpdateManyWithoutUsuarioNestedInput
   reportesGenerados?: Prisma.ReporteGeneradoUncheckedUpdateManyWithoutGeneradoPorNestedInput
+  solicitudesCompra?: Prisma.SolicitudCompraUncheckedUpdateManyWithoutSolicitanteNestedInput
 }
 
 export type UsuarioUpsertWithoutActivosActualizadosInput = {
@@ -1515,6 +1554,7 @@ export type UsuarioUpdateWithoutActivosActualizadosInput = {
   auditorias?: Prisma.AuditoriaUpdateManyWithoutUsuarioNestedInput
   notificaciones?: Prisma.NotificacionUpdateManyWithoutUsuarioNestedInput
   reportesGenerados?: Prisma.ReporteGeneradoUpdateManyWithoutGeneradoPorNestedInput
+  solicitudesCompra?: Prisma.SolicitudCompraUpdateManyWithoutSolicitanteNestedInput
 }
 
 export type UsuarioUncheckedUpdateWithoutActivosActualizadosInput = {
@@ -1542,6 +1582,7 @@ export type UsuarioUncheckedUpdateWithoutActivosActualizadosInput = {
   auditorias?: Prisma.AuditoriaUncheckedUpdateManyWithoutUsuarioNestedInput
   notificaciones?: Prisma.NotificacionUncheckedUpdateManyWithoutUsuarioNestedInput
   reportesGenerados?: Prisma.ReporteGeneradoUncheckedUpdateManyWithoutGeneradoPorNestedInput
+  solicitudesCompra?: Prisma.SolicitudCompraUncheckedUpdateManyWithoutSolicitanteNestedInput
 }
 
 export type UsuarioCreateWithoutAsignacionesDirectasInput = {
@@ -1569,6 +1610,7 @@ export type UsuarioCreateWithoutAsignacionesDirectasInput = {
   auditorias?: Prisma.AuditoriaCreateNestedManyWithoutUsuarioInput
   notificaciones?: Prisma.NotificacionCreateNestedManyWithoutUsuarioInput
   reportesGenerados?: Prisma.ReporteGeneradoCreateNestedManyWithoutGeneradoPorInput
+  solicitudesCompra?: Prisma.SolicitudCompraCreateNestedManyWithoutSolicitanteInput
 }
 
 export type UsuarioUncheckedCreateWithoutAsignacionesDirectasInput = {
@@ -1596,6 +1638,7 @@ export type UsuarioUncheckedCreateWithoutAsignacionesDirectasInput = {
   auditorias?: Prisma.AuditoriaUncheckedCreateNestedManyWithoutUsuarioInput
   notificaciones?: Prisma.NotificacionUncheckedCreateNestedManyWithoutUsuarioInput
   reportesGenerados?: Prisma.ReporteGeneradoUncheckedCreateNestedManyWithoutGeneradoPorInput
+  solicitudesCompra?: Prisma.SolicitudCompraUncheckedCreateNestedManyWithoutSolicitanteInput
 }
 
 export type UsuarioCreateOrConnectWithoutAsignacionesDirectasInput = {
@@ -1628,6 +1671,7 @@ export type UsuarioCreateWithoutAsignacionesRealizadasInput = {
   auditorias?: Prisma.AuditoriaCreateNestedManyWithoutUsuarioInput
   notificaciones?: Prisma.NotificacionCreateNestedManyWithoutUsuarioInput
   reportesGenerados?: Prisma.ReporteGeneradoCreateNestedManyWithoutGeneradoPorInput
+  solicitudesCompra?: Prisma.SolicitudCompraCreateNestedManyWithoutSolicitanteInput
 }
 
 export type UsuarioUncheckedCreateWithoutAsignacionesRealizadasInput = {
@@ -1655,6 +1699,7 @@ export type UsuarioUncheckedCreateWithoutAsignacionesRealizadasInput = {
   auditorias?: Prisma.AuditoriaUncheckedCreateNestedManyWithoutUsuarioInput
   notificaciones?: Prisma.NotificacionUncheckedCreateNestedManyWithoutUsuarioInput
   reportesGenerados?: Prisma.ReporteGeneradoUncheckedCreateNestedManyWithoutGeneradoPorInput
+  solicitudesCompra?: Prisma.SolicitudCompraUncheckedCreateNestedManyWithoutSolicitanteInput
 }
 
 export type UsuarioCreateOrConnectWithoutAsignacionesRealizadasInput = {
@@ -1687,6 +1732,7 @@ export type UsuarioCreateWithoutAsignacionesRecibidasInput = {
   auditorias?: Prisma.AuditoriaCreateNestedManyWithoutUsuarioInput
   notificaciones?: Prisma.NotificacionCreateNestedManyWithoutUsuarioInput
   reportesGenerados?: Prisma.ReporteGeneradoCreateNestedManyWithoutGeneradoPorInput
+  solicitudesCompra?: Prisma.SolicitudCompraCreateNestedManyWithoutSolicitanteInput
 }
 
 export type UsuarioUncheckedCreateWithoutAsignacionesRecibidasInput = {
@@ -1714,6 +1760,7 @@ export type UsuarioUncheckedCreateWithoutAsignacionesRecibidasInput = {
   auditorias?: Prisma.AuditoriaUncheckedCreateNestedManyWithoutUsuarioInput
   notificaciones?: Prisma.NotificacionUncheckedCreateNestedManyWithoutUsuarioInput
   reportesGenerados?: Prisma.ReporteGeneradoUncheckedCreateNestedManyWithoutGeneradoPorInput
+  solicitudesCompra?: Prisma.SolicitudCompraUncheckedCreateNestedManyWithoutSolicitanteInput
 }
 
 export type UsuarioCreateOrConnectWithoutAsignacionesRecibidasInput = {
@@ -1757,6 +1804,7 @@ export type UsuarioUpdateWithoutAsignacionesDirectasInput = {
   auditorias?: Prisma.AuditoriaUpdateManyWithoutUsuarioNestedInput
   notificaciones?: Prisma.NotificacionUpdateManyWithoutUsuarioNestedInput
   reportesGenerados?: Prisma.ReporteGeneradoUpdateManyWithoutGeneradoPorNestedInput
+  solicitudesCompra?: Prisma.SolicitudCompraUpdateManyWithoutSolicitanteNestedInput
 }
 
 export type UsuarioUncheckedUpdateWithoutAsignacionesDirectasInput = {
@@ -1784,6 +1832,7 @@ export type UsuarioUncheckedUpdateWithoutAsignacionesDirectasInput = {
   auditorias?: Prisma.AuditoriaUncheckedUpdateManyWithoutUsuarioNestedInput
   notificaciones?: Prisma.NotificacionUncheckedUpdateManyWithoutUsuarioNestedInput
   reportesGenerados?: Prisma.ReporteGeneradoUncheckedUpdateManyWithoutGeneradoPorNestedInput
+  solicitudesCompra?: Prisma.SolicitudCompraUncheckedUpdateManyWithoutSolicitanteNestedInput
 }
 
 export type UsuarioUpsertWithoutAsignacionesRealizadasInput = {
@@ -1822,6 +1871,7 @@ export type UsuarioUpdateWithoutAsignacionesRealizadasInput = {
   auditorias?: Prisma.AuditoriaUpdateManyWithoutUsuarioNestedInput
   notificaciones?: Prisma.NotificacionUpdateManyWithoutUsuarioNestedInput
   reportesGenerados?: Prisma.ReporteGeneradoUpdateManyWithoutGeneradoPorNestedInput
+  solicitudesCompra?: Prisma.SolicitudCompraUpdateManyWithoutSolicitanteNestedInput
 }
 
 export type UsuarioUncheckedUpdateWithoutAsignacionesRealizadasInput = {
@@ -1849,6 +1899,7 @@ export type UsuarioUncheckedUpdateWithoutAsignacionesRealizadasInput = {
   auditorias?: Prisma.AuditoriaUncheckedUpdateManyWithoutUsuarioNestedInput
   notificaciones?: Prisma.NotificacionUncheckedUpdateManyWithoutUsuarioNestedInput
   reportesGenerados?: Prisma.ReporteGeneradoUncheckedUpdateManyWithoutGeneradoPorNestedInput
+  solicitudesCompra?: Prisma.SolicitudCompraUncheckedUpdateManyWithoutSolicitanteNestedInput
 }
 
 export type UsuarioUpsertWithoutAsignacionesRecibidasInput = {
@@ -1887,6 +1938,7 @@ export type UsuarioUpdateWithoutAsignacionesRecibidasInput = {
   auditorias?: Prisma.AuditoriaUpdateManyWithoutUsuarioNestedInput
   notificaciones?: Prisma.NotificacionUpdateManyWithoutUsuarioNestedInput
   reportesGenerados?: Prisma.ReporteGeneradoUpdateManyWithoutGeneradoPorNestedInput
+  solicitudesCompra?: Prisma.SolicitudCompraUpdateManyWithoutSolicitanteNestedInput
 }
 
 export type UsuarioUncheckedUpdateWithoutAsignacionesRecibidasInput = {
@@ -1914,6 +1966,7 @@ export type UsuarioUncheckedUpdateWithoutAsignacionesRecibidasInput = {
   auditorias?: Prisma.AuditoriaUncheckedUpdateManyWithoutUsuarioNestedInput
   notificaciones?: Prisma.NotificacionUncheckedUpdateManyWithoutUsuarioNestedInput
   reportesGenerados?: Prisma.ReporteGeneradoUncheckedUpdateManyWithoutGeneradoPorNestedInput
+  solicitudesCompra?: Prisma.SolicitudCompraUncheckedUpdateManyWithoutSolicitanteNestedInput
 }
 
 export type UsuarioCreateWithoutMovimientosActivoInput = {
@@ -1941,6 +1994,7 @@ export type UsuarioCreateWithoutMovimientosActivoInput = {
   auditorias?: Prisma.AuditoriaCreateNestedManyWithoutUsuarioInput
   notificaciones?: Prisma.NotificacionCreateNestedManyWithoutUsuarioInput
   reportesGenerados?: Prisma.ReporteGeneradoCreateNestedManyWithoutGeneradoPorInput
+  solicitudesCompra?: Prisma.SolicitudCompraCreateNestedManyWithoutSolicitanteInput
 }
 
 export type UsuarioUncheckedCreateWithoutMovimientosActivoInput = {
@@ -1968,6 +2022,7 @@ export type UsuarioUncheckedCreateWithoutMovimientosActivoInput = {
   auditorias?: Prisma.AuditoriaUncheckedCreateNestedManyWithoutUsuarioInput
   notificaciones?: Prisma.NotificacionUncheckedCreateNestedManyWithoutUsuarioInput
   reportesGenerados?: Prisma.ReporteGeneradoUncheckedCreateNestedManyWithoutGeneradoPorInput
+  solicitudesCompra?: Prisma.SolicitudCompraUncheckedCreateNestedManyWithoutSolicitanteInput
 }
 
 export type UsuarioCreateOrConnectWithoutMovimientosActivoInput = {
@@ -2011,6 +2066,7 @@ export type UsuarioUpdateWithoutMovimientosActivoInput = {
   auditorias?: Prisma.AuditoriaUpdateManyWithoutUsuarioNestedInput
   notificaciones?: Prisma.NotificacionUpdateManyWithoutUsuarioNestedInput
   reportesGenerados?: Prisma.ReporteGeneradoUpdateManyWithoutGeneradoPorNestedInput
+  solicitudesCompra?: Prisma.SolicitudCompraUpdateManyWithoutSolicitanteNestedInput
 }
 
 export type UsuarioUncheckedUpdateWithoutMovimientosActivoInput = {
@@ -2038,6 +2094,7 @@ export type UsuarioUncheckedUpdateWithoutMovimientosActivoInput = {
   auditorias?: Prisma.AuditoriaUncheckedUpdateManyWithoutUsuarioNestedInput
   notificaciones?: Prisma.NotificacionUncheckedUpdateManyWithoutUsuarioNestedInput
   reportesGenerados?: Prisma.ReporteGeneradoUncheckedUpdateManyWithoutGeneradoPorNestedInput
+  solicitudesCompra?: Prisma.SolicitudCompraUncheckedUpdateManyWithoutSolicitanteNestedInput
 }
 
 export type UsuarioCreateWithoutIncidentesActivoInput = {
@@ -2065,6 +2122,7 @@ export type UsuarioCreateWithoutIncidentesActivoInput = {
   auditorias?: Prisma.AuditoriaCreateNestedManyWithoutUsuarioInput
   notificaciones?: Prisma.NotificacionCreateNestedManyWithoutUsuarioInput
   reportesGenerados?: Prisma.ReporteGeneradoCreateNestedManyWithoutGeneradoPorInput
+  solicitudesCompra?: Prisma.SolicitudCompraCreateNestedManyWithoutSolicitanteInput
 }
 
 export type UsuarioUncheckedCreateWithoutIncidentesActivoInput = {
@@ -2092,6 +2150,7 @@ export type UsuarioUncheckedCreateWithoutIncidentesActivoInput = {
   auditorias?: Prisma.AuditoriaUncheckedCreateNestedManyWithoutUsuarioInput
   notificaciones?: Prisma.NotificacionUncheckedCreateNestedManyWithoutUsuarioInput
   reportesGenerados?: Prisma.ReporteGeneradoUncheckedCreateNestedManyWithoutGeneradoPorInput
+  solicitudesCompra?: Prisma.SolicitudCompraUncheckedCreateNestedManyWithoutSolicitanteInput
 }
 
 export type UsuarioCreateOrConnectWithoutIncidentesActivoInput = {
@@ -2135,6 +2194,7 @@ export type UsuarioUpdateWithoutIncidentesActivoInput = {
   auditorias?: Prisma.AuditoriaUpdateManyWithoutUsuarioNestedInput
   notificaciones?: Prisma.NotificacionUpdateManyWithoutUsuarioNestedInput
   reportesGenerados?: Prisma.ReporteGeneradoUpdateManyWithoutGeneradoPorNestedInput
+  solicitudesCompra?: Prisma.SolicitudCompraUpdateManyWithoutSolicitanteNestedInput
 }
 
 export type UsuarioUncheckedUpdateWithoutIncidentesActivoInput = {
@@ -2162,6 +2222,7 @@ export type UsuarioUncheckedUpdateWithoutIncidentesActivoInput = {
   auditorias?: Prisma.AuditoriaUncheckedUpdateManyWithoutUsuarioNestedInput
   notificaciones?: Prisma.NotificacionUncheckedUpdateManyWithoutUsuarioNestedInput
   reportesGenerados?: Prisma.ReporteGeneradoUncheckedUpdateManyWithoutGeneradoPorNestedInput
+  solicitudesCompra?: Prisma.SolicitudCompraUncheckedUpdateManyWithoutSolicitanteNestedInput
 }
 
 export type UsuarioCreateWithoutMovimientosInventarioInput = {
@@ -2189,6 +2250,7 @@ export type UsuarioCreateWithoutMovimientosInventarioInput = {
   auditorias?: Prisma.AuditoriaCreateNestedManyWithoutUsuarioInput
   notificaciones?: Prisma.NotificacionCreateNestedManyWithoutUsuarioInput
   reportesGenerados?: Prisma.ReporteGeneradoCreateNestedManyWithoutGeneradoPorInput
+  solicitudesCompra?: Prisma.SolicitudCompraCreateNestedManyWithoutSolicitanteInput
 }
 
 export type UsuarioUncheckedCreateWithoutMovimientosInventarioInput = {
@@ -2216,6 +2278,7 @@ export type UsuarioUncheckedCreateWithoutMovimientosInventarioInput = {
   auditorias?: Prisma.AuditoriaUncheckedCreateNestedManyWithoutUsuarioInput
   notificaciones?: Prisma.NotificacionUncheckedCreateNestedManyWithoutUsuarioInput
   reportesGenerados?: Prisma.ReporteGeneradoUncheckedCreateNestedManyWithoutGeneradoPorInput
+  solicitudesCompra?: Prisma.SolicitudCompraUncheckedCreateNestedManyWithoutSolicitanteInput
 }
 
 export type UsuarioCreateOrConnectWithoutMovimientosInventarioInput = {
@@ -2259,6 +2322,7 @@ export type UsuarioUpdateWithoutMovimientosInventarioInput = {
   auditorias?: Prisma.AuditoriaUpdateManyWithoutUsuarioNestedInput
   notificaciones?: Prisma.NotificacionUpdateManyWithoutUsuarioNestedInput
   reportesGenerados?: Prisma.ReporteGeneradoUpdateManyWithoutGeneradoPorNestedInput
+  solicitudesCompra?: Prisma.SolicitudCompraUpdateManyWithoutSolicitanteNestedInput
 }
 
 export type UsuarioUncheckedUpdateWithoutMovimientosInventarioInput = {
@@ -2286,6 +2350,7 @@ export type UsuarioUncheckedUpdateWithoutMovimientosInventarioInput = {
   auditorias?: Prisma.AuditoriaUncheckedUpdateManyWithoutUsuarioNestedInput
   notificaciones?: Prisma.NotificacionUncheckedUpdateManyWithoutUsuarioNestedInput
   reportesGenerados?: Prisma.ReporteGeneradoUncheckedUpdateManyWithoutGeneradoPorNestedInput
+  solicitudesCompra?: Prisma.SolicitudCompraUncheckedUpdateManyWithoutSolicitanteNestedInput
 }
 
 export type UsuarioCreateWithoutNotificacionesInput = {
@@ -2313,6 +2378,7 @@ export type UsuarioCreateWithoutNotificacionesInput = {
   incidentesActivo?: Prisma.IncidenteActivoCreateNestedManyWithoutReportadoPorInput
   auditorias?: Prisma.AuditoriaCreateNestedManyWithoutUsuarioInput
   reportesGenerados?: Prisma.ReporteGeneradoCreateNestedManyWithoutGeneradoPorInput
+  solicitudesCompra?: Prisma.SolicitudCompraCreateNestedManyWithoutSolicitanteInput
 }
 
 export type UsuarioUncheckedCreateWithoutNotificacionesInput = {
@@ -2340,6 +2406,7 @@ export type UsuarioUncheckedCreateWithoutNotificacionesInput = {
   incidentesActivo?: Prisma.IncidenteActivoUncheckedCreateNestedManyWithoutReportadoPorInput
   auditorias?: Prisma.AuditoriaUncheckedCreateNestedManyWithoutUsuarioInput
   reportesGenerados?: Prisma.ReporteGeneradoUncheckedCreateNestedManyWithoutGeneradoPorInput
+  solicitudesCompra?: Prisma.SolicitudCompraUncheckedCreateNestedManyWithoutSolicitanteInput
 }
 
 export type UsuarioCreateOrConnectWithoutNotificacionesInput = {
@@ -2383,6 +2450,7 @@ export type UsuarioUpdateWithoutNotificacionesInput = {
   incidentesActivo?: Prisma.IncidenteActivoUpdateManyWithoutReportadoPorNestedInput
   auditorias?: Prisma.AuditoriaUpdateManyWithoutUsuarioNestedInput
   reportesGenerados?: Prisma.ReporteGeneradoUpdateManyWithoutGeneradoPorNestedInput
+  solicitudesCompra?: Prisma.SolicitudCompraUpdateManyWithoutSolicitanteNestedInput
 }
 
 export type UsuarioUncheckedUpdateWithoutNotificacionesInput = {
@@ -2410,6 +2478,7 @@ export type UsuarioUncheckedUpdateWithoutNotificacionesInput = {
   incidentesActivo?: Prisma.IncidenteActivoUncheckedUpdateManyWithoutReportadoPorNestedInput
   auditorias?: Prisma.AuditoriaUncheckedUpdateManyWithoutUsuarioNestedInput
   reportesGenerados?: Prisma.ReporteGeneradoUncheckedUpdateManyWithoutGeneradoPorNestedInput
+  solicitudesCompra?: Prisma.SolicitudCompraUncheckedUpdateManyWithoutSolicitanteNestedInput
 }
 
 export type UsuarioCreateWithoutAuditoriasInput = {
@@ -2437,6 +2506,7 @@ export type UsuarioCreateWithoutAuditoriasInput = {
   incidentesActivo?: Prisma.IncidenteActivoCreateNestedManyWithoutReportadoPorInput
   notificaciones?: Prisma.NotificacionCreateNestedManyWithoutUsuarioInput
   reportesGenerados?: Prisma.ReporteGeneradoCreateNestedManyWithoutGeneradoPorInput
+  solicitudesCompra?: Prisma.SolicitudCompraCreateNestedManyWithoutSolicitanteInput
 }
 
 export type UsuarioUncheckedCreateWithoutAuditoriasInput = {
@@ -2464,6 +2534,7 @@ export type UsuarioUncheckedCreateWithoutAuditoriasInput = {
   incidentesActivo?: Prisma.IncidenteActivoUncheckedCreateNestedManyWithoutReportadoPorInput
   notificaciones?: Prisma.NotificacionUncheckedCreateNestedManyWithoutUsuarioInput
   reportesGenerados?: Prisma.ReporteGeneradoUncheckedCreateNestedManyWithoutGeneradoPorInput
+  solicitudesCompra?: Prisma.SolicitudCompraUncheckedCreateNestedManyWithoutSolicitanteInput
 }
 
 export type UsuarioCreateOrConnectWithoutAuditoriasInput = {
@@ -2507,6 +2578,7 @@ export type UsuarioUpdateWithoutAuditoriasInput = {
   incidentesActivo?: Prisma.IncidenteActivoUpdateManyWithoutReportadoPorNestedInput
   notificaciones?: Prisma.NotificacionUpdateManyWithoutUsuarioNestedInput
   reportesGenerados?: Prisma.ReporteGeneradoUpdateManyWithoutGeneradoPorNestedInput
+  solicitudesCompra?: Prisma.SolicitudCompraUpdateManyWithoutSolicitanteNestedInput
 }
 
 export type UsuarioUncheckedUpdateWithoutAuditoriasInput = {
@@ -2534,6 +2606,7 @@ export type UsuarioUncheckedUpdateWithoutAuditoriasInput = {
   incidentesActivo?: Prisma.IncidenteActivoUncheckedUpdateManyWithoutReportadoPorNestedInput
   notificaciones?: Prisma.NotificacionUncheckedUpdateManyWithoutUsuarioNestedInput
   reportesGenerados?: Prisma.ReporteGeneradoUncheckedUpdateManyWithoutGeneradoPorNestedInput
+  solicitudesCompra?: Prisma.SolicitudCompraUncheckedUpdateManyWithoutSolicitanteNestedInput
 }
 
 export type UsuarioCreateWithoutReportesGeneradosInput = {
@@ -2561,6 +2634,7 @@ export type UsuarioCreateWithoutReportesGeneradosInput = {
   incidentesActivo?: Prisma.IncidenteActivoCreateNestedManyWithoutReportadoPorInput
   auditorias?: Prisma.AuditoriaCreateNestedManyWithoutUsuarioInput
   notificaciones?: Prisma.NotificacionCreateNestedManyWithoutUsuarioInput
+  solicitudesCompra?: Prisma.SolicitudCompraCreateNestedManyWithoutSolicitanteInput
 }
 
 export type UsuarioUncheckedCreateWithoutReportesGeneradosInput = {
@@ -2588,6 +2662,7 @@ export type UsuarioUncheckedCreateWithoutReportesGeneradosInput = {
   incidentesActivo?: Prisma.IncidenteActivoUncheckedCreateNestedManyWithoutReportadoPorInput
   auditorias?: Prisma.AuditoriaUncheckedCreateNestedManyWithoutUsuarioInput
   notificaciones?: Prisma.NotificacionUncheckedCreateNestedManyWithoutUsuarioInput
+  solicitudesCompra?: Prisma.SolicitudCompraUncheckedCreateNestedManyWithoutSolicitanteInput
 }
 
 export type UsuarioCreateOrConnectWithoutReportesGeneradosInput = {
@@ -2631,6 +2706,7 @@ export type UsuarioUpdateWithoutReportesGeneradosInput = {
   incidentesActivo?: Prisma.IncidenteActivoUpdateManyWithoutReportadoPorNestedInput
   auditorias?: Prisma.AuditoriaUpdateManyWithoutUsuarioNestedInput
   notificaciones?: Prisma.NotificacionUpdateManyWithoutUsuarioNestedInput
+  solicitudesCompra?: Prisma.SolicitudCompraUpdateManyWithoutSolicitanteNestedInput
 }
 
 export type UsuarioUncheckedUpdateWithoutReportesGeneradosInput = {
@@ -2658,6 +2734,135 @@ export type UsuarioUncheckedUpdateWithoutReportesGeneradosInput = {
   incidentesActivo?: Prisma.IncidenteActivoUncheckedUpdateManyWithoutReportadoPorNestedInput
   auditorias?: Prisma.AuditoriaUncheckedUpdateManyWithoutUsuarioNestedInput
   notificaciones?: Prisma.NotificacionUncheckedUpdateManyWithoutUsuarioNestedInput
+  solicitudesCompra?: Prisma.SolicitudCompraUncheckedUpdateManyWithoutSolicitanteNestedInput
+}
+
+export type UsuarioCreateWithoutSolicitudesCompraInput = {
+  id?: string
+  nombres: string
+  apellidos: string
+  correo: string
+  nombreUsuario: string
+  hashContrasena: string
+  telefono?: string | null
+  estado?: $Enums.EstadoUsuario
+  creadoEn?: Date | string
+  actualizadoEn?: Date | string
+  area?: Prisma.AreaCreateNestedOneWithoutUsuariosInput
+  rol: Prisma.RolCreateNestedOneWithoutUsuariosInput
+  areasGestionadas?: Prisma.AreaCreateNestedManyWithoutEncargadoInput
+  activosResponsable?: Prisma.ActivoCreateNestedManyWithoutResponsableActualInput
+  activosCreados?: Prisma.ActivoCreateNestedManyWithoutCreadoPorInput
+  activosActualizados?: Prisma.ActivoCreateNestedManyWithoutActualizadoPorInput
+  asignacionesRealizadas?: Prisma.AsignacionActivoCreateNestedManyWithoutAsignadoPorInput
+  asignacionesRecibidas?: Prisma.AsignacionActivoCreateNestedManyWithoutRecibidoPorInput
+  asignacionesDirectas?: Prisma.AsignacionActivoCreateNestedManyWithoutUsuarioAsignadoInput
+  movimientosInventario?: Prisma.MovimientoInventarioCreateNestedManyWithoutRealizadoPorInput
+  movimientosActivo?: Prisma.MovimientoActivoCreateNestedManyWithoutRealizadoPorInput
+  incidentesActivo?: Prisma.IncidenteActivoCreateNestedManyWithoutReportadoPorInput
+  auditorias?: Prisma.AuditoriaCreateNestedManyWithoutUsuarioInput
+  notificaciones?: Prisma.NotificacionCreateNestedManyWithoutUsuarioInput
+  reportesGenerados?: Prisma.ReporteGeneradoCreateNestedManyWithoutGeneradoPorInput
+}
+
+export type UsuarioUncheckedCreateWithoutSolicitudesCompraInput = {
+  id?: string
+  nombres: string
+  apellidos: string
+  correo: string
+  nombreUsuario: string
+  hashContrasena: string
+  telefono?: string | null
+  estado?: $Enums.EstadoUsuario
+  areaId?: string | null
+  rolId: string
+  creadoEn?: Date | string
+  actualizadoEn?: Date | string
+  areasGestionadas?: Prisma.AreaUncheckedCreateNestedManyWithoutEncargadoInput
+  activosResponsable?: Prisma.ActivoUncheckedCreateNestedManyWithoutResponsableActualInput
+  activosCreados?: Prisma.ActivoUncheckedCreateNestedManyWithoutCreadoPorInput
+  activosActualizados?: Prisma.ActivoUncheckedCreateNestedManyWithoutActualizadoPorInput
+  asignacionesRealizadas?: Prisma.AsignacionActivoUncheckedCreateNestedManyWithoutAsignadoPorInput
+  asignacionesRecibidas?: Prisma.AsignacionActivoUncheckedCreateNestedManyWithoutRecibidoPorInput
+  asignacionesDirectas?: Prisma.AsignacionActivoUncheckedCreateNestedManyWithoutUsuarioAsignadoInput
+  movimientosInventario?: Prisma.MovimientoInventarioUncheckedCreateNestedManyWithoutRealizadoPorInput
+  movimientosActivo?: Prisma.MovimientoActivoUncheckedCreateNestedManyWithoutRealizadoPorInput
+  incidentesActivo?: Prisma.IncidenteActivoUncheckedCreateNestedManyWithoutReportadoPorInput
+  auditorias?: Prisma.AuditoriaUncheckedCreateNestedManyWithoutUsuarioInput
+  notificaciones?: Prisma.NotificacionUncheckedCreateNestedManyWithoutUsuarioInput
+  reportesGenerados?: Prisma.ReporteGeneradoUncheckedCreateNestedManyWithoutGeneradoPorInput
+}
+
+export type UsuarioCreateOrConnectWithoutSolicitudesCompraInput = {
+  where: Prisma.UsuarioWhereUniqueInput
+  create: Prisma.XOR<Prisma.UsuarioCreateWithoutSolicitudesCompraInput, Prisma.UsuarioUncheckedCreateWithoutSolicitudesCompraInput>
+}
+
+export type UsuarioUpsertWithoutSolicitudesCompraInput = {
+  update: Prisma.XOR<Prisma.UsuarioUpdateWithoutSolicitudesCompraInput, Prisma.UsuarioUncheckedUpdateWithoutSolicitudesCompraInput>
+  create: Prisma.XOR<Prisma.UsuarioCreateWithoutSolicitudesCompraInput, Prisma.UsuarioUncheckedCreateWithoutSolicitudesCompraInput>
+  where?: Prisma.UsuarioWhereInput
+}
+
+export type UsuarioUpdateToOneWithWhereWithoutSolicitudesCompraInput = {
+  where?: Prisma.UsuarioWhereInput
+  data: Prisma.XOR<Prisma.UsuarioUpdateWithoutSolicitudesCompraInput, Prisma.UsuarioUncheckedUpdateWithoutSolicitudesCompraInput>
+}
+
+export type UsuarioUpdateWithoutSolicitudesCompraInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  nombres?: Prisma.StringFieldUpdateOperationsInput | string
+  apellidos?: Prisma.StringFieldUpdateOperationsInput | string
+  correo?: Prisma.StringFieldUpdateOperationsInput | string
+  nombreUsuario?: Prisma.StringFieldUpdateOperationsInput | string
+  hashContrasena?: Prisma.StringFieldUpdateOperationsInput | string
+  telefono?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  estado?: Prisma.EnumEstadoUsuarioFieldUpdateOperationsInput | $Enums.EstadoUsuario
+  creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  area?: Prisma.AreaUpdateOneWithoutUsuariosNestedInput
+  rol?: Prisma.RolUpdateOneRequiredWithoutUsuariosNestedInput
+  areasGestionadas?: Prisma.AreaUpdateManyWithoutEncargadoNestedInput
+  activosResponsable?: Prisma.ActivoUpdateManyWithoutResponsableActualNestedInput
+  activosCreados?: Prisma.ActivoUpdateManyWithoutCreadoPorNestedInput
+  activosActualizados?: Prisma.ActivoUpdateManyWithoutActualizadoPorNestedInput
+  asignacionesRealizadas?: Prisma.AsignacionActivoUpdateManyWithoutAsignadoPorNestedInput
+  asignacionesRecibidas?: Prisma.AsignacionActivoUpdateManyWithoutRecibidoPorNestedInput
+  asignacionesDirectas?: Prisma.AsignacionActivoUpdateManyWithoutUsuarioAsignadoNestedInput
+  movimientosInventario?: Prisma.MovimientoInventarioUpdateManyWithoutRealizadoPorNestedInput
+  movimientosActivo?: Prisma.MovimientoActivoUpdateManyWithoutRealizadoPorNestedInput
+  incidentesActivo?: Prisma.IncidenteActivoUpdateManyWithoutReportadoPorNestedInput
+  auditorias?: Prisma.AuditoriaUpdateManyWithoutUsuarioNestedInput
+  notificaciones?: Prisma.NotificacionUpdateManyWithoutUsuarioNestedInput
+  reportesGenerados?: Prisma.ReporteGeneradoUpdateManyWithoutGeneradoPorNestedInput
+}
+
+export type UsuarioUncheckedUpdateWithoutSolicitudesCompraInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  nombres?: Prisma.StringFieldUpdateOperationsInput | string
+  apellidos?: Prisma.StringFieldUpdateOperationsInput | string
+  correo?: Prisma.StringFieldUpdateOperationsInput | string
+  nombreUsuario?: Prisma.StringFieldUpdateOperationsInput | string
+  hashContrasena?: Prisma.StringFieldUpdateOperationsInput | string
+  telefono?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  estado?: Prisma.EnumEstadoUsuarioFieldUpdateOperationsInput | $Enums.EstadoUsuario
+  areaId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  rolId?: Prisma.StringFieldUpdateOperationsInput | string
+  creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  areasGestionadas?: Prisma.AreaUncheckedUpdateManyWithoutEncargadoNestedInput
+  activosResponsable?: Prisma.ActivoUncheckedUpdateManyWithoutResponsableActualNestedInput
+  activosCreados?: Prisma.ActivoUncheckedUpdateManyWithoutCreadoPorNestedInput
+  activosActualizados?: Prisma.ActivoUncheckedUpdateManyWithoutActualizadoPorNestedInput
+  asignacionesRealizadas?: Prisma.AsignacionActivoUncheckedUpdateManyWithoutAsignadoPorNestedInput
+  asignacionesRecibidas?: Prisma.AsignacionActivoUncheckedUpdateManyWithoutRecibidoPorNestedInput
+  asignacionesDirectas?: Prisma.AsignacionActivoUncheckedUpdateManyWithoutUsuarioAsignadoNestedInput
+  movimientosInventario?: Prisma.MovimientoInventarioUncheckedUpdateManyWithoutRealizadoPorNestedInput
+  movimientosActivo?: Prisma.MovimientoActivoUncheckedUpdateManyWithoutRealizadoPorNestedInput
+  incidentesActivo?: Prisma.IncidenteActivoUncheckedUpdateManyWithoutReportadoPorNestedInput
+  auditorias?: Prisma.AuditoriaUncheckedUpdateManyWithoutUsuarioNestedInput
+  notificaciones?: Prisma.NotificacionUncheckedUpdateManyWithoutUsuarioNestedInput
+  reportesGenerados?: Prisma.ReporteGeneradoUncheckedUpdateManyWithoutGeneradoPorNestedInput
 }
 
 export type UsuarioCreateManyRolInput = {
@@ -2699,6 +2904,7 @@ export type UsuarioUpdateWithoutRolInput = {
   auditorias?: Prisma.AuditoriaUpdateManyWithoutUsuarioNestedInput
   notificaciones?: Prisma.NotificacionUpdateManyWithoutUsuarioNestedInput
   reportesGenerados?: Prisma.ReporteGeneradoUpdateManyWithoutGeneradoPorNestedInput
+  solicitudesCompra?: Prisma.SolicitudCompraUpdateManyWithoutSolicitanteNestedInput
 }
 
 export type UsuarioUncheckedUpdateWithoutRolInput = {
@@ -2726,6 +2932,7 @@ export type UsuarioUncheckedUpdateWithoutRolInput = {
   auditorias?: Prisma.AuditoriaUncheckedUpdateManyWithoutUsuarioNestedInput
   notificaciones?: Prisma.NotificacionUncheckedUpdateManyWithoutUsuarioNestedInput
   reportesGenerados?: Prisma.ReporteGeneradoUncheckedUpdateManyWithoutGeneradoPorNestedInput
+  solicitudesCompra?: Prisma.SolicitudCompraUncheckedUpdateManyWithoutSolicitanteNestedInput
 }
 
 export type UsuarioUncheckedUpdateManyWithoutRolInput = {
@@ -2781,6 +2988,7 @@ export type UsuarioUpdateWithoutAreaInput = {
   auditorias?: Prisma.AuditoriaUpdateManyWithoutUsuarioNestedInput
   notificaciones?: Prisma.NotificacionUpdateManyWithoutUsuarioNestedInput
   reportesGenerados?: Prisma.ReporteGeneradoUpdateManyWithoutGeneradoPorNestedInput
+  solicitudesCompra?: Prisma.SolicitudCompraUpdateManyWithoutSolicitanteNestedInput
 }
 
 export type UsuarioUncheckedUpdateWithoutAreaInput = {
@@ -2808,6 +3016,7 @@ export type UsuarioUncheckedUpdateWithoutAreaInput = {
   auditorias?: Prisma.AuditoriaUncheckedUpdateManyWithoutUsuarioNestedInput
   notificaciones?: Prisma.NotificacionUncheckedUpdateManyWithoutUsuarioNestedInput
   reportesGenerados?: Prisma.ReporteGeneradoUncheckedUpdateManyWithoutGeneradoPorNestedInput
+  solicitudesCompra?: Prisma.SolicitudCompraUncheckedUpdateManyWithoutSolicitanteNestedInput
 }
 
 export type UsuarioUncheckedUpdateManyWithoutAreaInput = {
@@ -2843,6 +3052,7 @@ export type UsuarioCountOutputType = {
   auditorias: number
   notificaciones: number
   reportesGenerados: number
+  solicitudesCompra: number
 }
 
 export type UsuarioCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -2859,6 +3069,7 @@ export type UsuarioCountOutputTypeSelect<ExtArgs extends runtime.Types.Extension
   auditorias?: boolean | UsuarioCountOutputTypeCountAuditoriasArgs
   notificaciones?: boolean | UsuarioCountOutputTypeCountNotificacionesArgs
   reportesGenerados?: boolean | UsuarioCountOutputTypeCountReportesGeneradosArgs
+  solicitudesCompra?: boolean | UsuarioCountOutputTypeCountSolicitudesCompraArgs
 }
 
 /**
@@ -2962,6 +3173,13 @@ export type UsuarioCountOutputTypeCountReportesGeneradosArgs<ExtArgs extends run
   where?: Prisma.ReporteGeneradoWhereInput
 }
 
+/**
+ * UsuarioCountOutputType without action
+ */
+export type UsuarioCountOutputTypeCountSolicitudesCompraArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.SolicitudCompraWhereInput
+}
+
 
 export type UsuarioSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -2991,6 +3209,7 @@ export type UsuarioSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   auditorias?: boolean | Prisma.Usuario$auditoriasArgs<ExtArgs>
   notificaciones?: boolean | Prisma.Usuario$notificacionesArgs<ExtArgs>
   reportesGenerados?: boolean | Prisma.Usuario$reportesGeneradosArgs<ExtArgs>
+  solicitudesCompra?: boolean | Prisma.Usuario$solicitudesCompraArgs<ExtArgs>
   _count?: boolean | Prisma.UsuarioCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["usuario"]>
 
@@ -3060,6 +3279,7 @@ export type UsuarioInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs
   auditorias?: boolean | Prisma.Usuario$auditoriasArgs<ExtArgs>
   notificaciones?: boolean | Prisma.Usuario$notificacionesArgs<ExtArgs>
   reportesGenerados?: boolean | Prisma.Usuario$reportesGeneradosArgs<ExtArgs>
+  solicitudesCompra?: boolean | Prisma.Usuario$solicitudesCompraArgs<ExtArgs>
   _count?: boolean | Prisma.UsuarioCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type UsuarioIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -3089,6 +3309,7 @@ export type $UsuarioPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     auditorias: Prisma.$AuditoriaPayload<ExtArgs>[]
     notificaciones: Prisma.$NotificacionPayload<ExtArgs>[]
     reportesGenerados: Prisma.$ReporteGeneradoPayload<ExtArgs>[]
+    solicitudesCompra: Prisma.$SolicitudCompraPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -3512,6 +3733,7 @@ export interface Prisma__UsuarioClient<T, Null = never, ExtArgs extends runtime.
   auditorias<T extends Prisma.Usuario$auditoriasArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Usuario$auditoriasArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AuditoriaPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   notificaciones<T extends Prisma.Usuario$notificacionesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Usuario$notificacionesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$NotificacionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   reportesGenerados<T extends Prisma.Usuario$reportesGeneradosArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Usuario$reportesGeneradosArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ReporteGeneradoPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  solicitudesCompra<T extends Prisma.Usuario$solicitudesCompraArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Usuario$solicitudesCompraArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SolicitudCompraPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -4282,6 +4504,30 @@ export type Usuario$reportesGeneradosArgs<ExtArgs extends runtime.Types.Extensio
   take?: number
   skip?: number
   distinct?: Prisma.ReporteGeneradoScalarFieldEnum | Prisma.ReporteGeneradoScalarFieldEnum[]
+}
+
+/**
+ * Usuario.solicitudesCompra
+ */
+export type Usuario$solicitudesCompraArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the SolicitudCompra
+   */
+  select?: Prisma.SolicitudCompraSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the SolicitudCompra
+   */
+  omit?: Prisma.SolicitudCompraOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.SolicitudCompraInclude<ExtArgs> | null
+  where?: Prisma.SolicitudCompraWhereInput
+  orderBy?: Prisma.SolicitudCompraOrderByWithRelationInput | Prisma.SolicitudCompraOrderByWithRelationInput[]
+  cursor?: Prisma.SolicitudCompraWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.SolicitudCompraScalarFieldEnum | Prisma.SolicitudCompraScalarFieldEnum[]
 }
 
 /**
