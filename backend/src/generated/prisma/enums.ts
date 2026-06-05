@@ -86,3 +86,21 @@ export const FormatoReporte = {
 } as const
 
 export type FormatoReporte = (typeof FormatoReporte)[keyof typeof FormatoReporte]
+
+
+export const TipoSolicitudCompra = {
+  ACTIVO: 'ACTIVO',
+  MATERIAL: 'MATERIAL'
+} as const
+
+export type TipoSolicitudCompra = (typeof TipoSolicitudCompra)[keyof typeof TipoSolicitudCompra]
+
+
+export const EstadoSolicitudCompra = {
+  PENDIENTE: 'PENDIENTE',
+  APROBADA: 'APROBADA',
+  RECHAZADA: 'RECHAZADA',
+  COMPLETADA: 'COMPLETADA'
+} as const
+
+export type EstadoSolicitudCompra = (typeof EstadoSolicitudCompra)[keyof typeof EstadoSolicitudCompra]

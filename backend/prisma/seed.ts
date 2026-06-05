@@ -71,6 +71,21 @@ async function main() {
       nombre: 'Ver auditoría',
       descripcion: 'Consultar historial y bitácora',
     },
+    {
+      codigo: 'MARKETPLACE_VIEW',
+      nombre: 'Ver marketplace',
+      descripcion: 'Buscar y visualizar activos/materiales disponibles para compra',
+    },
+    {
+      codigo: 'PURCHASE_CREATE',
+      nombre: 'Solicitar compras',
+      descripcion: 'Registrar solicitudes de compra de activos o materiales',
+    },
+    {
+      codigo: 'SUPPLIER_MANAGE',
+      nombre: 'Registrar proveedores',
+      descripcion: 'Registrar y consultar proveedores externos para compras',
+    },
   ];
 
   for (const permiso of permisosData) {
@@ -131,6 +146,17 @@ async function main() {
     },
   });
 
+  const rolComprador = await prisma.rol.upsert({
+    where: { nombre: 'COMPRADOR' },
+    update: {
+      descripcion: 'Usuario comprador con acceso a catálogo y solicitudes de compra',
+    },
+    create: {
+      nombre: 'COMPRADOR',
+      descripcion: 'Usuario comprador con acceso a catálogo y solicitudes de compra',
+    },
+  });
+
   const permisos = await prisma.permiso.findMany();
 
   const codigosPermisosAdmin = [
@@ -156,6 +182,11 @@ async function main() {
 
   const codigosPermisosResponsable = ['ASSET_VIEW', 'REPORT_VIEW'];
   const codigosPermisosAuditor = ['AUDIT_VIEW'];
+  const codigosPermisosComprador = [
+    'MARKETPLACE_VIEW',
+    'PURCHASE_CREATE',
+    'SUPPLIER_MANAGE',
+  ];
 
   for (const permiso of permisos) {
     if (codigosPermisosAdmin.includes(permiso.codigo)) {
@@ -217,6 +248,22 @@ async function main() {
         update: {},
         create: {
           rolId: rolAuditor.id,
+          permisoId: permiso.id,
+        },
+      });
+    }
+
+    if (codigosPermisosComprador.includes(permiso.codigo)) {
+      await prisma.rolPermiso.upsert({
+        where: {
+          rolId_permisoId: {
+            rolId: rolComprador.id,
+            permisoId: permiso.id,
+          },
+        },
+        update: {},
+        create: {
+          rolId: rolComprador.id,
           permisoId: permiso.id,
         },
       });
@@ -304,6 +351,7 @@ async function main() {
   const passwordOperativo = await bcrypt.hash('Operativo123*', 10);
   const passwordResponsable = await bcrypt.hash('Responsable123*', 10);
   const passwordAuditor = await bcrypt.hash('Auditor123*', 10);
+  const passwordComprador = await bcrypt.hash('Comprador123*', 10);
 
   const usuarioAdmin = await prisma.usuario.upsert({
     where: { correo: 'admin@activos.bo' },
@@ -395,6 +443,29 @@ async function main() {
       rolId: rolAuditor.id,
       estado: 'ACTIVO',
       telefono: '70687568',
+    },
+  });
+
+  await prisma.usuario.upsert({
+    where: { correo: 'comprador@activos.bo' },
+    update: {
+      nombres: 'Laura',
+      apellidos: 'Compradora',
+      nombreUsuario: 'laura.compradora',
+      hashContrasena: passwordComprador,
+      rolId: rolComprador.id,
+      estado: 'ACTIVO',
+      telefono: '70000004',
+    },
+    create: {
+      nombres: 'Laura',
+      apellidos: 'Compradora',
+      correo: 'comprador@activos.bo',
+      nombreUsuario: 'laura.compradora',
+      hashContrasena: passwordComprador,
+      rolId: rolComprador.id,
+      estado: 'ACTIVO',
+      telefono: '70000004',
     },
   });
 
@@ -883,6 +954,7 @@ async function main() {
   console.log('Operativo -> operativo@activos.bo / Operativo123*');
   console.log('Responsable -> responsable@activos.bo / Responsable123*');
   console.log('Auditor -> auditor@activos.bo / Auditor123*');
+  console.log('Comprador -> comprador@activos.bo / Comprador123*');
 }
 
 main()

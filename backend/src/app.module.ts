@@ -9,6 +9,8 @@ import { MaterialModule } from './material/material.module';
 import { CatalogsModule } from './catalogs/catalogs.module';
 import { LocationsModule } from './locations/locations.module';
 import { AuditoriaModule } from './auditoria/auditoria.module';
+import { PurchasesModule } from './purchases/purchases.module';
+import { SuppliersModule } from './suppliers/suppliers.module';
 
 @Module({
   imports: [
@@ -21,6 +23,8 @@ import { AuditoriaModule } from './auditoria/auditoria.module';
     CatalogsModule,
     LocationsModule,
     AuditoriaModule,
+    PurchasesModule,
+    SuppliersModule,
   ],
   controllers: [HealthController],
   providers: [],

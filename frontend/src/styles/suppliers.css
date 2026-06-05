@@ -1,0 +1,228 @@
+.suppliersPage {
+  min-height: 100vh;
+  padding: var(--space-6);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-family);
+}
+
+.suppliersHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
+}
+
+.suppliersHeader p {
+  margin: 0 0 var(--space-1);
+  color: var(--color-primary);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  text-transform: uppercase;
+}
+
+.suppliersHeader h1 {
+  margin: 0;
+  font-size: var(--font-size-2xl);
+}
+
+.suppliersHeader span {
+  display: block;
+  margin-top: var(--space-2);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.suppliersLayout {
+  display: grid;
+  grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
+  gap: var(--space-4);
+  align-items: start;
+}
+
+.suppliersForm,
+.suppliersList {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-base);
+  background: var(--color-surface);
+  padding: var(--space-4);
+}
+
+.suppliersForm {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.suppliersForm h2,
+.suppliersList h2 {
+  margin: 0;
+  font-size: var(--font-size-lg);
+}
+
+.suppliersForm__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+
+.suppliersForm label {
+  display: grid;
+  gap: var(--space-1);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+.suppliersForm input,
+.suppliersForm textarea,
+.suppliersSearch input {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-base);
+  background: var(--color-surface-2);
+  color: var(--color-text);
+  font: inherit;
+  padding: var(--space-2);
+  box-sizing: border-box;
+}
+
+.suppliersForm textarea {
+  min-height: 96px;
+  resize: vertical;
+}
+
+.suppliersButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 38px;
+  border-radius: var(--radius-base);
+  border: 1px solid transparent;
+  padding: 0 var(--space-3);
+  font: inherit;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+}
+
+.suppliersButton--primary {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-text-inverse);
+}
+
+.suppliersButton--ghost {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+  color: var(--color-text-secondary);
+}
+
+.suppliersButton:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.suppliersAlert {
+  margin-bottom: var(--space-3);
+  border-radius: var(--radius-base);
+  padding: var(--space-3);
+  font-size: var(--font-size-sm);
+}
+
+.suppliersAlert--error {
+  border: 1px solid var(--color-danger-border);
+  background: var(--color-danger-light);
+  color: var(--color-danger);
+}
+
+.suppliersAlert--success {
+  border: 1px solid var(--color-success-border);
+  background: var(--color-success-light);
+  color: var(--color-success);
+}
+
+.suppliersList {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.suppliersList__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.suppliersSearch {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 260px;
+}
+
+.suppliersTable {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.suppliersRow {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1.3fr) minmax(0, 1fr);
+  gap: var(--space-3);
+  align-items: center;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-base);
+  padding: var(--space-3);
+  background: var(--color-surface-2);
+}
+
+.suppliersRow__icon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-base);
+  background: var(--color-primary-muted);
+  color: var(--color-primary);
+}
+
+.suppliersRow strong,
+.suppliersRow span,
+.suppliersRow small {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.suppliersRow span,
+.suppliersRow small {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+}
+
+.suppliersEmpty {
+  display: grid;
+  place-items: center;
+  min-height: 140px;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-base);
+  color: var(--color-text-secondary);
+}
+
+@media (max-width: 980px) {
+  .suppliersLayout,
+  .suppliersRow {
+    grid-template-columns: 1fr;
+  }
+
+  .suppliersForm__grid,
+  .suppliersList__top {
+    grid-template-columns: 1fr;
+    display: grid;
+  }
+
+  .suppliersSearch {
+    min-width: 0;
+  }
+}

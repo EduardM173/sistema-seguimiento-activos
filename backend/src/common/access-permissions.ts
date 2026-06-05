@@ -44,6 +44,27 @@ export const CORE_ACCESS_PERMISSIONS = [
     ],
   },
   {
+    codigo: 'MARKETPLACE_VIEW',
+    nombre: 'Ver marketplace',
+    descripcion:
+      'Permite buscar y visualizar activos/materiales disponibles para compra.',
+    defaultRoleNames: ['COMPRADOR'],
+  },
+  {
+    codigo: 'PURCHASE_CREATE',
+    nombre: 'Solicitar compras',
+    descripcion:
+      'Permite registrar solicitudes de compra de activos o materiales.',
+    defaultRoleNames: ['COMPRADOR'],
+  },
+  {
+    codigo: 'SUPPLIER_MANAGE',
+    nombre: 'Registrar proveedores',
+    descripcion:
+      'Permite registrar y consultar proveedores externos para compras.',
+    defaultRoleNames: ['COMPRADOR'],
+  },
+  {
     codigo: 'ASSET_ASSIGN',
     nombre: 'Asignar activos',
     descripcion: 'Permite acceder al flujo de asignación de activos.',

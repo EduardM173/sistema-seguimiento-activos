@@ -355,6 +355,7 @@ export type ActivoWhereInput = {
   incidentes?: Prisma.IncidenteActivoListRelationFilter
   documentos?: Prisma.DocumentoActivoListRelationFilter
   imagenes?: Prisma.ImagenActivoListRelationFilter
+  solicitudesCompra?: Prisma.SolicitudCompraListRelationFilter
 }
 
 export type ActivoOrderByWithRelationInput = {
@@ -390,6 +391,7 @@ export type ActivoOrderByWithRelationInput = {
   incidentes?: Prisma.IncidenteActivoOrderByRelationAggregateInput
   documentos?: Prisma.DocumentoActivoOrderByRelationAggregateInput
   imagenes?: Prisma.ImagenActivoOrderByRelationAggregateInput
+  solicitudesCompra?: Prisma.SolicitudCompraOrderByRelationAggregateInput
 }
 
 export type ActivoWhereUniqueInput = Prisma.AtLeast<{
@@ -428,6 +430,7 @@ export type ActivoWhereUniqueInput = Prisma.AtLeast<{
   incidentes?: Prisma.IncidenteActivoListRelationFilter
   documentos?: Prisma.DocumentoActivoListRelationFilter
   imagenes?: Prisma.ImagenActivoListRelationFilter
+  solicitudesCompra?: Prisma.SolicitudCompraListRelationFilter
 }, "id" | "codigo" | "numeroSerie">
 
 export type ActivoOrderByWithAggregationInput = {
@@ -513,6 +516,7 @@ export type ActivoCreateInput = {
   incidentes?: Prisma.IncidenteActivoCreateNestedManyWithoutActivoInput
   documentos?: Prisma.DocumentoActivoCreateNestedManyWithoutActivoInput
   imagenes?: Prisma.ImagenActivoCreateNestedManyWithoutActivoInput
+  solicitudesCompra?: Prisma.SolicitudCompraCreateNestedManyWithoutActivoInput
 }
 
 export type ActivoUncheckedCreateInput = {
@@ -542,6 +546,7 @@ export type ActivoUncheckedCreateInput = {
   incidentes?: Prisma.IncidenteActivoUncheckedCreateNestedManyWithoutActivoInput
   documentos?: Prisma.DocumentoActivoUncheckedCreateNestedManyWithoutActivoInput
   imagenes?: Prisma.ImagenActivoUncheckedCreateNestedManyWithoutActivoInput
+  solicitudesCompra?: Prisma.SolicitudCompraUncheckedCreateNestedManyWithoutActivoInput
 }
 
 export type ActivoUpdateInput = {
@@ -571,6 +576,7 @@ export type ActivoUpdateInput = {
   incidentes?: Prisma.IncidenteActivoUpdateManyWithoutActivoNestedInput
   documentos?: Prisma.DocumentoActivoUpdateManyWithoutActivoNestedInput
   imagenes?: Prisma.ImagenActivoUpdateManyWithoutActivoNestedInput
+  solicitudesCompra?: Prisma.SolicitudCompraUpdateManyWithoutActivoNestedInput
 }
 
 export type ActivoUncheckedUpdateInput = {
@@ -600,6 +606,7 @@ export type ActivoUncheckedUpdateInput = {
   incidentes?: Prisma.IncidenteActivoUncheckedUpdateManyWithoutActivoNestedInput
   documentos?: Prisma.DocumentoActivoUncheckedUpdateManyWithoutActivoNestedInput
   imagenes?: Prisma.ImagenActivoUncheckedUpdateManyWithoutActivoNestedInput
+  solicitudesCompra?: Prisma.SolicitudCompraUncheckedUpdateManyWithoutActivoNestedInput
 }
 
 export type ActivoCreateManyInput = {
@@ -1108,6 +1115,22 @@ export type ActivoUpdateOneRequiredWithoutImagenesNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.ActivoUpdateToOneWithWhereWithoutImagenesInput, Prisma.ActivoUpdateWithoutImagenesInput>, Prisma.ActivoUncheckedUpdateWithoutImagenesInput>
 }
 
+export type ActivoCreateNestedOneWithoutSolicitudesCompraInput = {
+  create?: Prisma.XOR<Prisma.ActivoCreateWithoutSolicitudesCompraInput, Prisma.ActivoUncheckedCreateWithoutSolicitudesCompraInput>
+  connectOrCreate?: Prisma.ActivoCreateOrConnectWithoutSolicitudesCompraInput
+  connect?: Prisma.ActivoWhereUniqueInput
+}
+
+export type ActivoUpdateOneWithoutSolicitudesCompraNestedInput = {
+  create?: Prisma.XOR<Prisma.ActivoCreateWithoutSolicitudesCompraInput, Prisma.ActivoUncheckedCreateWithoutSolicitudesCompraInput>
+  connectOrCreate?: Prisma.ActivoCreateOrConnectWithoutSolicitudesCompraInput
+  upsert?: Prisma.ActivoUpsertWithoutSolicitudesCompraInput
+  disconnect?: Prisma.ActivoWhereInput | boolean
+  delete?: Prisma.ActivoWhereInput | boolean
+  connect?: Prisma.ActivoWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ActivoUpdateToOneWithWhereWithoutSolicitudesCompraInput, Prisma.ActivoUpdateWithoutSolicitudesCompraInput>, Prisma.ActivoUncheckedUpdateWithoutSolicitudesCompraInput>
+}
+
 export type ActivoCreateWithoutResponsableActualInput = {
   id?: string
   codigo: string
@@ -1134,6 +1157,7 @@ export type ActivoCreateWithoutResponsableActualInput = {
   incidentes?: Prisma.IncidenteActivoCreateNestedManyWithoutActivoInput
   documentos?: Prisma.DocumentoActivoCreateNestedManyWithoutActivoInput
   imagenes?: Prisma.ImagenActivoCreateNestedManyWithoutActivoInput
+  solicitudesCompra?: Prisma.SolicitudCompraCreateNestedManyWithoutActivoInput
 }
 
 export type ActivoUncheckedCreateWithoutResponsableActualInput = {
@@ -1162,6 +1186,7 @@ export type ActivoUncheckedCreateWithoutResponsableActualInput = {
   incidentes?: Prisma.IncidenteActivoUncheckedCreateNestedManyWithoutActivoInput
   documentos?: Prisma.DocumentoActivoUncheckedCreateNestedManyWithoutActivoInput
   imagenes?: Prisma.ImagenActivoUncheckedCreateNestedManyWithoutActivoInput
+  solicitudesCompra?: Prisma.SolicitudCompraUncheckedCreateNestedManyWithoutActivoInput
 }
 
 export type ActivoCreateOrConnectWithoutResponsableActualInput = {
@@ -1200,6 +1225,7 @@ export type ActivoCreateWithoutCreadoPorInput = {
   incidentes?: Prisma.IncidenteActivoCreateNestedManyWithoutActivoInput
   documentos?: Prisma.DocumentoActivoCreateNestedManyWithoutActivoInput
   imagenes?: Prisma.ImagenActivoCreateNestedManyWithoutActivoInput
+  solicitudesCompra?: Prisma.SolicitudCompraCreateNestedManyWithoutActivoInput
 }
 
 export type ActivoUncheckedCreateWithoutCreadoPorInput = {
@@ -1228,6 +1254,7 @@ export type ActivoUncheckedCreateWithoutCreadoPorInput = {
   incidentes?: Prisma.IncidenteActivoUncheckedCreateNestedManyWithoutActivoInput
   documentos?: Prisma.DocumentoActivoUncheckedCreateNestedManyWithoutActivoInput
   imagenes?: Prisma.ImagenActivoUncheckedCreateNestedManyWithoutActivoInput
+  solicitudesCompra?: Prisma.SolicitudCompraUncheckedCreateNestedManyWithoutActivoInput
 }
 
 export type ActivoCreateOrConnectWithoutCreadoPorInput = {
@@ -1266,6 +1293,7 @@ export type ActivoCreateWithoutActualizadoPorInput = {
   incidentes?: Prisma.IncidenteActivoCreateNestedManyWithoutActivoInput
   documentos?: Prisma.DocumentoActivoCreateNestedManyWithoutActivoInput
   imagenes?: Prisma.ImagenActivoCreateNestedManyWithoutActivoInput
+  solicitudesCompra?: Prisma.SolicitudCompraCreateNestedManyWithoutActivoInput
 }
 
 export type ActivoUncheckedCreateWithoutActualizadoPorInput = {
@@ -1294,6 +1322,7 @@ export type ActivoUncheckedCreateWithoutActualizadoPorInput = {
   incidentes?: Prisma.IncidenteActivoUncheckedCreateNestedManyWithoutActivoInput
   documentos?: Prisma.DocumentoActivoUncheckedCreateNestedManyWithoutActivoInput
   imagenes?: Prisma.ImagenActivoUncheckedCreateNestedManyWithoutActivoInput
+  solicitudesCompra?: Prisma.SolicitudCompraUncheckedCreateNestedManyWithoutActivoInput
 }
 
 export type ActivoCreateOrConnectWithoutActualizadoPorInput = {
@@ -1407,6 +1436,7 @@ export type ActivoCreateWithoutAreaActualInput = {
   incidentes?: Prisma.IncidenteActivoCreateNestedManyWithoutActivoInput
   documentos?: Prisma.DocumentoActivoCreateNestedManyWithoutActivoInput
   imagenes?: Prisma.ImagenActivoCreateNestedManyWithoutActivoInput
+  solicitudesCompra?: Prisma.SolicitudCompraCreateNestedManyWithoutActivoInput
 }
 
 export type ActivoUncheckedCreateWithoutAreaActualInput = {
@@ -1435,6 +1465,7 @@ export type ActivoUncheckedCreateWithoutAreaActualInput = {
   incidentes?: Prisma.IncidenteActivoUncheckedCreateNestedManyWithoutActivoInput
   documentos?: Prisma.DocumentoActivoUncheckedCreateNestedManyWithoutActivoInput
   imagenes?: Prisma.ImagenActivoUncheckedCreateNestedManyWithoutActivoInput
+  solicitudesCompra?: Prisma.SolicitudCompraUncheckedCreateNestedManyWithoutActivoInput
 }
 
 export type ActivoCreateOrConnectWithoutAreaActualInput = {
@@ -1489,6 +1520,7 @@ export type ActivoCreateWithoutUbicacionInput = {
   incidentes?: Prisma.IncidenteActivoCreateNestedManyWithoutActivoInput
   documentos?: Prisma.DocumentoActivoCreateNestedManyWithoutActivoInput
   imagenes?: Prisma.ImagenActivoCreateNestedManyWithoutActivoInput
+  solicitudesCompra?: Prisma.SolicitudCompraCreateNestedManyWithoutActivoInput
 }
 
 export type ActivoUncheckedCreateWithoutUbicacionInput = {
@@ -1517,6 +1549,7 @@ export type ActivoUncheckedCreateWithoutUbicacionInput = {
   incidentes?: Prisma.IncidenteActivoUncheckedCreateNestedManyWithoutActivoInput
   documentos?: Prisma.DocumentoActivoUncheckedCreateNestedManyWithoutActivoInput
   imagenes?: Prisma.ImagenActivoUncheckedCreateNestedManyWithoutActivoInput
+  solicitudesCompra?: Prisma.SolicitudCompraUncheckedCreateNestedManyWithoutActivoInput
 }
 
 export type ActivoCreateOrConnectWithoutUbicacionInput = {
@@ -1571,6 +1604,7 @@ export type ActivoCreateWithoutCategoriaInput = {
   incidentes?: Prisma.IncidenteActivoCreateNestedManyWithoutActivoInput
   documentos?: Prisma.DocumentoActivoCreateNestedManyWithoutActivoInput
   imagenes?: Prisma.ImagenActivoCreateNestedManyWithoutActivoInput
+  solicitudesCompra?: Prisma.SolicitudCompraCreateNestedManyWithoutActivoInput
 }
 
 export type ActivoUncheckedCreateWithoutCategoriaInput = {
@@ -1599,6 +1633,7 @@ export type ActivoUncheckedCreateWithoutCategoriaInput = {
   incidentes?: Prisma.IncidenteActivoUncheckedCreateNestedManyWithoutActivoInput
   documentos?: Prisma.DocumentoActivoUncheckedCreateNestedManyWithoutActivoInput
   imagenes?: Prisma.ImagenActivoUncheckedCreateNestedManyWithoutActivoInput
+  solicitudesCompra?: Prisma.SolicitudCompraUncheckedCreateNestedManyWithoutActivoInput
 }
 
 export type ActivoCreateOrConnectWithoutCategoriaInput = {
@@ -1653,6 +1688,7 @@ export type ActivoCreateWithoutAsignacionesInput = {
   incidentes?: Prisma.IncidenteActivoCreateNestedManyWithoutActivoInput
   documentos?: Prisma.DocumentoActivoCreateNestedManyWithoutActivoInput
   imagenes?: Prisma.ImagenActivoCreateNestedManyWithoutActivoInput
+  solicitudesCompra?: Prisma.SolicitudCompraCreateNestedManyWithoutActivoInput
 }
 
 export type ActivoUncheckedCreateWithoutAsignacionesInput = {
@@ -1681,6 +1717,7 @@ export type ActivoUncheckedCreateWithoutAsignacionesInput = {
   incidentes?: Prisma.IncidenteActivoUncheckedCreateNestedManyWithoutActivoInput
   documentos?: Prisma.DocumentoActivoUncheckedCreateNestedManyWithoutActivoInput
   imagenes?: Prisma.ImagenActivoUncheckedCreateNestedManyWithoutActivoInput
+  solicitudesCompra?: Prisma.SolicitudCompraUncheckedCreateNestedManyWithoutActivoInput
 }
 
 export type ActivoCreateOrConnectWithoutAsignacionesInput = {
@@ -1725,6 +1762,7 @@ export type ActivoUpdateWithoutAsignacionesInput = {
   incidentes?: Prisma.IncidenteActivoUpdateManyWithoutActivoNestedInput
   documentos?: Prisma.DocumentoActivoUpdateManyWithoutActivoNestedInput
   imagenes?: Prisma.ImagenActivoUpdateManyWithoutActivoNestedInput
+  solicitudesCompra?: Prisma.SolicitudCompraUpdateManyWithoutActivoNestedInput
 }
 
 export type ActivoUncheckedUpdateWithoutAsignacionesInput = {
@@ -1753,6 +1791,7 @@ export type ActivoUncheckedUpdateWithoutAsignacionesInput = {
   incidentes?: Prisma.IncidenteActivoUncheckedUpdateManyWithoutActivoNestedInput
   documentos?: Prisma.DocumentoActivoUncheckedUpdateManyWithoutActivoNestedInput
   imagenes?: Prisma.ImagenActivoUncheckedUpdateManyWithoutActivoNestedInput
+  solicitudesCompra?: Prisma.SolicitudCompraUncheckedUpdateManyWithoutActivoNestedInput
 }
 
 export type ActivoCreateWithoutMovimientosInput = {
@@ -1781,6 +1820,7 @@ export type ActivoCreateWithoutMovimientosInput = {
   incidentes?: Prisma.IncidenteActivoCreateNestedManyWithoutActivoInput
   documentos?: Prisma.DocumentoActivoCreateNestedManyWithoutActivoInput
   imagenes?: Prisma.ImagenActivoCreateNestedManyWithoutActivoInput
+  solicitudesCompra?: Prisma.SolicitudCompraCreateNestedManyWithoutActivoInput
 }
 
 export type ActivoUncheckedCreateWithoutMovimientosInput = {
@@ -1809,6 +1849,7 @@ export type ActivoUncheckedCreateWithoutMovimientosInput = {
   incidentes?: Prisma.IncidenteActivoUncheckedCreateNestedManyWithoutActivoInput
   documentos?: Prisma.DocumentoActivoUncheckedCreateNestedManyWithoutActivoInput
   imagenes?: Prisma.ImagenActivoUncheckedCreateNestedManyWithoutActivoInput
+  solicitudesCompra?: Prisma.SolicitudCompraUncheckedCreateNestedManyWithoutActivoInput
 }
 
 export type ActivoCreateOrConnectWithoutMovimientosInput = {
@@ -1853,6 +1894,7 @@ export type ActivoUpdateWithoutMovimientosInput = {
   incidentes?: Prisma.IncidenteActivoUpdateManyWithoutActivoNestedInput
   documentos?: Prisma.DocumentoActivoUpdateManyWithoutActivoNestedInput
   imagenes?: Prisma.ImagenActivoUpdateManyWithoutActivoNestedInput
+  solicitudesCompra?: Prisma.SolicitudCompraUpdateManyWithoutActivoNestedInput
 }
 
 export type ActivoUncheckedUpdateWithoutMovimientosInput = {
@@ -1881,6 +1923,7 @@ export type ActivoUncheckedUpdateWithoutMovimientosInput = {
   incidentes?: Prisma.IncidenteActivoUncheckedUpdateManyWithoutActivoNestedInput
   documentos?: Prisma.DocumentoActivoUncheckedUpdateManyWithoutActivoNestedInput
   imagenes?: Prisma.ImagenActivoUncheckedUpdateManyWithoutActivoNestedInput
+  solicitudesCompra?: Prisma.SolicitudCompraUncheckedUpdateManyWithoutActivoNestedInput
 }
 
 export type ActivoCreateWithoutIncidentesInput = {
@@ -1909,6 +1952,7 @@ export type ActivoCreateWithoutIncidentesInput = {
   movimientos?: Prisma.MovimientoActivoCreateNestedManyWithoutActivoInput
   documentos?: Prisma.DocumentoActivoCreateNestedManyWithoutActivoInput
   imagenes?: Prisma.ImagenActivoCreateNestedManyWithoutActivoInput
+  solicitudesCompra?: Prisma.SolicitudCompraCreateNestedManyWithoutActivoInput
 }
 
 export type ActivoUncheckedCreateWithoutIncidentesInput = {
@@ -1937,6 +1981,7 @@ export type ActivoUncheckedCreateWithoutIncidentesInput = {
   movimientos?: Prisma.MovimientoActivoUncheckedCreateNestedManyWithoutActivoInput
   documentos?: Prisma.DocumentoActivoUncheckedCreateNestedManyWithoutActivoInput
   imagenes?: Prisma.ImagenActivoUncheckedCreateNestedManyWithoutActivoInput
+  solicitudesCompra?: Prisma.SolicitudCompraUncheckedCreateNestedManyWithoutActivoInput
 }
 
 export type ActivoCreateOrConnectWithoutIncidentesInput = {
@@ -1981,6 +2026,7 @@ export type ActivoUpdateWithoutIncidentesInput = {
   movimientos?: Prisma.MovimientoActivoUpdateManyWithoutActivoNestedInput
   documentos?: Prisma.DocumentoActivoUpdateManyWithoutActivoNestedInput
   imagenes?: Prisma.ImagenActivoUpdateManyWithoutActivoNestedInput
+  solicitudesCompra?: Prisma.SolicitudCompraUpdateManyWithoutActivoNestedInput
 }
 
 export type ActivoUncheckedUpdateWithoutIncidentesInput = {
@@ -2009,6 +2055,7 @@ export type ActivoUncheckedUpdateWithoutIncidentesInput = {
   movimientos?: Prisma.MovimientoActivoUncheckedUpdateManyWithoutActivoNestedInput
   documentos?: Prisma.DocumentoActivoUncheckedUpdateManyWithoutActivoNestedInput
   imagenes?: Prisma.ImagenActivoUncheckedUpdateManyWithoutActivoNestedInput
+  solicitudesCompra?: Prisma.SolicitudCompraUncheckedUpdateManyWithoutActivoNestedInput
 }
 
 export type ActivoCreateWithoutDocumentosInput = {
@@ -2037,6 +2084,7 @@ export type ActivoCreateWithoutDocumentosInput = {
   movimientos?: Prisma.MovimientoActivoCreateNestedManyWithoutActivoInput
   incidentes?: Prisma.IncidenteActivoCreateNestedManyWithoutActivoInput
   imagenes?: Prisma.ImagenActivoCreateNestedManyWithoutActivoInput
+  solicitudesCompra?: Prisma.SolicitudCompraCreateNestedManyWithoutActivoInput
 }
 
 export type ActivoUncheckedCreateWithoutDocumentosInput = {
@@ -2065,6 +2113,7 @@ export type ActivoUncheckedCreateWithoutDocumentosInput = {
   movimientos?: Prisma.MovimientoActivoUncheckedCreateNestedManyWithoutActivoInput
   incidentes?: Prisma.IncidenteActivoUncheckedCreateNestedManyWithoutActivoInput
   imagenes?: Prisma.ImagenActivoUncheckedCreateNestedManyWithoutActivoInput
+  solicitudesCompra?: Prisma.SolicitudCompraUncheckedCreateNestedManyWithoutActivoInput
 }
 
 export type ActivoCreateOrConnectWithoutDocumentosInput = {
@@ -2109,6 +2158,7 @@ export type ActivoUpdateWithoutDocumentosInput = {
   movimientos?: Prisma.MovimientoActivoUpdateManyWithoutActivoNestedInput
   incidentes?: Prisma.IncidenteActivoUpdateManyWithoutActivoNestedInput
   imagenes?: Prisma.ImagenActivoUpdateManyWithoutActivoNestedInput
+  solicitudesCompra?: Prisma.SolicitudCompraUpdateManyWithoutActivoNestedInput
 }
 
 export type ActivoUncheckedUpdateWithoutDocumentosInput = {
@@ -2137,6 +2187,7 @@ export type ActivoUncheckedUpdateWithoutDocumentosInput = {
   movimientos?: Prisma.MovimientoActivoUncheckedUpdateManyWithoutActivoNestedInput
   incidentes?: Prisma.IncidenteActivoUncheckedUpdateManyWithoutActivoNestedInput
   imagenes?: Prisma.ImagenActivoUncheckedUpdateManyWithoutActivoNestedInput
+  solicitudesCompra?: Prisma.SolicitudCompraUncheckedUpdateManyWithoutActivoNestedInput
 }
 
 export type ActivoCreateWithoutImagenesInput = {
@@ -2165,6 +2216,7 @@ export type ActivoCreateWithoutImagenesInput = {
   movimientos?: Prisma.MovimientoActivoCreateNestedManyWithoutActivoInput
   incidentes?: Prisma.IncidenteActivoCreateNestedManyWithoutActivoInput
   documentos?: Prisma.DocumentoActivoCreateNestedManyWithoutActivoInput
+  solicitudesCompra?: Prisma.SolicitudCompraCreateNestedManyWithoutActivoInput
 }
 
 export type ActivoUncheckedCreateWithoutImagenesInput = {
@@ -2193,6 +2245,7 @@ export type ActivoUncheckedCreateWithoutImagenesInput = {
   movimientos?: Prisma.MovimientoActivoUncheckedCreateNestedManyWithoutActivoInput
   incidentes?: Prisma.IncidenteActivoUncheckedCreateNestedManyWithoutActivoInput
   documentos?: Prisma.DocumentoActivoUncheckedCreateNestedManyWithoutActivoInput
+  solicitudesCompra?: Prisma.SolicitudCompraUncheckedCreateNestedManyWithoutActivoInput
 }
 
 export type ActivoCreateOrConnectWithoutImagenesInput = {
@@ -2237,6 +2290,7 @@ export type ActivoUpdateWithoutImagenesInput = {
   movimientos?: Prisma.MovimientoActivoUpdateManyWithoutActivoNestedInput
   incidentes?: Prisma.IncidenteActivoUpdateManyWithoutActivoNestedInput
   documentos?: Prisma.DocumentoActivoUpdateManyWithoutActivoNestedInput
+  solicitudesCompra?: Prisma.SolicitudCompraUpdateManyWithoutActivoNestedInput
 }
 
 export type ActivoUncheckedUpdateWithoutImagenesInput = {
@@ -2265,6 +2319,139 @@ export type ActivoUncheckedUpdateWithoutImagenesInput = {
   movimientos?: Prisma.MovimientoActivoUncheckedUpdateManyWithoutActivoNestedInput
   incidentes?: Prisma.IncidenteActivoUncheckedUpdateManyWithoutActivoNestedInput
   documentos?: Prisma.DocumentoActivoUncheckedUpdateManyWithoutActivoNestedInput
+  solicitudesCompra?: Prisma.SolicitudCompraUncheckedUpdateManyWithoutActivoNestedInput
+}
+
+export type ActivoCreateWithoutSolicitudesCompraInput = {
+  id?: string
+  codigo: string
+  nombre: string
+  descripcion?: string | null
+  marca?: string | null
+  modelo?: string | null
+  numeroSerie?: string | null
+  fechaAdquisicion?: Date | string | null
+  costoAdquisicion?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  vencimientoGarantia?: Date | string | null
+  estado?: $Enums.EstadoActivo
+  creadoEn?: Date | string
+  actualizadoEn?: Date | string
+  dadoDeBajaEn?: Date | string | null
+  motivoBaja?: string | null
+  categoria: Prisma.CategoriaActivoCreateNestedOneWithoutActivosInput
+  ubicacion?: Prisma.UbicacionCreateNestedOneWithoutActivosInput
+  areaActual?: Prisma.AreaCreateNestedOneWithoutActivosInput
+  responsableActual?: Prisma.UsuarioCreateNestedOneWithoutActivosResponsableInput
+  creadoPor: Prisma.UsuarioCreateNestedOneWithoutActivosCreadosInput
+  actualizadoPor?: Prisma.UsuarioCreateNestedOneWithoutActivosActualizadosInput
+  asignaciones?: Prisma.AsignacionActivoCreateNestedManyWithoutActivoInput
+  movimientos?: Prisma.MovimientoActivoCreateNestedManyWithoutActivoInput
+  incidentes?: Prisma.IncidenteActivoCreateNestedManyWithoutActivoInput
+  documentos?: Prisma.DocumentoActivoCreateNestedManyWithoutActivoInput
+  imagenes?: Prisma.ImagenActivoCreateNestedManyWithoutActivoInput
+}
+
+export type ActivoUncheckedCreateWithoutSolicitudesCompraInput = {
+  id?: string
+  codigo: string
+  nombre: string
+  descripcion?: string | null
+  marca?: string | null
+  modelo?: string | null
+  numeroSerie?: string | null
+  fechaAdquisicion?: Date | string | null
+  costoAdquisicion?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  vencimientoGarantia?: Date | string | null
+  estado?: $Enums.EstadoActivo
+  categoriaId: string
+  ubicacionId?: string | null
+  areaActualId?: string | null
+  responsableActualId?: string | null
+  creadoPorId: string
+  actualizadoPorId?: string | null
+  creadoEn?: Date | string
+  actualizadoEn?: Date | string
+  dadoDeBajaEn?: Date | string | null
+  motivoBaja?: string | null
+  asignaciones?: Prisma.AsignacionActivoUncheckedCreateNestedManyWithoutActivoInput
+  movimientos?: Prisma.MovimientoActivoUncheckedCreateNestedManyWithoutActivoInput
+  incidentes?: Prisma.IncidenteActivoUncheckedCreateNestedManyWithoutActivoInput
+  documentos?: Prisma.DocumentoActivoUncheckedCreateNestedManyWithoutActivoInput
+  imagenes?: Prisma.ImagenActivoUncheckedCreateNestedManyWithoutActivoInput
+}
+
+export type ActivoCreateOrConnectWithoutSolicitudesCompraInput = {
+  where: Prisma.ActivoWhereUniqueInput
+  create: Prisma.XOR<Prisma.ActivoCreateWithoutSolicitudesCompraInput, Prisma.ActivoUncheckedCreateWithoutSolicitudesCompraInput>
+}
+
+export type ActivoUpsertWithoutSolicitudesCompraInput = {
+  update: Prisma.XOR<Prisma.ActivoUpdateWithoutSolicitudesCompraInput, Prisma.ActivoUncheckedUpdateWithoutSolicitudesCompraInput>
+  create: Prisma.XOR<Prisma.ActivoCreateWithoutSolicitudesCompraInput, Prisma.ActivoUncheckedCreateWithoutSolicitudesCompraInput>
+  where?: Prisma.ActivoWhereInput
+}
+
+export type ActivoUpdateToOneWithWhereWithoutSolicitudesCompraInput = {
+  where?: Prisma.ActivoWhereInput
+  data: Prisma.XOR<Prisma.ActivoUpdateWithoutSolicitudesCompraInput, Prisma.ActivoUncheckedUpdateWithoutSolicitudesCompraInput>
+}
+
+export type ActivoUpdateWithoutSolicitudesCompraInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  codigo?: Prisma.StringFieldUpdateOperationsInput | string
+  nombre?: Prisma.StringFieldUpdateOperationsInput | string
+  descripcion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  marca?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  modelo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  numeroSerie?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  fechaAdquisicion?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  costoAdquisicion?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  vencimientoGarantia?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  estado?: Prisma.EnumEstadoActivoFieldUpdateOperationsInput | $Enums.EstadoActivo
+  creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  dadoDeBajaEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  motivoBaja?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  categoria?: Prisma.CategoriaActivoUpdateOneRequiredWithoutActivosNestedInput
+  ubicacion?: Prisma.UbicacionUpdateOneWithoutActivosNestedInput
+  areaActual?: Prisma.AreaUpdateOneWithoutActivosNestedInput
+  responsableActual?: Prisma.UsuarioUpdateOneWithoutActivosResponsableNestedInput
+  creadoPor?: Prisma.UsuarioUpdateOneRequiredWithoutActivosCreadosNestedInput
+  actualizadoPor?: Prisma.UsuarioUpdateOneWithoutActivosActualizadosNestedInput
+  asignaciones?: Prisma.AsignacionActivoUpdateManyWithoutActivoNestedInput
+  movimientos?: Prisma.MovimientoActivoUpdateManyWithoutActivoNestedInput
+  incidentes?: Prisma.IncidenteActivoUpdateManyWithoutActivoNestedInput
+  documentos?: Prisma.DocumentoActivoUpdateManyWithoutActivoNestedInput
+  imagenes?: Prisma.ImagenActivoUpdateManyWithoutActivoNestedInput
+}
+
+export type ActivoUncheckedUpdateWithoutSolicitudesCompraInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  codigo?: Prisma.StringFieldUpdateOperationsInput | string
+  nombre?: Prisma.StringFieldUpdateOperationsInput | string
+  descripcion?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  marca?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  modelo?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  numeroSerie?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  fechaAdquisicion?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  costoAdquisicion?: Prisma.NullableDecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string | null
+  vencimientoGarantia?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  estado?: Prisma.EnumEstadoActivoFieldUpdateOperationsInput | $Enums.EstadoActivo
+  categoriaId?: Prisma.StringFieldUpdateOperationsInput | string
+  ubicacionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  areaActualId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  responsableActualId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  creadoPorId?: Prisma.StringFieldUpdateOperationsInput | string
+  actualizadoPorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  dadoDeBajaEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  motivoBaja?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  asignaciones?: Prisma.AsignacionActivoUncheckedUpdateManyWithoutActivoNestedInput
+  movimientos?: Prisma.MovimientoActivoUncheckedUpdateManyWithoutActivoNestedInput
+  incidentes?: Prisma.IncidenteActivoUncheckedUpdateManyWithoutActivoNestedInput
+  documentos?: Prisma.DocumentoActivoUncheckedUpdateManyWithoutActivoNestedInput
+  imagenes?: Prisma.ImagenActivoUncheckedUpdateManyWithoutActivoNestedInput
 }
 
 export type ActivoCreateManyResponsableActualInput = {
@@ -2362,6 +2549,7 @@ export type ActivoUpdateWithoutResponsableActualInput = {
   incidentes?: Prisma.IncidenteActivoUpdateManyWithoutActivoNestedInput
   documentos?: Prisma.DocumentoActivoUpdateManyWithoutActivoNestedInput
   imagenes?: Prisma.ImagenActivoUpdateManyWithoutActivoNestedInput
+  solicitudesCompra?: Prisma.SolicitudCompraUpdateManyWithoutActivoNestedInput
 }
 
 export type ActivoUncheckedUpdateWithoutResponsableActualInput = {
@@ -2390,6 +2578,7 @@ export type ActivoUncheckedUpdateWithoutResponsableActualInput = {
   incidentes?: Prisma.IncidenteActivoUncheckedUpdateManyWithoutActivoNestedInput
   documentos?: Prisma.DocumentoActivoUncheckedUpdateManyWithoutActivoNestedInput
   imagenes?: Prisma.ImagenActivoUncheckedUpdateManyWithoutActivoNestedInput
+  solicitudesCompra?: Prisma.SolicitudCompraUncheckedUpdateManyWithoutActivoNestedInput
 }
 
 export type ActivoUncheckedUpdateManyWithoutResponsableActualInput = {
@@ -2441,6 +2630,7 @@ export type ActivoUpdateWithoutCreadoPorInput = {
   incidentes?: Prisma.IncidenteActivoUpdateManyWithoutActivoNestedInput
   documentos?: Prisma.DocumentoActivoUpdateManyWithoutActivoNestedInput
   imagenes?: Prisma.ImagenActivoUpdateManyWithoutActivoNestedInput
+  solicitudesCompra?: Prisma.SolicitudCompraUpdateManyWithoutActivoNestedInput
 }
 
 export type ActivoUncheckedUpdateWithoutCreadoPorInput = {
@@ -2469,6 +2659,7 @@ export type ActivoUncheckedUpdateWithoutCreadoPorInput = {
   incidentes?: Prisma.IncidenteActivoUncheckedUpdateManyWithoutActivoNestedInput
   documentos?: Prisma.DocumentoActivoUncheckedUpdateManyWithoutActivoNestedInput
   imagenes?: Prisma.ImagenActivoUncheckedUpdateManyWithoutActivoNestedInput
+  solicitudesCompra?: Prisma.SolicitudCompraUncheckedUpdateManyWithoutActivoNestedInput
 }
 
 export type ActivoUncheckedUpdateManyWithoutCreadoPorInput = {
@@ -2520,6 +2711,7 @@ export type ActivoUpdateWithoutActualizadoPorInput = {
   incidentes?: Prisma.IncidenteActivoUpdateManyWithoutActivoNestedInput
   documentos?: Prisma.DocumentoActivoUpdateManyWithoutActivoNestedInput
   imagenes?: Prisma.ImagenActivoUpdateManyWithoutActivoNestedInput
+  solicitudesCompra?: Prisma.SolicitudCompraUpdateManyWithoutActivoNestedInput
 }
 
 export type ActivoUncheckedUpdateWithoutActualizadoPorInput = {
@@ -2548,6 +2740,7 @@ export type ActivoUncheckedUpdateWithoutActualizadoPorInput = {
   incidentes?: Prisma.IncidenteActivoUncheckedUpdateManyWithoutActivoNestedInput
   documentos?: Prisma.DocumentoActivoUncheckedUpdateManyWithoutActivoNestedInput
   imagenes?: Prisma.ImagenActivoUncheckedUpdateManyWithoutActivoNestedInput
+  solicitudesCompra?: Prisma.SolicitudCompraUncheckedUpdateManyWithoutActivoNestedInput
 }
 
 export type ActivoUncheckedUpdateManyWithoutActualizadoPorInput = {
@@ -2622,6 +2815,7 @@ export type ActivoUpdateWithoutAreaActualInput = {
   incidentes?: Prisma.IncidenteActivoUpdateManyWithoutActivoNestedInput
   documentos?: Prisma.DocumentoActivoUpdateManyWithoutActivoNestedInput
   imagenes?: Prisma.ImagenActivoUpdateManyWithoutActivoNestedInput
+  solicitudesCompra?: Prisma.SolicitudCompraUpdateManyWithoutActivoNestedInput
 }
 
 export type ActivoUncheckedUpdateWithoutAreaActualInput = {
@@ -2650,6 +2844,7 @@ export type ActivoUncheckedUpdateWithoutAreaActualInput = {
   incidentes?: Prisma.IncidenteActivoUncheckedUpdateManyWithoutActivoNestedInput
   documentos?: Prisma.DocumentoActivoUncheckedUpdateManyWithoutActivoNestedInput
   imagenes?: Prisma.ImagenActivoUncheckedUpdateManyWithoutActivoNestedInput
+  solicitudesCompra?: Prisma.SolicitudCompraUncheckedUpdateManyWithoutActivoNestedInput
 }
 
 export type ActivoUncheckedUpdateManyWithoutAreaActualInput = {
@@ -2724,6 +2919,7 @@ export type ActivoUpdateWithoutUbicacionInput = {
   incidentes?: Prisma.IncidenteActivoUpdateManyWithoutActivoNestedInput
   documentos?: Prisma.DocumentoActivoUpdateManyWithoutActivoNestedInput
   imagenes?: Prisma.ImagenActivoUpdateManyWithoutActivoNestedInput
+  solicitudesCompra?: Prisma.SolicitudCompraUpdateManyWithoutActivoNestedInput
 }
 
 export type ActivoUncheckedUpdateWithoutUbicacionInput = {
@@ -2752,6 +2948,7 @@ export type ActivoUncheckedUpdateWithoutUbicacionInput = {
   incidentes?: Prisma.IncidenteActivoUncheckedUpdateManyWithoutActivoNestedInput
   documentos?: Prisma.DocumentoActivoUncheckedUpdateManyWithoutActivoNestedInput
   imagenes?: Prisma.ImagenActivoUncheckedUpdateManyWithoutActivoNestedInput
+  solicitudesCompra?: Prisma.SolicitudCompraUncheckedUpdateManyWithoutActivoNestedInput
 }
 
 export type ActivoUncheckedUpdateManyWithoutUbicacionInput = {
@@ -2826,6 +3023,7 @@ export type ActivoUpdateWithoutCategoriaInput = {
   incidentes?: Prisma.IncidenteActivoUpdateManyWithoutActivoNestedInput
   documentos?: Prisma.DocumentoActivoUpdateManyWithoutActivoNestedInput
   imagenes?: Prisma.ImagenActivoUpdateManyWithoutActivoNestedInput
+  solicitudesCompra?: Prisma.SolicitudCompraUpdateManyWithoutActivoNestedInput
 }
 
 export type ActivoUncheckedUpdateWithoutCategoriaInput = {
@@ -2854,6 +3052,7 @@ export type ActivoUncheckedUpdateWithoutCategoriaInput = {
   incidentes?: Prisma.IncidenteActivoUncheckedUpdateManyWithoutActivoNestedInput
   documentos?: Prisma.DocumentoActivoUncheckedUpdateManyWithoutActivoNestedInput
   imagenes?: Prisma.ImagenActivoUncheckedUpdateManyWithoutActivoNestedInput
+  solicitudesCompra?: Prisma.SolicitudCompraUncheckedUpdateManyWithoutActivoNestedInput
 }
 
 export type ActivoUncheckedUpdateManyWithoutCategoriaInput = {
@@ -2890,6 +3089,7 @@ export type ActivoCountOutputType = {
   incidentes: number
   documentos: number
   imagenes: number
+  solicitudesCompra: number
 }
 
 export type ActivoCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -2898,6 +3098,7 @@ export type ActivoCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions
   incidentes?: boolean | ActivoCountOutputTypeCountIncidentesArgs
   documentos?: boolean | ActivoCountOutputTypeCountDocumentosArgs
   imagenes?: boolean | ActivoCountOutputTypeCountImagenesArgs
+  solicitudesCompra?: boolean | ActivoCountOutputTypeCountSolicitudesCompraArgs
 }
 
 /**
@@ -2945,6 +3146,13 @@ export type ActivoCountOutputTypeCountImagenesArgs<ExtArgs extends runtime.Types
   where?: Prisma.ImagenActivoWhereInput
 }
 
+/**
+ * ActivoCountOutputType without action
+ */
+export type ActivoCountOutputTypeCountSolicitudesCompraArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.SolicitudCompraWhereInput
+}
+
 
 export type ActivoSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -2979,6 +3187,7 @@ export type ActivoSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   incidentes?: boolean | Prisma.Activo$incidentesArgs<ExtArgs>
   documentos?: boolean | Prisma.Activo$documentosArgs<ExtArgs>
   imagenes?: boolean | Prisma.Activo$imagenesArgs<ExtArgs>
+  solicitudesCompra?: boolean | Prisma.Activo$solicitudesCompraArgs<ExtArgs>
   _count?: boolean | Prisma.ActivoCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["activo"]>
 
@@ -3079,6 +3288,7 @@ export type ActivoInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   incidentes?: boolean | Prisma.Activo$incidentesArgs<ExtArgs>
   documentos?: boolean | Prisma.Activo$documentosArgs<ExtArgs>
   imagenes?: boolean | Prisma.Activo$imagenesArgs<ExtArgs>
+  solicitudesCompra?: boolean | Prisma.Activo$solicitudesCompraArgs<ExtArgs>
   _count?: boolean | Prisma.ActivoCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type ActivoIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -3112,6 +3322,7 @@ export type $ActivoPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
     incidentes: Prisma.$IncidenteActivoPayload<ExtArgs>[]
     documentos: Prisma.$DocumentoActivoPayload<ExtArgs>[]
     imagenes: Prisma.$ImagenActivoPayload<ExtArgs>[]
+    solicitudesCompra: Prisma.$SolicitudCompraPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -3540,6 +3751,7 @@ export interface Prisma__ActivoClient<T, Null = never, ExtArgs extends runtime.T
   incidentes<T extends Prisma.Activo$incidentesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Activo$incidentesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$IncidenteActivoPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   documentos<T extends Prisma.Activo$documentosArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Activo$documentosArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DocumentoActivoPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   imagenes<T extends Prisma.Activo$imagenesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Activo$imagenesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ImagenActivoPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  solicitudesCompra<T extends Prisma.Activo$solicitudesCompraArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Activo$solicitudesCompraArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SolicitudCompraPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -4184,6 +4396,30 @@ export type Activo$imagenesArgs<ExtArgs extends runtime.Types.Extensions.Interna
   take?: number
   skip?: number
   distinct?: Prisma.ImagenActivoScalarFieldEnum | Prisma.ImagenActivoScalarFieldEnum[]
+}
+
+/**
+ * Activo.solicitudesCompra
+ */
+export type Activo$solicitudesCompraArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the SolicitudCompra
+   */
+  select?: Prisma.SolicitudCompraSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the SolicitudCompra
+   */
+  omit?: Prisma.SolicitudCompraOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.SolicitudCompraInclude<ExtArgs> | null
+  where?: Prisma.SolicitudCompraWhereInput
+  orderBy?: Prisma.SolicitudCompraOrderByWithRelationInput | Prisma.SolicitudCompraOrderByWithRelationInput[]
+  cursor?: Prisma.SolicitudCompraWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.SolicitudCompraScalarFieldEnum | Prisma.SolicitudCompraScalarFieldEnum[]
 }
 
 /**

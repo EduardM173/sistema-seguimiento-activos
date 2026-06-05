@@ -70,7 +70,9 @@ export const ModelName = {
   Auditoria: 'Auditoria',
   ReporteGenerado: 'ReporteGenerado',
   ImagenActivo: 'ImagenActivo',
-  ImagenMaterial: 'ImagenMaterial'
+  ImagenMaterial: 'ImagenMaterial',
+  SolicitudCompra: 'SolicitudCompra',
+  Proveedor: 'Proveedor'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -373,6 +375,40 @@ export const ImagenMaterialScalarFieldEnum = {
 } as const
 
 export type ImagenMaterialScalarFieldEnum = (typeof ImagenMaterialScalarFieldEnum)[keyof typeof ImagenMaterialScalarFieldEnum]
+
+
+export const SolicitudCompraScalarFieldEnum = {
+  id: 'id',
+  tipo: 'tipo',
+  estado: 'estado',
+  cantidad: 'cantidad',
+  nota: 'nota',
+  solicitanteId: 'solicitanteId',
+  activoId: 'activoId',
+  materialId: 'materialId',
+  creadoEn: 'creadoEn',
+  actualizadoEn: 'actualizadoEn'
+} as const
+
+export type SolicitudCompraScalarFieldEnum = (typeof SolicitudCompraScalarFieldEnum)[keyof typeof SolicitudCompraScalarFieldEnum]
+
+
+export const ProveedorScalarFieldEnum = {
+  id: 'id',
+  nombre: 'nombre',
+  nit: 'nit',
+  contacto: 'contacto',
+  telefono: 'telefono',
+  correo: 'correo',
+  direccion: 'direccion',
+  rubro: 'rubro',
+  observaciones: 'observaciones',
+  activo: 'activo',
+  creadoEn: 'creadoEn',
+  actualizadoEn: 'actualizadoEn'
+} as const
+
+export type ProveedorScalarFieldEnum = (typeof ProveedorScalarFieldEnum)[keyof typeof ProveedorScalarFieldEnum]
 
 
 export const SortOrder = {

@@ -14,6 +14,7 @@ import {
   IconBell,
   IconSettings,
   IconLogOut,
+  IconDollarSign,
 } from '../common/Icon';
 import '../../styles/navbar.css';
 
@@ -38,11 +39,15 @@ export default function Navbar() {
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   // Controla si el submenú de Transferencias está expandido
   const [transferOpen, setTransferOpen] = useState(false);
+  const [commerceOpen, setCommerceOpen] = useState(false);
 
   // Auto-expandir si la ruta actual es una sub-ruta de transferencias
   useEffect(() => {
     if (location.pathname.startsWith('/transferencias')) {
       setTransferOpen(true);
+    }
+    if (location.pathname.startsWith('/marketplace') || location.pathname.startsWith('/proveedores')) {
+      setCommerceOpen(true);
     }
   }, [location.pathname]);
 
@@ -112,6 +117,20 @@ export default function Navbar() {
       label: 'Inventario',
       icon: <IconClipboard size={16} />,
       to: '/inventario',
+    });
+  }
+
+  if (hasPermission('MARKETPLACE_VIEW')) {
+    const children = [{ label: 'Catálogo de materiales', to: '/marketplace' }];
+
+    if (hasPermission('SUPPLIER_MANAGE')) {
+      children.push({ label: 'Registro de proveedores', to: '/proveedores' });
+    }
+
+    mainItems.push({
+      label: 'Compras',
+      icon: <IconDollarSign size={16} />,
+      children,
     });
   }
 
@@ -229,17 +248,27 @@ export default function Navbar() {
                           ? 'sidebar__link--active'
                           : ''
                       }`}
-                      onClick={() => setTransferOpen((v) => !v)}
-                      aria-expanded={transferOpen}
+                      onClick={() => {
+                        if (item.label === 'Compras') {
+                          setCommerceOpen((v) => !v);
+                        } else {
+                          setTransferOpen((v) => !v);
+                        }
+                      }}
+                      aria-expanded={item.label === 'Compras' ? commerceOpen : transferOpen}
                     >
                       <span className="sidebar__icon">{item.icon}</span>
                       <span className="sidebar__text">{item.label}</span>
-                      <span className={`sidebar__chevron ${transferOpen ? 'sidebar__chevron--open' : ''}`}>
+                      <span className={`sidebar__chevron ${
+                        (item.label === 'Compras' ? commerceOpen : transferOpen)
+                          ? 'sidebar__chevron--open'
+                          : ''
+                      }`}>
                         ›
                       </span>
                     </button>
 
-                    {transferOpen && (
+                    {(item.label === 'Compras' ? commerceOpen : transferOpen) && (
                       <ul className="sidebar__submenu">
                         {item.children.map((child) => (
                           <li key={child.to} className="sidebar__subitem">

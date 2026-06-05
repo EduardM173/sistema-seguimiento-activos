@@ -23,6 +23,8 @@ import AuditoriaPage from './pages/auditoria/AuditoriaPage';
 import TrazabilidadDepartamentalPage from './pages/auditoria/TrazabilidadDepartamentalPage';
 import ReportesPage from './pages/reportes/ReportesPage';
 import NotificacionesPage from './pages/notificaciones/NotificacionesPage';
+import MarketplacePage from './pages/marketplace/MarketplacePage';
+import SuppliersPage from './pages/suppliers/SuppliersPage';
 import './App.css';
 
 function getToken() {
@@ -75,6 +77,12 @@ export default function App() {
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route element={<ProtectedRoute requiredPermission="NOTIFICATION_VIEW" />}>
                 <Route path="/notificaciones" element={<NotificacionesPage />} />
+              </Route>
+              <Route element={<ProtectedRoute requiredPermission="MARKETPLACE_VIEW" />}>
+                <Route path="/marketplace" element={<MarketplacePage />} />
+              </Route>
+              <Route element={<ProtectedRoute requiredPermission="SUPPLIER_MANAGE" />}>
+                <Route path="/proveedores" element={<SuppliersPage />} />
               </Route>
               <Route element={<ProtectedRoute requiredPermission="ASSET_VIEW" />}>
                 <Route path="/activos" element={<AssetsPage />} />

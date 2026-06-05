@@ -403,6 +403,53 @@ export type IntWithAggregatesFilter<$PrismaModel = never> = {
   _max?: Prisma.NestedIntFilter<$PrismaModel>
 }
 
+export type EnumTipoSolicitudCompraFilter<$PrismaModel = never> = {
+  equals?: $Enums.TipoSolicitudCompra | Prisma.EnumTipoSolicitudCompraFieldRefInput<$PrismaModel>
+  in?: $Enums.TipoSolicitudCompra[] | Prisma.ListEnumTipoSolicitudCompraFieldRefInput<$PrismaModel>
+  notIn?: $Enums.TipoSolicitudCompra[] | Prisma.ListEnumTipoSolicitudCompraFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumTipoSolicitudCompraFilter<$PrismaModel> | $Enums.TipoSolicitudCompra
+}
+
+export type EnumEstadoSolicitudCompraFilter<$PrismaModel = never> = {
+  equals?: $Enums.EstadoSolicitudCompra | Prisma.EnumEstadoSolicitudCompraFieldRefInput<$PrismaModel>
+  in?: $Enums.EstadoSolicitudCompra[] | Prisma.ListEnumEstadoSolicitudCompraFieldRefInput<$PrismaModel>
+  notIn?: $Enums.EstadoSolicitudCompra[] | Prisma.ListEnumEstadoSolicitudCompraFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumEstadoSolicitudCompraFilter<$PrismaModel> | $Enums.EstadoSolicitudCompra
+}
+
+export type EnumTipoSolicitudCompraWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.TipoSolicitudCompra | Prisma.EnumTipoSolicitudCompraFieldRefInput<$PrismaModel>
+  in?: $Enums.TipoSolicitudCompra[] | Prisma.ListEnumTipoSolicitudCompraFieldRefInput<$PrismaModel>
+  notIn?: $Enums.TipoSolicitudCompra[] | Prisma.ListEnumTipoSolicitudCompraFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumTipoSolicitudCompraWithAggregatesFilter<$PrismaModel> | $Enums.TipoSolicitudCompra
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumTipoSolicitudCompraFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumTipoSolicitudCompraFilter<$PrismaModel>
+}
+
+export type EnumEstadoSolicitudCompraWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.EstadoSolicitudCompra | Prisma.EnumEstadoSolicitudCompraFieldRefInput<$PrismaModel>
+  in?: $Enums.EstadoSolicitudCompra[] | Prisma.ListEnumEstadoSolicitudCompraFieldRefInput<$PrismaModel>
+  notIn?: $Enums.EstadoSolicitudCompra[] | Prisma.ListEnumEstadoSolicitudCompraFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumEstadoSolicitudCompraWithAggregatesFilter<$PrismaModel> | $Enums.EstadoSolicitudCompra
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumEstadoSolicitudCompraFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumEstadoSolicitudCompraFilter<$PrismaModel>
+}
+
+export type BoolFilter<$PrismaModel = never> = {
+  equals?: boolean | Prisma.BooleanFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedBoolFilter<$PrismaModel> | boolean
+}
+
+export type BoolWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: boolean | Prisma.BooleanFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedBoolFilter<$PrismaModel>
+  _max?: Prisma.NestedBoolFilter<$PrismaModel>
+}
+
 export type NestedStringFilter<$PrismaModel = never> = {
   equals?: string | Prisma.StringFieldRefInput<$PrismaModel>
   in?: string[] | Prisma.ListStringFieldRefInput<$PrismaModel>
@@ -776,6 +823,53 @@ export type NestedFloatFilter<$PrismaModel = never> = {
   gt?: number | Prisma.FloatFieldRefInput<$PrismaModel>
   gte?: number | Prisma.FloatFieldRefInput<$PrismaModel>
   not?: Prisma.NestedFloatFilter<$PrismaModel> | number
+}
+
+export type NestedEnumTipoSolicitudCompraFilter<$PrismaModel = never> = {
+  equals?: $Enums.TipoSolicitudCompra | Prisma.EnumTipoSolicitudCompraFieldRefInput<$PrismaModel>
+  in?: $Enums.TipoSolicitudCompra[] | Prisma.ListEnumTipoSolicitudCompraFieldRefInput<$PrismaModel>
+  notIn?: $Enums.TipoSolicitudCompra[] | Prisma.ListEnumTipoSolicitudCompraFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumTipoSolicitudCompraFilter<$PrismaModel> | $Enums.TipoSolicitudCompra
+}
+
+export type NestedEnumEstadoSolicitudCompraFilter<$PrismaModel = never> = {
+  equals?: $Enums.EstadoSolicitudCompra | Prisma.EnumEstadoSolicitudCompraFieldRefInput<$PrismaModel>
+  in?: $Enums.EstadoSolicitudCompra[] | Prisma.ListEnumEstadoSolicitudCompraFieldRefInput<$PrismaModel>
+  notIn?: $Enums.EstadoSolicitudCompra[] | Prisma.ListEnumEstadoSolicitudCompraFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumEstadoSolicitudCompraFilter<$PrismaModel> | $Enums.EstadoSolicitudCompra
+}
+
+export type NestedEnumTipoSolicitudCompraWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.TipoSolicitudCompra | Prisma.EnumTipoSolicitudCompraFieldRefInput<$PrismaModel>
+  in?: $Enums.TipoSolicitudCompra[] | Prisma.ListEnumTipoSolicitudCompraFieldRefInput<$PrismaModel>
+  notIn?: $Enums.TipoSolicitudCompra[] | Prisma.ListEnumTipoSolicitudCompraFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumTipoSolicitudCompraWithAggregatesFilter<$PrismaModel> | $Enums.TipoSolicitudCompra
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumTipoSolicitudCompraFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumTipoSolicitudCompraFilter<$PrismaModel>
+}
+
+export type NestedEnumEstadoSolicitudCompraWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.EstadoSolicitudCompra | Prisma.EnumEstadoSolicitudCompraFieldRefInput<$PrismaModel>
+  in?: $Enums.EstadoSolicitudCompra[] | Prisma.ListEnumEstadoSolicitudCompraFieldRefInput<$PrismaModel>
+  notIn?: $Enums.EstadoSolicitudCompra[] | Prisma.ListEnumEstadoSolicitudCompraFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumEstadoSolicitudCompraWithAggregatesFilter<$PrismaModel> | $Enums.EstadoSolicitudCompra
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumEstadoSolicitudCompraFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumEstadoSolicitudCompraFilter<$PrismaModel>
+}
+
+export type NestedBoolFilter<$PrismaModel = never> = {
+  equals?: boolean | Prisma.BooleanFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedBoolFilter<$PrismaModel> | boolean
+}
+
+export type NestedBoolWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: boolean | Prisma.BooleanFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedBoolFilter<$PrismaModel>
+  _max?: Prisma.NestedBoolFilter<$PrismaModel>
 }
 
 
