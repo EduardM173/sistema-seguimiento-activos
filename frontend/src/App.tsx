@@ -8,6 +8,7 @@ import PrivateLayout from './components/layout/PrivateLayout';
 import ToastContainer from './components/notifications/ToastContainer';
 import ChatWidget from './components/chat/ChatWidget';
 import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
 import UserList from './pages/users/UserList';
 import AssetsPage from './pages/AssetsPage';
@@ -72,6 +73,7 @@ export default function App() {
         <ChatWidget />
         <Routes>
           <Route path="/" element={<LoginPage />} />
+          <Route path="/registro" element={<RegisterPage />} />
           <Route element={<ProtectedRoute />}>
             <Route element={<PrivateLayout />}>
               <Route path="/dashboard" element={<DashboardPage />} />

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import { login } from '../../services/auth.service';
 import { useAuth } from '../../context/AuthContext';
@@ -128,6 +129,12 @@ export default function LoginForm() {
         </button>
       </form>
 
+      <div className="login-card__footer">
+        <span>¿Aún no tienes cuenta?</span>
+        <Link className="link-button" to="/registro">
+          Crear cuenta
+        </Link>
+      </div>
 
     </div>
   );
