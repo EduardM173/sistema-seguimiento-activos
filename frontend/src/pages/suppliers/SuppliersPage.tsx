@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
+import { Alert, Button, EmptyState, FormField, PageHeader, Section } from '../../components/common';
 import { IconRefresh, IconSave, IconSearch, IconUsers } from '../../components/common/Icon';
 import {
   createSupplier,
@@ -48,7 +49,7 @@ export default function SuppliersPage() {
     setForm((current) => ({ ...current, [field]: value }));
   }
 
-  async function submit(event: React.FormEvent) {
+  async function submit(event: FormEvent) {
     event.preventDefault();
     setSaving(true);
     setError(null);
@@ -68,67 +69,92 @@ export default function SuppliersPage() {
 
   return (
     <main className="suppliersPage">
-      <header className="suppliersHeader">
-        <div>
-          <p>Compras</p>
-          <h1>Registro de proveedores</h1>
-          <span>Administra proveedores externos para compras universitarias.</span>
-        </div>
-        <button className="suppliersButton suppliersButton--ghost" onClick={() => void loadSuppliers()}>
-          <IconRefresh size={16} />
-          Actualizar
-        </button>
-      </header>
+      <PageHeader
+        eyebrow="Compras"
+        title="Registro de proveedores"
+        subtitle="Administra proveedores externos para compras universitarias."
+        actions={
+          <Button
+            label="Actualizar"
+            variant="ghost"
+            icon={<IconRefresh size={16} />}
+            onClick={() => void loadSuppliers()}
+          />
+        }
+      />
 
-      {error ? <div className="suppliersAlert suppliersAlert--error">{error}</div> : null}
-      {success ? <div className="suppliersAlert suppliersAlert--success">{success}</div> : null}
+      {error ? <Alert type="error" message={error} onClose={() => setError(null)} /> : null}
+      {success ? <Alert type="success" message={success} onClose={() => setSuccess(null)} /> : null}
 
       <div className="suppliersLayout">
-        <form className="suppliersForm" onSubmit={submit}>
-          <h2>Nuevo proveedor</h2>
+        <Section title="Nuevo proveedor" className="suppliersForm" noDivider>
+          <form className="suppliersForm__body" onSubmit={submit}>
           <div className="suppliersForm__grid">
-            <label>
-              Nombre
-              <input value={form.nombre} onChange={(event) => updateField('nombre', event.target.value)} required />
-            </label>
-            <label>
-              NIT
-              <input value={form.nit} onChange={(event) => updateField('nit', event.target.value)} />
-            </label>
-            <label>
-              Contacto
-              <input value={form.contacto} onChange={(event) => updateField('contacto', event.target.value)} />
-            </label>
-            <label>
-              Teléfono
-              <input value={form.telefono} onChange={(event) => updateField('telefono', event.target.value)} />
-            </label>
-            <label>
-              Correo
-              <input type="email" value={form.correo} onChange={(event) => updateField('correo', event.target.value)} />
-            </label>
-            <label>
-              Rubro
-              <input value={form.rubro} onChange={(event) => updateField('rubro', event.target.value)} />
-            </label>
+            <FormField
+              id="supplier-nombre"
+              label="Nombre"
+              value={form.nombre}
+              onChange={(event) => updateField('nombre', event.target.value)}
+              required
+            />
+            <FormField
+              id="supplier-nit"
+              label="NIT"
+              value={form.nit}
+              onChange={(event) => updateField('nit', event.target.value)}
+            />
+            <FormField
+              id="supplier-contacto"
+              label="Contacto"
+              value={form.contacto}
+              onChange={(event) => updateField('contacto', event.target.value)}
+            />
+            <FormField
+              id="supplier-telefono"
+              label="Teléfono"
+              value={form.telefono}
+              onChange={(event) => updateField('telefono', event.target.value)}
+            />
+            <FormField
+              id="supplier-correo"
+              label="Correo"
+              type="email"
+              value={form.correo}
+              onChange={(event) => updateField('correo', event.target.value)}
+            />
+            <FormField
+              id="supplier-rubro"
+              label="Rubro"
+              value={form.rubro}
+              onChange={(event) => updateField('rubro', event.target.value)}
+            />
           </div>
-          <label>
-            Dirección
-            <input value={form.direccion} onChange={(event) => updateField('direccion', event.target.value)} />
-          </label>
-          <label>
-            Observaciones
-            <textarea value={form.observaciones} onChange={(event) => updateField('observaciones', event.target.value)} />
-          </label>
-          <button className="suppliersButton suppliersButton--primary" disabled={saving}>
-            <IconSave size={16} />
-            {saving ? 'Guardando...' : 'Registrar proveedor'}
-          </button>
-        </form>
+          <FormField
+            id="supplier-direccion"
+            label="Dirección"
+            value={form.direccion}
+            onChange={(event) => updateField('direccion', event.target.value)}
+          />
+          <FormField
+            id="supplier-observaciones"
+            label="Observaciones"
+            as="textarea"
+            value={form.observaciones}
+            onChange={(event) => updateField('observaciones', event.target.value)}
+          />
+          <Button
+            type="submit"
+            label={saving ? 'Guardando...' : 'Registrar proveedor'}
+            icon={<IconSave size={16} />}
+            isLoading={saving}
+          />
+          </form>
+        </Section>
 
-        <section className="suppliersList">
-          <div className="suppliersList__top">
-            <h2>Proveedores</h2>
+        <Section
+          title="Proveedores"
+          className="suppliersList"
+          actions={
             <form
               className="suppliersSearch"
               onSubmit={(event) => {
@@ -139,7 +165,8 @@ export default function SuppliersPage() {
               <IconSearch size={16} />
               <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Buscar proveedor" />
             </form>
-          </div>
+          }
+        >
 
           <div className="suppliersTable">
             {suppliers.map((supplier) => (
@@ -160,9 +187,13 @@ export default function SuppliersPage() {
           </div>
 
           {!loading && suppliers.length === 0 ? (
-            <div className="suppliersEmpty">No hay proveedores registrados.</div>
+            <EmptyState
+              icon={<IconUsers size={18} />}
+              title="No hay proveedores registrados"
+              message="Registra el primer proveedor para habilitar compras y solicitudes."
+            />
           ) : null}
-        </section>
+        </Section>
       </div>
     </main>
   );

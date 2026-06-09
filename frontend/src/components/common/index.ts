@@ -1,5 +1,8 @@
 // Exportar todos los componentes comunes desde aquí
 export { Button } from './Button';
+export { EmptyState } from './EmptyState';
+export { FormField } from './FormField';
+export type { FormFieldProps } from './FormField';
 export { Card } from './Card';
 export { LoadingSpinner } from './LoadingSpinner';
 export { Modal } from './Modal';
@@ -15,3 +18,5 @@ export { Select } from './Select';
 export type { SelectOption, SelectProps } from './Select';
 export { FilterRow } from './FilterRow';
 export type { FilterQuery, FilterElementDef, SearchBoxDef, TextBoxDef, SelectBoxDef, FilterRowProps } from './FilterRow';
+export { PageHeader } from './PageHeader';
+export { Section } from './Section';
