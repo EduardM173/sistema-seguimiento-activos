@@ -33,6 +33,8 @@ export type UsuarioMinAggregateOutputType = {
   hashContrasena: string | null
   telefono: string | null
   estado: $Enums.EstadoUsuario | null
+  correoConfirmado: boolean | null
+  correoConfirmadoEn: Date | null
   areaId: string | null
   rolId: string | null
   creadoEn: Date | null
@@ -48,6 +50,8 @@ export type UsuarioMaxAggregateOutputType = {
   hashContrasena: string | null
   telefono: string | null
   estado: $Enums.EstadoUsuario | null
+  correoConfirmado: boolean | null
+  correoConfirmadoEn: Date | null
   areaId: string | null
   rolId: string | null
   creadoEn: Date | null
@@ -63,6 +67,8 @@ export type UsuarioCountAggregateOutputType = {
   hashContrasena: number
   telefono: number
   estado: number
+  correoConfirmado: number
+  correoConfirmadoEn: number
   areaId: number
   rolId: number
   creadoEn: number
@@ -80,6 +86,8 @@ export type UsuarioMinAggregateInputType = {
   hashContrasena?: true
   telefono?: true
   estado?: true
+  correoConfirmado?: true
+  correoConfirmadoEn?: true
   areaId?: true
   rolId?: true
   creadoEn?: true
@@ -95,6 +103,8 @@ export type UsuarioMaxAggregateInputType = {
   hashContrasena?: true
   telefono?: true
   estado?: true
+  correoConfirmado?: true
+  correoConfirmadoEn?: true
   areaId?: true
   rolId?: true
   creadoEn?: true
@@ -110,6 +120,8 @@ export type UsuarioCountAggregateInputType = {
   hashContrasena?: true
   telefono?: true
   estado?: true
+  correoConfirmado?: true
+  correoConfirmadoEn?: true
   areaId?: true
   rolId?: true
   creadoEn?: true
@@ -198,6 +210,8 @@ export type UsuarioGroupByOutputType = {
   hashContrasena: string
   telefono: string | null
   estado: $Enums.EstadoUsuario
+  correoConfirmado: boolean
+  correoConfirmadoEn: Date | null
   areaId: string | null
   rolId: string
   creadoEn: Date
@@ -234,6 +248,8 @@ export type UsuarioWhereInput = {
   hashContrasena?: Prisma.StringFilter<"Usuario"> | string
   telefono?: Prisma.StringNullableFilter<"Usuario"> | string | null
   estado?: Prisma.EnumEstadoUsuarioFilter<"Usuario"> | $Enums.EstadoUsuario
+  correoConfirmado?: Prisma.BoolFilter<"Usuario"> | boolean
+  correoConfirmadoEn?: Prisma.DateTimeNullableFilter<"Usuario"> | Date | string | null
   areaId?: Prisma.StringNullableFilter<"Usuario"> | string | null
   rolId?: Prisma.StringFilter<"Usuario"> | string
   creadoEn?: Prisma.DateTimeFilter<"Usuario"> | Date | string
@@ -265,6 +281,8 @@ export type UsuarioOrderByWithRelationInput = {
   hashContrasena?: Prisma.SortOrder
   telefono?: Prisma.SortOrderInput | Prisma.SortOrder
   estado?: Prisma.SortOrder
+  correoConfirmado?: Prisma.SortOrder
+  correoConfirmadoEn?: Prisma.SortOrderInput | Prisma.SortOrder
   areaId?: Prisma.SortOrderInput | Prisma.SortOrder
   rolId?: Prisma.SortOrder
   creadoEn?: Prisma.SortOrder
@@ -299,6 +317,8 @@ export type UsuarioWhereUniqueInput = Prisma.AtLeast<{
   hashContrasena?: Prisma.StringFilter<"Usuario"> | string
   telefono?: Prisma.StringNullableFilter<"Usuario"> | string | null
   estado?: Prisma.EnumEstadoUsuarioFilter<"Usuario"> | $Enums.EstadoUsuario
+  correoConfirmado?: Prisma.BoolFilter<"Usuario"> | boolean
+  correoConfirmadoEn?: Prisma.DateTimeNullableFilter<"Usuario"> | Date | string | null
   areaId?: Prisma.StringNullableFilter<"Usuario"> | string | null
   rolId?: Prisma.StringFilter<"Usuario"> | string
   creadoEn?: Prisma.DateTimeFilter<"Usuario"> | Date | string
@@ -330,6 +350,8 @@ export type UsuarioOrderByWithAggregationInput = {
   hashContrasena?: Prisma.SortOrder
   telefono?: Prisma.SortOrderInput | Prisma.SortOrder
   estado?: Prisma.SortOrder
+  correoConfirmado?: Prisma.SortOrder
+  correoConfirmadoEn?: Prisma.SortOrderInput | Prisma.SortOrder
   areaId?: Prisma.SortOrderInput | Prisma.SortOrder
   rolId?: Prisma.SortOrder
   creadoEn?: Prisma.SortOrder
@@ -351,6 +373,8 @@ export type UsuarioScalarWhereWithAggregatesInput = {
   hashContrasena?: Prisma.StringWithAggregatesFilter<"Usuario"> | string
   telefono?: Prisma.StringNullableWithAggregatesFilter<"Usuario"> | string | null
   estado?: Prisma.EnumEstadoUsuarioWithAggregatesFilter<"Usuario"> | $Enums.EstadoUsuario
+  correoConfirmado?: Prisma.BoolWithAggregatesFilter<"Usuario"> | boolean
+  correoConfirmadoEn?: Prisma.DateTimeNullableWithAggregatesFilter<"Usuario"> | Date | string | null
   areaId?: Prisma.StringNullableWithAggregatesFilter<"Usuario"> | string | null
   rolId?: Prisma.StringWithAggregatesFilter<"Usuario"> | string
   creadoEn?: Prisma.DateTimeWithAggregatesFilter<"Usuario"> | Date | string
@@ -366,6 +390,8 @@ export type UsuarioCreateInput = {
   hashContrasena: string
   telefono?: string | null
   estado?: $Enums.EstadoUsuario
+  correoConfirmado?: boolean
+  correoConfirmadoEn?: Date | string | null
   creadoEn?: Date | string
   actualizadoEn?: Date | string
   area?: Prisma.AreaCreateNestedOneWithoutUsuariosInput
@@ -395,6 +421,8 @@ export type UsuarioUncheckedCreateInput = {
   hashContrasena: string
   telefono?: string | null
   estado?: $Enums.EstadoUsuario
+  correoConfirmado?: boolean
+  correoConfirmadoEn?: Date | string | null
   areaId?: string | null
   rolId: string
   creadoEn?: Date | string
@@ -424,6 +452,8 @@ export type UsuarioUpdateInput = {
   hashContrasena?: Prisma.StringFieldUpdateOperationsInput | string
   telefono?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   estado?: Prisma.EnumEstadoUsuarioFieldUpdateOperationsInput | $Enums.EstadoUsuario
+  correoConfirmado?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  correoConfirmadoEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   area?: Prisma.AreaUpdateOneWithoutUsuariosNestedInput
@@ -453,6 +483,8 @@ export type UsuarioUncheckedUpdateInput = {
   hashContrasena?: Prisma.StringFieldUpdateOperationsInput | string
   telefono?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   estado?: Prisma.EnumEstadoUsuarioFieldUpdateOperationsInput | $Enums.EstadoUsuario
+  correoConfirmado?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  correoConfirmadoEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   areaId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   rolId?: Prisma.StringFieldUpdateOperationsInput | string
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -482,6 +514,8 @@ export type UsuarioCreateManyInput = {
   hashContrasena: string
   telefono?: string | null
   estado?: $Enums.EstadoUsuario
+  correoConfirmado?: boolean
+  correoConfirmadoEn?: Date | string | null
   areaId?: string | null
   rolId: string
   creadoEn?: Date | string
@@ -497,6 +531,8 @@ export type UsuarioUpdateManyMutationInput = {
   hashContrasena?: Prisma.StringFieldUpdateOperationsInput | string
   telefono?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   estado?: Prisma.EnumEstadoUsuarioFieldUpdateOperationsInput | $Enums.EstadoUsuario
+  correoConfirmado?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  correoConfirmadoEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -510,6 +546,8 @@ export type UsuarioUncheckedUpdateManyInput = {
   hashContrasena?: Prisma.StringFieldUpdateOperationsInput | string
   telefono?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   estado?: Prisma.EnumEstadoUsuarioFieldUpdateOperationsInput | $Enums.EstadoUsuario
+  correoConfirmado?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  correoConfirmadoEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   areaId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   rolId?: Prisma.StringFieldUpdateOperationsInput | string
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -525,6 +563,8 @@ export type UsuarioCountOrderByAggregateInput = {
   hashContrasena?: Prisma.SortOrder
   telefono?: Prisma.SortOrder
   estado?: Prisma.SortOrder
+  correoConfirmado?: Prisma.SortOrder
+  correoConfirmadoEn?: Prisma.SortOrder
   areaId?: Prisma.SortOrder
   rolId?: Prisma.SortOrder
   creadoEn?: Prisma.SortOrder
@@ -540,6 +580,8 @@ export type UsuarioMaxOrderByAggregateInput = {
   hashContrasena?: Prisma.SortOrder
   telefono?: Prisma.SortOrder
   estado?: Prisma.SortOrder
+  correoConfirmado?: Prisma.SortOrder
+  correoConfirmadoEn?: Prisma.SortOrder
   areaId?: Prisma.SortOrder
   rolId?: Prisma.SortOrder
   creadoEn?: Prisma.SortOrder
@@ -555,6 +597,8 @@ export type UsuarioMinOrderByAggregateInput = {
   hashContrasena?: Prisma.SortOrder
   telefono?: Prisma.SortOrder
   estado?: Prisma.SortOrder
+  correoConfirmado?: Prisma.SortOrder
+  correoConfirmadoEn?: Prisma.SortOrder
   areaId?: Prisma.SortOrder
   rolId?: Prisma.SortOrder
   creadoEn?: Prisma.SortOrder
@@ -591,6 +635,14 @@ export type NullableStringFieldUpdateOperationsInput = {
 
 export type EnumEstadoUsuarioFieldUpdateOperationsInput = {
   set?: $Enums.EstadoUsuario
+}
+
+export type BoolFieldUpdateOperationsInput = {
+  set?: boolean
+}
+
+export type NullableDateTimeFieldUpdateOperationsInput = {
+  set?: Date | string | null
 }
 
 export type DateTimeFieldUpdateOperationsInput = {
@@ -900,6 +952,8 @@ export type UsuarioCreateWithoutRolInput = {
   hashContrasena: string
   telefono?: string | null
   estado?: $Enums.EstadoUsuario
+  correoConfirmado?: boolean
+  correoConfirmadoEn?: Date | string | null
   creadoEn?: Date | string
   actualizadoEn?: Date | string
   area?: Prisma.AreaCreateNestedOneWithoutUsuariosInput
@@ -928,6 +982,8 @@ export type UsuarioUncheckedCreateWithoutRolInput = {
   hashContrasena: string
   telefono?: string | null
   estado?: $Enums.EstadoUsuario
+  correoConfirmado?: boolean
+  correoConfirmadoEn?: Date | string | null
   areaId?: string | null
   creadoEn?: Date | string
   actualizadoEn?: Date | string
@@ -985,6 +1041,8 @@ export type UsuarioScalarWhereInput = {
   hashContrasena?: Prisma.StringFilter<"Usuario"> | string
   telefono?: Prisma.StringNullableFilter<"Usuario"> | string | null
   estado?: Prisma.EnumEstadoUsuarioFilter<"Usuario"> | $Enums.EstadoUsuario
+  correoConfirmado?: Prisma.BoolFilter<"Usuario"> | boolean
+  correoConfirmadoEn?: Prisma.DateTimeNullableFilter<"Usuario"> | Date | string | null
   areaId?: Prisma.StringNullableFilter<"Usuario"> | string | null
   rolId?: Prisma.StringFilter<"Usuario"> | string
   creadoEn?: Prisma.DateTimeFilter<"Usuario"> | Date | string
@@ -1000,6 +1058,8 @@ export type UsuarioCreateWithoutAreasGestionadasInput = {
   hashContrasena: string
   telefono?: string | null
   estado?: $Enums.EstadoUsuario
+  correoConfirmado?: boolean
+  correoConfirmadoEn?: Date | string | null
   creadoEn?: Date | string
   actualizadoEn?: Date | string
   area?: Prisma.AreaCreateNestedOneWithoutUsuariosInput
@@ -1028,6 +1088,8 @@ export type UsuarioUncheckedCreateWithoutAreasGestionadasInput = {
   hashContrasena: string
   telefono?: string | null
   estado?: $Enums.EstadoUsuario
+  correoConfirmado?: boolean
+  correoConfirmadoEn?: Date | string | null
   areaId?: string | null
   rolId: string
   creadoEn?: Date | string
@@ -1061,6 +1123,8 @@ export type UsuarioCreateWithoutAreaInput = {
   hashContrasena: string
   telefono?: string | null
   estado?: $Enums.EstadoUsuario
+  correoConfirmado?: boolean
+  correoConfirmadoEn?: Date | string | null
   creadoEn?: Date | string
   actualizadoEn?: Date | string
   rol: Prisma.RolCreateNestedOneWithoutUsuariosInput
@@ -1089,6 +1153,8 @@ export type UsuarioUncheckedCreateWithoutAreaInput = {
   hashContrasena: string
   telefono?: string | null
   estado?: $Enums.EstadoUsuario
+  correoConfirmado?: boolean
+  correoConfirmadoEn?: Date | string | null
   rolId: string
   creadoEn?: Date | string
   actualizadoEn?: Date | string
@@ -1138,6 +1204,8 @@ export type UsuarioUpdateWithoutAreasGestionadasInput = {
   hashContrasena?: Prisma.StringFieldUpdateOperationsInput | string
   telefono?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   estado?: Prisma.EnumEstadoUsuarioFieldUpdateOperationsInput | $Enums.EstadoUsuario
+  correoConfirmado?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  correoConfirmadoEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   area?: Prisma.AreaUpdateOneWithoutUsuariosNestedInput
@@ -1166,6 +1234,8 @@ export type UsuarioUncheckedUpdateWithoutAreasGestionadasInput = {
   hashContrasena?: Prisma.StringFieldUpdateOperationsInput | string
   telefono?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   estado?: Prisma.EnumEstadoUsuarioFieldUpdateOperationsInput | $Enums.EstadoUsuario
+  correoConfirmado?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  correoConfirmadoEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   areaId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   rolId?: Prisma.StringFieldUpdateOperationsInput | string
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1210,6 +1280,8 @@ export type UsuarioCreateWithoutActivosResponsableInput = {
   hashContrasena: string
   telefono?: string | null
   estado?: $Enums.EstadoUsuario
+  correoConfirmado?: boolean
+  correoConfirmadoEn?: Date | string | null
   creadoEn?: Date | string
   actualizadoEn?: Date | string
   area?: Prisma.AreaCreateNestedOneWithoutUsuariosInput
@@ -1238,6 +1310,8 @@ export type UsuarioUncheckedCreateWithoutActivosResponsableInput = {
   hashContrasena: string
   telefono?: string | null
   estado?: $Enums.EstadoUsuario
+  correoConfirmado?: boolean
+  correoConfirmadoEn?: Date | string | null
   areaId?: string | null
   rolId: string
   creadoEn?: Date | string
@@ -1271,6 +1345,8 @@ export type UsuarioCreateWithoutActivosCreadosInput = {
   hashContrasena: string
   telefono?: string | null
   estado?: $Enums.EstadoUsuario
+  correoConfirmado?: boolean
+  correoConfirmadoEn?: Date | string | null
   creadoEn?: Date | string
   actualizadoEn?: Date | string
   area?: Prisma.AreaCreateNestedOneWithoutUsuariosInput
@@ -1299,6 +1375,8 @@ export type UsuarioUncheckedCreateWithoutActivosCreadosInput = {
   hashContrasena: string
   telefono?: string | null
   estado?: $Enums.EstadoUsuario
+  correoConfirmado?: boolean
+  correoConfirmadoEn?: Date | string | null
   areaId?: string | null
   rolId: string
   creadoEn?: Date | string
@@ -1332,6 +1410,8 @@ export type UsuarioCreateWithoutActivosActualizadosInput = {
   hashContrasena: string
   telefono?: string | null
   estado?: $Enums.EstadoUsuario
+  correoConfirmado?: boolean
+  correoConfirmadoEn?: Date | string | null
   creadoEn?: Date | string
   actualizadoEn?: Date | string
   area?: Prisma.AreaCreateNestedOneWithoutUsuariosInput
@@ -1360,6 +1440,8 @@ export type UsuarioUncheckedCreateWithoutActivosActualizadosInput = {
   hashContrasena: string
   telefono?: string | null
   estado?: $Enums.EstadoUsuario
+  correoConfirmado?: boolean
+  correoConfirmadoEn?: Date | string | null
   areaId?: string | null
   rolId: string
   creadoEn?: Date | string
@@ -1404,6 +1486,8 @@ export type UsuarioUpdateWithoutActivosResponsableInput = {
   hashContrasena?: Prisma.StringFieldUpdateOperationsInput | string
   telefono?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   estado?: Prisma.EnumEstadoUsuarioFieldUpdateOperationsInput | $Enums.EstadoUsuario
+  correoConfirmado?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  correoConfirmadoEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   area?: Prisma.AreaUpdateOneWithoutUsuariosNestedInput
@@ -1432,6 +1516,8 @@ export type UsuarioUncheckedUpdateWithoutActivosResponsableInput = {
   hashContrasena?: Prisma.StringFieldUpdateOperationsInput | string
   telefono?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   estado?: Prisma.EnumEstadoUsuarioFieldUpdateOperationsInput | $Enums.EstadoUsuario
+  correoConfirmado?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  correoConfirmadoEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   areaId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   rolId?: Prisma.StringFieldUpdateOperationsInput | string
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1471,6 +1557,8 @@ export type UsuarioUpdateWithoutActivosCreadosInput = {
   hashContrasena?: Prisma.StringFieldUpdateOperationsInput | string
   telefono?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   estado?: Prisma.EnumEstadoUsuarioFieldUpdateOperationsInput | $Enums.EstadoUsuario
+  correoConfirmado?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  correoConfirmadoEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   area?: Prisma.AreaUpdateOneWithoutUsuariosNestedInput
@@ -1499,6 +1587,8 @@ export type UsuarioUncheckedUpdateWithoutActivosCreadosInput = {
   hashContrasena?: Prisma.StringFieldUpdateOperationsInput | string
   telefono?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   estado?: Prisma.EnumEstadoUsuarioFieldUpdateOperationsInput | $Enums.EstadoUsuario
+  correoConfirmado?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  correoConfirmadoEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   areaId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   rolId?: Prisma.StringFieldUpdateOperationsInput | string
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1538,6 +1628,8 @@ export type UsuarioUpdateWithoutActivosActualizadosInput = {
   hashContrasena?: Prisma.StringFieldUpdateOperationsInput | string
   telefono?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   estado?: Prisma.EnumEstadoUsuarioFieldUpdateOperationsInput | $Enums.EstadoUsuario
+  correoConfirmado?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  correoConfirmadoEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   area?: Prisma.AreaUpdateOneWithoutUsuariosNestedInput
@@ -1566,6 +1658,8 @@ export type UsuarioUncheckedUpdateWithoutActivosActualizadosInput = {
   hashContrasena?: Prisma.StringFieldUpdateOperationsInput | string
   telefono?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   estado?: Prisma.EnumEstadoUsuarioFieldUpdateOperationsInput | $Enums.EstadoUsuario
+  correoConfirmado?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  correoConfirmadoEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   areaId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   rolId?: Prisma.StringFieldUpdateOperationsInput | string
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1594,6 +1688,8 @@ export type UsuarioCreateWithoutAsignacionesDirectasInput = {
   hashContrasena: string
   telefono?: string | null
   estado?: $Enums.EstadoUsuario
+  correoConfirmado?: boolean
+  correoConfirmadoEn?: Date | string | null
   creadoEn?: Date | string
   actualizadoEn?: Date | string
   area?: Prisma.AreaCreateNestedOneWithoutUsuariosInput
@@ -1622,6 +1718,8 @@ export type UsuarioUncheckedCreateWithoutAsignacionesDirectasInput = {
   hashContrasena: string
   telefono?: string | null
   estado?: $Enums.EstadoUsuario
+  correoConfirmado?: boolean
+  correoConfirmadoEn?: Date | string | null
   areaId?: string | null
   rolId: string
   creadoEn?: Date | string
@@ -1655,6 +1753,8 @@ export type UsuarioCreateWithoutAsignacionesRealizadasInput = {
   hashContrasena: string
   telefono?: string | null
   estado?: $Enums.EstadoUsuario
+  correoConfirmado?: boolean
+  correoConfirmadoEn?: Date | string | null
   creadoEn?: Date | string
   actualizadoEn?: Date | string
   area?: Prisma.AreaCreateNestedOneWithoutUsuariosInput
@@ -1683,6 +1783,8 @@ export type UsuarioUncheckedCreateWithoutAsignacionesRealizadasInput = {
   hashContrasena: string
   telefono?: string | null
   estado?: $Enums.EstadoUsuario
+  correoConfirmado?: boolean
+  correoConfirmadoEn?: Date | string | null
   areaId?: string | null
   rolId: string
   creadoEn?: Date | string
@@ -1716,6 +1818,8 @@ export type UsuarioCreateWithoutAsignacionesRecibidasInput = {
   hashContrasena: string
   telefono?: string | null
   estado?: $Enums.EstadoUsuario
+  correoConfirmado?: boolean
+  correoConfirmadoEn?: Date | string | null
   creadoEn?: Date | string
   actualizadoEn?: Date | string
   area?: Prisma.AreaCreateNestedOneWithoutUsuariosInput
@@ -1744,6 +1848,8 @@ export type UsuarioUncheckedCreateWithoutAsignacionesRecibidasInput = {
   hashContrasena: string
   telefono?: string | null
   estado?: $Enums.EstadoUsuario
+  correoConfirmado?: boolean
+  correoConfirmadoEn?: Date | string | null
   areaId?: string | null
   rolId: string
   creadoEn?: Date | string
@@ -1788,6 +1894,8 @@ export type UsuarioUpdateWithoutAsignacionesDirectasInput = {
   hashContrasena?: Prisma.StringFieldUpdateOperationsInput | string
   telefono?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   estado?: Prisma.EnumEstadoUsuarioFieldUpdateOperationsInput | $Enums.EstadoUsuario
+  correoConfirmado?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  correoConfirmadoEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   area?: Prisma.AreaUpdateOneWithoutUsuariosNestedInput
@@ -1816,6 +1924,8 @@ export type UsuarioUncheckedUpdateWithoutAsignacionesDirectasInput = {
   hashContrasena?: Prisma.StringFieldUpdateOperationsInput | string
   telefono?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   estado?: Prisma.EnumEstadoUsuarioFieldUpdateOperationsInput | $Enums.EstadoUsuario
+  correoConfirmado?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  correoConfirmadoEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   areaId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   rolId?: Prisma.StringFieldUpdateOperationsInput | string
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1855,6 +1965,8 @@ export type UsuarioUpdateWithoutAsignacionesRealizadasInput = {
   hashContrasena?: Prisma.StringFieldUpdateOperationsInput | string
   telefono?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   estado?: Prisma.EnumEstadoUsuarioFieldUpdateOperationsInput | $Enums.EstadoUsuario
+  correoConfirmado?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  correoConfirmadoEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   area?: Prisma.AreaUpdateOneWithoutUsuariosNestedInput
@@ -1883,6 +1995,8 @@ export type UsuarioUncheckedUpdateWithoutAsignacionesRealizadasInput = {
   hashContrasena?: Prisma.StringFieldUpdateOperationsInput | string
   telefono?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   estado?: Prisma.EnumEstadoUsuarioFieldUpdateOperationsInput | $Enums.EstadoUsuario
+  correoConfirmado?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  correoConfirmadoEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   areaId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   rolId?: Prisma.StringFieldUpdateOperationsInput | string
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1922,6 +2036,8 @@ export type UsuarioUpdateWithoutAsignacionesRecibidasInput = {
   hashContrasena?: Prisma.StringFieldUpdateOperationsInput | string
   telefono?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   estado?: Prisma.EnumEstadoUsuarioFieldUpdateOperationsInput | $Enums.EstadoUsuario
+  correoConfirmado?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  correoConfirmadoEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   area?: Prisma.AreaUpdateOneWithoutUsuariosNestedInput
@@ -1950,6 +2066,8 @@ export type UsuarioUncheckedUpdateWithoutAsignacionesRecibidasInput = {
   hashContrasena?: Prisma.StringFieldUpdateOperationsInput | string
   telefono?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   estado?: Prisma.EnumEstadoUsuarioFieldUpdateOperationsInput | $Enums.EstadoUsuario
+  correoConfirmado?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  correoConfirmadoEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   areaId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   rolId?: Prisma.StringFieldUpdateOperationsInput | string
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1978,6 +2096,8 @@ export type UsuarioCreateWithoutMovimientosActivoInput = {
   hashContrasena: string
   telefono?: string | null
   estado?: $Enums.EstadoUsuario
+  correoConfirmado?: boolean
+  correoConfirmadoEn?: Date | string | null
   creadoEn?: Date | string
   actualizadoEn?: Date | string
   area?: Prisma.AreaCreateNestedOneWithoutUsuariosInput
@@ -2006,6 +2126,8 @@ export type UsuarioUncheckedCreateWithoutMovimientosActivoInput = {
   hashContrasena: string
   telefono?: string | null
   estado?: $Enums.EstadoUsuario
+  correoConfirmado?: boolean
+  correoConfirmadoEn?: Date | string | null
   areaId?: string | null
   rolId: string
   creadoEn?: Date | string
@@ -2050,6 +2172,8 @@ export type UsuarioUpdateWithoutMovimientosActivoInput = {
   hashContrasena?: Prisma.StringFieldUpdateOperationsInput | string
   telefono?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   estado?: Prisma.EnumEstadoUsuarioFieldUpdateOperationsInput | $Enums.EstadoUsuario
+  correoConfirmado?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  correoConfirmadoEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   area?: Prisma.AreaUpdateOneWithoutUsuariosNestedInput
@@ -2078,6 +2202,8 @@ export type UsuarioUncheckedUpdateWithoutMovimientosActivoInput = {
   hashContrasena?: Prisma.StringFieldUpdateOperationsInput | string
   telefono?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   estado?: Prisma.EnumEstadoUsuarioFieldUpdateOperationsInput | $Enums.EstadoUsuario
+  correoConfirmado?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  correoConfirmadoEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   areaId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   rolId?: Prisma.StringFieldUpdateOperationsInput | string
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2106,6 +2232,8 @@ export type UsuarioCreateWithoutIncidentesActivoInput = {
   hashContrasena: string
   telefono?: string | null
   estado?: $Enums.EstadoUsuario
+  correoConfirmado?: boolean
+  correoConfirmadoEn?: Date | string | null
   creadoEn?: Date | string
   actualizadoEn?: Date | string
   area?: Prisma.AreaCreateNestedOneWithoutUsuariosInput
@@ -2134,6 +2262,8 @@ export type UsuarioUncheckedCreateWithoutIncidentesActivoInput = {
   hashContrasena: string
   telefono?: string | null
   estado?: $Enums.EstadoUsuario
+  correoConfirmado?: boolean
+  correoConfirmadoEn?: Date | string | null
   areaId?: string | null
   rolId: string
   creadoEn?: Date | string
@@ -2178,6 +2308,8 @@ export type UsuarioUpdateWithoutIncidentesActivoInput = {
   hashContrasena?: Prisma.StringFieldUpdateOperationsInput | string
   telefono?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   estado?: Prisma.EnumEstadoUsuarioFieldUpdateOperationsInput | $Enums.EstadoUsuario
+  correoConfirmado?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  correoConfirmadoEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   area?: Prisma.AreaUpdateOneWithoutUsuariosNestedInput
@@ -2206,6 +2338,8 @@ export type UsuarioUncheckedUpdateWithoutIncidentesActivoInput = {
   hashContrasena?: Prisma.StringFieldUpdateOperationsInput | string
   telefono?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   estado?: Prisma.EnumEstadoUsuarioFieldUpdateOperationsInput | $Enums.EstadoUsuario
+  correoConfirmado?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  correoConfirmadoEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   areaId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   rolId?: Prisma.StringFieldUpdateOperationsInput | string
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2234,6 +2368,8 @@ export type UsuarioCreateWithoutMovimientosInventarioInput = {
   hashContrasena: string
   telefono?: string | null
   estado?: $Enums.EstadoUsuario
+  correoConfirmado?: boolean
+  correoConfirmadoEn?: Date | string | null
   creadoEn?: Date | string
   actualizadoEn?: Date | string
   area?: Prisma.AreaCreateNestedOneWithoutUsuariosInput
@@ -2262,6 +2398,8 @@ export type UsuarioUncheckedCreateWithoutMovimientosInventarioInput = {
   hashContrasena: string
   telefono?: string | null
   estado?: $Enums.EstadoUsuario
+  correoConfirmado?: boolean
+  correoConfirmadoEn?: Date | string | null
   areaId?: string | null
   rolId: string
   creadoEn?: Date | string
@@ -2306,6 +2444,8 @@ export type UsuarioUpdateWithoutMovimientosInventarioInput = {
   hashContrasena?: Prisma.StringFieldUpdateOperationsInput | string
   telefono?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   estado?: Prisma.EnumEstadoUsuarioFieldUpdateOperationsInput | $Enums.EstadoUsuario
+  correoConfirmado?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  correoConfirmadoEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   area?: Prisma.AreaUpdateOneWithoutUsuariosNestedInput
@@ -2334,6 +2474,8 @@ export type UsuarioUncheckedUpdateWithoutMovimientosInventarioInput = {
   hashContrasena?: Prisma.StringFieldUpdateOperationsInput | string
   telefono?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   estado?: Prisma.EnumEstadoUsuarioFieldUpdateOperationsInput | $Enums.EstadoUsuario
+  correoConfirmado?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  correoConfirmadoEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   areaId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   rolId?: Prisma.StringFieldUpdateOperationsInput | string
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2362,6 +2504,8 @@ export type UsuarioCreateWithoutNotificacionesInput = {
   hashContrasena: string
   telefono?: string | null
   estado?: $Enums.EstadoUsuario
+  correoConfirmado?: boolean
+  correoConfirmadoEn?: Date | string | null
   creadoEn?: Date | string
   actualizadoEn?: Date | string
   area?: Prisma.AreaCreateNestedOneWithoutUsuariosInput
@@ -2390,6 +2534,8 @@ export type UsuarioUncheckedCreateWithoutNotificacionesInput = {
   hashContrasena: string
   telefono?: string | null
   estado?: $Enums.EstadoUsuario
+  correoConfirmado?: boolean
+  correoConfirmadoEn?: Date | string | null
   areaId?: string | null
   rolId: string
   creadoEn?: Date | string
@@ -2434,6 +2580,8 @@ export type UsuarioUpdateWithoutNotificacionesInput = {
   hashContrasena?: Prisma.StringFieldUpdateOperationsInput | string
   telefono?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   estado?: Prisma.EnumEstadoUsuarioFieldUpdateOperationsInput | $Enums.EstadoUsuario
+  correoConfirmado?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  correoConfirmadoEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   area?: Prisma.AreaUpdateOneWithoutUsuariosNestedInput
@@ -2462,6 +2610,8 @@ export type UsuarioUncheckedUpdateWithoutNotificacionesInput = {
   hashContrasena?: Prisma.StringFieldUpdateOperationsInput | string
   telefono?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   estado?: Prisma.EnumEstadoUsuarioFieldUpdateOperationsInput | $Enums.EstadoUsuario
+  correoConfirmado?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  correoConfirmadoEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   areaId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   rolId?: Prisma.StringFieldUpdateOperationsInput | string
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2490,6 +2640,8 @@ export type UsuarioCreateWithoutAuditoriasInput = {
   hashContrasena: string
   telefono?: string | null
   estado?: $Enums.EstadoUsuario
+  correoConfirmado?: boolean
+  correoConfirmadoEn?: Date | string | null
   creadoEn?: Date | string
   actualizadoEn?: Date | string
   area?: Prisma.AreaCreateNestedOneWithoutUsuariosInput
@@ -2518,6 +2670,8 @@ export type UsuarioUncheckedCreateWithoutAuditoriasInput = {
   hashContrasena: string
   telefono?: string | null
   estado?: $Enums.EstadoUsuario
+  correoConfirmado?: boolean
+  correoConfirmadoEn?: Date | string | null
   areaId?: string | null
   rolId: string
   creadoEn?: Date | string
@@ -2562,6 +2716,8 @@ export type UsuarioUpdateWithoutAuditoriasInput = {
   hashContrasena?: Prisma.StringFieldUpdateOperationsInput | string
   telefono?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   estado?: Prisma.EnumEstadoUsuarioFieldUpdateOperationsInput | $Enums.EstadoUsuario
+  correoConfirmado?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  correoConfirmadoEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   area?: Prisma.AreaUpdateOneWithoutUsuariosNestedInput
@@ -2590,6 +2746,8 @@ export type UsuarioUncheckedUpdateWithoutAuditoriasInput = {
   hashContrasena?: Prisma.StringFieldUpdateOperationsInput | string
   telefono?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   estado?: Prisma.EnumEstadoUsuarioFieldUpdateOperationsInput | $Enums.EstadoUsuario
+  correoConfirmado?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  correoConfirmadoEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   areaId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   rolId?: Prisma.StringFieldUpdateOperationsInput | string
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2618,6 +2776,8 @@ export type UsuarioCreateWithoutReportesGeneradosInput = {
   hashContrasena: string
   telefono?: string | null
   estado?: $Enums.EstadoUsuario
+  correoConfirmado?: boolean
+  correoConfirmadoEn?: Date | string | null
   creadoEn?: Date | string
   actualizadoEn?: Date | string
   area?: Prisma.AreaCreateNestedOneWithoutUsuariosInput
@@ -2646,6 +2806,8 @@ export type UsuarioUncheckedCreateWithoutReportesGeneradosInput = {
   hashContrasena: string
   telefono?: string | null
   estado?: $Enums.EstadoUsuario
+  correoConfirmado?: boolean
+  correoConfirmadoEn?: Date | string | null
   areaId?: string | null
   rolId: string
   creadoEn?: Date | string
@@ -2690,6 +2852,8 @@ export type UsuarioUpdateWithoutReportesGeneradosInput = {
   hashContrasena?: Prisma.StringFieldUpdateOperationsInput | string
   telefono?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   estado?: Prisma.EnumEstadoUsuarioFieldUpdateOperationsInput | $Enums.EstadoUsuario
+  correoConfirmado?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  correoConfirmadoEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   area?: Prisma.AreaUpdateOneWithoutUsuariosNestedInput
@@ -2718,6 +2882,8 @@ export type UsuarioUncheckedUpdateWithoutReportesGeneradosInput = {
   hashContrasena?: Prisma.StringFieldUpdateOperationsInput | string
   telefono?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   estado?: Prisma.EnumEstadoUsuarioFieldUpdateOperationsInput | $Enums.EstadoUsuario
+  correoConfirmado?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  correoConfirmadoEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   areaId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   rolId?: Prisma.StringFieldUpdateOperationsInput | string
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2746,6 +2912,8 @@ export type UsuarioCreateWithoutSolicitudesCompraInput = {
   hashContrasena: string
   telefono?: string | null
   estado?: $Enums.EstadoUsuario
+  correoConfirmado?: boolean
+  correoConfirmadoEn?: Date | string | null
   creadoEn?: Date | string
   actualizadoEn?: Date | string
   area?: Prisma.AreaCreateNestedOneWithoutUsuariosInput
@@ -2774,6 +2942,8 @@ export type UsuarioUncheckedCreateWithoutSolicitudesCompraInput = {
   hashContrasena: string
   telefono?: string | null
   estado?: $Enums.EstadoUsuario
+  correoConfirmado?: boolean
+  correoConfirmadoEn?: Date | string | null
   areaId?: string | null
   rolId: string
   creadoEn?: Date | string
@@ -2818,6 +2988,8 @@ export type UsuarioUpdateWithoutSolicitudesCompraInput = {
   hashContrasena?: Prisma.StringFieldUpdateOperationsInput | string
   telefono?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   estado?: Prisma.EnumEstadoUsuarioFieldUpdateOperationsInput | $Enums.EstadoUsuario
+  correoConfirmado?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  correoConfirmadoEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   area?: Prisma.AreaUpdateOneWithoutUsuariosNestedInput
@@ -2846,6 +3018,8 @@ export type UsuarioUncheckedUpdateWithoutSolicitudesCompraInput = {
   hashContrasena?: Prisma.StringFieldUpdateOperationsInput | string
   telefono?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   estado?: Prisma.EnumEstadoUsuarioFieldUpdateOperationsInput | $Enums.EstadoUsuario
+  correoConfirmado?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  correoConfirmadoEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   areaId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   rolId?: Prisma.StringFieldUpdateOperationsInput | string
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2874,6 +3048,8 @@ export type UsuarioCreateManyRolInput = {
   hashContrasena: string
   telefono?: string | null
   estado?: $Enums.EstadoUsuario
+  correoConfirmado?: boolean
+  correoConfirmadoEn?: Date | string | null
   areaId?: string | null
   creadoEn?: Date | string
   actualizadoEn?: Date | string
@@ -2888,6 +3064,8 @@ export type UsuarioUpdateWithoutRolInput = {
   hashContrasena?: Prisma.StringFieldUpdateOperationsInput | string
   telefono?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   estado?: Prisma.EnumEstadoUsuarioFieldUpdateOperationsInput | $Enums.EstadoUsuario
+  correoConfirmado?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  correoConfirmadoEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   area?: Prisma.AreaUpdateOneWithoutUsuariosNestedInput
@@ -2916,6 +3094,8 @@ export type UsuarioUncheckedUpdateWithoutRolInput = {
   hashContrasena?: Prisma.StringFieldUpdateOperationsInput | string
   telefono?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   estado?: Prisma.EnumEstadoUsuarioFieldUpdateOperationsInput | $Enums.EstadoUsuario
+  correoConfirmado?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  correoConfirmadoEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   areaId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2944,6 +3124,8 @@ export type UsuarioUncheckedUpdateManyWithoutRolInput = {
   hashContrasena?: Prisma.StringFieldUpdateOperationsInput | string
   telefono?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   estado?: Prisma.EnumEstadoUsuarioFieldUpdateOperationsInput | $Enums.EstadoUsuario
+  correoConfirmado?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  correoConfirmadoEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   areaId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -2958,6 +3140,8 @@ export type UsuarioCreateManyAreaInput = {
   hashContrasena: string
   telefono?: string | null
   estado?: $Enums.EstadoUsuario
+  correoConfirmado?: boolean
+  correoConfirmadoEn?: Date | string | null
   rolId: string
   creadoEn?: Date | string
   actualizadoEn?: Date | string
@@ -2972,6 +3156,8 @@ export type UsuarioUpdateWithoutAreaInput = {
   hashContrasena?: Prisma.StringFieldUpdateOperationsInput | string
   telefono?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   estado?: Prisma.EnumEstadoUsuarioFieldUpdateOperationsInput | $Enums.EstadoUsuario
+  correoConfirmado?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  correoConfirmadoEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   rol?: Prisma.RolUpdateOneRequiredWithoutUsuariosNestedInput
@@ -3000,6 +3186,8 @@ export type UsuarioUncheckedUpdateWithoutAreaInput = {
   hashContrasena?: Prisma.StringFieldUpdateOperationsInput | string
   telefono?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   estado?: Prisma.EnumEstadoUsuarioFieldUpdateOperationsInput | $Enums.EstadoUsuario
+  correoConfirmado?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  correoConfirmadoEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   rolId?: Prisma.StringFieldUpdateOperationsInput | string
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -3028,6 +3216,8 @@ export type UsuarioUncheckedUpdateManyWithoutAreaInput = {
   hashContrasena?: Prisma.StringFieldUpdateOperationsInput | string
   telefono?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   estado?: Prisma.EnumEstadoUsuarioFieldUpdateOperationsInput | $Enums.EstadoUsuario
+  correoConfirmado?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  correoConfirmadoEn?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   rolId?: Prisma.StringFieldUpdateOperationsInput | string
   creadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   actualizadoEn?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -3190,6 +3380,8 @@ export type UsuarioSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   hashContrasena?: boolean
   telefono?: boolean
   estado?: boolean
+  correoConfirmado?: boolean
+  correoConfirmadoEn?: boolean
   areaId?: boolean
   rolId?: boolean
   creadoEn?: boolean
@@ -3222,6 +3414,8 @@ export type UsuarioSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exten
   hashContrasena?: boolean
   telefono?: boolean
   estado?: boolean
+  correoConfirmado?: boolean
+  correoConfirmadoEn?: boolean
   areaId?: boolean
   rolId?: boolean
   creadoEn?: boolean
@@ -3239,6 +3433,8 @@ export type UsuarioSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exten
   hashContrasena?: boolean
   telefono?: boolean
   estado?: boolean
+  correoConfirmado?: boolean
+  correoConfirmadoEn?: boolean
   areaId?: boolean
   rolId?: boolean
   creadoEn?: boolean
@@ -3256,13 +3452,15 @@ export type UsuarioSelectScalar = {
   hashContrasena?: boolean
   telefono?: boolean
   estado?: boolean
+  correoConfirmado?: boolean
+  correoConfirmadoEn?: boolean
   areaId?: boolean
   rolId?: boolean
   creadoEn?: boolean
   actualizadoEn?: boolean
 }
 
-export type UsuarioOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "nombres" | "apellidos" | "correo" | "nombreUsuario" | "hashContrasena" | "telefono" | "estado" | "areaId" | "rolId" | "creadoEn" | "actualizadoEn", ExtArgs["result"]["usuario"]>
+export type UsuarioOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "nombres" | "apellidos" | "correo" | "nombreUsuario" | "hashContrasena" | "telefono" | "estado" | "correoConfirmado" | "correoConfirmadoEn" | "areaId" | "rolId" | "creadoEn" | "actualizadoEn", ExtArgs["result"]["usuario"]>
 export type UsuarioInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   area?: boolean | Prisma.Usuario$areaArgs<ExtArgs>
   rol?: boolean | Prisma.RolDefaultArgs<ExtArgs>
@@ -3320,6 +3518,8 @@ export type $UsuarioPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     hashContrasena: string
     telefono: string | null
     estado: $Enums.EstadoUsuario
+    correoConfirmado: boolean
+    correoConfirmadoEn: Date | null
     areaId: string | null
     rolId: string
     creadoEn: Date
@@ -3771,6 +3971,8 @@ export interface UsuarioFieldRefs {
   readonly hashContrasena: Prisma.FieldRef<"Usuario", 'String'>
   readonly telefono: Prisma.FieldRef<"Usuario", 'String'>
   readonly estado: Prisma.FieldRef<"Usuario", 'EstadoUsuario'>
+  readonly correoConfirmado: Prisma.FieldRef<"Usuario", 'Boolean'>
+  readonly correoConfirmadoEn: Prisma.FieldRef<"Usuario", 'DateTime'>
   readonly areaId: Prisma.FieldRef<"Usuario", 'String'>
   readonly rolId: Prisma.FieldRef<"Usuario", 'String'>
   readonly creadoEn: Prisma.FieldRef<"Usuario", 'DateTime'>

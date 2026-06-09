@@ -83,6 +83,8 @@ model Usuario {
   hashContrasena String
   telefono       String?
   estado         EstadoUsuario @default(ACTIVO)
+  correoConfirmado Boolean      @default(true)
+  correoConfirmadoEn DateTime?
   areaId         String?
   rolId          String
   creadoEn       DateTime      @default(now())
