@@ -5,7 +5,7 @@ interface ButtonProps {
   label: string;
   onClick?: () => void;
   type?: 'button' | 'submit' | 'reset';
-  variant?: 'primary' | 'secondary' | 'danger' | 'warning' | 'success';
+  variant?: 'primary' | 'secondary' | 'danger' | 'warning' | 'success' | 'ghost' | 'outline' | 'accent';
   size?: 'sm' | 'md' | 'lg';
   disabled?: boolean;
   className?: string;

@@ -327,6 +327,113 @@
 }
 .alert-close:hover { opacity: 1; }
 
+/* ── Form field ────────────────────────────────────────── */
+.form-field {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+.form-field__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.form-field__required {
+  color: var(--color-danger);
+}
+
+.form-field__control {
+  width: 100%;
+  min-width: 0;
+  min-height: var(--input-height);
+  border: var(--input-border);
+  border-radius: var(--radius-base);
+  background: var(--input-bg);
+  color: var(--color-text);
+  font: inherit;
+  padding: var(--space-2);
+  box-sizing: border-box;
+  transition:
+    background var(--transition-base),
+    border-color var(--transition-base);
+}
+
+.form-field__control:focus {
+  outline: none;
+  border: var(--input-border-focus);
+  background: var(--input-bg-focus);
+}
+
+.form-field__control::placeholder {
+  color: var(--color-text-muted);
+}
+
+.form-field__control--textarea {
+  min-height: 96px;
+  resize: vertical;
+}
+
+.form-field--error .form-field__control {
+  border-color: var(--color-danger-border);
+}
+
+.form-field__message {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+}
+
+.form-field__message--error {
+  color: var(--color-danger);
+}
+
+/* ── Empty state ───────────────────────────────────────── */
+.empty-state {
+  display: grid;
+  place-items: center;
+  gap: var(--space-2);
+  min-height: 140px;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-base);
+  color: var(--color-text-secondary);
+  text-align: center;
+  padding: var(--space-5);
+}
+
+.empty-state__icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-base);
+  background: var(--color-primary-muted);
+  color: var(--color-primary);
+}
+
+.empty-state__title,
+.empty-state__message {
+  margin: 0;
+}
+
+.empty-state__title {
+  color: var(--color-text);
+  font-weight: var(--font-weight-semibold);
+}
+
+.empty-state__message {
+  margin-top: var(--space-1);
+  font-size: var(--font-size-sm);
+}
+
+.empty-state__action {
+  margin-top: var(--space-2);
+}
+
 /* ── Modal ─────────────────────────────────────────────── */
 .modal-backdrop {
   position: fixed;
