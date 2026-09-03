@@ -33,19 +33,21 @@ pipeline {
 
         stage('Docker Build') {
             steps {
-                sh "docker compose -f docker-compose.prod.yml build"
+                sh "docker compose -p seguimiento_activos -f docker-compose.prod.yml build"
             }
         }
 
-        stage('Deploy Detached') {  
+        stage('Deploy Detached') {
             // when {
-            //     expression { 
-            //         return env.GIT_BRANCH == "origin/${env.TARGET_BRANCH}" || env.GIT_BRANCH == env.TARGET_BRANCH 
+            //     expression {
+            //         return env.GIT_BRANCH == "origin/${env.TARGET_BRANCH}" || env.GIT_BRANCH == env.TARGET_BRANCH
             //     }
             // }
             steps {
-                sh "docker compose -p seguimiento_activos -f docker-compose.deploy.yml down"
-                sh "docker compose -p seguimiento_activos -f docker-compose.deploy.yml up -d --force-recreate --remove-orphans"
+                // --remove-orphans clears stale containers from older compose files
+                // (e.g. the Sprint4 docker-compose.deploy.yml stack that used to bind :8084).
+                sh "docker compose -p seguimiento_activos -f docker-compose.prod.yml down --remove-orphans || true"
+                sh "docker compose -p seguimiento_activos -f docker-compose.prod.yml up -d --force-recreate --remove-orphans"
             }
         }
     }
@@ -92,7 +94,8 @@ post {
 EOF
 
                     echo "Enviando payload a Discord..."
-                    curl -s -S --max-time 10 -H "Content-Type: application/json" -X POST -d @discord_payload.json "\$DISCORD_URL"
+                    # Notification must never fail the build (Jenkins agent has no DNS/egress to discord.com in some networks).
+                    curl -s -S --max-time 10 -H "Content-Type: application/json" -X POST -d @discord_payload.json "\$DISCORD_URL" || echo "Discord notification failed (ignored)"
                     """
                 }
             }

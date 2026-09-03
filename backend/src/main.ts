@@ -11,6 +11,17 @@ import * as fs from 'fs';
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   app.setGlobalPrefix('api', { exclude: ['health'] });
+
+  // Deployed origin(s): APP_DOMAIN (the public host behind Cloudflare) plus any
+  // comma-separated extras in CORS_EXTRA_ORIGINS. Local dev origins are always allowed.
+  const appDomain = process.env.APP_DOMAIN?.trim();
+  const deployedOrigins = appDomain
+    ? [`https://${appDomain}`, `http://${appDomain}`]
+    : [];
+  const extraOrigins = (process.env.CORS_EXTRA_ORIGINS ?? '')
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean);
   app.enableCors({
     origin: [
       'http://localhost:5173',
@@ -18,6 +29,8 @@ async function bootstrap() {
       'http://localhost:8084',
       'http://127.0.0.1:5173',
       'http://127.0.0.1:5174',
+      ...deployedOrigins,
+      ...extraOrigins,
     ],
     credentials: true,
   });

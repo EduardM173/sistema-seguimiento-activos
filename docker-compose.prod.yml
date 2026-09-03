@@ -29,8 +29,7 @@ services:
     container_name: activos_consul_prod
     restart: unless-stopped
     command: agent -server -bootstrap-expect=1 -client=0.0.0.0 -advertise=consul
-    ports:
-      - "${PROD_CONSUL_UI_PORT:-8500}:8500"
+    # No host port: reachable only inside activos_prod_net (consul:8500).
     networks:
       - activos_prod_net
 
@@ -77,8 +76,7 @@ services:
     command: sh -c "npx prisma migrate deploy && npm run start:prod"
     volumes:
       - activos_uploads_prod:/app/backend/uploads
-    ports:
-      - "${PROD_BACKEND_SWAGGER_PORT:-3001}:${BACKEND_PORT:-3001}"
+    # No host port: reachable only inside activos_prod_net (backend:3001), proxied by nginx.
     depends_on:
       postgres:
         condition: service_healthy
@@ -107,8 +105,7 @@ services:
       CONSUL_HOST:      consul
       CONSUL_PORT:      "8500"
       SERVICE_ADDRESS:  reports
-    ports:
-      - "${PROD_REPORTS_SWAGGER_PORT:-3002}:${REPORTS_PORT:-3002}"
+    # No host port: reachable only inside activos_prod_net (reports:3002), proxied by nginx.
     depends_on:
       postgres:
         condition: service_healthy
@@ -137,8 +134,7 @@ services:
       CONSUL_HOST:      consul
       CONSUL_PORT:      "8500"
       SERVICE_ADDRESS:  auditoria
-    ports:
-      - "${PROD_AUDITORIA_SWAGGER_PORT:-3003}:${AUDIT_MS_PORT:-3003}"
+    # No host port: reachable only inside activos_prod_net (auditoria:3003), proxied by nginx.
     depends_on:
       postgres:
         condition: service_healthy
@@ -179,9 +175,7 @@ services:
       NEO4J_ACCEPT_LICENSE_AGREEMENT:                  "yes"
     volumes:
       - activos_neo4j_data_prod:/data
-    ports:
-      - "${PROD_NEO4J_UI_PORT:-7474}:7474"
-      - "${PROD_NEO4J_BOLT_PORT:-7687}:7687"
+    # No host ports: HTTP 7474 / Bolt 7687 reachable only inside activos_prod_net.
     networks:
       - activos_prod_net
     healthcheck:
@@ -226,8 +220,7 @@ services:
       CHUNK_OVERLAP:           ${CHUNK_OVERLAP:-64}
       DSL_MAX_DEDUCTION_STEPS: ${DSL_MAX_DEDUCTION_STEPS:-100}
       DSL_SIMPLIFY_BEFORE_ANSWER: ${DSL_SIMPLIFY_BEFORE_ANSWER:-true}
-    ports:
-      - "${PROD_AGENT_DOCS_PORT:-8000}:${APP_PORT:-8000}"
+    # No host port: reachable only inside activos_prod_net (agent:8000), proxied by nginx.
     depends_on:
       agent-postgres:
         condition: service_healthy
@@ -250,8 +243,9 @@ services:
       CONSUL_HOST: consul
       CONSUL_PORT: "8500"
       APP_DOMAIN:  ${APP_DOMAIN:-localhost}
+    # The ONLY container published to the host. Cloudflare fronts this on app.dontrisk.org.
     ports:
-      - "${PROD_GATEWAY_PORT:-8080}:80"
+      - "${PROD_GATEWAY_PORT:-80}:80"
     depends_on:
       - consul
       - backend
