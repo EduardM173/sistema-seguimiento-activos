@@ -18,8 +18,9 @@ upstream {{ .Name }} {
 {{ end }}{{ end }}{{ end }}
 
 server {
-    listen 80;
-    server_name {{ env "APP_DOMAIN" }};
+    listen 80 default_server;
+    # Public host (Cloudflare) + names used for in-cluster / health-check requests.
+    server_name {{ env "APP_DOMAIN" }} localhost nginx _;
 
     # ── Frontend estático ────────────────────────────────────────────────────
     root /usr/share/nginx/html;
