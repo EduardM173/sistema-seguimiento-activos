@@ -26,6 +26,10 @@ pipeline {
 
         stage('Setup Environment') {
             steps {
+                // A previous build's containers can leave a root-owned ./.env in the
+                // workspace that the Jenkins user can't overwrite. Remove it as root
+                // from a sibling container sharing Jenkins' volumes before writing.
+                sh 'docker run --rm --volumes-from jenkins busybox rm -f "$WORKSPACE/.env" || true'
                 sh 'cp $SECRET_ENV_PATH ./.env'
                 sh 'echo "NEXUS_URL=$NEXUS_URL" >> ./.env'
             }
@@ -54,8 +58,8 @@ pipeline {
 
 post {
         always {
-            sh "rm -f ./.env"
-            sh "docker image prune -af"
+            sh 'docker run --rm --volumes-from jenkins busybox rm -f "$WORKSPACE/.env" || rm -f ./.env || true'
+            sh "docker image prune -af || true"
 
             script {
                 withCredentials([string(credentialsId: 'DISCORD_WEBHOOK', variable: 'DISCORD_URL')]) {
