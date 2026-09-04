@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { register } from '../../services/auth.service';
+import { Link, useNavigate } from 'react-router-dom';
+import { login, register } from '../../services/auth.service';
+import { useAuth } from '../../context/AuthContext';
 import {
   IconCheck,
   IconEye,
@@ -11,6 +12,9 @@ import {
 } from '../common/Icon';
 
 export default function RegisterForm() {
+  const navigate = useNavigate();
+  const { setLoginData } = useAuth();
+
   const [nombres, setNombres] = useState('');
   const [apellidos, setApellidos] = useState('');
   const [correo, setCorreo] = useState('');
@@ -45,7 +49,7 @@ export default function RegisterForm() {
 
     try {
       setLoading(true);
-      const response = await register({
+      await register({
         nombres: nombres.trim(),
         apellidos: apellidos.trim(),
         correo: correo.trim(),
@@ -54,7 +58,25 @@ export default function RegisterForm() {
         password,
       });
 
-      setSuccessMessage(response.message);
+      // Log the new user straight in so registration is a single step.
+      // Email confirmation is not enforced on login; if auto-login fails for
+      // any reason, fall back to the "now sign in" message.
+      try {
+        const session = await login({
+          identifier: correo.trim(),
+          password,
+        });
+        sessionStorage.setItem('accessToken', session.accessToken);
+        sessionStorage.setItem('usuario', JSON.stringify(session.usuario));
+        setLoginData(session);
+        navigate('/dashboard', { replace: true });
+        return;
+      } catch {
+        setSuccessMessage(
+          'Cuenta creada correctamente. Ya puedes iniciar sesión.',
+        );
+      }
+
       setNombres('');
       setApellidos('');
       setCorreo('');
