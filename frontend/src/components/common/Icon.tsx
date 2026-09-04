@@ -47,4 +47,5 @@ export {
   Upload            as IconUpload,
   Lightbulb         as IconLightbulb,
   Calendar          as IconCalendar,
+  Menu              as IconMenu,
 } from 'lucide-react';

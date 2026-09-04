@@ -312,7 +312,11 @@ export function SmartTable<T extends object>({
 
                     if (col.primary) {
                       return (
-                        <td key={col.id} className="st__td st__td--primary">
+                        <td
+                          key={col.id}
+                          className="st__td st__td--primary"
+                          data-label={col.header}
+                        >
                           <div className="st__primaryCell">
                             {/* Name text — fires onRowClick */}
                             {onRowClick ? (
@@ -347,7 +351,7 @@ export function SmartTable<T extends object>({
                     }
 
                     return (
-                      <td key={col.id} className="st__td">
+                      <td key={col.id} className="st__td" data-label={col.header}>
                         {col.render
                           ? col.render(value, row)
                           : (value as React.ReactNode) ?? '—'}

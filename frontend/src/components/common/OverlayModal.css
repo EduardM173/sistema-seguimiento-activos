@@ -126,3 +126,36 @@
   border-top: 1px solid var(--color-border);
   margin-top: 4px;
 }
+
+/* ── Responsive: bottom sheet on phones ───────────────────
+   Anchoring to the bottom edge (vs. centering) keeps the modal reachable
+   with a thumb and avoids fighting the on-screen keyboard for space. */
+@media (max-width: 640px) {
+  .overlayModal__backdrop {
+    padding: var(--space-3, 12px);
+    align-items: flex-end;
+  }
+
+  .overlayModal__dialog {
+    max-width: 100% !important;
+    padding: 20px;
+    max-height: 85vh;
+  }
+
+  .overlayModal__title {
+    font-size: 1.15rem;
+  }
+
+  .overlayModal__closeBtn {
+    width: 44px;
+    height: 44px;
+  }
+
+  .overlayModal__footer {
+    flex-direction: column-reverse;
+  }
+
+  .overlayModal__footer .btn {
+    width: 100%;
+  }
+}

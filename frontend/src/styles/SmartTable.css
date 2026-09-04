@@ -330,20 +330,92 @@
   font-family: var(--font-family);
 }
 
-/* ── Responsive: horizontal scroll hint on small screens ─── */
+/* ── Responsive: one card per row below 640px ──────────────
+   A fixed-layout table just doesn't fit a phone. Below the breakpoint each
+   <tr> becomes a bordered card and each <td> a "LABEL  value" line, using
+   the column's own header text (threaded through as data-label on the <td>
+   in SmartTable.tsx) via the ::before content trick — no JS branch needed. */
 @media (max-width: 640px) {
-  .st__wrap::after {
-    content: '';
-    display: block;
-    position: absolute;
-    right: 0;
-    top: 0;
-    bottom: 0;
-    width: 32px;
-    pointer-events: none;
-    background: linear-gradient(to right, transparent, var(--color-bg));
-  }
   .st__wrap {
-    position: relative;
+    overflow-x: visible;
+  }
+
+  .st__table,
+  .st__tbody {
+    display: block;
+    width: 100%;
+  }
+
+  .st__thead {
+    display: none;
+  }
+
+  .st__tr {
+    display: block;
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-md);
+    padding: var(--space-3) var(--space-4);
+    margin-bottom: var(--space-3);
+    background: var(--color-surface);
+  }
+
+  .st__tr:last-child {
+    margin-bottom: 0;
+  }
+
+  .st__td {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: var(--space-2) 0;
+    border-bottom: 1px solid var(--color-border-light);
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    text-align: right;
+  }
+
+  .st__td:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+
+  .st__td::before {
+    content: attr(data-label);
+    font-size: 11px;
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    flex-shrink: 0;
+    text-align: left;
+  }
+
+  /* Primary column reads as the card's title, not another label/value row */
+  .st__td--primary {
+    display: block;
+    text-align: left;
+    padding-bottom: var(--space-3);
+    margin-bottom: var(--space-2);
+  }
+
+  .st__td--primary::before {
+    content: none;
+  }
+
+  .st__primaryName {
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  /* No hover state on touch — the actions arrow must stay visible */
+  .st__dropdownTrigger {
+    visibility: visible;
+  }
+
+  /* No column dragging on touch */
+  .st__resizeHandle {
+    display: none;
   }
 }
