@@ -52,13 +52,12 @@ pipeline {
             //     }
             // }
             steps {
-                // --remove-orphans clears stale containers from older compose files
-                // (e.g. the Sprint4 docker-compose.deploy.yml stack that used to bind :8084).
-                sh "docker compose -p seguimiento_activos -f docker-compose.prod.yml down --remove-orphans --timeout 30 || true"
-                // `restart:` containers can be resurrected by the runtime mid-`down`,
-                // leaving a name conflict on `up` ("container name ... already in use").
-                // Force-clear anything still labelled with this compose project.
-                sh "docker ps -aq --filter label=com.docker.compose.project=seguimiento_activos | xargs -r docker rm -f || true"
+                // No `down` first: with podman, `restart: unless-stopped` containers
+                // get resurrected mid-`down`, then `up` dies on a name conflict
+                // ("container name /activos_consul_prod is already in use") — intermittent,
+                // hit builds #59 and #64. `up --force-recreate` recreates every service
+                // container in place (compose owns the lifecycle, no race) and
+                // `--remove-orphans` drops anything left from an older compose file.
                 sh "docker compose -p seguimiento_activos -f docker-compose.prod.yml up -d --force-recreate --remove-orphans"
             }
         }
