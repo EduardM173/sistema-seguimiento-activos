@@ -248,6 +248,7 @@
 /* ── Priority Buttons ── */
 .priorityGroup {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
@@ -414,6 +415,16 @@
   .createAssetForm__footer .btn {
     width: 100%;
     justify-content: center;
+  }
+}
+
+@media (max-width: 640px) {
+  .formSection {
+    padding: 14px;
+  }
+
+  .uploadArea {
+    padding: 20px;
   }
 }
 
