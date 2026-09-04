@@ -5,9 +5,8 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  // Required by the Prisma CLI for `prisma migrate deploy`. The NestJS runtime
-  // ignores this and connects via PrismaPg(buildDatabaseUrl()) instead.
-  url      = env("DATABASE_URL")
+  // Prisma 7 forbids `url` here. The migrate CLI reads it from prisma.config.ts;
+  // the NestJS runtime connects via PrismaPg(buildDatabaseUrl()).
 }
 
 enum EstadoUsuario {

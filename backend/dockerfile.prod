@@ -42,10 +42,11 @@ RUN npm ci --omit=dev
 
 COPY --from=builder --chown=node:node /app/backend/dist ./dist
 
-# Prisma schema + migrations: needed at container start for `prisma migrate deploy`
-# (see docker-compose.prod.yml backend command). The generated client lives under
-# src/generated/prisma and is already compiled into ./dist.
+# Prisma schema + migrations + config: needed at container start for
+# `prisma migrate deploy` (see docker-compose.prod.yml backend command). The
+# generated client lives under src/generated/prisma and is already in ./dist.
 COPY --chown=node:node backend/prisma ./prisma
+COPY --chown=node:node backend/prisma.config.ts ./prisma.config.ts
 
 # Directorio de uploads con permisos node para inicialización de volumen
 RUN mkdir -p /app/uploads
