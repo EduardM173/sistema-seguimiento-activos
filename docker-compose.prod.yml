@@ -28,7 +28,10 @@ services:
     image: hashicorp/consul:1.18
     container_name: activos_consul_prod
     restart: unless-stopped
-    command: agent -server -bootstrap-expect=1 -client=0.0.0.0 -advertise=consul
+    # -advertise must be an IP, not the hostname "consul" (Consul refuses to start
+    # with "invalid ip address: consul"). Omit it; Consul auto-detects the eth0 IP,
+    # and other containers reach it via the Docker DNS name `consul`.
+    command: agent -server -bootstrap-expect=1 -client=0.0.0.0
     # No host port: reachable only inside activos_prod_net (consul:8500).
     networks:
       - activos_prod_net
