@@ -490,6 +490,33 @@
   border-top: 1px solid var(--glass-border);
 }
 
+@media (max-width: 640px) {
+  .modal-backdrop {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .modal {
+    max-width: 100%;
+    max-height: 90vh;
+  }
+
+  .modal-header,
+  .modal-body,
+  .modal-footer {
+    padding-left: var(--space-4);
+    padding-right: var(--space-4);
+  }
+
+  .modal-footer {
+    flex-direction: column-reverse;
+  }
+
+  .modal-footer .btn {
+    width: 100%;
+  }
+}
+
 /* ── Loading spinner ───────────────────────────────────── */
 .loading-spinner {
   display: flex;
@@ -587,4 +614,27 @@
 
 .data-table tbody tr:last-child td {
   border-bottom: none;
+}
+
+/* ── Responsive: touch targets ≤640px ─────────────────────
+   Shared by every page that uses Button/FormField/OverlayModal, so this one
+   block is most of "mobile-first" for anything not already covered by the
+   nav shell or SmartTable's card mode. */
+@media (max-width: 640px) {
+  .btn {
+    min-height: 44px;
+    padding: var(--space-2) var(--space-4);
+  }
+
+  .btn-sm,
+  .btn--sm {
+    min-height: 38px;
+  }
+
+  /* 16px stops iOS Safari auto-zooming the page on input focus — anything
+     smaller than that and every tap into a field jerks the viewport in. */
+  .form-field__control {
+    min-height: 44px;
+    font-size: 16px;
+  }
 }

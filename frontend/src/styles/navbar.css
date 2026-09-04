@@ -360,18 +360,115 @@
   z-index: 1;
 }
 
-/* ── Responsive ────────────────────────────────────────── */
-@media (max-width: 768px) {
+/* ── Drawer close button (mobile/tablet only) ─────────── */
+.sidebar__close {
+  display: none;
+  margin-left: auto;
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
+  color: var(--sidebar-text);
+  cursor: pointer;
+  padding: var(--space-2);
+  border-radius: var(--radius-md);
+}
+
+.sidebar__close:hover {
+  background: var(--sidebar-hover-bg);
+  color: var(--sidebar-text-active);
+}
+
+/* ── Backdrop (mobile/tablet only) ────────────────────── */
+.sidebar-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition-base);
+  z-index: var(--z-overlay);
+}
+
+.sidebar-backdrop--visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ── Mobile top bar (hamburger + brand) ───────────────── */
+.mobile-topbar {
+  display: none;
+  align-items: center;
+  gap: var(--space-3);
+  height: 56px;
+  padding: 0 var(--space-4);
+  position: sticky;
+  top: 0;
+  background: var(--sidebar-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border-bottom: 1px solid var(--glass-border);
+  z-index: var(--z-sticky);
+}
+
+.mobile-topbar__menu {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin: 0 calc(-1 * var(--space-2));
+  border: none;
+  background: transparent;
+  color: var(--sidebar-text);
+  cursor: pointer;
+  border-radius: var(--radius-md);
+}
+
+.mobile-topbar__menu:hover {
+  background: var(--sidebar-hover-bg);
+  color: var(--sidebar-text-active);
+}
+
+.mobile-topbar__brand {
+  font-family: var(--font-family-heading);
+  font-size: var(--font-size-base);
+  font-weight: 200;
+  color: var(--color-text-bright);
+}
+
+/* ── Responsive: off-canvas drawer ≤1024px ────────────────
+   Below this width the fixed 252px sidebar (see .sidebar above) no longer
+   fits alongside real content, so it slides fully off-screen and only
+   reappears — over a dimming backdrop — when opened from the mobile top
+   bar's hamburger button. ≥1024px it's untouched: always visible, no
+   backdrop, no top bar. */
+@media (max-width: 1024px) {
   .sidebar {
-    position: relative;
-    width: 100%;
-    height: auto;
-    flex-direction: row;
-    flex-wrap: wrap;
+    transform: translateX(-100%);
+    transition: transform var(--transition-base);
+    z-index: calc(var(--z-overlay) + 1);
+  }
+
+  .sidebar--open {
+    transform: translateX(0);
+    box-shadow: 4px 0 48px rgba(0, 0, 0, 0.55);
+  }
+
+  .sidebar__close {
+    display: inline-flex;
+  }
+
+  .sidebar-backdrop {
+    display: block;
   }
 
   .main-content {
     margin-left: 0;
+  }
+
+  .mobile-topbar {
+    display: flex;
   }
 }
 

@@ -15,6 +15,7 @@ import {
   IconSettings,
   IconLogOut,
   IconDollarSign,
+  IconX,
 } from '../common/Icon';
 import '../../styles/navbar.css';
 
@@ -33,7 +34,14 @@ type BottomItem = {
   action?: () => void;
 };
 
-export default function Navbar() {
+type NavbarProps = {
+  /** Whether the off-canvas drawer is open (mobile/tablet only; ignored ≥1024px). */
+  isOpen?: boolean;
+  /** Called to close the drawer — backdrop click, Escape, or a route change. */
+  onClose?: () => void;
+};
+
+export default function Navbar({ isOpen = false, onClose }: NavbarProps) {
   const { logout, hasPermission, user } = useAuth();
   const location = useLocation();
   const [unreadNotifications, setUnreadNotifications] = useState(0);
@@ -50,6 +58,23 @@ export default function Navbar() {
       setCommerceOpen(true);
     }
   }, [location.pathname]);
+
+  // Close the mobile drawer on every navigation — covers link clicks without
+  // needing an onClick handler on each NavLink.
+  useEffect(() => {
+    onClose?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
+
+  // Close on Escape while the drawer is open.
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose?.();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
   useEffect(() => {
     if (!hasPermission('NOTIFICATION_VIEW')) {
@@ -220,7 +245,15 @@ export default function Navbar() {
   ];
 
   return (
-    <aside className="sidebar">
+    <>
+      {/* Mobile/tablet only (≤1024px, see navbar.css): dims the page and
+          closes the drawer on tap. Inert and invisible above that width. */}
+      <div
+        className={`sidebar-backdrop${isOpen ? ' sidebar-backdrop--visible' : ''}`}
+        onClick={onClose}
+        aria-hidden="true"
+      />
+      <aside className={`sidebar${isOpen ? ' sidebar--open' : ''}`}>
       <div className="sidebar__top">
         {/* Brand */}
         <div className="sidebar__brand">
@@ -231,6 +264,14 @@ export default function Navbar() {
             ActivoGestión
             <span>Sistema de Activos</span>
           </span>
+          <button
+            type="button"
+            className="sidebar__close"
+            onClick={onClose}
+            aria-label="Cerrar menú"
+          >
+            <IconX size={20} />
+          </button>
         </div>
 
         {/* Navigation */}
@@ -334,6 +375,7 @@ export default function Navbar() {
           ))}
         </ul>
       </div>
-    </aside>
+      </aside>
+    </>
   );
 }
