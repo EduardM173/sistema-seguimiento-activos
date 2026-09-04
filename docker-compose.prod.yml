@@ -216,8 +216,8 @@ services:
       SERVICE_ADDRESS:      agent
       DEEPLINK_NAV_MAP_URL: http://nginx/activos-frontend/__deeplink/navigation-map.json
       APP_PORT:                ${APP_PORT:-8000}
-      EMBEDDING_MODEL:         ${EMBEDDING_MODEL:-text-embedding-004}
-      LLM_MODEL:               ${LLM_MODEL:-gemini-2.0-flash}
+      EMBEDDING_MODEL:         ${EMBEDDING_MODEL:-gemini-embedding-001}
+      LLM_MODEL:               ${LLM_MODEL:-gemini-2.5-flash}
       LLM_TEMPERATURE:         ${LLM_TEMPERATURE:-0.0}
       CHUNK_SIZE:              ${CHUNK_SIZE:-512}
       CHUNK_OVERLAP:           ${CHUNK_OVERLAP:-64}

@@ -48,8 +48,8 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
 
     # RAG
-    embedding_model: str = "text-embedding-004"
-    llm_model: str = "gemini-2.0-flash"
+    embedding_model: str = "gemini-embedding-001"
+    llm_model: str = "gemini-2.5-flash"
     llm_temperature: float = 0.0
     chunk_size: int = 512
     chunk_overlap: int = 64
