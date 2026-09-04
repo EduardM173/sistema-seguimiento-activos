@@ -26,12 +26,16 @@ pipeline {
 
         stage('Setup Environment') {
             steps {
-                // A previous build's containers can leave a root-owned ./.env in the
-                // workspace that the Jenkins user can't overwrite. Remove it as root
-                // from a sibling container sharing Jenkins' volumes before writing.
-                sh 'docker run --rm --volumes-from jenkins busybox rm -f "$WORKSPACE/.env" || true'
-                sh 'cp $SECRET_ENV_PATH ./.env'
-                sh 'echo "NEXUS_URL=$NEXUS_URL" >> ./.env'
+                // Build ./.env from the Jenkins secret file + NEXUS_URL.
+                // Use `cat >` not `cp`: `cp` copies the secret file's 0400 mode,
+                // which then makes the `>>` append fail with "Permission denied".
+                sh '''
+                    set -eu
+                    rm -f ./.env
+                    cat "$SECRET_ENV_PATH" > ./.env
+                    printf 'NEXUS_URL=%s\\n' "$NEXUS_URL" >> ./.env
+                    chmod 600 ./.env
+                '''
             }
         }
 
@@ -58,7 +62,7 @@ pipeline {
 
 post {
         always {
-            sh 'docker run --rm --volumes-from jenkins busybox rm -f "$WORKSPACE/.env" || rm -f ./.env || true'
+            sh 'rm -f ./.env || true'
             sh "docker image prune -af || true"
 
             script {
