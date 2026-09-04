@@ -100,6 +100,8 @@ export const UsuarioScalarFieldEnum = {
   hashContrasena: 'hashContrasena',
   telefono: 'telefono',
   estado: 'estado',
+  correoConfirmado: 'correoConfirmado',
+  correoConfirmadoEn: 'correoConfirmadoEn',
   areaId: 'areaId',
   rolId: 'rolId',
   creadoEn: 'creadoEn',

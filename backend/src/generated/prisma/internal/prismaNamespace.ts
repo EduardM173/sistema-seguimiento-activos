@@ -2101,6 +2101,8 @@ export const UsuarioScalarFieldEnum = {
   hashContrasena: 'hashContrasena',
   telefono: 'telefono',
   estado: 'estado',
+  correoConfirmado: 'correoConfirmado',
+  correoConfirmadoEn: 'correoConfirmadoEn',
   areaId: 'areaId',
   rolId: 'rolId',
   creadoEn: 'creadoEn',
@@ -2488,6 +2490,13 @@ export type ListEnumEstadoUsuarioFieldRefInput<$PrismaModel> = FieldRefInputType
 
 
 /**
+ * Reference to a field of type 'Boolean'
+ */
+export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
+    
+
+
+/**
  * Reference to a field of type 'DateTime'
  */
 export type DateTimeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'DateTime'>
@@ -2666,13 +2675,6 @@ export type EnumEstadoSolicitudCompraFieldRefInput<$PrismaModel> = FieldRefInput
  * Reference to a field of type 'EstadoSolicitudCompra[]'
  */
 export type ListEnumEstadoSolicitudCompraFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'EstadoSolicitudCompra[]'>
-    
-
-
-/**
- * Reference to a field of type 'Boolean'
- */
-export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Boolean'>
     
 
 

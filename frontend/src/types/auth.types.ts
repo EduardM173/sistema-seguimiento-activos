@@ -35,3 +35,27 @@ export type LoginResponse = {
   accessToken: string;
   usuario: AuthUser;
 };
+
+export type RegisterRequest = {
+  nombres: string;
+  apellidos: string;
+  correo: string;
+  nombreUsuario: string;
+  password: string;
+  telefono?: string;
+};
+
+export type RegisterResponse = {
+  message: string;
+  emailConfirmationSent: boolean;
+  usuario: {
+    id: string;
+    nombres: string;
+    apellidos: string;
+    correo: string;
+    nombreUsuario: string;
+    estado: string;
+    correoConfirmado: boolean;
+    creadoEn: string;
+  };
+};

@@ -2,6 +2,8 @@ import type {
   LoginRequest,
   LoginResponse,
   AuthUser,
+  RegisterRequest,
+  RegisterResponse,
 } from "../types/auth.types";
 import { ActivosService } from '@activos/config/browser';
 
@@ -38,6 +40,25 @@ export async function login(data: LoginRequest): Promise<LoginResponse> {
   }
 
   return result as LoginResponse;
+}
+
+export async function register(data: RegisterRequest): Promise<RegisterResponse> {
+  const response = await fetch(`${API_URL}/auth/register`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
+  });
+
+  const raw = await response.text();
+  const result = tryParseJson(raw);
+
+  if (!response.ok) {
+    throw new Error(result.message || "No se pudo registrar el usuario");
+  }
+
+  return result as RegisterResponse;
 }
 
 export function saveAuthSession(data: LoginResponse): void {

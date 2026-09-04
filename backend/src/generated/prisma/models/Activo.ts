@@ -1027,10 +1027,6 @@ export type ActivoUncheckedUpdateManyWithoutCategoriaNestedInput = {
   deleteMany?: Prisma.ActivoScalarWhereInput | Prisma.ActivoScalarWhereInput[]
 }
 
-export type NullableDateTimeFieldUpdateOperationsInput = {
-  set?: Date | string | null
-}
-
 export type NullableDecimalFieldUpdateOperationsInput = {
   set?: runtime.Decimal | runtime.DecimalJsLike | number | string | null
   increment?: runtime.Decimal | runtime.DecimalJsLike | number | string
